@@ -1,0 +1,106 @@
+<svg id="svg-3tg-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 126 126" width="380" height="130">
+        <defs>
+          <!-- Gradient nền App Icon -->
+          <linearGradient id="bg3tgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FF2E63"/>
+            <stop offset="55%" stop-color="#F43F5E"/>
+            <stop offset="100%" stop-color="#FB7185"/>
+          </linearGradient>
+
+          <!-- Gradient chữ 3TG -->
+          <linearGradient id="text3tgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#FF2E63"/>
+            <stop offset="100%" stop-color="#E11D48"/>
+          </linearGradient>
+        </defs>
+
+        <!-- ================= KHỐI APP ICON (130x130) ================= -->
+        <g id="icon-core">
+          <!-- Đế nổi 3D phía dưới -->
+          <rect x="10" y="18" width="106" height="102" rx="28" fill="#9F1239" stroke="#18181B" stroke-width="3.8"/>
+          <!-- Mặt chính Squircle -->
+          <rect x="10" y="10" width="106" height="102" rx="28" fill="url(#bg3tgGrad)" stroke="#18181B" stroke-width="3.8"/>
+          <!-- Ánh sáng bóng phía trên -->
+          <path d="M 36 16 L 90 16 C 100 16 106 22 107 30 C 104 23 97 20 88 20 L 38 20 C 29 20 22 23 19 30 C 20 22 26 16 36 16 Z" fill="#FFFFFF" opacity="0.32"/>
+
+          <!-- Hai tai Thỏ Bảy Màu ôm sát má -->
+          <path d="M 32 58 C 19 64 16 80 19 96 C 21 105 30 106 35 101 C 40 95 40 78 38 66 Z" fill="#FFFFFF" stroke="#18181B" stroke-width="3.5" stroke-linejoin="round"/>
+          <path d="M 94 58 C 107 64 110 80 107 96 C 105 105 96 106 91 101 C 86 95 86 78 88 66 Z" fill="#FFFFFF" stroke="#18181B" stroke-width="3.5" stroke-linejoin="round"/>
+
+          <!-- Đầu & Thân Thỏ Bảy Màu tròn mũm mĩm -->
+          <path d="M 63 32 C 92 32 102 50 102 72 C 102 88 94 98 90 106 L 36 106 C 32 98 24 88 24 72 C 24 50 34 32 63 32 Z" fill="#FFFFFF" stroke="#18181B" stroke-width="3.8" stroke-linejoin="round"/>
+
+          <!-- Hai má hồng -->
+          <ellipse cx="38" cy="76" rx="6.5" ry="4" fill="#FDA4AF"/>
+          <ellipse cx="88" cy="76" rx="6.5" ry="4" fill="#FDA4AF"/>
+
+          <!-- Đôi mắt đen long lanh -->
+          <ellipse cx="50" cy="66" rx="4.2" ry="6.5" fill="#18181B"/>
+          <circle cx="48.5" cy="63.5" r="1.8" fill="#FFFFFF"/>
+          <ellipse cx="76" cy="66" rx="4.2" ry="6.5" fill="#18181B"/>
+          <circle cx="74.5" cy="63.5" r="1.8" fill="#FFFFFF"/>
+
+          <!-- KÍNH CẬN TRÒN TRI THỨC (Scholar Glasses) -->
+          <g>
+            <circle cx="50" cy="66" r="10.5" fill="rgba(224, 242, 254, 0.3)" stroke="#18181B" stroke-width="3"/>
+            <circle cx="76" cy="66" r="10.5" fill="rgba(224, 242, 254, 0.3)" stroke="#18181B" stroke-width="3"/>
+            <!-- Gọng nối giữa 2 mắt kính -->
+            <path d="M 60.5 66 Q 63 63 65.5 66" fill="none" stroke="#18181B" stroke-width="3" stroke-linecap="round"/>
+            <!-- Vệt sáng phản quang trên kính -->
+            <path d="M 44 60 L 48 64 M 70 60 L 74 64" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+          </g>
+
+          <!-- Miệng cười tự tin khoe lưỡi hồng -->
+          <path d="M 57 77 Q 63 88 69 77 Z" fill="#E11D48" stroke="#18181B" stroke-width="2.4" stroke-linejoin="round"/>
+          <path d="M 59.5 82 Q 63 79.5 66.5 82 Q 63 86.5 59.5 82 Z" fill="#F472B6"/>
+
+          <!-- CUỐN SÁCH MỞ & 2 BÀN TAY MŨM MĨM ÔM SÁCH Ở ĐÁY ICON -->
+          <g transform="translate(63, 98)">
+            <!-- Bìa sách vàng/xanh -->
+            <path d="M -28 4 L 0 10 L 28 4 L 28 12 L 0 18 L -28 12 Z" fill="#FBBF24" stroke="#18181B" stroke-width="2.8" stroke-linejoin="round"/>
+            <!-- Trang sách trắng mở ra -->
+            <path d="M -26 -4 Q -13 -6 0 2 Q 13 -6 26 -4 L 26 6 Q 13 4 0 12 Q -13 4 -26 6 Z" fill="#FFFFFF" stroke="#18181B" stroke-width="2.8" stroke-linejoin="round"/>
+            <line x1="0" y1="2" x2="0" y2="12" stroke="#18181B" stroke-width="2.5"/>
+            <!-- Hai bàn tay tròn của Thỏ nắm 2 bên mép sách -->
+            <ellipse cx="-26" cy="2" rx="7" ry="5.5" fill="#FFFFFF" stroke="#18181B" stroke-width="3"/>
+            <ellipse cx="26" cy="2" rx="7" ry="5.5" fill="#FFFFFF" stroke="#18181B" stroke-width="3"/>
+          </g>
+
+          <!-- MŨ CỬ NHÂN ĐỘI TRÊN ĐẦU THỎ (GRADUATION MORTARBOARD) -->
+          <g transform="translate(63, 28)">
+            <!-- Đế mũ ôm trán -->
+            <path d="M -25 8 Q 0 0 25 8 L 22 18 Q 0 11 -22 18 Z" fill="#1E293B" stroke="#18181B" stroke-width="3.2" stroke-linejoin="round"/>
+            <!-- Mặt phẳng hình thoi của mũ -->
+            <polygon points="0,-16 42,-2 0,10 -42,-2" fill="#334155" stroke="#18181B" stroke-width="3.5" stroke-linejoin="round"/>
+            <!-- Viền sáng trên mũ -->
+            <polyline points="-32,-2 0,-12 32,-2" fill="none" stroke="#64748B" stroke-width="2" stroke-linecap="round"/>
+            <!-- Nút vàng giữa mũ & Dây tua rua (Tassel) -->
+            <ellipse cx="0" cy="-2" rx="4.5" ry="2.8" fill="#FBBF24" stroke="#18181B" stroke-width="2"/>
+            <path d="M 3 -2 Q 24 0 32 14" fill="none" stroke="#FBBF24" stroke-width="3" stroke-linecap="round"/>
+            <polygon points="32,12 28,22 36,22" fill="#FBBF24" stroke="#18181B" stroke-width="1.8" stroke-linejoin="round"/>
+          </g>
+        </g>
+
+        <!-- ================= CHỮ THƯƠNG HIỆU "3TG" (GAMIFIED ACADEMIC) ================= -->
+        <g transform="translate(134, 0)">
+          <!-- Lớp bóng 3D màu đen/đỏ sẫm phía dưới chữ 3TG -->
+          <text x="4" y="96" font-family="'Fredoka', 'Nunito', Arial, sans-serif" font-size="84" font-weight="900" letter-spacing="2" fill="#18181B" stroke="#18181B" stroke-width="8" stroke-linejoin="round">3TG</text>
+
+          <!-- Lớp chữ chính 3TG -->
+          <text x="0" y="90" font-family="'Fredoka', 'Nunito', Arial, sans-serif" font-size="84" font-weight="900" letter-spacing="2" fill="url(#text3tgGrad)" stroke="#18181B" stroke-width="4" stroke-linejoin="round">3TG</text>
+
+          <!-- Cây bút chì vàng & Ngôi sao tri thức điểm xuyết cạnh chữ 3TG -->
+          <g transform="translate(208, 28) rotate(25)">
+            <!-- Thân bút chì -->
+            <rect x="-6" y="0" width="12" height="34" rx="2" fill="#FBBF24" stroke="#18181B" stroke-width="2.8"/>
+            <!-- Đầu tẩy hồng -->
+            <path d="M -6 0 L -6 -6 C -6 -9 6 -9 6 -6 L 6 0 Z" fill="#FB7185" stroke="#18181B" stroke-width="2.8"/>
+            <!-- Ngòi bút nhọn -->
+            <polygon points="-6,34 6,34 0,46" fill="#FDE68A" stroke="#18181B" stroke-width="2.8" stroke-linejoin="round"/>
+            <polygon points="-2.5,41 2.5,41 0,46" fill="#18181B"/>
+          </g>
+
+          <!-- Ngôi sao 4 cánh lấp lánh -->
+          <polygon points="186,16 189,24 197,27 189,30 186,38 183,30 175,27 183,24" fill="#FBBF24" stroke="#18181B" stroke-width="1.8" stroke-linejoin="round"/>
+        </g>
+      </svg>

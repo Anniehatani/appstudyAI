@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#fff5f8">
+    <meta name="description" content="3TG — Web học tập thông minh, vượt ải và tiến bộ mỗi ngày cùng Mascot Thỏ Bảy Màu.">
+    <title>3TG — Học vui mỗi ngày</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/tho-bay-mau.css">
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <a class="brand brand-3tg" href="/" aria-label="3TG trang chủ">
+          <img src="/3tg-logo-full.svg" alt="3TG" class="brand-logo-img">
+        </a>
+        <div class="sidebar-label">KHÔNG GIAN HỌC</div>
+        <nav class="main-nav" aria-label="Điều hướng chính">
+          <button class="nav-item active" data-page="home"><span class="nav-icon">🗺️</span><span>Lộ trình học</span></button>
+          <button class="nav-item" data-page="courses"><span class="nav-icon">📚</span><span>Môn học</span><span class="nav-count" id="course-count">10</span></button>
+          <button class="nav-item" data-page="leaderboard"><span class="nav-icon">🏆</span><span>Bảng xếp hạng</span></button>
+          <button class="nav-item" data-page="shop"><span class="nav-icon">🏪</span><span>Cửa hàng</span><span class="nav-badge-gems" id="nav-gems-badge">💎</span></button>
+          <button class="nav-item" data-page="achievements"><span class="nav-icon">🎖️</span><span>Thành tích</span></button>
+          <button class="nav-item" data-page="review"><span class="nav-icon">🎯</span><span>Ôn câu sai</span><span class="nav-count review-count" id="nav-review-count">0</span></button>
+          <button class="nav-item" data-page="chat"><span class="nav-icon">✧</span><span>Hỏi 3TG AI</span><span class="nav-ai-dot"></span></button>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="streak-mini streak-mini-interactive" id="side-streak-card" title="Bấm để xem Khu Streak xịn xò! 🔥" tabindex="0" role="button">
+            <div class="streak-mini-top"><span>✦ Chuỗi ngày học</span><span class="streak-flame">🔥</span></div>
+            <div class="streak-mini-number"><span id="side-streak">0</span> ngày</div>
+            <div class="streak-week" id="side-week"></div>
+            <div class="streak-mini-note" id="side-streak-note">Học mỗi ngày để giữ lửa nhé!</div>
+          </div>
+          <button class="profile-row" id="side-profile-btn" data-page="settings">
+            <span class="avatar avatar-small" id="side-avatar">3</span>
+            <span class="profile-row-copy"><strong id="side-name">Bạn học 3TG</strong><small id="side-account-type">Hồ sơ cá nhân</small></span>
+            <span class="profile-chevron">›</span>
+          </button>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div class="topbar-left">
+            <button class="icon-button mobile-menu" id="menu-toggle" aria-label="Mở menu">☰</button>
+            <div class="subject-quick-select" id="top-subject-selector">
+              <span class="subject-tag-icon" id="top-subject-icon">🧠</span>
+              <span class="subject-tag-name" id="top-subject-name">Đang tải môn học...</span>
+              <span class="subject-tag-arrow">▾</span>
+            </div>
+          </div>
+          <div class="topbar-right">
+            <div class="top-stat top-streak" id="top-streak-btn" title="Chuỗi ngày học liên tục (Bấm để xem khu Streak xịn xò!)">
+              <span class="stat-emoji">🔥</span>
+              <b id="header-streak">0</b>
+            </div>
+            <div class="top-stat top-gems" title="Đá quý tích lũy">
+              <span class="stat-emoji">💎</span>
+              <b id="header-gems">50</b>
+            </div>
+            <div class="top-stat top-hearts" title="Vô hạn tim vĩnh viễn (∞)">
+              <span class="stat-emoji">❤️</span>
+              <b id="header-hearts">∞</b>
+            </div>
+            <div class="top-stat top-xp" title="Tổng kinh nghiệm XP">
+              <span class="stat-emoji">⭐</span>
+              <b id="header-xp">0</b>
+              <small>XP</small>
+            </div>
+            <div class="top-user-wrap" id="top-user-wrap">
+              <button class="auth-pill-btn" id="header-login-btn">Đăng nhập</button>
+              <button class="top-avatar" id="header-avatar-btn" data-page="settings" style="display:none;" aria-label="Mở cài đặt hồ sơ">
+                <span class="avatar avatar-top" id="top-avatar">3</span>
+                <span class="top-avatar-chevron">⌄</span>
+              </button>
+            </div>
+          </div>
+        </header>
+        <main class="page-content" id="app-view">
+          <div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải lộ trình học 3TG…</span></div>
+        </main>
+        <footer class="app-footer">
+          <span>✿ Web học 3TG</span>
+          <span>• Đồng hành cùng Mascot Thỏ Bảy Màu & Cloudflare D1</span>
+          <span class="footer-live" id="connection-status"><i></i> Đã kết nối D1</span>
+        </footer>
+      </section>
+    </div>
+    <div class="mobile-overlay" id="mobile-overlay"></div>
+    <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+    <div id="modal-root"></div>
+  </body>
+</html>

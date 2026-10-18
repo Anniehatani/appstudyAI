@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Linh vật Thỏ Bảy Màu — 20 Trạng Thái Animation (Duolingo Style)</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/tho-bay-mau.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #fff1f5 0%, #ffe4ec 50%, #fdf2f8 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      margin: 0;
+      padding: 30px 20px 80px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .demo-container {
+      max-width: 1240px;
+      width: 100%;
+    }
+
+    .demo-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .demo-title {
+      font-size: 34px;
+      font-weight: 900;
+      color: #e11d48;
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .demo-subtitle {
+      font-size: 16px;
+      color: #64748b;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    /* Main Showcase Stage */
+    .stage-card {
+      background: #ffffff;
+      border: 3px solid #18181b;
+      border-radius: 28px;
+      box-shadow: 0 12px 0 #18181b, 0 20px 30px rgba(225, 29, 72, 0.15);
+      padding: 32px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 40px;
+      position: relative;
+    }
+
+    .stage-canvas {
+      min-height: 330px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+    }
+
+    /* Controller Panel */
+    .controls-grid {
+      width: 100%;
+      border-top: 2.5px dashed #f472b6;
+      padding-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .filter-tab-btn {
+      background: #f1f5f9;
+      border: 2px solid #cbd5e1;
+      border-radius: 14px;
+      padding: 8px 18px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      color: #475569;
+      transition: all 0.15s ease;
+    }
+
+    .filter-tab-btn.active {
+      background: #18181b;
+      color: #ffffff;
+      border-color: #18181b;
+    }
+
+    .state-buttons-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 6px 4px;
+    }
+
+    .state-btn {
+      background: #ffffff;
+      border: 2px solid #18181b;
+      border-bottom: 4.5px solid #18181b;
+      border-radius: 16px;
+      padding: 9px 16px;
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #18181b;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.1s ease;
+      user-select: none;
+    }
+
+    .state-btn:hover {
+      background: #fff0f5;
+      transform: translateY(-2px);
+      border-bottom-width: 6px;
+    }
+
+    .state-btn:active {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+    }
+
+    .state-btn.active {
+      background: #e11d48;
+      color: #ffffff;
+      border-color: #18181b;
+      border-bottom-color: #881337;
+      box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+    }
+
+    .tool-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: #fff5f8;
+      padding: 12px 18px;
+      border-radius: 16px;
+      border: 2px solid #fbcfe8;
+    }
+
+    .custom-speech-input {
+      flex: 1;
+      min-width: 260px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 2px solid #18181b;
+      font-size: 14px;
+      font-weight: 700;
+      outline: none;
+    }
+
+    .custom-speech-input:focus {
+      border-color: #e11d48;
+      box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2);
+    }
+
+    .size-slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 13.5px;
+    }
+
+    /* 20 Cards Gallery Grid */
+    .gallery-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .gallery-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #1e293b;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 22px;
+    }
+
+    .gallery-card {
+      background: #ffffff;
+      border: 2.5px solid #18181b;
+      border-bottom: 6px solid #18181b;
+      border-radius: 24px;
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 380px;
+      box-sizing: border-box;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+
+    .gallery-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 24px rgba(225, 29, 72, 0.18);
+      border-color: #e11d48;
+    }
+
+    /* Phần 1: Khung bong bóng thoại phía trên */
+    .gallery-card-bubble {
+      position: relative;
+      background: #ffffff;
+      border: 2.5px solid #18181b;
+      border-radius: 16px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      font-weight: 800;
+      line-height: 1.4;
+      color: #18181b;
+      text-align: center;
+      margin-top: 4px;
+      margin-bottom: 10px;
+      width: 100%;
+      box-sizing: border-box;
+      box-shadow: 0 3px 0 #18181b;
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      word-break: break-word;
+    }
+
+    .gallery-card-bubble::after {
+      content: "";
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%) rotate(45deg);
+      width: 10px;
+      height: 10px;
+      background: #ffffff;
+      border-right: 2.5px solid #18181b;
+      border-bottom: 2.5px solid #18181b;
+    }
+
+    /* Phần 2: Khung mascot ở giữa */
+    .gallery-card-mascot {
+      width: 150px;
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin: 4px 0;
+    }
+
+    /* Phần 3: Footer nhãn số thứ tự và tên dưới chân nhân vật */
+    .gallery-card-footer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .gallery-card-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 10px;
+      background: #ffe4e6;
+      color: #e11d48;
+      border: 1.5px solid #fecdd3;
+      letter-spacing: 0.5px;
+    }
+
+    .gallery-card-badge.badge-ref {
+      background: #dbeafe;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+
+    .gallery-card-title {
+      font-size: 14.5px;
+      font-weight: 900;
+      color: #18181b;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    .gallery-card-desc {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 3px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .back-home-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 40px;
+      background: #18181b;
+      color: #ffffff;
+      padding: 14px 28px;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 15px;
+      transition: transform 0.15s ease;
+    }
+
+    .back-home-btn:hover {
+      transform: scale(1.04);
+      background: #e11d48;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="demo-container">
+    
+    <header class="demo-header">
+      <h1 class="demo-title">
+        <span>🐰</span> Thỏ Bảy Màu — Hệ Thống 20 Animation Duolingo
+      </h1>
+      <p class="demo-subtitle">
+        Tạo hình chuẩn mập tròn liền thân theo ảnh <strong>Thỏ bảy màu8.jpg</strong> • ViewBox 260x260
+      </p>
+    </header>
+
+    <!-- MAIN INTERACTIVE STAGE -->
+    <div class="stage-card">
+      <div class="stage-canvas" id="main-stage">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- CONTROLLER PANEL -->
+      <div class="controls-grid">
+        <div class="filter-tabs">
+          <button class="filter-tab-btn active" onclick="filterButtons('all')">Tất cả (20)</button>
+          <button class="filter-tab-btn" onclick="filterButtons('photo')">📸 9 Ảnh mẫu gốc</button>
+          <button class="filter-tab-btn" onclick="filterButtons('expanded')">✨ 11 Mở rộng học tập</button>
+        </div>
+
+        <div class="state-buttons-row" id="state-buttons-row">
+          <!-- Buttons generated dynamically from THO_METADATA -->
+        </div>
+
+        <div class="tool-row">
+          <input type="text" id="custom-speech-input" class="custom-speech-input" 
+                 placeholder="Gõ lời thoại tùy ý cho Thỏ Bảy Màu..." 
+                 oninput="handleCustomSpeech(this.value)" />
+
+          <div class="size-slider-wrap">
+            <span>Kích thước:</span>
+            <input type="range" id="size-slider" min="140" max="340" value="220" oninput="handleSizeChange(this.value)" />
+            <span id="size-val">220px</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 20 STATES GALLERY GRID -->
+    <div class="gallery-header-row">
+      <h2 class="gallery-title">
+        <span>🖼️</span> Toàn bộ 20 Trạng thái Animation (Thẻ đối chiếu trực quan)
+      </h2>
+    </div>
+    
+    <div class="gallery-grid" id="gallery-grid">
+      <!-- 20 cards rendered by JS -->
+    </div>
+
+    <div style="text-align:center;">
+      <a href="/" class="back-home-btn">
+        <span>🏠</span> Quay lại Ứng dụng Học tập Lumi
+      </a>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { renderThoBayMau, generateThoBayMauSvg, THO_STATES, THO_METADATA } from '/tho-bay-mau.js';
+
+    let currentState = 'idle';
+    let currentSize = 220;
+    let customSpeech = "";
+    let currentCategoryFilter = 'all';
+
+    // Web Audio Sound Generator for rich interactive feedback
+    let audioCtx = null;
+    function playChime(state) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const now = audioCtx.currentTime;
+
+        if (state === "vietnam-celebrate" || state === "king-champion" || state === "gem-rich") {
+          // Cheerful fanfare notes
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+            gain.gain.setValueAtTime(0.18, now + idx * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.08);
+            osc.stop(now + idx * 0.08 + 0.35);
+          });
+        } else if (state === "calm-wrong" || state === "heart-broken") {
+          // Gentle comforting soft chime
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(240, now + 0.4);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        } else if (state === "cloud-float" || state === "xp-boost") {
+          // Ascending magical sparkle
+          [440, 554.37, 659.25, 880, 1108.7].forEach((freq, idx) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+            gain.gain.setValueAtTime(0.12, now + idx * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + idx * 0.06);
+            osc.stop(now + idx * 0.06 + 0.3);
+          });
+        } else if (state === "sword-master") {
+          // Sword slash whoosh
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.exponentialRampToValueAtTime(160, now + 0.22);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else {
+          // Pop sound
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.frequency.setValueAtTime(580, now);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        }
+      } catch (e) {}
+    }
+
+    function updateMainStage() {
+      const meta = THO_METADATA[currentState] || {};
+      const speech = customSpeech || meta.quote || "";
+      const stage = document.getElementById("main-stage");
+      stage.innerHTML = renderThoBayMau({
+        state: currentState,
+        size: currentSize,
+        speech: speech,
+        speechDirection: "top"
+      });
+
+      // Update button active state
+      document.querySelectorAll(".state-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.state === currentState);
+      });
+
+      // Update input placeholder with current state quote
+      document.getElementById("custom-speech-input").placeholder = meta.quote || "Gõ lời thoại tùy ý...";
+    }
+
+    window.changeState = function(state) {
+      currentState = state;
+      playChime(state);
+      updateMainStage();
+    };
+
+    window.handleCustomSpeech = function(val) {
+      customSpeech = val;
+      updateMainStage();
+    };
+
+    window.handleSizeChange = function(val) {
+      currentSize = Number(val);
+      document.getElementById("size-val").textContent = val + "px";
+      updateMainStage();
+    };
+
+    // Render 20 State Switcher Buttons
+    function renderButtons() {
+      const container = document.getElementById("state-buttons-row");
+      const states = Object.keys(THO_METADATA);
+      
+      container.innerHTML = states.map((st, idx) => {
+        const meta = THO_METADATA[st];
+        const isPhoto = meta.category === "Ảnh mẫu";
+        const isHidden = (currentCategoryFilter === 'photo' && !isPhoto) || (currentCategoryFilter === 'expanded' && isPhoto);
+
+        return `
+          <button class="state-btn ${st === currentState ? 'active' : ''}" 
+                  data-state="${st}" 
+                  style="${isHidden ? 'display:none;' : ''}"
+                  onclick="changeState('${st}')">
+            <span>${idx + 1}.</span> ${meta.name}
+          </button>
+        `;
+      }).join("");
+    }
+
+    window.filterButtons = function(cat) {
+      currentCategoryFilter = cat;
+      document.querySelectorAll(".filter-tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.textContent.includes(cat === 'photo' ? '9 Ảnh' : cat === 'expanded' ? '11 Mở' : 'Tất cả'));
+      });
+      renderButtons();
+    };
+
+    // Render 20 Gallery Cards Grid (3-Tier Layout: Bubble on top, fixed 150x150 Mascot in middle, footer below)
+    function renderGallery() {
+      const container = document.getElementById("gallery-grid");
+      const states = Object.keys(THO_METADATA);
+
+      container.innerHTML = states.map((st, idx) => {
+        const meta = THO_METADATA[st];
+        const isPhoto = meta.category === "Ảnh mẫu";
+
+        return `
+          <div class="gallery-card" onclick="changeState('${st}')" title="Nhấn để xem trạng thái trên sàn diễn">
+            <!-- Phần 1: Khung bong bóng thoại phía trên (đầy đủ viền đen 4 cạnh) -->
+            <div class="gallery-card-bubble">
+              ${meta.quote}
+            </div>
+
+            <!-- Phần 2: Khung mascot ở giữa có chiều cao cố định 150px x 150px -->
+            <div class="gallery-card-mascot">
+              ${generateThoBayMauSvg({ state: st, size: 145 })}
+            </div>
+
+            <!-- Phần 3: Footer luồng văn bản dưới chân thỏ (không absolute) -->
+            <div class="gallery-card-footer">
+              <span class="gallery-card-badge ${isPhoto ? 'badge-ref' : ''}">
+                ${idx + 1}. ${meta.category}
+              </span>
+              <div class="gallery-card-title">${meta.name}</div>
+              <div class="gallery-card-desc">${meta.ref}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // Initialize
+    renderButtons();
+    updateMainStage();
+    renderGallery();
+  </script>
+</body>
+</html>

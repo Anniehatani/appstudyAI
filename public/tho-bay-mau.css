@@ -1,0 +1,803 @@
+/* ========================================================
+   THỎ BẢY MÀU - 20 ANIMATIONS ENGINE (DUOLINGO GAMIFICATION)
+   Tone: Pink Kawaii & 2D Vietnamese Comic Aesthetic
+   Seamless Plump Body Rigging (ViewBox: 0 0 260 260)
+   ======================================================== */
+
+.tho-mascot-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.tho-mascot-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 8px 18px rgba(255, 107, 149, 0.16));
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Base Line & Fill Styles */
+.tho-stroke-main {
+  stroke: #18181b;
+  stroke-width: 5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tho-stroke-med {
+  stroke: #18181b;
+  stroke-width: 4px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tho-stroke-fine {
+  stroke: #18181b;
+  stroke-width: 2.8px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tho-fill-white {
+  fill: #ffffff;
+}
+
+.tho-fill-blush {
+  fill: #ff8fab;
+  opacity: 0.9;
+}
+
+.tho-fill-black {
+  fill: #18181b;
+}
+
+/* ========================================================
+   ANIMATION KEYFRAMES FOR 20 STATES
+   ======================================================= */
+
+/* 1. IDLE: Breathing, ear swaying, natural blinking */
+.tho-state-idle .tho-body-core {
+  transform-origin: 130px 240px;
+  animation: thoBreathe 3.2s ease-in-out infinite;
+}
+.tho-state-idle .tho-ear-l {
+  transform-origin: 82px 115px;
+  animation: thoEarSwayLeft 3.6s ease-in-out infinite;
+}
+.tho-state-idle .tho-ear-r {
+  transform-origin: 178px 115px;
+  animation: thoEarSwayRight 3.6s ease-in-out infinite 0.25s;
+}
+.tho-state-idle .tho-blink-eye {
+  transform-origin: 130px 112px;
+  animation: thoBlink 4s ease-in-out infinite;
+}
+
+/* 2. THINKING: Head tilting, eyes pondering, chin resting */
+.tho-state-thinking .tho-body-core {
+  transform-origin: 130px 240px;
+  animation: thoThinkTilt 4s ease-in-out infinite;
+}
+.tho-state-thinking .tho-eyes-ponder {
+  animation: thoPonderEyes 3.2s ease-in-out infinite;
+}
+.tho-state-thinking .tho-think-bubble {
+  animation: thoFloatBubble 2.5s ease-in-out infinite alternate;
+}
+
+/* 3. CALM-WRONG: Serene zen breathing, reassuring hand */
+.tho-state-calm-wrong .tho-body-core {
+  transform-origin: 130px 240px;
+  animation: thoCalmBreathing 4s ease-in-out infinite;
+}
+.tho-state-calm-wrong .tho-ear-l {
+  transform-origin: 82px 115px;
+  animation: thoEarDroopL 4s ease-in-out infinite;
+}
+.tho-state-calm-wrong .tho-ear-r {
+  transform-origin: 178px 115px;
+  animation: thoEarDroopR 4s ease-in-out infinite;
+}
+.tho-state-calm-wrong .tho-hand-chest {
+  transform-origin: 130px 170px;
+  animation: thoHandComfort 3s ease-in-out infinite;
+}
+
+/* 4. VIETNAM-CELEBRATE: High bounce, waving arms, sparkles */
+.tho-state-vietnam-celebrate .tho-rig-container {
+  animation: thoCelebrateBounce 1.1s cubic-bezier(0.28, 0.84, 0.42, 1) infinite;
+}
+.tho-state-vietnam-celebrate .tho-arm-cheer-l {
+  transform-origin: 75px 165px;
+  animation: thoCheerArmL 0.55s ease-in-out infinite alternate;
+}
+.tho-state-vietnam-celebrate .tho-arm-cheer-r {
+  transform-origin: 185px 165px;
+  animation: thoCheerArmR 0.55s ease-in-out infinite alternate 0.1s;
+}
+.tho-state-vietnam-celebrate .tho-confetti-star {
+  animation: thoTwinkleStar 1.3s ease-in-out infinite;
+}
+
+/* 5. CLOUD-FLOAT: Smooth levitation and cloud pulse */
+.tho-state-cloud-float .tho-rig-container {
+  animation: thoFloatLevitate 3s ease-in-out infinite;
+}
+.tho-state-cloud-float .tho-cloud-mesh {
+  transform-origin: 130px 230px;
+  animation: thoCloudMeshPulse 3s ease-in-out infinite;
+}
+
+/* 6. SWORD-MASTER: Yasuo samurai slash, wind blowing, hair flutter */
+.tho-samurai-hair {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation: thoHairWind 2s ease-in-out infinite alternate;
+}
+.tho-sword-blade {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoSwordShine 2.5s ease-in-out infinite;
+}
+.tho-wind-gust {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoWindDrift 1.8s ease-in-out infinite;
+}
+
+/* 7. MAID-SERVICE: Polite curtsy bow, blushing, bonnet bobbing */
+.tho-state-maid-service .tho-body-core {
+  transform-origin: 130px 240px;
+  animation: thoMaidCurtsy 3.5s ease-in-out infinite;
+}
+.tho-state-maid-service .tho-maid-apron {
+  animation: thoApronSway 3.5s ease-in-out infinite;
+}
+
+/* 8. SHOCKED-WALKING: Stomping feet waddle, surprised O mouth, arm swings */
+.tho-state-shocked-walking .tho-body-core {
+  animation: thoShockedWalk 0.65s ease-in-out infinite alternate;
+}
+.tho-arm-swing-l {
+  transform-origin: 76px 168px;
+  animation: thoWaddleLegL 0.65s ease-in-out infinite alternate;
+}
+.tho-arm-swing-r {
+  transform-origin: 184px 168px;
+  animation: thoWaddleLegR 0.65s ease-in-out infinite alternate;
+}
+
+/* 9. CONFUSED-PHONE: Looking at phone, bouncy '?' bubble */
+.tho-state-confused-phone .tho-body-core {
+  transform-origin: 130px 240px;
+  animation: thoPhoneBreathing 3s ease-in-out infinite;
+}
+.tho-qmark-bubble {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoPopBounce 1.5s ease-in-out infinite;
+}
+
+/* 10. AI-PROFESSOR: Adjusting glasses, pointing wand/book */
+.tho-state-ai-professor .tho-glasses {
+  transform-origin: 130px 110px;
+  animation: thoAdjustGlasses 4s ease-in-out infinite;
+}
+.tho-state-ai-professor .tho-pointer-stick {
+  transform-origin: 180px 175px;
+  animation: thoPointerTap 2.5s ease-in-out infinite;
+}
+
+/* 11. STREAK-FIRE: Flaming aura, clenched fists, determined head */
+.tho-fire-aura {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoFlameFlicker 0.8s ease-in-out infinite alternate;
+}
+.tho-state-streak-fire .tho-headband-tails {
+  transform-origin: 75px 85px;
+  animation: thoHeadbandFlutter 0.7s ease-in-out infinite alternate;
+}
+
+/* 12. GEM-RICH: Sparkling diamond eyes, treasure gems gleaming */
+.tho-state-gem-rich .tho-diamond-eye {
+  animation: thoGemSpin 1.8s ease-in-out infinite;
+}
+.tho-state-gem-rich .tho-chest-sparkles {
+  animation: thoTwinkleStar 1s ease-in-out infinite;
+}
+.tho-state-gem-rich .tho-body-core {
+  animation: thoRichBounce 0.9s ease-in-out infinite alternate;
+}
+
+/* 13. KING-CHAMPION: Crown gleam, waving trophy, royal cape */
+.tho-trophy {
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  animation: thoTrophyRaise 1.8s ease-in-out infinite alternate;
+}
+.tho-state-king-champion .tho-crown-star {
+  animation: thoTwinkleStar 1.2s ease-in-out infinite;
+}
+.tho-state-king-champion .tho-cape {
+  transform-origin: 130px 160px;
+  animation: thoCapeFlutter 2.2s ease-in-out infinite alternate;
+}
+
+/* 14. DETECTIVE-FIX: Magnifying glass swaying to search clues */
+.tho-glass-lens {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoDetectiveSearch 2.5s ease-in-out infinite;
+}
+
+/* 15. HEART-BROKEN: Trembling, teardrops streaming */
+.tho-state-heart-broken .tho-body-core {
+  animation: thoTremble 0.25s ease-in-out infinite;
+}
+.tho-state-heart-broken .tho-teardrop {
+  animation: thoTearFlow 1.2s ease-in infinite;
+}
+.tho-cracked-heart {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoHeartThrob 1.4s ease-in-out infinite;
+}
+
+/* 16. XP-BOOST: Riding star zooming, lightning flashes */
+.tho-state-xp-boost .tho-rig-container {
+  animation: thoStarRider 1.5s ease-in-out infinite alternate;
+}
+.tho-xp-lightning {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoLightningFlash 0.9s ease-in-out infinite;
+}
+
+/* 17. SLEEPY-AFK: Slumping, snot bubble inflating/popping, Zzz floating */
+.tho-state-sleepy-afk .tho-body-core {
+  transform-origin: 130px 240px;
+  animation: thoSleepSlump 4s ease-in-out infinite;
+}
+.tho-snot-bubble {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoSnotInflate 3s ease-in-out infinite;
+}
+.tho-zzz-text {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoZzzDrift 3s ease-in-out infinite;
+}
+
+/* 18. CHEERING-POM: Shaking pom-poms left and right vigorously */
+.tho-pom-l {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoPomShakeL 0.4s ease-in-out infinite alternate;
+}
+.tho-pom-r {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoPomShakeR 0.4s ease-in-out infinite alternate 0.1s;
+}
+
+/* 19. TYPING-FAST: Laptop hands hammering keys, sweat drops */
+.tho-state-typing-fast .tho-typing-hands {
+  animation: thoTypingFrenzy 0.18s ease-in-out infinite alternate;
+}
+.tho-sweat-drop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoSweatFly 0.8s ease-out infinite;
+}
+
+/* 20. ANGRY-REMIND: Puffed cheeks, stomping, steam clouds from head */
+.tho-state-angry-remind .tho-body-core {
+  transform-origin: 130px 240px;
+  animation: thoAngryStomp 0.5s ease-in-out infinite alternate;
+}
+.tho-angry-steam {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: thoSteamPuff 1s ease-out infinite;
+}
+
+/* ========================================================
+   KEYFRAME DEFINITIONS (SMOOTH 60FPS)
+   ======================================================= */
+@keyframes thoBreathe {
+  0%, 100% { transform: scale(1, 1) translateY(0); }
+  50% { transform: scale(1.02, 0.985) translateY(2px); }
+}
+
+@keyframes thoBlink {
+  0%, 46%, 50%, 96%, 100% { transform: scaleY(1); }
+  48%, 98% { transform: scaleY(0.06); }
+}
+
+@keyframes thoEarSwayLeft {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-4deg); }
+}
+
+@keyframes thoEarSwayRight {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(4deg); }
+}
+
+@keyframes thoThinkTilt {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3.5deg) translateY(-2px); }
+  75% { transform: rotate(3deg) translateY(-1px); }
+}
+
+@keyframes thoPonderEyes {
+  0%, 20%, 100% { transform: translate(0, 0); }
+  35%, 65% { transform: translate(3px, -4px); }
+  75%, 90% { transform: translate(-3px, -3px); }
+}
+
+@keyframes thoFloatBubble {
+  0% { transform: translateY(0) scale(0.95); opacity: 0.85; }
+  100% { transform: translateY(-7px) scale(1.05); opacity: 1; }
+}
+
+@keyframes thoCalmBreathing {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.015, 0.99) translateY(1.5px); }
+}
+
+@keyframes thoEarDroopL {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(-6deg); }
+}
+
+@keyframes thoEarDroopR {
+  0%, 100% { transform: rotate(2deg); }
+  50% { transform: rotate(6deg); }
+}
+
+@keyframes thoHandComfort {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2px) rotate(1.5deg); }
+}
+
+@keyframes thoCelebrateBounce {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  35% { transform: translateY(-24px) scale(0.97, 1.04); }
+  55% { transform: translateY(-30px) scale(1.02, 0.99); }
+  80% { transform: translateY(2px) scale(1.04, 0.96); }
+}
+
+@keyframes thoCheerArmL {
+  0% { transform: rotate(-12deg); }
+  100% { transform: rotate(16deg); }
+}
+
+@keyframes thoCheerArmR {
+  0% { transform: rotate(12deg); }
+  100% { transform: rotate(-16deg); }
+}
+
+@keyframes thoTwinkleStar {
+  0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.25) rotate(45deg); opacity: 1; }
+}
+
+@keyframes thoFloatLevitate {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(1.5deg); }
+}
+
+@keyframes thoCloudMeshPulse {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.04, 0.97); }
+}
+
+@keyframes thoHairWind {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-6deg); }
+}
+
+@keyframes thoSwordShine {
+  0%, 100% { opacity: 0.85; filter: drop-shadow(0 0 2px #38bdf8); }
+  50% { opacity: 1; filter: drop-shadow(0 0 8px #67e8f9); }
+}
+
+@keyframes thoWindDrift {
+  0% { transform: translateX(0); opacity: 0.3; }
+  50% { opacity: 0.9; }
+  100% { transform: translateX(-18px); opacity: 0; }
+}
+
+@keyframes thoMaidCurtsy {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  45%, 55% { transform: translateY(6px) scale(1.03, 0.95); }
+}
+
+@keyframes thoApronSway {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(1.03); }
+}
+
+@keyframes thoShockedWalk {
+  0% { transform: translateY(0) rotate(-1.5deg); }
+  100% { transform: translateY(-4px) rotate(1.5deg); }
+}
+
+@keyframes thoWaddleLegL {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-5px); }
+}
+
+@keyframes thoWaddleLegR {
+  0% { transform: translateY(-5px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes thoPhoneBreathing {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(2px); }
+}
+
+@keyframes thoPopBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.12); }
+}
+
+@keyframes thoAdjustGlasses {
+  0%, 100% { transform: translateY(0); }
+  40%, 60% { transform: translateY(-2.5px); }
+}
+
+@keyframes thoPointerTap {
+  0%, 100% { transform: rotate(0deg); }
+  40% { transform: rotate(-10deg); }
+  60% { transform: rotate(6deg); }
+}
+
+@keyframes thoFlameFlicker {
+  0% { transform: scale(0.96, 1) rotate(-2deg); opacity: 0.85; }
+  100% { transform: scale(1.05, 1.08) rotate(2deg); opacity: 1; }
+}
+
+@keyframes thoHeadbandFlutter {
+  0% { transform: rotate(-8deg); }
+  100% { transform: rotate(12deg); }
+}
+
+@keyframes thoGemSpin {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15) rotate(12deg); }
+}
+
+@keyframes thoRichBounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-7px); }
+}
+
+@keyframes thoTrophyRaise {
+  0% { transform: translateY(0) rotate(-3deg); }
+  100% { transform: translateY(-8px) rotate(4deg); }
+}
+
+@keyframes thoCapeFlutter {
+  0% { transform: scaleX(1) skewY(0deg); }
+  100% { transform: scaleX(1.06) skewY(2deg); }
+}
+
+@keyframes thoDetectiveSearch {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  33% { transform: rotate(-7deg) scale(1.05); }
+  66% { transform: rotate(7deg) scale(1.05); }
+}
+
+@keyframes thoTremble {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-1.5px, 1px); }
+  75% { transform: translate(1.5px, -1px); }
+}
+
+@keyframes thoTearFlow {
+  0% { transform: translateY(0) scale(0.8); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(22px) scale(1.1); opacity: 0; }
+}
+
+@keyframes thoHeartThrob {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes thoStarRider {
+  0% { transform: translateY(0) rotate(-2deg); }
+  100% { transform: translateY(-16px) rotate(3deg); }
+}
+
+@keyframes thoLightningFlash {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes thoSleepSlump {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  50% { transform: rotate(3deg) translateY(4px); }
+}
+
+@keyframes thoSnotInflate {
+  0%, 100% { transform: scale(0.3); opacity: 0.4; }
+  50% { transform: scale(1.3); opacity: 0.95; }
+}
+
+@keyframes thoZzzDrift {
+  0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: translate(18px, -28px) scale(1.15); opacity: 0; }
+}
+
+@keyframes thoPomShakeL {
+  0% { transform: rotate(-20deg) scale(0.95); }
+  100% { transform: rotate(20deg) scale(1.05); }
+}
+
+@keyframes thoPomShakeR {
+  0% { transform: rotate(20deg) scale(0.95); }
+  100% { transform: rotate(-20deg) scale(1.05); }
+}
+
+@keyframes thoTypingFrenzy {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-3.5px); }
+}
+
+@keyframes thoSweatFly {
+  0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: translate(14px, -14px) scale(1); opacity: 0; }
+}
+
+@keyframes thoAngryStomp {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-5px); }
+}
+
+@keyframes thoSteamPuff {
+  0% { transform: scale(0.4) translateY(0); opacity: 0; }
+  40% { opacity: 0.9; }
+  100% { transform: scale(1.2) translateY(-18px); opacity: 0; }
+}
+
+/* ========================================================
+   GLOBAL FLOATING COMPANION WIDGET (Góc màn hình)
+   ======================================================= */
+.tho-companion-floating-wrap {
+  position: fixed;
+  bottom: 24px;
+  right: 28px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.tho-companion-inner {
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tho-companion-inner:hover {
+  transform: scale(1.08) translateY(-4px);
+}
+
+.tho-companion-bubble {
+  background: #ffffff;
+  border: 2.5px solid #18181b;
+  border-radius: 18px;
+  padding: 10px 16px;
+  font-weight: 800;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: #18181b;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.16), 0 3px 0 #18181b;
+  max-width: 240px;
+  margin-bottom: 8px;
+  position: relative;
+  animation: thoPopBubble 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-align: right;
+}
+
+.tho-companion-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -9px;
+  right: 36px;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-right: 2.5px solid #18181b;
+  border-bottom: 2.5px solid #18181b;
+  transform: rotate(45deg);
+}
+
+/* Topbar Popover Mascots */
+.top-stat {
+  position: relative !important;
+  cursor: pointer !important;
+}
+
+.top-stat-popover {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 12px;
+  background: #ffffff;
+  border: 2.5px solid #18181b;
+  border-radius: 20px;
+  padding: 14px 18px;
+  box-shadow: 0 12px 32px rgba(225, 29, 72, 0.18), 0 4px 0 #18181b;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 1000;
+  min-width: 270px;
+  pointer-events: auto;
+  animation: thoPopBubble 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.top-stat-popover-text strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 900;
+  color: #18181b;
+  margin-bottom: 2px;
+}
+
+.top-stat-popover-text small {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+/* Learning Path Mascot Companions (Duolingo Style) */
+.path-mascot-station {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 16px 0;
+  position: relative;
+  z-index: 2;
+}
+
+.path-mascot-station.float-right {
+  justify-content: flex-end;
+  padding-right: 24px;
+}
+
+.path-mascot-station.float-left {
+  justify-content: flex-start;
+  padding-left: 24px;
+}
+
+/* Banner Mascot Layouts for Shop, Leaderboard, Review, Chat */
+.banner-with-mascot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: linear-gradient(135deg, #fff5f8 0%, #ffe4ec 100%);
+  border: 2.5px solid #18181b;
+  border-radius: 24px;
+  padding: 24px 28px;
+  box-shadow: 0 8px 24px rgba(225, 29, 72, 0.12), 0 4px 0 #18181b;
+  margin-bottom: 24px;
+}
+
+.banner-mascot-aside {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .banner-with-mascot {
+    flex-direction: column;
+    text-align: center;
+  }
+  .tho-companion-floating-wrap {
+    bottom: 16px;
+    right: 16px;
+  }
+}
+
+/* ========================================================
+   DUOLINGO-STYLE SPEECH BUBBLE COMPONENT
+   Full 4-sided black border, drop shadow, directional pointer
+   ======================================================= */
+.tho-speech-bubble {
+  position: relative;
+  background: #ffffff;
+  border: 2.5px solid #18181b;
+  border-radius: 18px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.4;
+  color: #18181b;
+  box-shadow: 0 4px 0 #18181b, 0 8px 16px rgba(0, 0, 0, 0.06);
+  max-width: 320px;
+  text-align: center;
+  z-index: 10;
+  margin: 4px auto 12px;
+  word-break: break-word;
+}
+
+/* Direction arrow pointing down to mascot */
+.tho-speech-bubble.bubble-top::after {
+  content: "";
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-right: 2.5px solid #18181b;
+  border-bottom: 2.5px solid #18181b;
+}
+
+.tho-speech-bubble.bubble-right::after {
+  content: "";
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  transform: translateY(-50%) rotate(135deg);
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-right: 2.5px solid #18181b;
+  border-bottom: 2.5px solid #18181b;
+}
+
+.tho-speech-bubble.bubble-left::after {
+  content: "";
+  position: absolute;
+  right: -9px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-45deg);
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border-right: 2.5px solid #18181b;
+  border-bottom: 2.5px solid #18181b;
+}
+
+/* ========================================================
+   CRITICAL FIX: ẨN HOÀN TOÀN MASCOT FLOATING KHI TRONG BÀI HỌC
+   Tránh đè lên nút "Kiểm tra" / "Tiếp tục" ở quiz-footer
+   ======================================================== */
+body:has(.quiz-overlay) #global-mascot-companion,
+body.in-lesson #global-mascot-companion,
+.quiz-overlay ~ #global-mascot-companion,
+#global-mascot-companion.hidden-in-quiz {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+
