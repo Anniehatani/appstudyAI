@@ -9,3 +9,6 @@ node_modules/
 Thumbs.db
 cookies.txt
 *.log
+__pycache__/
+*.pyc
+desktop.ini

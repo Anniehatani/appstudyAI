@@ -20,18 +20,34 @@ const state = {
   account: null,
   stats: { total_xp: 0, current_streak: 0, longest_streak: 0, hearts: 5, gems: 50 },
   inventory: [],
-  page: "home", // home | courses | leaderboard | shop | achievements | review | chat | settings
+  page: "home", // home | courses | notes | leaderboard | shop | achievements | review | chat | settings
   apiError: "",
   lesson: null,
   questionIndex: 0,
   selectedOption: "",
   checkedAnswer: null,
+  checkingAnswer: false,
+  submittingLesson: false,
   answers: [],
   finish: null,
   search: "",
   chatSubjectId: "",
+  chatDraft: "",
+  chatAttachments: [],
+  chatPendingFiles: [],
   chatMessages: [],
   chatBusy: false,
+  chatConversationId: null,
+  chatConversations: [],
+  notes: [],
+  notesLoading: false,
+  noteSubjectId: "",
+  noteLessonId: "",
+  noteSearch: "",
+  noteSaveTimers: new Map(),
+  activeNoteLesson: null,
+  activeQuickLessonId: null,
+  quickDrawerTab: "guide",
   isChatDropdownOpen: false,
   reviewMistakes: [],
   reviewCurrentIndex: 0,
@@ -149,8 +165,9 @@ export function updateGlobalCompanion(overrideState = null, overrideSpeech = nul
     document.body.appendChild(container);
   }
 
-  // CRITICAL FIX: Ẩn hoàn toàn khi đang trong bài học để không che nút "Tiếp tục" / "Kiểm tra"
-  if (state.lesson) {
+  // Inline mascots belong to their page; use the floating one where a page has none.
+  const inlineMascot = document.querySelector("#app-view .page-inline-mascot");
+  if (state.lesson || inlineMascot || (state.page === "chat" && !state.chatMessages.length)) {
     container.style.display = "none";
     container.classList.add("hidden-in-quiz");
     return;
@@ -160,9 +177,18 @@ export function updateGlobalCompanion(overrideState = null, overrideSpeech = nul
   }
 
   const curState = overrideState || (isUserAfk ? THO_STATES.SLEEPY_AFK : getPageDefaultState(state.page));
+  const pageSpeech = {
+    home: "Cố lên bạn ơi! Chinh phục từng bài học để tích XP lên cấp nhé! 🌸✨",
+    notes: "Ghi chú lại bí kíp ngay kẻo quên! Chữ đẹp điểm cao nha! 📝💖",
+    chat: "Để Giáo sư Thỏ giảng công thức từng bước cho bạn nghe! 🎓📘",
+    settings: "Kính chào chủ nhân! Hôm nay người muốn học bài nào ạ? 🎀",
+    review: "Ngã ở đâu mình gấp đôi XP ở đó! Quét sạch câu sai thôi nào! 🎯💪",
+    shop: "Đá quý rủng rỉnh quá! Sắm đồ đẹp hoặc đua Top giải đấu thôi! 💎🏆",
+    leaderboard: "Đá quý rủng rỉnh quá! Sắm đồ đẹp hoặc đua Top giải đấu thôi! 💎🏆"
+  }[state.page];
   const curSpeech = overrideSpeech !== null 
     ? overrideSpeech 
-    : (isUserAfk ? "Khò... khò... Ngủ gật mất tiêu rồi! Zzz... 💤" : (THO_METADATA[curState]?.quote || ""));
+    : (isUserAfk ? "Khò... khò... Ngủ gật mất tiêu rồi! Zzz... 💤" : (pageSpeech || THO_METADATA[curState]?.quote || ""));
 
   container.innerHTML = `
     <div class="tho-companion-inner" onclick="handleCompanionClick(event)" title="Bấm vào Thỏ Bảy Màu để đổi 20 Animation & nghe câu thoại hài hước!">
@@ -217,9 +243,6 @@ function setupTopbarPopovers() {
     const pop = document.createElement("div");
     pop.className = "top-stat-popover";
     pop.innerHTML = `
-      <div style="width:72px; height:72px; flex-shrink:0;">
-        ${generateThoBayMauSvg({ state: stateName, size: 72 })}
-      </div>
       <div class="top-stat-popover-text">
         <strong>${title}</strong>
         <small>${desc}</small>
@@ -781,6 +804,7 @@ function renderHome() {
   const currentIdx = state.currentStageIndex;
   const unit = units[currentIdx];
   const lessons = unit.lessons || [];
+  const noteTargetLesson = lessons.find(l => l.unlocked && !l.completed) || lessons.find(l => l.unlocked) || lessons[0] || null;
 
   const completedCount = lessons.filter(l => l.completed).length;
   const isStageAllCompleted = lessons.length > 0 && completedCount === lessons.length;
@@ -803,23 +827,7 @@ function renderHome() {
     const tooltip = current ? `<div class="node-tooltip">BẮT ĐẦU</div>` : "";
     const starsBadge = lesson.completed ? `<div class="node-stars"><span>⭐</span><span>⭐</span><span>⭐</span></div>` : "";
 
-    let mascotStation = "";
-    if (idx === 0) {
-      mascotStation = `
-        <div class="path-mascot-station float-right">
-          ${renderThoBayMau({ state: THO_STATES.CHEERING_POM, size: 125, speech: "Cố lên bạn ơi! Chinh phục từng bài học nhé! 📣✨", speechDirection: "top" })}
-        </div>
-      `;
-    } else if (idx === 2 || (lessons.length <= 2 && idx === 1)) {
-      mascotStation = `
-        <div class="path-mascot-station float-left">
-          ${renderThoBayMau({ state: THO_STATES.SWORD_MASTER, size: 135, speech: "Cửa ải Boss này cứ để thanh kiếm của Thỏ lo! ⚔️🌪️", speechDirection: "top" })}
-        </div>
-      `;
-    }
-
     return `
-      ${mascotStation}
       <div class="path-node-wrap">
         ${tooltip}
         <button class="node-btn ${statusClass}" data-lesson="${Number(lesson.id)}" ${!lesson.unlocked ? 'disabled' : ''} title="${esc(lesson.title)}">
@@ -878,9 +886,17 @@ function renderHome() {
               <span class="stage-progress-text">Đã hoàn thành ${completedCount} / ${lessons.length} bài học (${progressPercent}%)</span>
             </div>
           </div>
-          <button class="stage-guidebook-btn" onclick="openGuidebook('${esc(unit.title)}')">
-            <span>📖</span> Cẩm nang
-          </button>
+          <div class="page-inline-mascot stage-banner-mascot">
+            ${renderThoBayMau({ state: THO_STATES.CLOUD_FLOAT, size: 92, speech: "Cùng chinh phục cửa ải này nhé!", speechDirection: "top" })}
+          </div>
+          <div class="stage-banner-actions">
+            <button class="stage-guidebook-btn" onclick="openQuickLessonDrawer(${Number(noteTargetLesson?.id || 0)}, 'guide')" ${noteTargetLesson ? '' : 'disabled'}>
+              <span>📖</span> Cẩm nang
+            </button>
+            <button class="stage-note-btn" onclick="openQuickLessonDrawer(${Number(noteTargetLesson?.id || 0)}, 'note')" ${noteTargetLesson ? '' : 'disabled'}>
+              <span>✏️</span> Ghi chú bài này
+            </button>
+          </div>
         </div>
 
         <div class="stage-path-nodes">
@@ -888,12 +904,6 @@ function renderHome() {
 
           <!-- Final Stage Trophy / Boss Checkpoint with Thỏ Bảy Màu -->
           <div class="stage-trophy-node" style="display:flex; flex-direction:column; align-items:center; gap:8px;">
-            ${renderThoBayMau({
-              state: isStageAllCompleted ? THO_STATES.CLOUD_FLOAT : THO_STATES.SHOCKED_WALKING,
-              size: 130,
-              speech: isStageAllCompleted ? "Thăng cấp rồi! Cùng cưỡi mây về đích nào! ☁️✨" : "Ối dồi ôi! Vượt hết bài để cùng Thỏ rinh Cúp nhé! 👣✨",
-              speechDirection: "top"
-            })}
             <button class="trophy-btn ${isStageAllCompleted ? '' : 'locked'}" onclick="handleStageTrophyClick(${currentIdx + 1}, ${isStageAllCompleted})">
               ${isStageAllCompleted ? '🏆' : '🏁'}
             </button>
@@ -954,17 +964,895 @@ window.handleStageTrophyClick = function(stageNum, isCompleted) {
 };
 
 window.openGuidebook = function(unitTitle) {
-  showModal(`
-    <div class="modal-dialog">
-      <span class="modal-close" onclick="closeModal()">✕</span>
-      <h2 style="font-size:22px; font-weight:900; color:var(--ink-900);">📖 Cẩm nang Cửa ải</h2>
-      <h3 style="font-size:16px; font-weight:800; color:var(--lumi-pink); margin-top:-6px;">${esc(unitTitle)}</h3>
-      <p style="font-size:15px; color:var(--ink-700); line-height:1.6; margin-top:12px;">
-        Trong cửa ải này, bạn sẽ nắm vững các khái niệm then chốt qua các câu hỏi trắc nghiệm tương tác thực tế từ cơ sở dữ liệu Cloudflare D1. Hãy hoàn thành từng chặng để mở khóa cửa ải tiếp theo!
-      </p>
-      <button class="btn-duo btn-duo-pink" onclick="closeModal()" style="margin-top:18px; width:100%;">Đã hiểu!</button>
+  const unit = state.subjectDetail?.units?.[state.currentStageIndex];
+  const lesson = unit?.lessons?.find(l => l.unlocked && !l.completed) || unit?.lessons?.find(l => l.unlocked);
+  if (lesson) window.openQuickLessonDrawer(lesson.id, "guide");
+  else showToast("Chưa có bài học để mở cẩm nang.");
+};
+
+// ========================================================
+// STUDENT NOTES + QUICK LESSON DRAWER
+// ========================================================
+async function loadNotes() {
+  state.notesLoading = true;
+  if (state.page === "notes") render();
+  try {
+    const result = await api("/api/notes");
+    state.notes = result.notes || [];
+  } catch (err) {
+    showToast("Không tải được sổ tay: " + err.message, true);
+  } finally {
+    state.notesLoading = false;
+    if (state.page === "notes") render();
+  }
+}
+
+function noteSubjectsOptions(selected) {
+  return '<option value="">Chưa gắn môn học</option>' + state.subjects.map(subject =>
+    `<option value="${Number(subject.id)}" ${Number(selected) === Number(subject.id) ? "selected" : ""}>${esc(subject.subject_name)}</option>`
+  ).join("");
+}
+
+function noteSubjectFilterOptions() {
+  return '<option value="">Tất cả môn học</option>' + state.subjects.map(subject =>
+    `<option value="${Number(subject.id)}" ${String(state.noteSubjectId) === String(subject.id) ? "selected" : ""}>${esc(subject.subject_name)}</option>`
+  ).join("");
+}
+
+const NOTE_CONTENT_PREFIX = "__3TG_NOTE_V1__:";
+const NOTE_PAPERS = { lined: "Giấy kẻ ngang", grid: "Giấy ô li", dotted: "Giấy chấm", plain: "Giấy trắng" };
+const NOTE_FONTS = { sans: "Gọn gàng", serif: "Serif", mono: "Mã / công thức", hand: "Viết tay" };
+
+function cleanNoteStyle(style) {
+  const source = style && typeof style === "object" ? style : {};
+  const strokes = Array.isArray(source.strokes) ? source.strokes.slice(-12).map(stroke => ({
+    d: String(stroke?.d || "").slice(0, 1600),
+    color: /^#[0-9a-f]{6}$/i.test(String(stroke?.color || "")) ? String(stroke.color) : "#d63376",
+    width: Math.max(1, Math.min(14, Number(stroke?.width) || 3))
+  })).filter(stroke => stroke.d) : [];
+  return {
+    paper: Object.prototype.hasOwnProperty.call(NOTE_PAPERS, source.paper) ? source.paper : "lined",
+    font: Object.prototype.hasOwnProperty.call(NOTE_FONTS, source.font) ? source.font : "sans",
+    strokes: strokes
+  };
+}
+
+function parseNoteContent(value) {
+  const raw = String(value || "");
+  if (!raw.startsWith(NOTE_CONTENT_PREFIX)) return { body: raw, style: cleanNoteStyle(null), rich: false };
+  try {
+    const parsed = JSON.parse(raw.slice(NOTE_CONTENT_PREFIX.length));
+    return { body: String(parsed.body || ""), style: cleanNoteStyle(parsed.style), rich: parsed.format === "html" };
+  } catch {
+    return { body: raw.slice(NOTE_CONTENT_PREFIX.length), style: cleanNoteStyle(null), rich: false };
+  }
+}
+
+function sanitizeNoteHtml(value) {
+  const doc = new DOMParser().parseFromString(String(value || ""), "text/html");
+  const allowed = { B: "strong", STRONG: "strong", I: "em", EM: "em", U: "u", MARK: "mark", BR: "br", P: "p", DIV: "div", UL: "ul", OL: "ol", LI: "li", SUB: "sub", SUP: "sup" };
+  function clean(node) {
+    if (node.nodeType === 3) return esc(node.nodeValue || "");
+    if (node.nodeType !== 1) return "";
+    const children = Array.from(node.childNodes).map(clean).join("");
+    const tag = allowed[node.tagName];
+    return tag ? (tag === "br" ? "<br>" : `<${tag}>${children}</${tag}>`) : children;
+  }
+  return Array.from(doc.body.childNodes).map(clean).join("");
+}
+
+function noteBodyHtml(parsed) {
+  if (parsed.rich) return sanitizeNoteHtml(parsed.body);
+  return esc(parsed.body)
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/==(.+?)==/g, "<mark>$1</mark>")
+    .replace(/\$([^$\n]+)\$/g, '<span class="note-math">$1</span>')
+    .replace(/\$(?=<strong>)/g, "")
+    .replace(/\r?\n/g, "<br>");
+}
+
+function noteBodyText(parsed) {
+  return new DOMParser().parseFromString(noteBodyHtml(parsed), "text/html").body.textContent || "";
+}
+
+function serializeNoteContent(body, style) {
+  const safeStyle = cleanNoteStyle(style);
+  let safeBody = sanitizeNoteHtml(body).slice(0, 30000);
+  let serialized = NOTE_CONTENT_PREFIX + JSON.stringify({ body: safeBody, style: safeStyle, format: "html" });
+  while (serialized.length > 29990 && safeStyle.strokes.length) {
+    safeStyle.strokes.shift();
+    serialized = NOTE_CONTENT_PREFIX + JSON.stringify({ body: safeBody, style: safeStyle, format: "html" });
+  }
+  while (serialized.length > 29990 && safeBody.length) {
+    const excess = serialized.length - 29990;
+    safeBody = safeBody.slice(0, Math.max(0, safeBody.length - Math.max(16, Math.ceil(excess / 2))));
+    serialized = NOTE_CONTENT_PREFIX + JSON.stringify({ body: safeBody, style: safeStyle, format: "html" });
+  }
+  return serialized;
+}
+
+function renderNoteStyleBar(style) {
+  return `<div class="note-style-bar">
+    <label>Phông<select data-note-style-field="font" onchange="setNoteStyle(this, 'font', this.value)">${Object.entries(NOTE_FONTS).map(([key, label]) => `<option value="${key}" ${style.font === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>
+    <label>Giấy<select data-note-style-field="paper" onchange="setNoteStyle(this, 'paper', this.value)">${Object.entries(NOTE_PAPERS).map(([key, label]) => `<option value="${key}" ${style.paper === key ? "selected" : ""}>${label}</option>`).join("")}</select></label>
+    <button type="button" onclick="toggleNoteDrawing(this)">✏️ Vẽ / hình học</button>
+    <button type="button" onmousedown="event.preventDefault()" onclick="openStudyCalculator(this)">🧮 Máy tính</button>
+    <button type="button" data-note-fullscreen onclick="toggleNoteFullscreen(this)" title="Mở rộng vùng ghi chú">⛶ Toàn màn hình</button>
+  </div>`;
+}
+
+function renderNoteFormatBar() {
+  const tokens = [
+    ["f(x)", "f(x) = ", "Chèn hàm số"], ["x²", "x²", "Lũy thừa"], ["a⁄b", "□/□", "Phân số"],
+    ["√", "√( )", "Căn thức"], ["∫", "∫_{a}^{b} f(x) dx", "Tích phân"], ["Σ", "∑ᵢ₌₁ⁿ i", "Tổng sigma"],
+    ["d/dx", "d/dx", "Đạo hàm"], ["lim", "limₓ→ₐ", "Giới hạn"], ["∂", "∂/∂x", "Đạo hàm riêng"],
+    ["∞", "∞", "Vô cực"], ["∈", "∈", "Thuộc tập hợp"], ["∩", "∩", "Giao hai tập hợp"],
+    ["∠", "∠ABC", "Góc hình học"], ["△", "△ABC", "Tam giác"], ["⊥", "⊥", "Vuông góc"], ["∥", "∥", "Song song"]
+  ];
+  return `<div class="note-format-bar" aria-label="Định dạng, công thức và hình học">
+    <button type="button" onmousedown="event.preventDefault()" onclick="formatNoteSelection(this, 'bold')" title="In đậm"><strong>B</strong></button>
+    <button type="button" onmousedown="event.preventDefault()" onclick="formatNoteSelection(this, 'highlight')" title="Tô sáng">🖍️</button>
+    ${tokens.map(([label, token, title]) => `<button type="button" onmousedown="event.preventDefault()" data-note-token="${esc(token)}" onclick="insertNoteToken(this)" title="${esc(title)}">${esc(label)}</button>`).join("")}
+  </div>`;
+}
+
+function renderNoteDrawingPanel() {
+  return `<div class="note-draw-panel" hidden>
+    <div class="note-draw-tools">
+      <label>Dụng cụ<select data-note-draw-tool><option value="pen">Bút tự do</option><option value="line">Đoạn thẳng</option><option value="circle">Đường tròn</option><option value="triangle">Tam giác</option><option value="point">Điểm</option><option value="erase">Tẩy hết</option></select></label>
+      <label>Màu<input type="color" data-note-draw-color value="#d63376"></label>
+      <label>Nét<input type="range" data-note-draw-width min="1" max="12" value="3"></label>
+      <button type="button" onclick="clearNoteDrawing(this)">Xóa hình</button>
     </div>
-  `);
+    <canvas class="note-draw-canvas" data-note-canvas width="1000" height="320" aria-label="Bảng vẽ ghi chú"></canvas>
+    <small>Kéo để vẽ; chọn đoạn thẳng, đường tròn, tam giác hoặc điểm để dựng hình.</small>
+  </div>`;
+}
+
+function renderNoteDrawingPreview(style) {
+  if (!style.strokes.length) return "";
+  return `<svg class="note-drawing-preview" viewBox="0 0 1000 320" role="img" aria-label="Hình vẽ trong ghi chú">${style.strokes.map(stroke => `<path d="${esc(stroke.d)}" fill="none" stroke="${esc(stroke.color)}" stroke-width="${stroke.width}" stroke-linecap="round" stroke-linejoin="round"/>`).join("")}</svg>`;
+}
+
+function renderNoteCard(note, index) {
+  const tempKey = note._tempId || "";
+  const noteKey = note.id == null ? tempKey : String(note.id);
+  const linkedLesson = note.lesson_id != null;
+  const palettes = ["rose", "butter", "lilac", "mint"];
+  const meta = linkedLesson
+    ? `${esc(note.subject_name || "Môn học")} · ${esc(note.lesson_title || "Bài học")}`
+    : (note.subject_name ? esc(note.subject_name) : "Ghi chú tự do");
+  const parsedContent = parseNoteContent(note.content);
+  const styleJson = esc(JSON.stringify(parsedContent.style));
+  return `
+    <article class="note-card note-card-${palettes[index % palettes.length]} note-paper-${parsedContent.style.paper} note-font-${parsedContent.style.font} note-editor" data-note-style="${styleJson}" data-note-id="${esc(noteKey)}" data-note-subject="${esc(note.subject_id || "")}" data-note-lesson="${esc(note.lesson_id || "")}">
+      <div class="note-card-topline"><span class="note-card-meta">${meta}</span><span class="note-save-state">${note.id ? "Đã lưu" : "Bản nháp"}</span></div>
+      <input class="note-title-input" data-note-field="title" maxlength="160" aria-label="Tiêu đề ghi chú" value="${esc(note.title || "Ghi chú mới")}" oninput="queueNoteSave(this)">
+      ${renderNoteStyleBar(parsedContent.style)}
+      ${renderNoteFormatBar()}
+      ${renderNoteDrawingPanel()}
+      <div class="note-content-input" data-note-field="content" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Ghi lại điều quan trọng để ôn tập sau này…" oninput="queueNoteSave(this)" onpaste="pasteNotePlainText(event)">${noteBodyHtml(parsedContent)}</div>
+      ${renderNoteDrawingPreview(parsedContent.style)}
+      <div class="note-card-footer">
+        ${linkedLesson
+          ? `<span class="note-linked-label">📌 Gắn với bài học</span>`
+          : `<select class="note-subject-select" data-note-field="subject" aria-label="Môn học" onchange="queueNoteSave(this)">${noteSubjectsOptions(note.subject_id)}</select>`}
+        <button type="button" class="note-save-btn" data-note-save onclick="saveNoteNow(this)">💾 Lưu ghi chú</button>
+        <button type="button" class="note-delete-btn" onclick="deleteStudentNote(this)" aria-label="Xóa ghi chú">Xóa</button>
+      </div>
+    </article>`;
+}
+
+function renderNotes() {
+  const notes = state.notes || [];
+  const subjectId = String(state.noteSubjectId || "");
+  const eligible = notes.filter(note => !subjectId || String(note.subject_id || "") === subjectId);
+  const lessonIds = [...new Map(eligible.filter(n => n.lesson_id != null).map(n => [String(n.lesson_id), n])).values()];
+  const lessonFilter = '<option value="">Tất cả bài học</option>' + lessonIds.map(note =>
+    `<option value="${Number(note.lesson_id)}" ${String(state.noteLessonId) === String(note.lesson_id) ? "selected" : ""}>${esc(note.lesson_title || `Bài ${note.lesson_id}`)}</option>`
+  ).join("");
+  const search = state.noteSearch.trim().toLocaleLowerCase("vi");
+  const filtered = eligible.filter(note =>
+    (!state.noteLessonId || String(note.lesson_id || "") === String(state.noteLessonId)) &&
+    (!search || `${note.title || ""} ${noteBodyText(parseNoteContent(note.content))} ${note.subject_name || ""} ${note.lesson_title || ""}`.toLocaleLowerCase("vi").includes(search))
+  );
+  return `
+    <section class="notes-page">
+      <header class="notes-heading">
+        <div><span class="notes-kicker">GÓC ÔN TẬP CỦA BẠN ✨</span><h1 class="page-title">Sổ tay ghi chú</h1><p class="page-subtitle">Bí kíp bài học và lời giải 3TG AI được lưu gọn trong một chỗ.</p></div>
+        <div class="notes-heading-actions"><button type="button" class="notes-tool-btn" onclick="openStudyCalculator()">🧮 Máy tính</button><button class="btn-duo btn-duo-pink" onclick="addStudentNote()">＋ Ghi chú mới</button></div>
+      </header>
+      <div class="notes-toolbar">
+        <label class="notes-search">🔎 <input id="notes-search" type="search" placeholder="Tìm tiêu đề hoặc nội dung…" value="${esc(state.noteSearch)}" oninput="filterStudentNotes(this.value)"></label>
+        <select aria-label="Lọc theo môn học" onchange="setNotesSubject(this.value)">${noteSubjectFilterOptions()}</select>
+        <select aria-label="Lọc theo bài học" onchange="setNotesLesson(this.value)">${lessonFilter}</select>
+      </div>
+      ${state.notesLoading && !notes.length ? '<div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải sổ tay…</span></div>' : ""}
+      ${filtered.length ? `<div class="notes-grid">${filtered.map(renderNoteCard).join("")}</div><div class="notes-filter-empty" id="notes-filter-empty" hidden>Không tìm thấy ghi chú khớp với từ khóa này.</div>` : `
+        <div class="notes-empty"><div>📝</div><h2>${notes.length ? "Chưa có ghi chú phù hợp" : "Bắt đầu cuốn sổ của bạn"}</h2><p>${notes.length ? "Thử đổi bộ lọc hoặc từ khóa tìm kiếm nhé." : "Lưu một bí kíp từ bài học hoặc tạo ghi chú đầu tiên của bạn."}</p><button class="btn-duo btn-duo-pink" onclick="addStudentNote()">Tạo ghi chú đầu tiên</button></div>`}
+    </section>`;
+}
+
+window.filterStudentNotes = function(query) {
+  state.noteSearch = query || "";
+  const needle = state.noteSearch.trim().toLocaleLowerCase("vi");
+  let visibleCount = 0;
+  document.querySelectorAll(".note-card").forEach(card => {
+    const title = card.querySelector("[data-note-field='title']")?.value || "";
+    const content = card.querySelector("[data-note-field='content']")?.innerText || "";
+    card.hidden = Boolean(needle && !`${card.textContent} ${title} ${content}`.toLocaleLowerCase("vi").includes(needle));
+    if (!card.hidden) visibleCount++;
+  });
+  const empty = document.getElementById("notes-filter-empty");
+  if (empty) empty.hidden = visibleCount > 0;
+};
+
+window.setNotesSubject = function(value) {
+  state.noteSubjectId = value || "";
+  state.noteLessonId = "";
+  render();
+};
+
+window.setNotesLesson = function(value) {
+  state.noteLessonId = value || "";
+  render();
+};
+
+window.addStudentNote = function() {
+  state.noteSearch = "";
+  const tempId = "draft-" + crypto.randomUUID();
+  state.notes.unshift({ id: null, _tempId: tempId, subject_id: state.noteSubjectId || null, lesson_id: null, title: "Ghi chú mới", content: "", subject_name: "", lesson_title: "" });
+  state.noteLessonId = "";
+  render();
+  const card = document.querySelector(`[data-note-id="${tempId}"]`);
+  card?.querySelector("[data-note-field='content']")?.focus();
+  if (card) window.queueNoteSave(card.querySelector("[data-note-field='title']"));
+};
+
+function getNoteEditor(element) {
+  return element?.closest(".note-editor");
+}
+
+let activeFullscreenNoteEditor = null;
+let noteFullscreenBackdrop = null;
+
+window.toggleNoteFullscreen = function(control) {
+  const editor = getNoteEditor(control);
+  if (!editor) return;
+  if (editor.classList.contains("note-editor-fullscreen")) {
+    window.closeNoteFullscreen();
+    return;
+  }
+  if (activeFullscreenNoteEditor) window.closeNoteFullscreen();
+  noteFullscreenBackdrop = document.createElement("div");
+  noteFullscreenBackdrop.className = "note-fullscreen-backdrop";
+  noteFullscreenBackdrop.addEventListener("click", window.closeNoteFullscreen);
+  document.body.appendChild(noteFullscreenBackdrop);
+  activeFullscreenNoteEditor = editor;
+  const placeholder = document.createComment("note-editor-fullscreen-position");
+  editor.before(placeholder);
+  editor._noteFullscreenPlaceholder = placeholder;
+  document.body.appendChild(editor);
+  editor.classList.add("note-editor-fullscreen");
+  document.body.classList.add("note-fullscreen-open");
+  const toggle = editor.querySelector("[data-note-fullscreen]");
+  if (toggle) {
+    toggle.textContent = "↙ Thu nhỏ";
+    toggle.title = "Thu nhỏ ghi chú";
+  }
+  editor.querySelector("[data-note-field='content']")?.focus();
+};
+
+window.closeNoteFullscreen = function() {
+  if (activeFullscreenNoteEditor) {
+    const editor = activeFullscreenNoteEditor;
+    editor.classList.remove("note-editor-fullscreen");
+    const placeholder = editor._noteFullscreenPlaceholder;
+    if (placeholder?.parentNode) {
+      placeholder.parentNode.insertBefore(editor, placeholder);
+      placeholder.remove();
+    }
+    delete editor._noteFullscreenPlaceholder;
+    const toggle = editor.querySelector("[data-note-fullscreen]");
+    if (toggle) {
+      toggle.textContent = "⛶ Toàn màn hình";
+      toggle.title = "Mở rộng vùng ghi chú";
+    }
+  }
+  noteFullscreenBackdrop?.remove();
+  noteFullscreenBackdrop = null;
+  activeFullscreenNoteEditor = null;
+  document.body.classList.remove("note-fullscreen-open");
+};
+
+window.queueNoteSave = function(element) {
+  const editor = getNoteEditor(element);
+  if (!editor) return;
+  if (element.dataset.noteField === "subject") editor.dataset.noteSubject = element.value || "";
+  const key = editor.dataset.noteId || ("draft-" + crypto.randomUUID());
+  editor.dataset.noteId = key;
+  const timers = state.noteSaveTimers;
+  if (timers.has(key)) clearTimeout(timers.get(key));
+  const status = editor.querySelector(".note-save-state");
+  if (status) status.textContent = "Đang lưu…";
+  timers.set(key, setTimeout(() => {
+    timers.delete(key);
+    persistNoteEditor(editor, key);
+  }, 500));
+};
+
+async function persistNoteEditor(editor, key) {
+  if (editor._noteSaving) {
+    try { await editor._noteSaving; } catch {}
+    return persistNoteEditor(editor, editor.dataset.noteId || key);
+  }
+  key = editor.dataset.noteId || key;
+  const fields = field => editor.querySelector(`[data-note-field="${field}"]`);
+  const title = (fields("title")?.value || "").trim() || "Ghi chú mới";
+  const body = {
+    title,
+    content: serializeNoteContent(fields("content")?.innerHTML || "", readNoteEditorStyle(editor)),
+    subjectId: editor.dataset.noteSubject || null,
+    lessonId: editor.dataset.noteLesson || null
+  };
+  const isDraft = String(key).startsWith("draft-") || !/^\d+$/.test(String(key));
+  const savePromise = api(isDraft ? "/api/notes" : `/api/notes/${Number(key)}`, {
+      method: isDraft ? "POST" : "PATCH", body
+    });
+  editor._noteSaving = savePromise;
+  try {
+    const result = await savePromise;
+    const saved = result.note;
+    if (!saved) throw new Error("Không nhận được ghi chú đã lưu.");
+    const oldTemp = editor.dataset.noteId;
+    editor.dataset.noteId = String(saved.id);
+    editor.dataset.noteSubject = saved.subject_id == null ? "" : String(saved.subject_id);
+    editor.dataset.noteLesson = saved.lesson_id == null ? "" : String(saved.lesson_id);
+    const index = state.notes.findIndex(note => String(note.id) === String(saved.id) || note._tempId === oldTemp);
+    if (index >= 0) state.notes[index] = saved;
+    else state.notes.unshift(saved);
+    if (state.activeQuickLessonId && Number(saved.lesson_id) === Number(state.activeQuickLessonId)) state.quickNote = saved;
+    const status = editor.querySelector(".note-save-state");
+    if (status) status.textContent = "Đã lưu";
+    return true;
+  } catch (err) {
+    const status = editor.querySelector(".note-save-state");
+    if (status) status.textContent = "Lưu lỗi · thử lại";
+    console.error("Note autosave failed", err);
+    return false;
+  } finally {
+    if (editor._noteSaving === savePromise) editor._noteSaving = null;
+  }
+}
+
+window.saveNoteNow = async function(button) {
+  const editor = getNoteEditor(button);
+  if (!editor) return;
+  const key = editor.dataset.noteId || ("draft-" + crypto.randomUUID());
+  editor.dataset.noteId = key;
+  const timers = state.noteSaveTimers;
+  if (timers.has(key)) {
+    clearTimeout(timers.get(key));
+    timers.delete(key);
+  }
+  button.disabled = true;
+  button.textContent = "Đang lưu…";
+  const saved = await persistNoteEditor(editor, key);
+  if (button.isConnected) {
+    button.disabled = false;
+    button.textContent = saved ? "Đã lưu ✓" : "Lưu lại";
+    setTimeout(() => {
+      if (button.isConnected) button.textContent = "💾 Lưu ghi chú";
+    }, 1400);
+  }
+};
+
+window.formatNoteSelection = function(button, format) {
+  const editor = button.closest(".note-editor");
+  const input = editor?.querySelector("[data-note-field='content']");
+  if (!input) return;
+  input.focus();
+  const selection = window.getSelection();
+  const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  if (!range || !input.contains(range.commonAncestorContainer)) {
+    input.append(document.createTextNode("ý chính"));
+    const newRange = document.createRange();
+    newRange.selectNodeContents(input.lastChild);
+    selection?.removeAllRanges();
+    selection?.addRange(newRange);
+  }
+  if (format === "bold") {
+    document.execCommand("bold", false);
+  } else {
+    const current = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    if (current && input.contains(current.commonAncestorContainer)) {
+      const mark = document.createElement("mark");
+      try { current.surroundContents(mark); }
+      catch {
+        mark.append(current.extractContents());
+        current.insertNode(mark);
+      }
+      const after = document.createRange();
+      after.selectNodeContents(mark);
+      selection?.removeAllRanges();
+      selection?.addRange(after);
+    }
+  }
+  window.queueNoteSave(input);
+};
+
+window.pasteNotePlainText = function(event) {
+  event.preventDefault();
+  const text = event.clipboardData?.getData("text/plain") || "";
+  insertNoteTextAtCursor(event.currentTarget, text);
+};
+
+function insertNoteTextAtCursor(input, text, storedRange = null) {
+  if (!input || !text) return null;
+  input.focus();
+  const selection = window.getSelection();
+  let range = storedRange?.startContainer?.isConnected ? storedRange.cloneRange() : null;
+  if (!range || !input.contains(range.commonAncestorContainer)) {
+    const current = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    range = current && input.contains(current.commonAncestorContainer) ? current.cloneRange() : null;
+  }
+  if (!range) {
+    range = document.createRange();
+    range.selectNodeContents(input);
+    range.collapse(false);
+  }
+  range.deleteContents();
+  const textNode = document.createTextNode(text);
+  range.insertNode(textNode);
+  range.setStartAfter(textNode);
+  range.collapse(true);
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  return range.cloneRange();
+}
+
+function readNoteEditorStyle(editor) {
+  try { return cleanNoteStyle(JSON.parse(editor?.dataset.noteStyle || "{}")); }
+  catch { return cleanNoteStyle(null); }
+}
+
+function updateNoteEditorStyle(editor, nextStyle, save = true) {
+  if (!editor) return;
+  const style = cleanNoteStyle(nextStyle);
+  const previous = readNoteEditorStyle(editor);
+  editor.classList.remove(`note-paper-${previous.paper}`, `note-font-${previous.font}`);
+  editor.classList.add(`note-paper-${style.paper}`, `note-font-${style.font}`);
+  editor.dataset.noteStyle = JSON.stringify(style);
+  const preview = editor.querySelector(".note-drawing-preview");
+  const previewHtml = renderNoteDrawingPreview(style);
+  if (preview && previewHtml) preview.outerHTML = previewHtml;
+  else if (preview) preview.remove();
+  else if (previewHtml) editor.querySelector("[data-note-field='content']")?.insertAdjacentHTML("afterend", previewHtml);
+  const canvas = editor.querySelector("[data-note-canvas]");
+  const panel = editor.querySelector(".note-draw-panel");
+  if (canvas && panel && !panel.hidden) paintNoteCanvas(editor);
+  if (save) window.queueNoteSave(editor.querySelector("[data-note-field='content']"));
+}
+
+window.setNoteStyle = function(control, styleKey, value) {
+  const editor = getNoteEditor(control);
+  const style = readNoteEditorStyle(editor);
+  style[styleKey] = value;
+  updateNoteEditorStyle(editor, style);
+};
+
+window.insertNoteToken = function(button) {
+  const editor = getNoteEditor(button);
+  const input = editor?.querySelector("[data-note-field='content']");
+  if (!input) return;
+  input.focus();
+  const selection = window.getSelection();
+  const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  if (!range || !input.contains(range.commonAncestorContainer)) {
+    const end = document.createRange();
+    end.selectNodeContents(input);
+    end.collapse(false);
+    selection?.removeAllRanges();
+    selection?.addRange(end);
+  }
+  const token = button.dataset.noteToken || "";
+  insertNoteTextAtCursor(input, token);
+};
+
+function paintNoteCanvas(editor) {
+  const canvas = editor?.querySelector("[data-note-canvas]");
+  const context = canvas?.getContext("2d");
+  if (!canvas || !context) return;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  for (const stroke of readNoteEditorStyle(editor).strokes) {
+    try {
+      context.strokeStyle = stroke.color;
+      context.lineWidth = stroke.width;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.stroke(new Path2D(stroke.d));
+    } catch { /* Ignore malformed legacy drawing paths. */ }
+  }
+}
+
+window.toggleNoteDrawing = function(button) {
+  const editor = getNoteEditor(button);
+  const panel = editor?.querySelector(".note-draw-panel");
+  if (!panel) return;
+  panel.hidden = !panel.hidden;
+  if (!panel.hidden) paintNoteCanvas(editor);
+};
+
+window.clearNoteDrawing = function(button) {
+  const editor = getNoteEditor(button);
+  if (!editor) return;
+  const style = readNoteEditorStyle(editor);
+  style.strokes = [];
+  updateNoteEditorStyle(editor, style);
+};
+
+function noteCanvasPoint(canvas, event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: Math.max(0, Math.min(1000, Math.round((event.clientX - rect.left) * 1000 / rect.width))),
+    y: Math.max(0, Math.min(320, Math.round((event.clientY - rect.top) * 320 / rect.height)))
+  };
+}
+
+function geometryPath(tool, start, end) {
+  if (tool === "line") return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+  if (tool === "triangle") return `M ${start.x} ${start.y} L ${end.x} ${end.y} L ${(start.x + end.x) / 2} ${start.y} Z`;
+  if (tool === "circle") {
+    const rx = Math.max(1, Math.abs(end.x - start.x) / 2);
+    const ry = Math.max(1, Math.abs(end.y - start.y) / 2);
+    const cx = (start.x + end.x) / 2;
+    const cy = (start.y + end.y) / 2;
+    return `M ${cx - rx} ${cy} A ${rx} ${ry} 0 1 0 ${cx + rx} ${cy} A ${rx} ${ry} 0 1 0 ${cx - rx} ${cy}`;
+  }
+  if (tool === "point") return `M ${end.x - 4} ${end.y} a 4 4 0 1 0 8 0 a 4 4 0 1 0 -8 0`;
+  return "";
+}
+
+document.addEventListener("pointerdown", function(event) {
+  const canvas = event.target.closest("[data-note-canvas]");
+  if (!canvas) return;
+  const editor = getNoteEditor(canvas);
+  const panel = canvas.closest(".note-draw-panel");
+  if (!editor || !panel || panel.hidden) return;
+  const tool = panel.querySelector("[data-note-draw-tool]")?.value || "pen";
+  if (tool === "erase") { window.clearNoteDrawing(canvas); return; }
+  event.preventDefault();
+  canvas.setPointerCapture(event.pointerId);
+  const start = noteCanvasPoint(canvas, event);
+  const color = panel.querySelector("[data-note-draw-color]")?.value || "#d63376";
+  const width = Number(panel.querySelector("[data-note-draw-width]")?.value) || 3;
+  canvas._noteDrawing = { tool, start, previous: start, color, width, d: `M ${start.x} ${start.y}` };
+  if (tool === "pen") {
+    const context = canvas.getContext("2d");
+    context.beginPath();
+    context.moveTo(start.x, start.y);
+    context.strokeStyle = color;
+    context.lineWidth = width;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+  }
+});
+
+document.addEventListener("pointermove", function(event) {
+  const canvas = event.target.closest("[data-note-canvas]");
+  const drawing = canvas?._noteDrawing;
+  if (!canvas || !drawing || !(event.buttons & 1)) return;
+  const point = noteCanvasPoint(canvas, event);
+  if (drawing.tool === "pen" && drawing.d.length < 1500) {
+    drawing.d += ` L ${point.x} ${point.y}`;
+    const context = canvas.getContext("2d");
+    context.lineTo(point.x, point.y);
+    context.stroke();
+  } else if (drawing.tool !== "pen") {
+    drawing.previous = point;
+    const editor = getNoteEditor(canvas);
+    paintNoteCanvas(editor);
+    const context = canvas.getContext("2d");
+    const previewPath = geometryPath(drawing.tool, drawing.start, point);
+    if (previewPath) {
+      context.strokeStyle = drawing.color;
+      context.lineWidth = drawing.width;
+      context.stroke(new Path2D(previewPath));
+    }
+  }
+  drawing.previous = point;
+});
+
+function finishNoteCanvasStroke(canvas) {
+  const drawing = canvas?._noteDrawing;
+  if (!drawing) return;
+  const editor = getNoteEditor(canvas);
+  const end = drawing.previous || drawing.start;
+  const d = drawing.tool === "pen" ? drawing.d : geometryPath(drawing.tool, drawing.start, end);
+  if (d) {
+    const style = readNoteEditorStyle(editor);
+    style.strokes.push({ d: d.slice(0, 1600), color: drawing.color, width: drawing.width });
+    updateNoteEditorStyle(editor, style);
+  }
+  canvas._noteDrawing = null;
+}
+
+document.addEventListener("pointerup", event => finishNoteCanvasStroke(event.target.closest("[data-note-canvas]")));
+document.addEventListener("pointercancel", event => finishNoteCanvasStroke(event.target.closest("[data-note-canvas]")));
+
+function tokenizeCalculator(expression) {
+  const source = String(expression || "");
+  const tokens = source.match(/(?:\d+\.?\d*|\.\d+)|[a-zA-Z]+|[()+\-*/%^]/g) || [];
+  if (tokens.join("").toLowerCase() !== source.replace(/\s/g, "").toLowerCase()) throw new Error("Có ký tự chưa được hỗ trợ.");
+  return tokens;
+}
+
+function calculateExpression(expression) {
+  if (String(expression || "").length > 512) throw new Error("Phép tính dài quá; hãy rút gọn biểu thức.");
+  const tokens = tokenizeCalculator(expression);
+  let cursor = 0;
+  const peek = () => tokens[cursor];
+  const take = () => tokens[cursor++];
+  const parseAddSub = () => {
+    let value = parseMulDiv();
+    while (["+", "-"].includes(peek())) {
+      const operator = take();
+      const right = parseMulDiv();
+      value = operator === "+" ? value + right : value - right;
+    }
+    return value;
+  };
+  const parsePrimary = () => {
+    const token = take();
+    if (token === "(") {
+      const value = parseAddSub();
+      if (take() !== ")") throw new Error("Thiếu dấu ngoặc đóng.");
+      return value;
+    }
+    if (/^\d|^\./.test(token || "")) return Number(token);
+    const name = String(token || "").toLowerCase();
+    if (name === "pi") return Math.PI;
+    if (name === "e") return Math.E;
+    const functions = { sqrt: Math.sqrt, sin: Math.sin, cos: Math.cos, tan: Math.tan, log: Math.log10, ln: Math.log, abs: Math.abs };
+    if (functions[name]) {
+      if (peek() === "(") take();
+      const argument = parseAddSub();
+      if (peek() === ")") take();
+      return functions[name](argument);
+    }
+    throw new Error(`Không hiểu ký hiệu “${token || ""}”.`);
+  };
+  const parsePower = () => {
+    const left = parsePrimary();
+    if (peek() === "^") { take(); return Math.pow(left, parseUnary()); }
+    return left;
+  };
+  const parseUnary = () => peek() === "+" ? (take(), parseUnary()) : peek() === "-" ? (take(), -parseUnary()) : parsePower();
+  const parseMulDiv = () => {
+    let value = parseUnary();
+    while (["*", "/", "%"].includes(peek())) {
+      const operator = take();
+      const right = parseUnary();
+      value = operator === "*" ? value * right : operator === "/" ? value / right : value % right;
+    }
+    return value;
+  };
+  if (!tokens.length) throw new Error("Nhập phép tính trước nhé.");
+  const result = parseAddSub();
+  if (cursor < tokens.length) throw new Error("Biểu thức còn phần chưa tính được.");
+  if (!Number.isFinite(result)) throw new Error("Kết quả không xác định.");
+  return result;
+}
+
+let calculatorNoteEditor = null;
+let calculatorNoteRange = null;
+let lastFocusedNoteEditor = null;
+
+document.addEventListener("focusin", event => {
+  const editor = getNoteEditor(event.target);
+  if (editor) lastFocusedNoteEditor = editor;
+});
+
+window.openStudyCalculator = function(control) {
+  const selection = window.getSelection();
+  const selectedNode = selection?.anchorNode;
+  const selectedEditor = selectedNode ? getNoteEditor(selectedNode.nodeType === 1 ? selectedNode : selectedNode.parentElement) : null;
+  calculatorNoteEditor = getNoteEditor(control) || activeFullscreenNoteEditor || selectedEditor || (lastFocusedNoteEditor?.isConnected ? lastFocusedNoteEditor : null);
+  calculatorNoteRange = null;
+  const noteInput = calculatorNoteEditor?.querySelector("[data-note-field='content']");
+  const selectedRange = selection?.rangeCount ? selection.getRangeAt(0) : null;
+  if (noteInput && selectedRange && noteInput.contains(selectedRange.commonAncestorContainer)) {
+    calculatorNoteRange = selectedRange.cloneRange();
+  }
+  let layer = document.getElementById("study-calculator-layer");
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.id = "study-calculator-layer";
+    layer.className = "study-calculator-layer";
+    document.body.appendChild(layer);
+  }
+  layer.innerHTML = `<div class="study-calculator-backdrop" onclick="if(event.target===this) closeStudyCalculator()"><div class="study-calculator" onclick="event.stopPropagation()">
+    <button type="button" class="modal-close" onclick="closeStudyCalculator()" aria-label="Đóng máy tính">×</button>
+    <span class="notes-kicker">CÔNG CỤ HỌC TẬP</span><h2>Máy tính khoa học</h2>
+    <input id="study-calc-expression" type="text" inputmode="decimal" placeholder="Ví dụ: sqrt(25) + 2^3" onkeydown="if(event.key==='Enter') evaluateStudyCalculator()">
+    <div class="study-calc-result" id="study-calc-result">Nhập phép tính để bắt đầu · góc dùng radian</div>
+    <div class="study-calc-keys">${["7", "8", "9", "/", "4", "5", "6", "*", "1", "2", "3", "-", "0", ".", "(", "+", ")", "^", "pi", "sqrt(", "sin(", "cos(", "log(", "ln("].map(key => `<button type="button" onclick="appendCalculatorToken('${key}')">${key === "sqrt(" ? "√" : key}</button>`).join("")}</div>
+    <button type="button" class="btn-duo btn-duo-pink study-calc-evaluate" onclick="evaluateStudyCalculator()">Tính kết quả</button>
+    ${calculatorNoteEditor ? '<button type="button" class="study-calc-insert" id="study-calc-insert" onclick="insertCalculatorResultIntoNote()" disabled>↳ Chèn kết quả vào ghi chú</button><div class="study-calc-note-status" id="study-calc-note-status" aria-live="polite"></div>' : ''}
+  </div></div>`;
+  document.getElementById("study-calc-expression")?.focus();
+};
+
+window.closeStudyCalculator = function() {
+  document.getElementById("study-calculator-layer")?.remove();
+  const input = calculatorNoteEditor?.isConnected ? calculatorNoteEditor.querySelector("[data-note-field='content']") : null;
+  if (input) {
+    input.focus();
+    if (calculatorNoteRange && input.contains(calculatorNoteRange.commonAncestorContainer)) {
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(calculatorNoteRange);
+    }
+  }
+  calculatorNoteEditor = null;
+  calculatorNoteRange = null;
+};
+
+window.appendCalculatorToken = function(token) {
+  const input = document.getElementById("study-calc-expression");
+  if (!input) return;
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  input.value = input.value.slice(0, start) + token + input.value.slice(end);
+  input.focus();
+  input.setSelectionRange(start + token.length, start + token.length);
+};
+
+window.evaluateStudyCalculator = function() {
+  const result = document.getElementById("study-calc-result");
+  const insertButton = document.getElementById("study-calc-insert");
+  try {
+    const value = calculateExpression(document.getElementById("study-calc-expression")?.value || "");
+    if (result) result.textContent = `= ${Number(value.toPrecision(12))}`;
+    if (insertButton) insertButton.disabled = false;
+  } catch (err) {
+    if (result) result.textContent = err.message;
+    if (insertButton) insertButton.disabled = true;
+  }
+};
+
+window.insertCalculatorResultIntoNote = function() {
+  const editor = calculatorNoteEditor;
+  const input = editor?.isConnected ? editor.querySelector("[data-note-field='content']") : null;
+  const result = document.getElementById("study-calc-result")?.textContent?.trim() || "";
+  const status = document.getElementById("study-calc-note-status");
+  if (!input) {
+    if (status) status.textContent = "Ghi chú đã đóng; hãy mở máy tính từ ghi chú cần chèn.";
+    return;
+  }
+  if (!result.startsWith("=")) {
+    if (status) status.textContent = "Hãy tính xong kết quả trước.";
+    return;
+  }
+  calculatorNoteRange = insertNoteTextAtCursor(input, `\n${result}\n`, calculatorNoteRange);
+  if (status) status.textContent = "Đã chèn vào ghi chú và đang tự lưu.";
+  document.getElementById("study-calc-expression")?.focus();
+};
+
+window.deleteStudentNote = async function(button) {
+  const editor = getNoteEditor(button);
+  if (!editor) return;
+  let key = editor.dataset.noteId;
+  const timers = state.noteSaveTimers;
+  if (timers.has(key)) { clearTimeout(timers.get(key)); timers.delete(key); }
+  if (editor._noteSaving) {
+    try { await editor._noteSaving; } catch {}
+    key = editor.dataset.noteId;
+  }
+  if (key && !String(key).startsWith("draft-") && /^\d+$/.test(key)) {
+    if (!window.confirm("Xóa ghi chú này khỏi sổ tay?")) return;
+    try { await api(`/api/notes/${Number(key)}`, { method: "DELETE" }); }
+    catch (err) { showToast("Không xóa được ghi chú: " + err.message, true); return; }
+  }
+  state.notes = state.notes.filter(note => String(note.id) !== String(key) && note._tempId !== key);
+  render();
+  showToast("Đã xóa ghi chú.");
+};
+
+function renderQuickLessonDrawer() {
+  const detail = state.quickLessonData;
+  const lesson = detail?.lesson || {};
+  const activeTab = state.quickDrawerTab;
+  const note = state.quickNote || { id: null, _tempId: "quick-" + lesson.id, title: lesson.title || "Ghi chú bài học", content: "", subject_id: lesson.subject_id, lesson_id: lesson.id };
+  const video = lesson.video_url ? (() => {
+    try {
+      const url = new URL(lesson.video_url);
+      if (!["https:", "http:"].includes(url.protocol)) return { href: "", embed: "" };
+      let embed = "";
+      if (["youtube.com", "www.youtube.com", "m.youtube.com"].includes(url.hostname)) {
+        const pathMatch = url.pathname.match(/^\/(?:embed|shorts)\/([\w-]{11})/);
+        const id = url.searchParams.get("v") || (pathMatch && pathMatch[1]);
+        if (id && /^[\w-]{11}$/.test(id)) embed = `https://www.youtube-nocookie.com/embed/${id}`;
+      } else if (url.hostname === "youtu.be" && /^[\w-]{11}$/.test(url.pathname.slice(1))) {
+        embed = `https://www.youtube-nocookie.com/embed/${url.pathname.slice(1)}`;
+      } else if (["vimeo.com", "www.vimeo.com"].includes(url.hostname) && /^\d+$/.test(url.pathname.slice(1))) {
+        embed = `https://player.vimeo.com/video/${url.pathname.slice(1)}`;
+      }
+      return { href: url.href, embed };
+    } catch { return { href: "", embed: "" }; }
+  })() : { href: "", embed: "" };
+  const content = String(lesson.content || "").trim();
+  const quickNoteContent = parseNoteContent(note.content);
+  const quickNoteStyleJson = esc(JSON.stringify(quickNoteContent.style));
+  modalRoot.innerHTML = `
+    <div class="quick-drawer-backdrop" onclick="closeQuickLessonDrawer(event)"></div>
+    <aside class="quick-lesson-drawer" role="dialog" aria-modal="true" aria-label="Cẩm nang và ghi chú bài học">
+      <header class="quick-drawer-header"><div><span class="notes-kicker">${esc(lesson.subject_name || "3TG · BÀI HỌC")}</span><h2>${esc(lesson.title || "Cẩm nang bài học")}</h2><p>${esc(lesson.unit_title || "")}</p></div><button class="quick-drawer-close" onclick="closeQuickLessonDrawer()" aria-label="Đóng">×</button></header>
+      <div class="quick-drawer-tabs"><button class="${activeTab === "guide" ? "active" : ""}" onclick="switchQuickDrawerTab('guide')">📖 Cẩm nang</button><button class="${activeTab === "note" ? "active" : ""}" onclick="switchQuickDrawerTab('note')">✏️ Ghi chú nhanh</button></div>
+      ${!detail ? '<div class="loading-shell">Đang tải nội dung bài học…</div>' : activeTab === "guide" ? `
+        <div class="quick-guide-content">${video.embed ? `<iframe class="quick-video-frame" src="${esc(video.embed)}" title="Video bài học: ${esc(lesson.title || "3TG")}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>` : ""}${video.href ? `<a class="quick-video-link" href="${esc(video.href)}" target="_blank" rel="noopener noreferrer">▶ Mở video bài học ↗</a>` : ""}${content ? `<div class="quick-lesson-text">${esc(content).replace(/\n/g, "<br>")}</div>` : '<div class="notes-empty compact"><div>📚</div><h3>Nội dung đang được cập nhật</h3><p>Bạn có thể xem video nếu bài học có liên kết hoặc ghi chú lại phần giảng trên lớp.</p></div>'}</div>` : `
+        <div class="quick-note-editor note-editor note-paper-${quickNoteContent.style.paper} note-font-${quickNoteContent.style.font}" data-note-style="${quickNoteStyleJson}" data-note-id="${esc(note.id || note._tempId)}" data-note-subject="${esc(note.subject_id || lesson.subject_id || "")}" data-note-lesson="${Number(lesson.id)}">
+          <div class="quick-note-autosave"><span class="note-save-state">${note.id ? "Đã lưu tự động" : "Tự lưu sau 500ms"}</span><span>📌 ${esc(lesson.subject_name || "Môn học")}</span><button type="button" class="note-save-btn" data-note-save onclick="saveNoteNow(this)">💾 Lưu ghi chú</button></div>
+          <input class="note-title-input" data-note-field="title" maxlength="160" value="${esc(note.title || lesson.title || "Ghi chú bài học")}" oninput="queueNoteSave(this)" aria-label="Tiêu đề ghi chú">
+          ${renderNoteStyleBar(quickNoteContent.style)}
+          ${renderNoteFormatBar()}
+          ${renderNoteDrawingPanel()}
+          <div class="quick-note-textarea" data-note-field="content" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="Ghi lại ý chính, câu hỏi hoặc mẹo làm bài…" oninput="queueNoteSave(this)" onpaste="pasteNotePlainText(event)">${noteBodyHtml(quickNoteContent)}</div>
+          ${renderNoteDrawingPreview(quickNoteContent.style)}
+        </div>`}
+    </aside>`;
+}
+
+window.openQuickLessonDrawer = async function(lessonId, tab = "guide") {
+  if (!lessonId) return;
+  state.activeQuickLessonId = Number(lessonId);
+  state.quickDrawerTab = tab;
+  state.quickLessonData = null;
+  state.quickNote = null;
+  modalRoot.classList.add("drawer-modal-root");
+  renderQuickLessonDrawer();
+  try {
+    const [detail, notesResult] = await Promise.all([api(`/api/lessons/${Number(lessonId)}`), api(`/api/notes?lessonId=${Number(lessonId)}`)]);
+    if (state.activeQuickLessonId !== Number(lessonId) || !modalRoot.classList.contains("drawer-modal-root")) return;
+    state.quickLessonData = detail;
+    state.quickNote = (notesResult.notes || []).find(note => Number(note.lesson_id) === Number(lessonId)) || {
+      id: null, _tempId: "quick-" + lessonId, title: detail.lesson.title, content: "",
+      subject_id: detail.lesson.subject_id, lesson_id: detail.lesson.id
+    };
+    renderQuickLessonDrawer();
+  } catch (err) {
+    if (state.activeQuickLessonId !== Number(lessonId)) return;
+    modalRoot.innerHTML = `<div class="quick-drawer-backdrop" onclick="closeQuickLessonDrawer(event)"></div><aside class="quick-lesson-drawer"><button class="quick-drawer-close" onclick="closeQuickLessonDrawer()">×</button><div class="notes-empty"><div>🌷</div><h2>Chưa mở được cẩm nang</h2><p>${esc(err.message)}</p></div></aside>`;
+  }
+};
+
+async function flushQuickNote() {
+  const editor = modalRoot.querySelector(".quick-note-editor");
+  if (!editor) return;
+  const key = editor.dataset.noteId;
+  const timers = state.noteSaveTimers;
+  if (timers.has(key)) {
+    clearTimeout(timers.get(key));
+    timers.delete(key);
+    await persistNoteEditor(editor, key);
+  } else if (editor._noteSaving) {
+    try { await editor._noteSaving; } catch {}
+  }
+}
+
+window.switchQuickDrawerTab = async function(tab) {
+  if (state.quickDrawerTab === "note" && tab !== "note") await flushQuickNote();
+  state.quickDrawerTab = tab === "note" ? "note" : "guide";
+  renderQuickLessonDrawer();
+};
+
+window.closeQuickLessonDrawer = async function(event) {
+  if (event && event.target !== event.currentTarget) return;
+  await flushQuickNote();
+  state.activeQuickLessonId = null;
+  modalRoot.innerHTML = "";
+  modalRoot.classList.remove("drawer-modal-root");
 };
 
 // ========================================================
@@ -1012,13 +1900,8 @@ function renderCourses() {
             style="padding:10px 16px; border-radius:14px; border:2px solid var(--lumi-pink-border); font-weight:700; width:280px; max-width:100%;"
             oninput="state.search = this.value; render();" />
         </div>
-        <div class="banner-mascot-aside">
-          ${renderThoBayMau({
-            state: THO_STATES.CLOUD_FLOAT,
-            size: 135,
-            speech: "Hôm nay bạn muốn học môn gì nào? Cùng Thỏ bay lên mây nhé! ☁️✨",
-            speechDirection: "left"
-          })}
+        <div class="banner-mascot-aside page-inline-mascot">
+          ${renderThoBayMau({ state: THO_STATES.CLOUD_FLOAT, size: 126, speech: "Chọn môn bạn muốn khám phá nha!", speechDirection: "top" })}
         </div>
       </div>
       <div class="courses-grid">
@@ -1078,13 +1961,8 @@ function renderLeaderboard() {
             Bảng xếp hạng tuần từ Cloudflare D1. Tích lũy XP qua các bài học để dẫn đầu bảng xếp hạng!
           </p>
         </div>
-        <div style="flex-shrink:0;">
-          ${renderThoBayMau({
-            state: THO_STATES.KING_CHAMPION,
-            size: 140,
-            speech: "Nhà vô địch tuần này nhận vương miện & cúp vàng vinh quang! 👑🏆",
-            speechDirection: "top"
-          })}
+        <div class="banner-mascot-aside page-inline-mascot">
+          ${renderThoBayMau({ state: THO_STATES.KING_CHAMPION, size: 132, speech: "Tích XP rồi leo hạng thôi!", speechDirection: "top" })}
         </div>
       </div>
 
@@ -1161,19 +2039,8 @@ function renderShop() {
             <span>💎</span> <b>${state.stats.gems || 0}</b> Đá quý hiện có
           </div>
         </div>
-        <div class="banner-mascot-aside">
-          ${renderThoBayMau({
-            state: THO_STATES.GEM_RICH,
-            size: 130,
-            speech: "Đá quý đầy rương! Ghé Shop sắm đồ thôi bạn ơi! 💎✨",
-            speechDirection: "top"
-          })}
-          ${renderThoBayMau({
-            state: THO_STATES.MAID_SERVICE,
-            size: 130,
-            speech: "Kính chào chủ nhân! Hôm nay người muốn sắm món gì ạ? 🎀🧹",
-            speechDirection: "top"
-          })}
+        <div class="banner-mascot-aside page-inline-mascot">
+          ${renderThoBayMau({ state: THO_STATES.GEM_RICH, size: 126, speech: "Đổi đá quý lấy món xịn nào!", speechDirection: "top" })}
         </div>
       </div>
       <div class="shop-grid">
@@ -1252,13 +2119,8 @@ function renderAchievements() {
           <h1 class="page-title" style="margin-bottom:6px;">Huy hiệu Thành tích 🎖️</h1>
           <p class="page-subtitle" style="margin:0;">Mỗi cột mốc hoàn thành sẽ thưởng thêm Đá quý 💎 để mua sắm trong Cửa hàng.</p>
         </div>
-        <div class="banner-mascot-aside">
-          ${renderThoBayMau({
-            state: THO_STATES.SWORD_MASTER,
-            size: 135,
-            speech: "Mỗi huy hiệu là một chiến công hiển hách! Cùng Thỏ phá đảo nào! ⚔️🎖️",
-            speechDirection: "left"
-          })}
+        <div class="banner-mascot-aside page-inline-mascot">
+          ${renderThoBayMau({ state: THO_STATES.SWORD_MASTER, size: 126, speech: "Thêm một huy hiệu sắp mở khóa!", speechDirection: "top" })}
         </div>
       </div>
       <div class="achievements-grid">
@@ -1292,17 +2154,12 @@ function renderReview() {
     }
     return `
       <div style="max-width:640px; margin:30px auto; display:flex; flex-direction:column; gap:20px;">
+        <div class="page-inline-mascot" style="display:flex; justify-content:flex-end;">
+          ${renderThoBayMau({ state: THO_STATES.DETECTIVE_FIX, size: 100, speech: "Mình cùng gỡ từng câu nhé!", speechDirection: "left" })}
+        </div>
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <button type="button" class="btn-duo btn-duo-white" onclick="stopReview()">✕ Dừng ôn tập</button>
           <span style="font-weight:800; color:var(--lumi-pink);">Câu ${state.reviewCurrentIndex + 1} / ${mistakes.length}</span>
-        </div>
-        <div style="display:flex; justify-content:center; margin-bottom:4px;">
-          ${renderThoBayMau({
-            state: THO_STATES.CALM_WRONG,
-            size: 130,
-            speech: "Thôi bình tĩnh, hít một hơi thật sâu rồi làm lại nhé! 🧘❤️",
-            speechDirection: "top"
-          })}
         </div>
         <div style="background:#fff; border:2px solid var(--lumi-pink-border); border-radius:24px; padding:32px; box-shadow:0 8px 24px rgba(255, 75, 130, 0.08);">
           <span style="font-size:13px; font-weight:900; color:var(--lumi-pink); text-transform:uppercase;">${esc(cur.subject_name)} • ${esc(cur.lesson_title)}</span>
@@ -1344,13 +2201,8 @@ function renderReview() {
             </button>
           ` : ''}
         </div>
-        <div class="banner-mascot-aside">
-          ${renderThoBayMau({
-            state: THO_STATES.DETECTIVE_FIX,
-            size: 135,
-            speech: "Soi kính lúp tìm ngay câu sai để sửa triệt để! 🕵️🔍",
-            speechDirection: "left"
-          })}
+        <div class="banner-mascot-aside page-inline-mascot">
+          ${renderThoBayMau({ state: THO_STATES.DETECTIVE_FIX, size: 126, speech: "Ôn lại là nhớ lâu hơn đó!", speechDirection: "top" })}
         </div>
       </div>
       <div>
@@ -1420,6 +2272,8 @@ async function openLesson(lessonId) {
     state.questionIndex = 0;
     state.selectedOption = "";
     state.checkedAnswer = null;
+    state.checkingAnswer = false;
+    state.submittingLesson = false;
     state.answers = [];
     state.finish = null;
     render();
@@ -1458,7 +2312,7 @@ function renderLessonQuiz() {
     }
 
     return `
-      <button class="quiz-choice-btn ${extraClass}" ${inlineStyle} onclick="selectChoice('${esc(opt.key)}')" ${checked ? 'disabled' : ''}>
+      <button class="quiz-choice-btn ${extraClass}" data-choice-key="${esc(opt.key)}" aria-pressed="${isSelected ? "true" : "false"}" ${inlineStyle} onclick="selectChoice('${esc(opt.key)}')" ${checked || state.checkingAnswer ? 'disabled' : ''}>
         <span class="quiz-key-pill">${idx + 1}</span>
         <span class="quiz-choice-text">${esc(opt.text || opt.key)}</span>
       </button>
@@ -1467,8 +2321,8 @@ function renderLessonQuiz() {
 
   let footerStatusClass = "";
   let feedbackHtml = `
-    <button class="btn-duo btn-duo-pink" style="min-width:180px;" onclick="checkAnswer()" ${!state.selectedOption ? 'disabled' : ''}>
-      Kiểm tra
+    <button id="quiz-check-btn" class="btn-duo btn-duo-pink" style="min-width:180px;" onclick="checkAnswer()" ${!state.selectedOption || state.checkingAnswer ? 'disabled' : ''}>
+      ${state.checkingAnswer ? '<span class="quiz-spinner" aria-hidden="true"></span> Đang kiểm tra…' : 'Kiểm tra'}
     </button>
   `;
 
@@ -1483,8 +2337,8 @@ function renderLessonQuiz() {
             <span class="feedback-explanation">${esc(checked.explanation || "Tiếp tục giữ vững phong độ nhé!")}</span>
           </div>
         </div>
-        <button class="btn-duo btn-duo-pink" style="min-width:180px;" onclick="nextQuestion()">
-          Tiếp tục ➔
+        <button id="quiz-next-btn" class="btn-duo btn-duo-pink" style="min-width:180px;" onclick="nextQuestion()" ${state.submittingLesson ? "disabled" : ""}>
+          ${state.submittingLesson ? '<span class="quiz-spinner" aria-hidden="true"></span> Đang lưu kết quả…' : 'Tiếp tục ➔'}
         </button>
       `;
     } else {
@@ -1497,8 +2351,8 @@ function renderLessonQuiz() {
             <span class="feedback-explanation">Đáp án đúng là: <strong>${esc(checked.correctAnswer)}</strong>. ${esc(checked.explanation || "")}</span>
           </div>
         </div>
-        <button class="btn-duo btn-duo-red" style="min-width:180px;" onclick="nextQuestion()">
-          Đã hiểu ➔
+        <button id="quiz-next-btn" class="btn-duo btn-duo-red" style="min-width:180px;" onclick="nextQuestion()" ${state.submittingLesson ? "disabled" : ""}>
+          ${state.submittingLesson ? '<span class="quiz-spinner" aria-hidden="true"></span> Đang lưu kết quả…' : 'Đã hiểu ➔'}
         </button>
       `;
     }
@@ -1546,21 +2400,37 @@ function renderLessonQuiz() {
 }
 
 window.selectChoice = function(key) {
-  if (state.checkedAnswer) return;
+  if (state.checkedAnswer || state.checkingAnswer) return;
   playSound("click");
   state.selectedOption = key;
-  render();
+  view.querySelectorAll(".quiz-choice-btn[data-choice-key]").forEach(function (button) {
+    const selected = button.dataset.choiceKey === String(key);
+    button.classList.toggle("selected", selected);
+    button.setAttribute("aria-pressed", selected ? "true" : "false");
+  });
+  view.querySelector(".quiz-mascot-row")?.classList.add("has-selection");
+  const checkButton = document.getElementById("quiz-check-btn");
+  if (checkButton) checkButton.disabled = false;
 };
 
 window.checkAnswer = async function() {
-  if (!state.selectedOption || state.checkedAnswer) return;
+  if (!state.selectedOption || state.checkedAnswer || state.checkingAnswer) return;
   const question = state.lesson.questions[state.questionIndex];
+  state.checkingAnswer = true;
+  view.querySelectorAll(".quiz-choice-btn").forEach(button => { button.disabled = true; });
+  const checkButton = document.getElementById("quiz-check-btn");
+  if (checkButton) {
+    checkButton.disabled = true;
+    checkButton.setAttribute("aria-busy", "true");
+    checkButton.innerHTML = '<span class="quiz-spinner" aria-hidden="true"></span> Đang kiểm tra…';
+  }
   try {
     const res = await api(`/api/lessons/${state.lesson.lesson.id}/check`, {
       method: "POST",
       body: { questionId: question.id, selected: state.selectedOption }
     });
     state.checkedAnswer = res;
+    state.checkingAnswer = false;
     state.answers.push({ questionId: question.id, selected: state.selectedOption, isCorrect: res.isCorrect });
     if (res.isCorrect) {
       playSound("correct");
@@ -1572,18 +2442,35 @@ window.checkAnswer = async function() {
     }
     render();
   } catch (err) {
+    state.checkingAnswer = false;
+    view.querySelectorAll(".quiz-choice-btn").forEach(button => { button.disabled = false; });
+    if (checkButton) {
+      checkButton.disabled = !state.selectedOption;
+      checkButton.removeAttribute("aria-busy");
+      checkButton.textContent = "Kiểm tra";
+    }
     showToast(err.message, true);
   }
 };
 
 window.nextQuestion = async function() {
+  if (state.checkingAnswer || state.submittingLesson) return;
   playSound("click");
   if (state.questionIndex + 1 < state.lesson.questions.length) {
     state.questionIndex++;
     state.selectedOption = "";
     state.checkedAnswer = null;
+    state.checkingAnswer = false;
+    state.submittingLesson = false;
     render();
   } else {
+    state.submittingLesson = true;
+    const nextButton = document.getElementById("quiz-next-btn");
+    if (nextButton) {
+      nextButton.disabled = true;
+      nextButton.setAttribute("aria-busy", "true");
+      nextButton.innerHTML = '<span class="quiz-spinner" aria-hidden="true"></span> Đang lưu kết quả…';
+    }
     try {
       const finishRes = await api(`/api/lessons/${state.lesson.lesson.id}/submit`, {
         method: "POST",
@@ -1591,12 +2478,19 @@ window.nextQuestion = async function() {
       });
       playSound("fanfare");
       state.finish = finishRes;
+      state.submittingLesson = false;
       state.stats = finishRes.stats;
       updateShell();
       api(`/api/subjects/${state.currentSubjectId}`).then(d => { state.subjectDetail = d; });
       api("/api/overview").then(o => { state.overview = o; });
       render();
     } catch (err) {
+      state.submittingLesson = false;
+      if (nextButton) {
+        nextButton.disabled = false;
+        nextButton.removeAttribute("aria-busy");
+        nextButton.textContent = state.checkedAnswer?.isCorrect ? "Tiếp tục ➔" : "Đã hiểu ➔";
+      }
       showToast(err.message, true);
     }
   }
@@ -1711,7 +2605,7 @@ window.toggleChatDropdown = function(e) {
 
 window.selectChatSubject = function(subId) {
   playSound("click");
-  state.chatSubjectId = Number(subId);
+  state.chatSubjectId = subId === "free" ? "free" : Number(subId);
   state.isChatDropdownOpen = false;
   render();
 };
@@ -1728,21 +2622,27 @@ document.addEventListener("click", function(e) {
 // CHAT / LUMI AI
 // ========================================================
 function renderChat() {
-  const currentSub = state.subjects.find(s => Number(s.id) === Number(state.chatSubjectId || state.currentSubjectId)) || state.subjects[0];
+  const isFreeMode = state.chatSubjectId === "free";
+  const currentSub = isFreeMode ? null : (state.subjects.find(s => Number(s.id) === Number(state.chatSubjectId || state.currentSubjectId)) || state.subjects[0]);
+  const currentSubjectLabel = isFreeMode ? "AI tự do · mọi môn" : (currentSub?.subject_name || "Chọn môn học");
+  const currentSubjectIcon = isFreeMode ? "✨" : subjectIcon(currentSub);
+  const conversationOptions = `<option value="">Cuộc trò chuyện mới</option>` + state.chatConversations.map(item =>
+    `<option value="${esc(item.id)}" ${item.id === state.chatConversationId ? "selected" : ""}>${esc(item.title || "Phiên hỏi đáp")}</option>`
+  ).join("");
+  const chatAttachmentsHtml = state.chatAttachments.length ? `
+    <div class="chat-attachment-list" aria-label="Tệp đính kèm">
+      ${state.chatAttachments.map((file, index) => `<span class="chat-attachment-chip">${file.kind === "image" ? "🖼️" : "📄"} ${esc(file.name)}<button type="button" onclick="removeChatAttachment(${index})" aria-label="Gỡ ${esc(file.name)}">×</button></span>`).join("")}
+    </div>` : "";
+  const chatPendingHtml = state.chatPendingFiles.length ? `
+    <div class="chat-attachment-list" role="status" aria-live="polite">
+      ${state.chatPendingFiles.map(file => `<span class="chat-attachment-chip pending"><span class="chat-file-spinner" aria-hidden="true"></span>Đang đọc ${esc(file.name)}</span>`).join("")}
+    </div>` : "";
 
   const messagesHtml = state.chatMessages.map((m, idx) => `
     <div class="chat-row ${m.role === 'user' ? 'user' : 'assistant'}">
-      ${m.role !== 'user' ? `
-        <div style="width:42px; height:42px; flex-shrink:0;">
-          ${generateThoBayMauSvg({ state: THO_STATES.AI_PROFESSOR, size: 42 })}
-        </div>
-      ` : ''}
       <div id="chat-bubble-${idx}" class="chat-bubble ${m.role === 'user' ? 'user' : 'assistant'}">
         ${m.isStreaming && !m.content ? `
           <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:68px; height:68px; flex-shrink:0;">
-              ${generateThoBayMauSvg({ state: THO_STATES.TYPING_FAST, size: 68 })}
-            </div>
             <div class="typing-indicator-wrap">
               <span class="typing-dot"></span>
               <span class="typing-dot"></span>
@@ -1750,7 +2650,7 @@ function renderChat() {
               <span style="font-size:13px; color:var(--lumi-pink); font-weight:800; margin-left:6px;">Thỏ Bảy Màu đang gõ phím lia lịa…</span>
             </div>
           </div>
-        ` : formatChatText(m.content)}
+        ` : `${formatChatText(m.content)}${m.role === 'assistant' ? `<button type="button" class="chat-save-note" onclick="saveAiReplyToNotes(${idx})">📌 Lưu vào Sổ tay</button>` : ""}`}
       </div>
     </div>
   `).join("");
@@ -1763,26 +2663,33 @@ function renderChat() {
           <p class="page-subtitle">Trợ giảng 3TG AI giải thích chi tiết, từng bước kèm công thức dễ hiểu</p>
         </div>
 
+        <div class="chat-header-actions">
+        <div class="chat-conversation-actions"><select aria-label="Chọn cuộc trò chuyện" onchange="loadChatConversation(this.value)">${conversationOptions}</select><button type="button" onclick="startNewChat()">＋ Mới</button></div>
         <!-- CUSTOM ANIMATED DROPDOWN FOR SUBJECT SELECTION -->
         <div class="lumi-dropdown-wrapper" id="chat-dropdown-wrap">
           <button type="button" class="lumi-dropdown-btn ${state.isChatDropdownOpen ? 'active' : ''}" onclick="toggleChatDropdown(event)">
-            <span style="font-size:18px;">${subjectIcon(currentSub)}</span>
-            <span>${esc(currentSub?.subject_name || "Chọn môn học")}</span>
+            <span style="font-size:18px;">${currentSubjectIcon}</span>
+            <span>${esc(currentSubjectLabel)}</span>
             <span class="chevron-arrow">▾</span>
           </button>
           ${state.isChatDropdownOpen ? `
             <div class="lumi-dropdown-panel">
+              <div class="lumi-dropdown-item ${isFreeMode ? 'selected' : ''}" onclick="selectChatSubject('free')">
+                <div class="lumi-dropdown-item-left"><span style="font-size:18px;">✨</span><span>AI tự do · mọi môn</span></div>
+                ${isFreeMode ? '<span class="lumi-dropdown-check">✓</span>' : ''}
+              </div>
               ${state.subjects.map(s => `
-                <div class="lumi-dropdown-item ${Number(s.id) === Number(currentSub?.id) ? 'selected' : ''}" onclick="selectChatSubject(${Number(s.id)})">
+                <div class="lumi-dropdown-item ${!isFreeMode && Number(s.id) === Number(currentSub?.id) ? 'selected' : ''}" onclick="selectChatSubject(${Number(s.id)})">
                   <div class="lumi-dropdown-item-left">
                     <span style="font-size:18px;">${subjectIcon(s)}</span>
                     <span>${esc(s.subject_name)}</span>
                   </div>
-                  ${Number(s.id) === Number(currentSub?.id) ? '<span class="lumi-dropdown-check">✓</span>' : ''}
+                  ${!isFreeMode && Number(s.id) === Number(currentSub?.id) ? '<span class="lumi-dropdown-check">✓</span>' : ''}
                 </div>
               `).join("")}
             </div>
           ` : ''}
+        </div>
         </div>
       </div>
 
@@ -1792,51 +2699,303 @@ function renderChat() {
             ${renderThoBayMau({
               state: THO_STATES.AI_PROFESSOR,
               size: 165,
-              speech: `Chào bạn! Mình là Trợ giảng 3TG AI cùng Giáo sư Thỏ Bảy Màu! Bạn có thắc mắc gì về bài học môn ${esc(currentSub?.subject_name || "này")} cứ hỏi mình nhé! 🎓📖`,
+              speech: isFreeMode
+                ? "Chào bạn! Mình là Trợ giảng AI tự do. Cứ hỏi bất kỳ môn nào hoặc gửi tài liệu để mình cùng học nhé! 🎓📖"
+                : `Chào bạn! Mình là Trợ giảng 3TG AI cùng Giáo sư Thỏ Bảy Màu! Bạn có thắc mắc gì về bài học môn ${esc(currentSub?.subject_name || "này")} cứ hỏi mình nhé! 🎓📖`,
               speechDirection: "top"
             })}
             <h3 style="font-weight:900; color:var(--ink-900); margin-top:14px; font-size:22px;">Trợ giảng 3TG AI luôn sẵn sàng phục vụ bạn!</h3>
             <p style="font-size:15px; margin-top:6px; color:var(--ink-700); max-width:520px;">
-              Giải thích từng bước, chi tiết công thức toán học và kiến thức đại học từ Cloudflare D1.
+              ${isFreeMode ? "Hỏi đa môn, gửi ảnh hoặc tài liệu để AI đọc và hỗ trợ học." : "Giải thích từng bước, chi tiết công thức toán học và kiến thức đại học từ Cloudflare D1."}
             </p>
           </div>
         `}
       </div>
 
-      <form onsubmit="handleSendChat(event)" style="display:flex; gap:12px;">
-        <input type="text" id="chat-input" placeholder="Hỏi 3TG AI bất cứ câu hỏi nào..." style="flex:1; padding:15px 22px; border-radius:20px; border:2px solid var(--lumi-pink-border); font-size:15px; font-weight:700;" ${state.chatBusy ? 'disabled' : ''} />
-        <button type="submit" id="chat-submit-btn" class="btn-duo btn-duo-pink" style="padding:15px 30px; font-size:15px;" ${state.chatBusy ? 'disabled' : ''}>
-          ${state.chatBusy ? 'Đang gửi…' : 'Gửi ➔'}
-        </button>
+      <form class="chat-composer" onsubmit="handleSendChat(event)">
+        ${chatAttachmentsHtml}
+        ${chatPendingHtml}
+        <div class="chat-composer-row">
+          <label class="chat-attach-btn" title="Ảnh, PDF, DOCX, PPTX, XLSX hoặc tệp văn bản · tối đa 5 tệp, 10 MB mỗi tệp">📎<span>Tệp</span><input type="file" accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.docx,.pptx,.xlsx,.txt,.md,.csv,.json,.log" multiple onchange="handleChatFiles(this.files)" ${state.chatBusy || state.chatPendingFiles.length ? 'disabled' : ''}></label>
+          <input type="text" id="chat-input" placeholder="Hỏi AI hoặc mô tả nội dung cần đọc…" value="${esc(state.chatDraft)}" oninput="state.chatDraft=this.value" style="flex:1; padding:15px 22px; border-radius:20px; border:2px solid var(--lumi-pink-border); font-size:15px; font-weight:700;" ${state.chatBusy ? 'disabled' : ''} />
+          <button type="submit" id="chat-submit-btn" class="btn-duo btn-duo-pink" style="padding:15px 30px; font-size:15px;" ${state.chatBusy || state.chatPendingFiles.length ? 'disabled' : ''}>
+            ${state.chatBusy ? 'Đang gửi…' : 'Gửi ➔'}
+          </button>
+        </div>
+        <small class="chat-file-hint">Ảnh · PDF · DOCX · PPTX · XLSX · TXT · MD · CSV · JSON</small>
       </form>
     </div>
   `;
 }
 
+const CHAT_FILE_LIMIT = 10 * 1024 * 1024;
+const CHAT_TOTAL_FILE_LIMIT = 16 * 1024 * 1024;
+const CHAT_TEXT_LIMIT = 52000;
+
+function chatFileKind(file) {
+  const ext = String(file.name || "").toLowerCase().split(".").pop();
+  const type = String(file.type || "").toLowerCase();
+  if (["image/png", "image/jpeg", "image/webp", "image/gif"].includes(type) || ["png", "jpg", "jpeg", "webp", "gif"].includes(ext)) {
+    const imageType = type.startsWith("image/") ? type : ({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif" })[ext];
+    if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(imageType)) throw new Error("Ảnh này chưa được hỗ trợ. Hãy chọn PNG, JPG, WEBP hoặc GIF.");
+    return { kind: "image", type: imageType };
+  }
+  if (["pdf", "docx", "pptx", "xlsx", "txt", "md", "csv", "json", "log"].includes(ext)) {
+    return { kind: "document", type: type || "application/octet-stream", ext };
+  }
+  throw new Error(`Chưa hỗ trợ tệp .${ext || "không rõ định dạng"}. Hãy dùng ảnh, PDF, DOCX, PPTX, XLSX, TXT, MD, CSV hoặc JSON.`);
+}
+
+async function fileToBase64(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(offset, Math.min(offset + 0x8000, bytes.length)));
+  }
+  return btoa(binary);
+}
+
+async function inflateZipEntry(bytes, entry) {
+  if (entry.size > CHAT_FILE_LIMIT * 4) throw new Error("Tài liệu giải nén quá lớn để đọc an toàn.");
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const offset = entry.localOffset;
+  if (view.getUint32(offset, true) !== 0x04034b50) throw new Error("Tệp tài liệu ZIP không hợp lệ.");
+  const nameLength = view.getUint16(offset + 26, true);
+  const extraLength = view.getUint16(offset + 28, true);
+  const start = offset + 30 + nameLength + extraLength;
+  const packed = bytes.subarray(start, start + entry.compressedSize);
+  if (entry.method === 0) return new TextDecoder("utf-8").decode(packed);
+  if (entry.method !== 8 || typeof DecompressionStream === "undefined") {
+    throw new Error("Trình duyệt chưa hỗ trợ giải nén định dạng tài liệu này.");
+  }
+  const stream = new Blob([packed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  const unpacked = new Uint8Array(await new Response(stream).arrayBuffer());
+  return new TextDecoder("utf-8").decode(unpacked);
+}
+
+async function readZipTextEntries(file, namePattern) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let eocd = -1;
+  for (let pos = bytes.length - 22; pos >= Math.max(0, bytes.length - 65557); pos--) {
+    if (view.getUint32(pos, true) === 0x06054b50) { eocd = pos; break; }
+  }
+  if (eocd < 0) throw new Error("Không đọc được cấu trúc tệp Office này.");
+  const count = view.getUint16(eocd + 10, true);
+  let cursor = view.getUint32(eocd + 16, true);
+  const decoder = new TextDecoder("utf-8");
+  const entries = [];
+  for (let index = 0; index < count; index++) {
+    if (view.getUint32(cursor, true) !== 0x02014b50) break;
+    const method = view.getUint16(cursor + 10, true);
+    const compressedSize = view.getUint32(cursor + 20, true);
+    const size = view.getUint32(cursor + 24, true);
+    const nameLength = view.getUint16(cursor + 28, true);
+    const extraLength = view.getUint16(cursor + 30, true);
+    const commentLength = view.getUint16(cursor + 32, true);
+    const localOffset = view.getUint32(cursor + 42, true);
+    const nameStart = cursor + 46;
+    const name = decoder.decode(bytes.subarray(nameStart, nameStart + nameLength));
+    if (namePattern.test(name)) entries.push({ name, method, compressedSize, size, localOffset });
+    cursor = nameStart + nameLength + extraLength + commentLength;
+  }
+  return await Promise.all(entries.map(async entry => ({ name: entry.name, text: await inflateZipEntry(bytes, entry) })));
+}
+
+function xmlParagraphs(xmlText, paragraphTag = "p", textTag = "t") {
+  const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+  if (doc.querySelector("parsererror")) return "";
+  return Array.from(doc.getElementsByTagNameNS("*", paragraphTag)).map(paragraph =>
+    Array.from(paragraph.getElementsByTagNameNS("*", textTag)).map(node => node.textContent || "").join("")
+  ).filter(Boolean).join("\n");
+}
+
+async function extractOfficeText(file, ext) {
+  if (ext === "docx") {
+    const entries = await readZipTextEntries(file, /^word\/document\.xml$/);
+    return entries.map(entry => xmlParagraphs(entry.text)).join("\n");
+  }
+  if (ext === "pptx") {
+    const entries = await readZipTextEntries(file, /^ppt\/slides\/slide\d+\.xml$/);
+    entries.sort((a, b) => Number(a.name.match(/slide(\d+)/)?.[1] || 0) - Number(b.name.match(/slide(\d+)/)?.[1] || 0));
+    return entries.map((entry, index) => `Trang chiếu ${index + 1}:\n${xmlParagraphs(entry.text)}`).join("\n\n");
+  }
+  const entries = await readZipTextEntries(file, /^(?:xl\/sharedStrings\.xml|xl\/worksheets\/sheet\d+\.xml)$/);
+  const sharedEntry = entries.find(entry => entry.name === "xl/sharedStrings.xml");
+  const sharedDoc = sharedEntry ? new DOMParser().parseFromString(sharedEntry.text, "application/xml") : null;
+  const shared = sharedDoc ? Array.from(sharedDoc.getElementsByTagNameNS("*", "si")).map(item =>
+    Array.from(item.getElementsByTagNameNS("*", "t")).map(node => node.textContent || "").join("")
+  ) : [];
+  return entries.filter(entry => entry.name.includes("/worksheets/"))
+    .sort((a, b) => Number(a.name.match(/sheet(\d+)/)?.[1] || 0) - Number(b.name.match(/sheet(\d+)/)?.[1] || 0))
+    .map((entry, index) => {
+      const doc = new DOMParser().parseFromString(entry.text, "application/xml");
+      const rows = Array.from(doc.getElementsByTagNameNS("*", "row")).map(row =>
+        Array.from(row.getElementsByTagNameNS("*", "c")).map(cell => {
+          const value = cell.getElementsByTagNameNS("*", "v")[0]?.textContent || "";
+          return cell.getAttribute("t") === "s" ? (shared[Number(value)] || "") : value;
+        }).join("\t")
+      ).filter(Boolean);
+      return `Trang tính ${index + 1}:\n${rows.join("\n")}`;
+    }).join("\n\n");
+}
+
+function decodePdfString(value, isHex = false) {
+  let bytes;
+  if (isHex) {
+    const hex = value.replace(/\s/g, "");
+    const padded = hex.length % 2 ? hex + "0" : hex;
+    bytes = Uint8Array.from(padded.match(/.{2}/g) || [], pair => parseInt(pair, 16));
+  } else {
+    const unescaped = value.replace(/\\([0-7]{1,3})/g, (_, octal) => String.fromCharCode(parseInt(octal, 8)))
+      .replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t")
+      .replace(/\\b/g, "\b").replace(/\\f/g, "\f").replace(/\\([\\()])/g, "$1")
+      .replace(/\\\r?\n/g, "");
+    bytes = Uint8Array.from(unescaped, char => char.charCodeAt(0) & 255);
+  }
+  if (bytes.length > 1 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+    const words = [];
+    for (let i = 2; i + 1 < bytes.length; i += 2) words.push((bytes[i] << 8) | bytes[i + 1]);
+    return String.fromCharCode(...words);
+  }
+  return new TextDecoder("windows-1252").decode(bytes);
+}
+
+function textFromPdfStream(streamText) {
+  const output = [];
+  for (const block of streamText.matchAll(/BT([\s\S]*?)ET/g)) {
+    const body = block[1];
+    const operators = /\[((?:\\.|[^\]])*)\]\s*TJ|\(((?:\\.|[^\\)])*)\)\s*Tj|<([0-9a-f\s]+)>\s*Tj/gi;
+    for (const match of body.matchAll(operators)) {
+      if (match[1] !== undefined) {
+        for (const literal of match[1].matchAll(/\(((?:\\.|[^\\)])*)\)|<([0-9a-f\s]+)>/gi)) {
+          output.push(decodePdfString(literal[1] ?? literal[2] ?? "", literal[2] !== undefined));
+        }
+      } else {
+        output.push(decodePdfString(match[2] ?? match[3] ?? "", match[3] !== undefined));
+      }
+    }
+    output.push("\n");
+  }
+  return output.join("").replace(/[\t ]+/g, " ").replace(/\n{3,}/g, "\n\n");
+}
+
+async function extractPdfText(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const raw = new TextDecoder("latin1").decode(bytes);
+  const chunks = [raw];
+  const streamMarkers = /stream\r?\n/g;
+  let marker;
+  while ((marker = streamMarkers.exec(raw)) !== null && chunks.length < 80) {
+    const end = raw.indexOf("endstream", streamMarkers.lastIndex);
+    if (end < 0) break;
+    const dict = raw.slice(Math.max(0, marker.index - 500), marker.index);
+    if (/FlateDecode/.test(dict)) {
+      let start = streamMarkers.lastIndex;
+      let finish = end;
+      while (finish > start && (bytes[finish - 1] === 10 || bytes[finish - 1] === 13)) finish--;
+      const packed = bytes.subarray(start, finish);
+      try {
+        const stream = new Blob([packed]).stream().pipeThrough(new DecompressionStream("deflate"));
+        chunks.push(new TextDecoder("latin1").decode(new Uint8Array(await new Response(stream).arrayBuffer())));
+      } catch { /* Skip non-text or unsupported compressed streams. */ }
+    }
+    streamMarkers.lastIndex = end + 9;
+  }
+  const extracted = chunks.map(textFromPdfStream).join("\n").trim();
+  if (!extracted) throw new Error("PDF này chưa có lớp văn bản đọc được. Nếu là bản scan, hãy chụp hoặc xuất trang thành ảnh rồi gửi cho AI.");
+  return extracted;
+}
+
+async function prepareChatFile(file) {
+  if (file.size > CHAT_FILE_LIMIT) throw new Error(`Tệp “${file.name}” vượt giới hạn 10 MB.`);
+  const info = chatFileKind(file);
+  if (info.kind === "image") return { name: file.name, type: info.type, kind: "image", data: await fileToBase64(file), size: file.size };
+  let text = "";
+  if (info.ext === "pdf") text = await extractPdfText(file);
+  else if (["docx", "pptx", "xlsx"].includes(info.ext)) text = await extractOfficeText(file, info.ext);
+  else text = await file.text();
+  text = String(text || "").replace(/\u0000/g, "").trim();
+  if (!text) throw new Error(`Không tìm thấy văn bản để đọc trong “${file.name}”.`);
+  return { name: file.name, type: info.type, kind: "document", text: text.slice(0, CHAT_TEXT_LIMIT), size: file.size };
+}
+
+window.handleChatFiles = async function(fileList) {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  const room = 5 - state.chatAttachments.length - state.chatPendingFiles.length;
+  if (files.length > room) showToast("Mỗi lượt gửi tối đa 5 tệp.", true);
+  for (const file of files.slice(0, Math.max(0, room))) {
+    const currentSize = state.chatAttachments.reduce((sum, item) => sum + item.size, 0) + state.chatPendingFiles.reduce((sum, item) => sum + item.size, 0);
+    if (currentSize + file.size > CHAT_TOTAL_FILE_LIMIT) {
+      showToast("Tổng dung lượng tệp trong một lượt tối đa 16 MB.", true);
+      break;
+    }
+    const pending = { id: crypto.randomUUID(), name: file.name, size: file.size };
+    state.chatPendingFiles.push(pending);
+    render();
+    try {
+      const prepared = await prepareChatFile(file);
+      state.chatAttachments.push(prepared);
+    } catch (err) {
+      showToast(err.message || `Không đọc được tệp “${file.name}”.`, true);
+    } finally {
+      state.chatPendingFiles = state.chatPendingFiles.filter(item => item.id !== pending.id);
+      render();
+    }
+  }
+};
+
+window.removeChatAttachment = function(index) {
+  state.chatAttachments.splice(Number(index), 1);
+  render();
+};
+
 window.handleSendChat = async function(e) {
   e.preventDefault();
   const input = document.getElementById("chat-input");
   const btn = document.getElementById("chat-submit-btn");
-  const msg = input ? input.value.trim() : "";
-  if (!msg || state.chatBusy) return;
+  const msg = input ? input.value.trim() : String(state.chatDraft || "").trim();
+  const attachments = state.chatAttachments.slice();
+  if (state.chatPendingFiles.length) {
+    showToast("Đợi AI đọc xong tệp rồi gửi nhé.", true);
+    return;
+  }
+  if ((!msg && !attachments.length) || state.chatBusy) return;
+  const prompt = msg || "Hãy đọc các tệp đính kèm, tóm tắt ý chính và giúp mình học nội dung quan trọng.";
+  const visibleMessage = prompt + (attachments.length ? `\n\n📎 ${attachments.map(file => file.name).join(" · ")}` : "");
+  state.chatDraft = "";
   if (input) input.value = "";
   playSound("click");
-  state.chatMessages.push({ role: "user", content: msg });
+  state.chatMessages.push({ role: "user", content: visibleMessage });
   const assistantMsgIndex = state.chatMessages.length;
   state.chatMessages.push({ role: "assistant", content: "", isStreaming: true });
   state.chatBusy = true;
+  state.chatAttachments = [];
   render();
 
   const container = document.getElementById("chat-messages-area");
   if (container) container.scrollTop = container.scrollHeight;
 
   try {
-    const subId = state.chatSubjectId || state.currentSubjectId;
+    const freeMode = state.chatSubjectId === "free";
+    const subId = freeMode ? null : (state.chatSubjectId || state.currentSubjectId);
     const res = await api("/api/chat", {
       method: "POST",
-      body: { message: msg, subjectId: subId, history: state.chatMessages.slice(0, -1) }
+      body: {
+        message: prompt,
+        subjectId: subId,
+        freeMode,
+        attachments: attachments.map(file => file.kind === "image"
+          ? { name: file.name, type: file.type, data: file.data }
+          : { name: file.name, type: file.type, text: file.text }),
+        history: state.chatMessages.slice(0, -2),
+        conversationId: state.chatConversationId
+      }
     });
+    if (res.conversationId) state.chatConversationId = res.conversationId;
     await streamAiResponse(res.reply, assistantMsgIndex);
+    await loadChatConversations();
   } catch (err) {
     state.chatMessages[assistantMsgIndex] = {
       role: "assistant",
@@ -1857,9 +3016,50 @@ window.handleSendChat = async function(e) {
       btnEl.disabled = false;
       btnEl.innerHTML = "Gửi ➔";
     }
+    const attachInput = document.querySelector(".chat-attach-btn input");
+    if (attachInput) attachInput.disabled = state.chatPendingFiles.length > 0;
     updateShell();
   }
 };
+
+window.startNewChat = function() {
+  state.chatConversationId = null;
+  state.chatMessages = [];
+  state.chatDraft = "";
+  render();
+  document.getElementById("chat-input")?.focus();
+};
+
+window.loadChatConversation = async function(conversationId) {
+  if (!conversationId) return window.startNewChat();
+  try {
+    const result = await api(`/api/chat/conversations/${encodeURIComponent(conversationId)}`);
+    state.chatConversationId = result.conversation.id;
+    state.chatMessages = (result.messages || []).map(message => ({ role: message.sender, content: message.content }));
+    state.chatDraft = "";
+    render();
+    const container = document.getElementById("chat-messages-area");
+    if (container) container.scrollTop = container.scrollHeight;
+  } catch (err) {
+    showToast("Không mở được cuộc trò chuyện: " + err.message, true);
+  }
+};
+
+async function loadChatConversations() {
+  try {
+    const result = await api("/api/chat/conversations");
+    state.chatConversations = result.conversations || [];
+    const select = document.querySelector(".chat-conversation-actions select");
+    if (select) {
+      select.innerHTML = `<option value="">Cuộc trò chuyện mới</option>` + state.chatConversations.map(item =>
+        `<option value="${esc(item.id)}">${esc(item.title || "Phiên hỏi đáp")}</option>`
+      ).join("");
+      select.value = state.chatConversationId || "";
+    }
+  } catch (err) {
+    console.warn("Could not load AI conversation list", err);
+  }
+}
 
 function streamAiResponse(fullText, msgIndex) {
   return new Promise((resolve) => {
@@ -1886,11 +3086,30 @@ function streamAiResponse(fullText, msgIndex) {
           isStreaming: false
         };
         const targetBubble = document.getElementById("chat-bubble-" + msgIndex);
-        if (targetBubble) targetBubble.innerHTML = formatChatText(fullText);
+        if (targetBubble) targetBubble.innerHTML = formatChatText(fullText) + `<button type="button" class="chat-save-note" onclick="saveAiReplyToNotes(${msgIndex})">📌 Lưu vào Sổ tay</button>`;
         resolve();
       }
     }, 18);
   });
+};
+
+window.saveAiReplyToNotes = async function(messageIndex) {
+  const message = state.chatMessages[messageIndex];
+  if (!message || message.role !== "assistant" || message.isStreaming || !message.content) return;
+  const subjectId = state.chatSubjectId || state.currentSubjectId || null;
+  const priorQuestion = state.chatMessages.slice(0, messageIndex).reverse().find(item => item.role === "user");
+  const subject = state.subjects.find(item => Number(item.id) === Number(subjectId));
+  const title = `3TG AI · ${subject?.subject_name || "Giải đáp"} · ${(priorQuestion?.content || "Ghi chú").slice(0, 55)}`;
+  try {
+    const result = await api("/api/notes", {
+      method: "POST",
+      body: { title, content: message.content, subjectId, lessonId: null }
+    });
+    if (result.note) state.notes.unshift(result.note);
+    showToast("Đã lưu lời giải vào Sổ tay ghi chú ✨");
+  } catch (err) {
+    showToast("Chưa lưu được lời giải: " + err.message, true);
+  }
 };
 
 // ========================================================
@@ -2494,18 +3713,22 @@ window.closeStreakModal = function(e) {
 // MAIN RENDER ENGINE
 // ========================================================
 function render() {
-  // Smooth tab animation on page-view
+  // Animate real route changes only; quiz feedback and typing should not reflow the page.
   const appView = document.getElementById("app-view");
-  if (appView) {
+  const viewKey = !state.profile ? "auth" : state.lesson ? "lesson" : state.page;
+  if (appView && viewKey !== lastRenderedViewKey) {
     appView.classList.remove("page-view-enter");
     void appView.offsetWidth; // force reflow
     appView.classList.add("page-view-enter");
   }
+  lastRenderedViewKey = viewKey;
 
   // If not authenticated, always show the mandatory Login/Register screen
   if (!state.profile) {
     view.innerHTML = renderAuthScreen();
     updateShell();
+    const companion = document.getElementById("global-mascot-companion");
+    if (companion) companion.style.display = "none";
     return;
   }
 
@@ -2525,6 +3748,9 @@ function render() {
       break;
     case "courses":
       view.innerHTML = renderCourses();
+      break;
+    case "notes":
+      view.innerHTML = renderNotes();
       break;
     case "leaderboard":
       view.innerHTML = renderLeaderboard();
@@ -2555,6 +3781,7 @@ function render() {
     setTimeout(setupStagePillsScroll, 30);
   }
 }
+let lastRenderedViewKey = "";
 window.render = render;
 
 // Global click event listeners for data-page, data-subject, data-lesson, data-auth-tab
@@ -2625,6 +3852,11 @@ async function navigateToPage(targetPage) {
         state.subjects = subRes.subjects;
         render();
       }
+    } else if (targetPage === "notes") {
+      await loadNotes();
+    } else if (targetPage === "chat") {
+      await loadChatConversations();
+      render();
     } else if (targetPage === "leaderboard") {
       leaderboardData = await api("/api/leaderboard").catch(() => null);
       render();
@@ -2645,7 +3877,7 @@ async function navigateToPage(targetPage) {
 }
 
 async function syncLiveData(silent = true) {
-  if (!state.profile) return;
+  if (!state.profile || state.lesson) return;
   try {
     const ov = await api("/api/overview");
     if (ov && ov.stats) {
@@ -2712,6 +3944,18 @@ document.getElementById("header-avatar-btn")?.addEventListener("click", () => {
 
 // Keyboard shortcuts for Quiz (1, 2, 3, 4, Enter)
 document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape" && document.getElementById("study-calculator-layer")) {
+    window.closeStudyCalculator();
+    return;
+  }
+  if (e.key === "Escape" && activeFullscreenNoteEditor) {
+    window.closeNoteFullscreen();
+    return;
+  }
+  if (e.key === "Escape" && modalRoot.classList.contains("drawer-modal-root")) {
+    window.closeQuickLessonDrawer();
+    return;
+  }
   if (state.lesson && !state.finish) {
     const questions = state.lesson.questions;
     const question = questions[state.questionIndex];

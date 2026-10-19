@@ -466,7 +466,7 @@ async function subjectDetails(subjectId, userId, env) {
 
 async function lessonData(lessonId, userId, env) {
   const lesson = await env.DB.prepare(
-    "SELECT l.id, l.unit_id, l.title, l.order_index, l.xp_reward, " +
+    "SELECT l.id, l.unit_id, l.title, l.order_index, l.xp_reward, l.content, l.video_url, " +
     "u.title AS unit_title, s.id AS subject_id, s.subject_name " +
     "FROM lessons l JOIN units u ON u.id = l.unit_id JOIN subjects s ON s.id = u.subject_id WHERE l.id = ?"
   ).bind(lessonId).first();
@@ -510,26 +510,27 @@ async function lessonData(lessonId, userId, env) {
 }
 
 async function lessonIsUnlocked(lessonId, userId, env) {
-  const completed = await env.DB.prepare(
-    "SELECT id FROM user_progress WHERE user_id = ? AND lesson_id = ? AND status = 'completed' LIMIT 1"
-  ).bind(userId, lessonId).first();
-  if (completed) return true;
-  const course = await env.DB.prepare(
-    "SELECT subject_id FROM units u JOIN lessons l ON l.unit_id = u.id WHERE l.id = ?"
-  ).bind(lessonId).first();
-  if (!course) return false;
-  const ordered = await env.DB.prepare(
-    "SELECT l.id FROM lessons l JOIN units u ON u.id = l.unit_id WHERE u.subject_id = ? " +
-    "ORDER BY u.order_index, u.id, l.order_index, l.id"
-  ).bind(course.subject_id).all();
-  const ids = (ordered.results || []).map(function (row) { return Number(row.id); });
-  const index = ids.indexOf(Number(lessonId));
-  if (index < 0) return false;
-  if (index === 0) return true;
-  const previous = await env.DB.prepare(
-    "SELECT id FROM user_progress WHERE user_id = ? AND lesson_id = ? AND status = 'completed' LIMIT 1"
-  ).bind(userId, ids[index - 1]).first();
-  return Boolean(previous);
+  const unlocked = await env.DB.prepare(
+    "WITH current_lesson AS (" +
+      "SELECT l.id, l.order_index AS lesson_order, u.id AS unit_id, u.order_index AS unit_order, u.subject_id " +
+      "FROM lessons l JOIN units u ON u.id = l.unit_id WHERE l.id = ?" +
+    "), previous_lesson AS (" +
+      "SELECT prior.id FROM current_lesson current_row " +
+      "JOIN units prior_unit ON prior_unit.subject_id = current_row.subject_id " +
+      "JOIN lessons prior ON prior.unit_id = prior_unit.id " +
+      "WHERE prior_unit.order_index < current_row.unit_order " +
+        "OR (prior_unit.order_index = current_row.unit_order AND prior_unit.id < current_row.unit_id) " +
+        "OR (prior_unit.order_index = current_row.unit_order AND prior_unit.id = current_row.unit_id AND prior.order_index < current_row.lesson_order) " +
+        "OR (prior_unit.order_index = current_row.unit_order AND prior_unit.id = current_row.unit_id AND prior.order_index = current_row.lesson_order AND prior.id < current_row.id) " +
+      "ORDER BY prior_unit.order_index DESC, prior_unit.id DESC, prior.order_index DESC, prior.id DESC LIMIT 1" +
+    ") " +
+    "SELECT current_row.id FROM current_lesson current_row WHERE " +
+      "EXISTS (SELECT 1 FROM user_progress completed WHERE completed.user_id = ? AND completed.lesson_id = current_row.id AND completed.status = 'completed') " +
+      "OR NOT EXISTS (SELECT 1 FROM previous_lesson) " +
+      "OR EXISTS (SELECT 1 FROM previous_lesson previous JOIN user_progress progress ON progress.lesson_id = previous.id " +
+        "WHERE progress.user_id = ? AND progress.status = 'completed') LIMIT 1"
+  ).bind(lessonId, userId, userId).first();
+  return Boolean(unlocked);
 }
 
 async function submitLesson(request, lessonId, user, env) {
@@ -847,6 +848,73 @@ async function reviewList(user, env) {
   return response.results || [];
 }
 
+async function listNotes(request, user, env) {
+  const url = new URL(request.url);
+  const subjectId = Number(url.searchParams.get("subjectId")) || null;
+  const lessonId = Number(url.searchParams.get("lessonId")) || null;
+  const query = String(url.searchParams.get("q") || "").trim().slice(0, 120);
+  const where = ["n.user_id = ?"];
+  const params = [user.userId];
+  if (subjectId) { where.push("n.subject_id = ?"); params.push(subjectId); }
+  if (lessonId) { where.push("n.lesson_id = ?"); params.push(lessonId); }
+  if (query) {
+    where.push("(n.title LIKE ? OR n.content LIKE ?)");
+    params.push("%" + query + "%", "%" + query + "%");
+  }
+  const result = await env.DB.prepare(
+    "SELECT n.id, n.subject_id, n.lesson_id, n.title, n.content, n.created_at, n.updated_at, " +
+    "s.subject_name, l.title AS lesson_title FROM user_notes n " +
+    "LEFT JOIN subjects s ON s.id = n.subject_id LEFT JOIN lessons l ON l.id = n.lesson_id " +
+    "WHERE " + where.join(" AND ") + " ORDER BY n.updated_at DESC, n.id DESC LIMIT 200"
+  ).bind(...params).all();
+  return { notes: result.results || [] };
+}
+
+async function saveNote(request, user, env, noteId) {
+  const body = await readJson(request);
+  const title = String(body.title || "").trim().slice(0, 160);
+  const content = String(body.content || "").slice(0, 30000);
+  let subjectId = body.subjectId == null || body.subjectId === "" ? null : Number(body.subjectId);
+  const lessonId = body.lessonId == null || body.lessonId === "" ? null : Number(body.lessonId);
+  if (!title) throw new HttpError(400, "Đặt tiêu đề cho ghi chú trước nhé.");
+  if (subjectId != null && (!Number.isInteger(subjectId) || subjectId < 1)) throw new HttpError(400, "Môn học chưa hợp lệ.");
+  if (lessonId != null && (!Number.isInteger(lessonId) || lessonId < 1)) throw new HttpError(400, "Bài học chưa hợp lệ.");
+  if (lessonId != null) {
+    const lesson = await env.DB.prepare(
+      "SELECT l.id, u.subject_id FROM lessons l JOIN units u ON u.id = l.unit_id WHERE l.id = ? LIMIT 1"
+    ).bind(lessonId).first();
+    if (!lesson) throw new HttpError(404, "Không tìm thấy bài học này.");
+    if (subjectId != null && Number(lesson.subject_id) !== subjectId) throw new HttpError(400, "Bài học không thuộc môn đã chọn.");
+    if (subjectId == null) subjectId = Number(lesson.subject_id);
+  }
+  const now = new Date().toISOString();
+  if (noteId != null) {
+    const existing = await env.DB.prepare("SELECT id FROM user_notes WHERE id = ? AND user_id = ? LIMIT 1").bind(noteId, user.userId).first();
+    if (!existing) throw new HttpError(404, "Không tìm thấy ghi chú này.");
+    await env.DB.prepare(
+      "UPDATE user_notes SET subject_id = ?, lesson_id = ?, title = ?, content = ?, updated_at = ? WHERE id = ? AND user_id = ?"
+    ).bind(subjectId, lessonId, title, content, now, noteId, user.userId).run();
+  } else {
+    const inserted = await env.DB.prepare(
+      "INSERT INTO user_notes (user_id, subject_id, lesson_id, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id"
+    ).bind(user.userId, subjectId, lessonId, title, content, now, now).first();
+    noteId = inserted && inserted.id;
+  }
+  const saved = await env.DB.prepare(
+    "SELECT n.id, n.subject_id, n.lesson_id, n.title, n.content, n.created_at, n.updated_at, " +
+    "s.subject_name, l.title AS lesson_title FROM user_notes n " +
+    "LEFT JOIN subjects s ON s.id = n.subject_id LEFT JOIN lessons l ON l.id = n.lesson_id " +
+    "WHERE n.id = ? AND n.user_id = ? LIMIT 1"
+  ).bind(noteId, user.userId).first();
+  return { note: saved };
+}
+
+async function deleteNote(noteId, user, env) {
+  const result = await env.DB.prepare("DELETE FROM user_notes WHERE id = ? AND user_id = ?").bind(noteId, user.userId).run();
+  if (!result.meta || !result.meta.changes) throw new HttpError(404, "Không tìm thấy ghi chú này.");
+  return { ok: true };
+}
+
 async function hashPassword(password) {
   const enc = new TextEncoder();
   const data = enc.encode(String(password) + "_lumi_salt_duo");
@@ -1114,15 +1182,59 @@ async function leaderboard(user, env) {
 }
 
 async function askAI(request, user, env) {
+  const contentLength = Number(request.headers.get("content-length")) || 0;
+  if (contentLength > 24 * 1024 * 1024) throw new HttpError(413, "Tổng dung lượng tin nhắn và tệp không được vượt 24 MB.");
   const body = await readJson(request);
-  const message = String(body.message || "").trim().slice(0, 1800);
-  if (!message) throw new HttpError(400, "Viết câu hỏi trước khi gửi nhé.");
-  const apiKey = env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY;
-  if (!apiKey) throw new HttpError(503, "Chưa cấu hình khóa AI trên Worker. Thêm secret DEEPSEEK_API_KEY để bật trợ giảng.");
-  const model = env.DEEPSEEK_MODEL || env.VITE_DEEPSEEK_MODEL || "deepseek-chat";
+  let message = String(body.message || "").trim().slice(0, 1800);
+  const attachments = Array.isArray(body.attachments) ? body.attachments.slice(0, 5) : [];
+  if (!message && !attachments.length) throw new HttpError(400, "Viết câu hỏi hoặc chọn tệp trước khi gửi nhé.");
+  if (!message) message = "Hãy đọc các tệp đính kèm, tóm tắt ý chính và giúp mình học nội dung quan trọng.";
+  let attachmentTextSize = 0;
+  let attachmentImageSize = 0;
+  const imageParts = [];
+  const documentParts = [];
+  const attachmentNames = [];
+  for (const item of attachments) {
+    const name = String(item && item.name || "Tệp đính kèm").slice(0, 160);
+    attachmentNames.push(name);
+    if (item && typeof item.text === "string") {
+      const text = item.text.slice(0, 52000);
+      attachmentTextSize += text.length;
+      if (attachmentTextSize > 52000) throw new HttpError(413, "Văn bản trích từ tài liệu vượt giới hạn 52.000 ký tự.");
+      documentParts.push({ name: name, text: text });
+      continue;
+    }
+    const type = String(item && item.type || "").toLowerCase();
+    const data = String(item && item.data || "");
+    if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(type) || !/^[a-z0-9+/]*={0,2}$/i.test(data)) {
+      throw new HttpError(400, "Ảnh đính kèm chưa đúng định dạng hỗ trợ.");
+    }
+    attachmentImageSize += Math.floor(data.length * 3 / 4);
+    if (attachmentImageSize > 16 * 1024 * 1024) throw new HttpError(413, "Tổng dung lượng ảnh đính kèm không được vượt 16 MB.");
+    imageParts.push({ type: "image_url", image_url: { url: "data:" + type + ";base64," + data } });
+  }
+  let conversationId = String(body.conversationId || "").trim().slice(0, 80);
+  if (conversationId) {
+    const ownedConversation = await env.DB.prepare(
+      "SELECT id FROM ai_conversations WHERE id = ? AND user_id = ? LIMIT 1"
+    ).bind(conversationId, user.userId).first();
+    if (!ownedConversation) throw new HttpError(404, "Không tìm thấy phiên hỏi đáp này.");
+  } else {
+    conversationId = crypto.randomUUID();
+  }
+  const endpoint = String(env.LOCAL_AI_ENDPOINT || "").trim();
+  if (!endpoint) throw new HttpError(503, "Chưa cấu hình LOCAL_AI_ENDPOINT. Hãy kết nối Worker tới máy chủ Local AI để bảo vệ dữ liệu học tập.");
+  let parsedEndpoint;
+  try { parsedEndpoint = new URL(endpoint); } catch { throw new HttpError(503, "LOCAL_AI_ENDPOINT chưa phải URL hợp lệ."); }
+  if (!["http:", "https:"].includes(parsedEndpoint.protocol)) throw new HttpError(503, "LOCAL_AI_ENDPOINT chỉ hỗ trợ HTTP hoặc HTTPS.");
+  const apiKey = env.LOCAL_AI_API_KEY || "";
+  const model = imageParts.length
+    ? (env.LOCAL_AI_VISION_MODEL || env.LOCAL_AI_MODEL || "qwen2.5:14b-instruct")
+    : (env.LOCAL_AI_MODEL || "qwen2.5:14b-instruct");
+  const freeMode = body.freeMode === true;
   let courseTitle = "";
   let context = "";
-  if (body.subjectId) {
+  if (!freeMode && body.subjectId) {
     const subject = await env.DB.prepare("SELECT subject_name FROM subjects WHERE id = ?").bind(body.subjectId).first();
     if (subject) {
       courseTitle = subject.subject_name;
@@ -1133,34 +1245,43 @@ async function askAI(request, user, env) {
     "Giải thích rõ ràng, gần gũi, theo từng bước khi phù hợp. Không bịa thông tin về tài liệu môn học. " +
     "Nếu câu hỏi cần dữ liệu mà phần ngữ cảnh không có, hãy nói rõ điều đó rồi giải thích phần kiến thức chung với nhãn phân biệt. " +
     "Khuyến khích người học tự suy nghĩ và không tiết lộ đáp án trắc nghiệm nếu họ chưa hỏi.";
-  const contextText = "Môn đang học: " + (courseTitle || "chưa chọn") + ".\n" +
-    (context ? "Trích đoạn liên quan từ dữ liệu môn học:\n" + context :
-      "Không tìm thấy hoặc chưa chọn trích đoạn tài liệu phù hợp; đừng nói rằng bạn đã đọc tài liệu của môn.");
+  const contextText = freeMode
+    ? "Chế độ AI tự do: có thể hỗ trợ nhiều môn và kiến thức đời sống. Phân biệt rõ kiến thức chung với thông tin có trong tệp người học gửi."
+    : "Môn đang học: " + (courseTitle || "chưa chọn") + ".\n" +
+      (context ? "Trích đoạn liên quan từ dữ liệu môn học:\n" + context :
+        "Không tìm thấy hoặc chưa chọn trích đoạn tài liệu phù hợp; đừng nói rằng bạn đã đọc tài liệu của môn.");
   const history = Array.isArray(body.history) ? body.history.slice(-8).map(function (item) {
     const role = item && (item.role === "assistant" || item.role === "user") ? item.role : "";
     return role && item.content ? { role: role, content: String(item.content).slice(0, 1500) } : null;
   }).filter(Boolean) : [];
+  const documentsText = documentParts.map(file => "\n\n--- Tệp: " + file.name + " ---\n" + file.text).join("");
+  const userPrompt = message + documentsText;
+  const userContent = imageParts.length
+    ? [{ type: "text", text: userPrompt + (imageParts.length ? "\n\nHãy phân tích nội dung trong ảnh đính kèm." : "") }, ...imageParts]
+    : userPrompt;
   let response;
   try {
-    response = await fetch("https://api.deepseek.com/chat/completions", {
+    response = await fetch(endpoint, {
       method: "POST",
-      headers: { "content-type": "application/json", authorization: "Bearer " + apiKey },
+      headers: Object.assign({ "content-type": "application/json" }, apiKey ? { authorization: "Bearer " + apiKey } : {}),
       body: JSON.stringify({
         model: model,
         messages: [
           { role: "system", content: systemText + "\n\n" + contextText },
           ...history,
-          { role: "user", content: message }
+          { role: "user", content: userContent }
         ],
         temperature: 0.55,
         max_tokens: 900
       }),
-      signal: AbortSignal.timeout(25000)
+      signal: AbortSignal.timeout(90000)
     });
   } catch {
     throw new HttpError(502, "3TG chưa kết nối được với trợ giảng AI. Thử gửi lại sau một chút nhé.");
   }
-  if (!response.ok) throw new HttpError(502, "Trợ giảng 3TG AI đang bận. Bạn thử lại sau một chút nhé.");
+  if (!response.ok) throw new HttpError(502, imageParts.length
+      ? "AI chưa đọc được ảnh. Hãy kiểm tra LOCAL_AI_VISION_MODEL có hỗ trợ vision hoặc gửi ảnh nhỏ hơn."
+    : "Trợ giảng 3TG AI đang bận. Bạn thử lại sau một chút nhé.");
   let result;
   try {
     result = await response.json();
@@ -1171,7 +1292,41 @@ async function askAI(request, user, env) {
     ? String(result.choices[0].message.content || "")
     : "";
   if (!reply) throw new HttpError(502, "3TG chưa nhận được câu trả lời. Thử hỏi lại nhé.");
-  return { reply: reply };
+  const now = new Date().toISOString();
+  const isNewConversation = !body.conversationId;
+  const storedMessage = message + (attachmentNames.length ? "\n\n[Tệp đính kèm: " + attachmentNames.join(", ") + "]" : "");
+  const operations = [];
+  if (isNewConversation) {
+    operations.push(env.DB.prepare(
+      "INSERT INTO ai_conversations (id, user_id, title, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+    ).bind(conversationId, user.userId, message.slice(0, 80), now, now));
+  } else {
+    operations.push(env.DB.prepare("UPDATE ai_conversations SET updated_at = ? WHERE id = ? AND user_id = ?").bind(now, conversationId, user.userId));
+  }
+  operations.push(
+    env.DB.prepare("INSERT INTO ai_messages (conversation_id, sender, content, created_at) VALUES (?, 'user', ?, ?)").bind(conversationId, storedMessage, now),
+    env.DB.prepare("INSERT INTO ai_messages (conversation_id, sender, content, created_at) VALUES (?, 'assistant', ?, ?)").bind(conversationId, reply, now)
+  );
+  await env.DB.batch(operations);
+  return { reply: reply, conversationId: conversationId };
+}
+
+async function listAiConversations(user, env) {
+  const result = await env.DB.prepare(
+    "SELECT id, title, created_at, updated_at FROM ai_conversations WHERE user_id = ? ORDER BY updated_at DESC LIMIT 30"
+  ).bind(user.userId).all();
+  return { conversations: result.results || [] };
+}
+
+async function readAiConversation(conversationId, user, env) {
+  const conversation = await env.DB.prepare(
+    "SELECT id, title, created_at, updated_at FROM ai_conversations WHERE id = ? AND user_id = ? LIMIT 1"
+  ).bind(conversationId, user.userId).first();
+  if (!conversation) throw new HttpError(404, "Không tìm thấy phiên hỏi đáp này.");
+  const result = await env.DB.prepare(
+    "SELECT id, sender, content, created_at FROM ai_messages WHERE conversation_id = ? ORDER BY created_at, id"
+  ).bind(conversationId).all();
+  return { conversation: conversation, messages: result.results || [] };
 }
 
 async function createSession(request, env) {
@@ -1223,6 +1378,11 @@ async function routeApi(request, env) {
     return respond({ profile: user.profile, stats: stats || {}, inventory: inv.results || [] });
   }
   if (path === "/api/overview" && method === "GET") return respond(await overview(user, env));
+  if (path === "/api/notes" && method === "GET") return respond(await listNotes(request, user, env));
+  if (path === "/api/notes" && method === "POST") return respond(await saveNote(request, user, env));
+  const noteMatch = path.match(/^\/api\/notes\/(\d+)$/);
+  if (noteMatch && method === "PATCH") return respond(await saveNote(request, user, env, Number(noteMatch[1])));
+  if (noteMatch && method === "DELETE") return respond(await deleteNote(Number(noteMatch[1]), user, env));
   if (path === "/api/profile" && method === "PATCH") return respond({ profile: await updateProfile(request, user, env) });
   if (path === "/api/profile/avatar" && method === "POST") return respond({ profile: await uploadAvatar(request, user, env) });
   if (path === "/api/profile/avatar/preset" && method === "POST") return respond({ profile: await setPresetAvatar(request, user, env) });
@@ -1234,23 +1394,52 @@ async function routeApi(request, env) {
   if (path === "/api/shop/buy" && method === "POST") return respond(await buyShopItem(request, user, env));
   if (path === "/api/achievements" && method === "GET") return respond(await achievementsList(user, env));
   if (path === "/api/leaderboard" && method === "GET") return respond(await leaderboard(user, env));
+  if (path === "/api/chat/conversations" && method === "GET") return respond(await listAiConversations(user, env));
+  const conversationMatch = path.match(/^\/api\/chat\/conversations\/([0-9a-f-]{36})$/i);
+  if (conversationMatch && method === "GET") return respond(await readAiConversation(conversationMatch[1], user, env));
   if (path === "/api/chat" && method === "POST") return respond(await askAI(request, user, env));
   const lessonMatch = path.match(/^\/api\/lessons\/(\d+)$/);
   if (lessonMatch && method === "GET") return respond(await lessonData(Number(lessonMatch[1]), user.userId, env));
   const checkMatch = path.match(/^\/api\/lessons\/(\d+)\/check$/);
   if (checkMatch && method === "POST") {
     const body = await readJson(request);
-    if (!await lessonIsUnlocked(Number(checkMatch[1]), user.userId, env)) {
+    const lessonId = Number(checkMatch[1]);
+    const result = await env.DB.prepare(
+      "WITH current_lesson AS (" +
+        "SELECT l.id, l.order_index AS lesson_order, u.id AS unit_id, u.order_index AS unit_order, u.subject_id " +
+        "FROM lessons l JOIN units u ON u.id = l.unit_id WHERE l.id = ?" +
+      "), previous_lesson AS (" +
+        "SELECT prior.id FROM current_lesson current_row " +
+        "JOIN units prior_unit ON prior_unit.subject_id = current_row.subject_id " +
+        "JOIN lessons prior ON prior.unit_id = prior_unit.id " +
+        "WHERE prior_unit.order_index < current_row.unit_order " +
+          "OR (prior_unit.order_index = current_row.unit_order AND prior_unit.id < current_row.unit_id) " +
+          "OR (prior_unit.order_index = current_row.unit_order AND prior_unit.id = current_row.unit_id AND prior.order_index < current_row.lesson_order) " +
+          "OR (prior_unit.order_index = current_row.unit_order AND prior_unit.id = current_row.unit_id AND prior.order_index = current_row.lesson_order AND prior.id < current_row.id) " +
+        "ORDER BY prior_unit.order_index DESC, prior_unit.id DESC, prior.order_index DESC, prior.id DESC LIMIT 1" +
+      "), authorized_lesson AS (" +
+        "SELECT current_row.id FROM current_lesson current_row WHERE " +
+          "EXISTS (SELECT 1 FROM user_progress completed WHERE completed.user_id = ? AND completed.lesson_id = current_row.id AND completed.status = 'completed') " +
+          "OR NOT EXISTS (SELECT 1 FROM previous_lesson) " +
+          "OR EXISTS (SELECT 1 FROM previous_lesson previous JOIN user_progress progress ON progress.lesson_id = previous.id " +
+            "WHERE progress.user_id = ? AND progress.status = 'completed')" +
+      ") " +
+      "SELECT (SELECT id FROM authorized_lesson LIMIT 1) AS authorized_lesson_id, " +
+      "question.id AS question_id, question.correct_answer, question.explanation " +
+      "FROM (SELECT 1) AS seed " +
+      "LEFT JOIN questions question ON question.id = ? " +
+        "AND EXISTS (SELECT 1 FROM authorized_lesson) " +
+        "AND EXISTS (SELECT 1 FROM current_lesson current_row JOIN lessons source_lesson ON source_lesson.id = question.lesson_id " +
+          "JOIN units source_unit ON source_unit.id = source_lesson.unit_id WHERE source_unit.subject_id = current_row.subject_id)"
+    ).bind(lessonId, user.userId, user.userId, body.questionId).first();
+    if (!result?.authorized_lesson_id) {
       throw new HttpError(423, "Hoàn thành bài trước để mở khóa bài này nhé.");
     }
-    const row = await env.DB.prepare(
-      "SELECT correct_answer, explanation FROM questions WHERE id = ?"
-    ).bind(body.questionId).first();
-    if (!row) throw new HttpError(404, "Không tìm thấy câu hỏi này.");
+    if (!result.question_id) throw new HttpError(404, "Không tìm thấy câu hỏi này.");
     return respond({
-      isCorrect: normalizeAnswer(body.selected) !== "" && normalizeAnswer(body.selected) === normalizeAnswer(row.correct_answer),
-      correctAnswer: normalizeAnswer(row.correct_answer),
-      explanation: row.explanation || ""
+      isCorrect: normalizeAnswer(body.selected) !== "" && normalizeAnswer(body.selected) === normalizeAnswer(result.correct_answer),
+      correctAnswer: normalizeAnswer(result.correct_answer),
+      explanation: result.explanation || ""
     });
   }
   const submitMatch = path.match(/^\/api\/lessons\/(\d+)\/submit$/);
