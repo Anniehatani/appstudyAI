@@ -560,15 +560,21 @@ async function goiIU(session, cookie, tenEndpoint, patch = {}) {
   });
 
   const text = await res.text();
-  let json;
+  let json = null;
   try {
     json = text ? JSON.parse(text) : {};
-  } catch {
-    throw new Error(`Portal IU trả về dữ liệu không hợp lệ (HTTP ${res.status}).`);
-  }
+  } catch {}
 
   if (!res.ok) {
-    throw new Error(`Portal IU HTTP ${res.status}: ${json.Message || text || "Lỗi yêu cầu"}`);
+    if (res.status === 401) {
+      throw new Error("Phiên làm việc trên cổng IU không hợp lệ hoặc đã hết hạn (HTTP 401). Vui lòng thử đăng nhập lại bằng Mã sinh viên.");
+    }
+    const msg = (json && (json.Message || json.error)) || `Portal IU HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  if (!json) {
+    throw new Error(`Portal IU trả về dữ liệu không hợp lệ (HTTP ${res.status}).`);
   }
 
   // Giải mã Data.B nếu được mã hoá
@@ -798,7 +804,6 @@ function mapSangDataIU(schema) {
   const cn = (iu.ho_so_sinh_vien && iu.ho_so_sinh_vien.thong_tin_ca_nhan) || {};
   const goc = iu.goc_hoc_tap || {};
   const traCuu = goc.tra_cuu_diem || {};
-
   const bangDiemRaw = Array.isArray(traCuu.bang_diem) ? traCuu.bang_diem : [];
   const bang_diem = {};
   for (const mon of bangDiemRaw) {
@@ -867,96 +872,167 @@ function mapSangDataIU(schema) {
  * Đăng nhập Cổng Thông Tin IU CMCU (iu.cmcu.edu.vn)
  */
 async function loginIUPortal({ username, password }) {
-  const user = String(username || "").trim();
+  const rawUser = String(username || "").trim();
   const pass = String(password || "").trim();
-  if (!user || !pass) {
+  if (!rawUser || !pass) {
     throw new Error("Vui lòng nhập tài khoản/mã sinh viên và mật khẩu cổng IU.");
   }
 
-  // 1. Lấy ViewState và Cookie ban đầu
-  const getRes = await fetch(`${IU_ORIGIN}/congthongtin/login.aspx`, {
-    headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
-    signal: AbortSignal.timeout(15000)
-  });
-  const html = await getRes.text();
-  const initCookies = typeof getRes.headers.getSetCookie === "function"
-    ? getRes.headers.getSetCookie()
-    : [getRes.headers.get("set-cookie")].filter(Boolean);
-
-  function getAttr(tag, attr) {
-    const m = tag.match(new RegExp(attr + '="([^"]*)"', 'i')) || tag.match(new RegExp(attr + "='([^']*)'", 'i'));
-    return m ? m[1] : "";
-  }
-  const inputs = [...html.matchAll(/<input[^>]+>/gi)].map(m => m[0]);
-  let viewstate = "", generator = "", eventvalidation = "";
-  for (const tag of inputs) {
-    const name = getAttr(tag, "name");
-    const val = getAttr(tag, "value");
-    if (name === "__VIEWSTATE") viewstate = val;
-    if (name === "__VIEWSTATEGENERATOR") generator = val;
-    if (name === "__EVENTVALIDATION") eventvalidation = val;
+  const userVariants = [rawUser];
+  if (rawUser.includes("@")) {
+    const code = rawUser.split("@")[0].trim();
+    if (code && !userVariants.includes(code)) userVariants.push(code);
+    const upper = code.toUpperCase();
+    if (upper && !userVariants.includes(upper)) userVariants.push(upper);
+  } else {
+    const upper = rawUser.toUpperCase();
+    if (!userVariants.includes(upper)) userVariants.push(upper);
+    const withDomain = `${rawUser}@st.cmcu.edu.vn`;
+    if (!userVariants.includes(withDomain)) userVariants.push(withDomain);
   }
 
-  // 2. Gửi request xác thực
-  const params = new URLSearchParams();
-  params.append("__VIEWSTATE", viewstate);
-  params.append("__VIEWSTATEGENERATOR", generator);
-  params.append("__EVENTVALIDATION", eventvalidation);
-  params.append("username", user);
-  params.append("password", pass);
-  params.append("cms_authenticate_do_login", "ĐĂNG NHẬP");
+  let successSession = null;
+  let successCookies = "";
 
-  const postRes = await fetch(`${IU_ORIGIN}/congthongtin/login.aspx`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      ...(initCookies.length ? { "Cookie": cookieFrom(initCookies.join("; ")) } : {}),
-      "Origin": IU_ORIGIN,
-      "Referer": `${IU_ORIGIN}/congthongtin/login.aspx`,
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    },
-    body: params.toString(),
-    redirect: "manual",
-    signal: AbortSignal.timeout(20000)
-  });
+  for (const candidate of userVariants) {
+    try {
+      // 1. Lấy ViewState và Cookie ban đầu
+      const getRes = await fetch(`${IU_ORIGIN}/congthongtin/login.aspx`, {
+        headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" },
+        signal: AbortSignal.timeout(15000)
+      });
+      const html = await getRes.text();
+      const initCookies = typeof getRes.headers.getSetCookie === "function"
+        ? getRes.headers.getSetCookie()
+        : [getRes.headers.get("set-cookie")].filter(Boolean);
 
-  const postCookies = typeof postRes.headers.getSetCookie === "function"
-    ? postRes.headers.getSetCookie()
-    : [postRes.headers.get("set-cookie")].filter(Boolean);
-  const combinedCookies = cookieFrom([...initCookies, ...postCookies].join("; "));
-  const postHtml = await postRes.text();
+      function getAttr(tag, attr) {
+        const m = tag.match(new RegExp(attr + '="([^"]*)"', 'i')) || tag.match(new RegExp(attr + "='([^']*)'", 'i'));
+        return m ? m[1] : "";
+      }
+      const inputs = [...html.matchAll(/<input[^>]+>/gi)].map(m => m[0]);
+      let viewstate = "", generator = "", eventvalidation = "";
+      for (const tag of inputs) {
+        const name = getAttr(tag, "name");
+        const val = getAttr(tag, "value");
+        if (name === "__VIEWSTATE") viewstate = val;
+        if (name === "__VIEWSTATEGENERATOR") generator = val;
+        if (name === "__EVENTVALIDATION") eventvalidation = val;
+      }
 
-  if (postHtml.includes("Tai khoan khong dung") || postHtml.includes("không chính xác") || postHtml.includes("đăng nhập không thành công")) {
-    throw new Error("Tài khoản hoặc mật khẩu cổng thông tin IU không đúng. Vui lòng kiểm tra lại!");
+      // 2. Gửi request xác thực
+      const params = new URLSearchParams();
+      params.append("__VIEWSTATE", viewstate);
+      params.append("__VIEWSTATEGENERATOR", generator);
+      params.append("__EVENTVALIDATION", eventvalidation);
+      params.append("username", candidate);
+      params.append("password", pass);
+      params.append("cms_authenticate_do_login", "ĐĂNG NHẬP");
+
+      const postRes = await fetch(`${IU_ORIGIN}/congthongtin/login.aspx`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          ...(initCookies.length ? { "Cookie": cookieFrom(initCookies.join("; ")) } : {}),
+          "Origin": IU_ORIGIN,
+          "Referer": `${IU_ORIGIN}/congthongtin/login.aspx`,
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        },
+        body: params.toString(),
+        redirect: "manual",
+        signal: AbortSignal.timeout(20000)
+      });
+
+      const postCookies = typeof postRes.headers.getSetCookie === "function"
+        ? postRes.headers.getSetCookie()
+        : [postRes.headers.get("set-cookie")].filter(Boolean);
+      const combinedCookies = cookieFrom([...initCookies, ...postCookies].join("; "));
+      const postHtml = await postRes.text();
+      const location = postRes.headers.get("location") || "";
+
+      const isRedirectToIndex = (postRes.status >= 300 && postRes.status < 400 && /Index\.aspx/i.test(location));
+      const hasAuthCookie = /\.ASPXAUTH/i.test(combinedCookies);
+      const notifyMatch = postHtml.match(/<span[^>]*id=["']lblNotify["'][^>]*>([\s\S]*?)<\/span>/i);
+      const notifyText = notifyMatch ? notifyMatch[1].trim() : "";
+
+      const isFailed = (postRes.status === 200 && (notifyText || postHtml.includes("lblNotify"))) ||
+        postHtml.includes("Tai khoan khong dung") ||
+        postHtml.includes("không chính xác") ||
+        postHtml.includes("đăng nhập không thành công");
+
+      if (isFailed && !isRedirectToIndex && !hasAuthCookie) {
+        continue;
+      }
+
+      // 3. Phân tích Index.aspx lấy token hoặc userId
+      let token = "";
+      let studentId = candidate.includes("@") ? candidate.split("@")[0] : candidate;
+      let chucNangId = "20160101";
+
+      try {
+        const indexRes = await fetch(`${IU_ORIGIN}/congthongtin/Index.aspx`, {
+          headers: {
+            "Cookie": combinedCookies,
+            "Referer": `${IU_ORIGIN}/congthongtin/login.aspx`,
+            "User-Agent": "Mozilla/5.0"
+          },
+          redirect: "manual",
+          signal: AbortSignal.timeout(15000)
+        });
+
+        if (indexRes.status === 200) {
+          const indexHtml = await indexRes.text();
+          const axyzMatch = indexHtml.match(/(?:var\s+)?AXYZCLRVN\s*=\s*["']([^"']+)["']/i) ||
+            indexHtml.match(/AXYZCLRVN\s*\(\s*["']([^"']+)["']\s*\)/i) ||
+            indexHtml.match(/function\s+AXYZCLRVN\s*\(\)\s*\{\s*return\s*["']([^"']+)["']/i);
+
+          if (axyzMatch) {
+            try {
+              const plain = giai_ma_iu(axyzMatch[1], "AzzSystem");
+              const decrypted = JSON.parse(plain);
+              if (decrypted.tokenJWT) token = decrypted.tokenJWT;
+              if (decrypted.userId) studentId = decrypted.userId;
+              if (decrypted.strChucNang_Id) chucNangId = decrypted.strChucNang_Id;
+            } catch {}
+          }
+
+          if (!token) {
+            const jwtMatch = indexHtml.match(/(eyJ[a-zA-Z0-9_-]{15,}\.[a-zA-Z0-9_-]{15,}\.[a-zA-Z0-9_-]+)/);
+            if (jwtMatch) token = jwtMatch[1];
+          }
+
+          if (!token) {
+            const tokenMatch = indexHtml.match(/(?:tokenJWT|token)["']?\s*[:=]\s*["']([^"']+)["']/i);
+            if (tokenMatch) token = tokenMatch[1];
+          }
+
+          const userMatch = indexHtml.match(/(?:strQLSV_NguoiHoc_Id|userId)["']?\s*[:=]\s*["']([^"']+)["']/i);
+          if (userMatch) studentId = userMatch[1];
+
+          const chucNangMatch = indexHtml.match(/(?:strChucNang_Id|chucNangId)["']?\s*[:=]\s*["']([^"']+)["']/i);
+          if (chucNangMatch) chucNangId = chucNangMatch[1];
+        }
+      } catch {}
+
+      successSession = {
+        userId: studentId || candidate,
+        studentCode: candidate.includes("@") ? candidate.split("@")[0] : candidate,
+        chucNangId: chucNangId || "20160101",
+        token: token,
+        tokenJWT: token,
+        appId: "Portal_SinhVien",
+        iM: IM_MAC_DINH
+      };
+      successCookies = combinedCookies;
+      break;
+    } catch {}
   }
 
-  // 3. Phân tích Index.aspx lấy token hoặc userId
-  let token = "";
-  let userId = user;
-  try {
-    const indexRes = await fetch(`${IU_ORIGIN}/congthongtin/Index.aspx`, {
-      headers: {
-        "Cookie": combinedCookies,
-        "Referer": `${IU_ORIGIN}/congthongtin/login.aspx`,
-        "User-Agent": "Mozilla/5.0"
-      },
-      signal: AbortSignal.timeout(15000)
-    });
-    const indexHtml = await indexRes.text();
-    const tokenMatch = indexHtml.match(/token(?:JWT)?["']?\s*[:=]\s*["']([^"']+)["']/i);
-    if (tokenMatch) token = tokenMatch[1];
-    const userMatch = indexHtml.match(/strQLSV_NguoiHoc_Id["']?\s*[:=]\s*["']([^"']+)["']/i) || indexHtml.match(/userId["']?\s*[:=]\s*["']([^"']+)["']/i);
-    if (userMatch) userId = userMatch[1];
-  } catch {}
+  if (!successSession || (!successCookies && !successSession.token)) {
+    throw new Error("Tài khoản hoặc mật khẩu cổng thông tin IU không đúng. Vui lòng kiểm tra lại Mã sinh viên (ví dụ: bai250001) và Mật khẩu cổng trường!");
+  }
 
-  const session = {
-    userId: userId || user,
-    token: token,
-    tokenJWT: token,
-    appId: "Portal_SinhVien"
-  };
-
-  return { session, cookie: combinedCookies };
+  return { session: successSession, cookie: successCookies };
 }
 
 /**

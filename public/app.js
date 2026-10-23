@@ -5337,11 +5337,8 @@ function renderGradesView() {
               Kết nối trực tiếp tài khoản sinh viên cổng <strong>iu.cmcu.edu.vn</strong> để tra cứu điểm số, tổng kết GPA Hệ 10 & Hệ 4, bóc tách môn học theo từng học kỳ, tự động phát hiện "hòn đá tảng" kéo điểm và nhận lộ trình nâng điểm cá nhân hóa bằng <strong>Trợ giảng AI DeepSeek</strong>!
             </p>
             <div class="grades-hero-actions">
-              <button type="button" class="btn-duo btn-duo-pink grades-main-btn" onclick="window.openAcademicLoginModal('login')">
-                🔑 Đăng Nhập Cổng IU Trường Để Lấy Điểm
-              </button>
-              <button type="button" class="btn-duo btn-duo-outline grades-sub-btn" onclick="window.openAcademicLoginModal('token')">
-                📋 Nhập Cookie / Token / Dán JSON Bảng Điểm
+              <button type="button" class="btn-duo btn-duo-pink grades-main-btn" onclick="window.openAcademicLoginModal()">
+                🚀 Đăng Nhập Cổng IU Trường Để Lấy Điểm
               </button>
             </div>
           </div>
@@ -5414,7 +5411,7 @@ function renderGradesView() {
           </div>
         </div>
         <div class="grades-profile-actions">
-          <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="window.openAcademicLoginModal('login')">
+          <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="window.openAcademicLoginModal()">
             🔄 Cập nhật từ IU
           </button>
           <button type="button" class="btn-duo btn-duo-outline btn-duo-sm" onclick="window.resetAcademicTranscript()">
@@ -5793,27 +5790,19 @@ function renderGradesView() {
 // MODAL ĐĂNG NHẬP CỔNG IU & NHẬP BẢNG ĐIỂM
 // ========================================================
 
-window.openAcademicLoginModal = function(tab = "login") {
-  state.academicActiveTab = tab;
-  renderAcademicLoginModal();
-};
-
 window.closeAcademicModal = function(e) {
   if (e && e.target !== e.currentTarget && !e.target.classList.contains("academic-modal-close")) return;
   const modalRoot = document.getElementById("modal-root");
   if (modalRoot) modalRoot.innerHTML = "";
 };
 
-window.switchAcademicTab = function(tab) {
-  state.academicActiveTab = tab;
+window.openAcademicLoginModal = function() {
   renderAcademicLoginModal();
 };
 
 function renderAcademicLoginModal() {
   const modalRoot = document.getElementById("modal-root");
   if (!modalRoot) return;
-
-  const tab = state.academicActiveTab || "login";
 
   modalRoot.innerHTML = `
     <div class="modal-backdrop" onclick="window.closeAcademicModal(event)">
@@ -5835,73 +5824,25 @@ function renderAcademicLoginModal() {
           </div>
         </div>
 
-        <div class="academic-modal-tabs">
-          <button type="button" class="academic-tab-btn ${tab === 'login' ? 'active' : ''}" onclick="window.switchAcademicTab('login')">
-            🔑 Đăng nhập trực tiếp
-          </button>
-          <button type="button" class="academic-tab-btn ${tab === 'token' ? 'active' : ''}" onclick="window.switchAcademicTab('token')">
-            🍪 Cookie / Token (SSO)
-          </button>
-          <button type="button" class="academic-tab-btn ${tab === 'json' ? 'active' : ''}" onclick="window.switchAcademicTab('json')">
-            📋 Dán JSON crawler
-          </button>
-        </div>
-
         <div class="academic-modal-body">
-          ${tab === 'login' ? `
-            <form onsubmit="window.submitAcademicLogin(event)">
-              <div class="academic-field-group">
-                <label for="iu-login-user">Mã sinh viên / Tài khoản cổng IU:</label>
-                <input type="text" id="iu-login-user" class="academic-input" placeholder="Ví dụ: 23010123 hoặc anlv.23it" required autocomplete="username">
-              </div>
-              <div class="academic-field-group">
-                <label for="iu-login-pass">Mật khẩu cổng trường:</label>
-                <input type="password" id="iu-login-pass" class="academic-input" placeholder="Mật khẩu cổng iu.cmcu.edu.vn" required autocomplete="current-password">
-              </div>
-              <div class="academic-note-box">
-                🔒 <strong>Bảo mật tuyệt đối:</strong> Thông tin đăng nhập chỉ được gửi trực tiếp tới máy chủ cổng IU để xác thực và tải bảng điểm, hoàn toàn không lưu trữ mật khẩu trên máy chủ 3TG.
-              </div>
-              <div class="academic-form-actions">
-                <button type="submit" id="iu-submit-btn" class="btn-duo btn-duo-pink academic-submit-btn">
-                  🚀 Đăng Nhập & Cào Điểm Ngay
-                </button>
-              </div>
-            </form>
-          ` : tab === 'token' ? `
-            <form onsubmit="window.submitAcademicToken(event)">
-              <p class="tab-desc">Dành cho sinh viên đăng nhập qua <strong>Microsoft 365 SSO</strong> hoặc muốn nhập phiên thủ công.</p>
-              <div class="academic-field-group">
-                <label for="iu-cookie-input">Cookie phiên đăng nhập IU (bắt buộc):</label>
-                <textarea id="iu-cookie-input" class="academic-textarea" rows="3" placeholder="Dán chuỗi Cookie từ trình duyệt (F12 -> Application -> Cookies)..." required></textarea>
-              </div>
-              <div class="academic-field-group">
-                <label for="iu-token-input">JWT Token (nếu có):</label>
-                <input type="text" id="iu-token-input" class="academic-input" placeholder="Bearer Token JWT (tuỳ chọn)">
-              </div>
-              <div class="academic-field-group">
-                <label for="iu-userid-input">Mã sinh viên / User ID:</label>
-                <input type="text" id="iu-userid-input" class="academic-input" placeholder="Mã SV (Ví dụ: 23010123)">
-              </div>
-              <div class="academic-form-actions">
-                <button type="submit" id="iu-token-submit-btn" class="btn-duo btn-duo-pink academic-submit-btn">
-                  Xác Nhận & Cào Điểm
-                </button>
-              </div>
-            </form>
-          ` : `
-            <form onsubmit="window.submitAcademicJson(event)">
-              <p class="tab-desc">Dán trực tiếp kết quả chạy lệnh <code>node crawler.js iu login</code> hoặc <code>node crawler.js iu pull</code>.</p>
-              <div class="academic-field-group">
-                <label for="iu-json-input">Dữ liệu JSON:</label>
-                <textarea id="iu-json-input" class="academic-textarea" rows="6" placeholder="Dán toàn bộ chuỗi JSON bảng điểm vào đây..." required></textarea>
-              </div>
-              <div class="academic-form-actions">
-                <button type="submit" class="btn-duo btn-duo-pink academic-submit-btn">
-                  Nhập Bảng Điểm
-                </button>
-              </div>
-            </form>
-          `}
+          <form onsubmit="window.submitAcademicLogin(event)">
+            <div class="academic-field-group">
+              <label for="iu-login-user">Mã sinh viên / Tài khoản cổng IU:</label>
+              <input type="text" id="iu-login-user" class="academic-input" placeholder="Ví dụ: bai250001 hoặc bai250001@st.cmcu.edu.vn" required autocomplete="username">
+            </div>
+            <div class="academic-field-group">
+              <label for="iu-login-pass">Mật khẩu cổng trường:</label>
+              <input type="password" id="iu-login-pass" class="academic-input" placeholder="Mật khẩu cổng iu.cmcu.edu.vn" required autocomplete="current-password">
+            </div>
+            <div class="academic-note-box">
+              🔒 <strong>Bảo mật tuyệt đối:</strong> Thông tin đăng nhập chỉ được gửi trực tiếp tới máy chủ cổng IU để xác thực và tải bảng điểm, hoàn toàn không lưu trữ mật khẩu trên máy chủ 3TG.
+            </div>
+            <div class="academic-form-actions">
+              <button type="submit" id="iu-submit-btn" class="btn-duo btn-duo-pink academic-submit-btn">
+                🚀 Đăng Nhập & Cào Điểm Ngay
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

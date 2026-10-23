@@ -1983,29 +1983,32 @@ async function readAiConversation(conversationId, user, env) {
 
 async function handleAcademicLoginIU(request, user, env) {
   const body = await readJson(request);
-  const { username, password, cookie, token, userId } = body;
+  const { username, password } = body;
   
-  let session = null;
-  let finalCookie = cookie || "";
-
-  if (username && password) {
-    const loginResult = await loginIUPortal({ username, password });
-    session = loginResult.session;
-    finalCookie = loginResult.cookie;
-  } else if (cookie) {
-    session = {
-      userId: userId || username || "SV",
-      token: token || "",
-      tokenJWT: token || "",
-      appId: "Portal_SinhVien"
-    };
-  } else {
-    throw new HttpError(400, "Vui lòng nhập tài khoản và mật khẩu cổng IU hoặc cung cấp phiên cookie/token.");
+  if (!username || !password) {
+    throw new HttpError(400, "Vui lòng nhập tài khoản/mã sinh viên và mật khẩu cổng IU.");
   }
 
-  const { studentInfo, rawSubjects } = await layBangDiemVaHoSoIU(session, finalCookie);
+  let loginResult;
+  try {
+    loginResult = await loginIUPortal({ username, password });
+  } catch (err) {
+    throw new HttpError(400, err.message);
+  }
+
+  const session = loginResult.session;
+  const finalCookie = loginResult.cookie;
+
+  let academicData;
+  try {
+    academicData = await layBangDiemVaHoSoIU(session, finalCookie);
+  } catch (err) {
+    throw new HttpError(400, err.message);
+  }
+
+  const { studentInfo, rawSubjects } = academicData;
   if (!rawSubjects || !rawSubjects.length) {
-    throw new HttpError(404, "Cổng IU chưa có dữ liệu điểm hoặc phiên đăng nhập đã hết hạn.");
+    throw new HttpError(404, "Cổng IU chưa có dữ liệu bảng điểm học phần cho tài khoản này.");
   }
 
   const processed = processAcademicTranscript(rawSubjects, studentInfo);
