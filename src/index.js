@@ -8,6 +8,9 @@ function respond(data, status, extraHeaders) {
   const headers = new Headers(extraHeaders || {});
   headers.set("content-type", "application/json; charset=utf-8");
   headers.set("cache-control", "no-store");
+  headers.set("access-control-allow-origin", "*");
+  headers.set("access-control-allow-methods", "GET, POST, OPTIONS, PATCH, DELETE");
+  headers.set("access-control-allow-headers", "content-type, authorization");
   return new Response(JSON.stringify(data), { status: status || 200, headers });
 }
 
@@ -2058,16 +2061,88 @@ async function handleAcademicImportData(request, user, env) {
   let rawSubjects = [];
   let studentInfo = {};
 
-  if (rawInput.raw_subjects) {
-    rawSubjects = rawInput.raw_subjects;
-    studentInfo = rawInput.student || {};
-  } else if (rawInput.IU && rawInput.IU.goc_hoc_tap && rawInput.IU.goc_hoc_tap.tra_cuu_diem && rawInput.IU.goc_hoc_tap.tra_cuu_diem.bang_diem) {
-    rawSubjects = rawInput.IU.goc_hoc_tap.tra_cuu_diem.bang_diem;
-    studentInfo = (rawInput.IU.ho_so_sinh_vien && rawInput.IU.ho_so_sinh_vien.thong_tin_ca_nhan) || {};
-  } else if (Array.isArray(rawInput)) {
-    rawSubjects = rawInput;
-  } else {
-    throw new HttpError(400, "Định dạng dữ liệu bảng điểm không hợp lệ.");
+  if (body.cookie || body.token || (rawInput && (rawInput.cookie || rawInput.token))) {
+    const c = body.cookie || rawInput.cookie || "";
+    const t = body.token || rawInput.token || "";
+    const u = body.userId || rawInput.userId || (user ? user.userId : "student");
+    const session = {
+      userId: u,
+      token: t,
+      tokenJWT: t,
+      chucNangId: body.chucNangId || "20160101",
+      chuongTrinhId: body.chuongTrinhId || "",
+      appId: "Portal_SinhVien",
+      iM: "AzzSystem"
+    };
+    try {
+      const academicData = await layBangDiemVaHoSoIU(session, c);
+      rawSubjects = academicData.rawSubjects || [];
+      studentInfo = academicData.studentInfo || {};
+    } catch (fetchErr) {
+      console.warn("[Academic Fetch From Session Error]", fetchErr.message);
+    }
+  }
+
+  if (!rawSubjects.length) {
+    if (rawInput.raw_subjects) {
+      rawSubjects = rawInput.raw_subjects;
+      studentInfo = rawInput.student || {};
+    } else if (rawInput.IU && rawInput.IU.goc_hoc_tap && rawInput.IU.goc_hoc_tap.tra_cuu_diem && rawInput.IU.goc_hoc_tap.tra_cuu_diem.bang_diem) {
+      rawSubjects = rawInput.IU.goc_hoc_tap.tra_cuu_diem.bang_diem;
+      studentInfo = (rawInput.IU.ho_so_sinh_vien && rawInput.IU.ho_so_sinh_vien.thong_tin_ca_nhan) || {};
+    } else if (rawInput.rsDiemKetThucHocPhan || (rawInput.data && rawInput.data.rsDiemKetThucHocPhan)) {
+      const src = rawInput.rsDiemKetThucHocPhan ? rawInput : rawInput.data;
+      const r = (src.rsThongTinNguoiHoc && src.rsThongTinNguoiHoc[0]) || {};
+      const hoDem = r.QLSV_NGUOIHOC_HODEM || "";
+      const ten = r.QLSV_NGUOIHOC_TEN || "";
+      const hoTen = `${hoDem} ${ten}`.trim() || r.QLSV_NGUOIHOC_HOTEN || (body.student && body.student.ho_ten) || "Sinh viên CMC";
+      studentInfo = {
+        ma_sinh_vien: r.QLSV_NGUOIHOC_MASO || (body.student && body.student.ma_sinh_vien) || "",
+        ho_ten: hoTen,
+        ngay_sinh: r.QLSV_NGUOIHOC_NGAYSINH || "",
+        email: r.EMAIL || "",
+        lop: r.DAOTAO_LOPQUANLY_TEN || "",
+        nganh: r.NGANH || "Công nghệ thông tin",
+        khoa: r.KHOA || ""
+      };
+      const rsDiem = src.rsDiemKetThucHocPhan || [];
+      const rsThanhPhan = src.rsDiemThanhPhan || [];
+      rawSubjects = rsDiem.map(e => {
+        const matchedParts = rsThanhPhan.filter(x =>
+          String(x.DAOTAO_HOCPHAN_ID) === String(e.DAOTAO_HOCPHAN_ID) &&
+          String(x.LANHOC) === String(e.LANHOC)
+        );
+        const getPartScore = kw => {
+          const f = matchedParts.find(x => new RegExp(kw, "i").test(String(x.DIEM_THANHPHANDIEM_TEN || "")));
+          return f && Number.isFinite(Number(f.DIEM)) ? Number(f.DIEM) : null;
+        };
+        return {
+          ma_mon: String(e.DAOTAO_HOCPHAN_MA || ""),
+          ten_hoc_phan: String(e.DAOTAO_HOCPHAN_TEN || ""),
+          so_tin_chi: Number(e.DAOTAO_HOCPHAN_HOCTRINH) || 3,
+          diem_he_10: Number.isFinite(Number(e.DIEM)) ? Number(e.DIEM) : 0,
+          diem_he_4: Number.isFinite(Number(e.DIEMQUYDOI)) ? Number(e.DIEMQUYDOI) : 0,
+          diem_chu: String(e.DIEMQUYDOI_TEN || "B").trim(),
+          hoc_ky: String(e.HOCKY || e.HOC_KY || "Học kỳ 1"),
+          nam_hoc: String(e.NAMHOC || e.NAM_HOC || ""),
+          xep_loai: String(e.DANHGIA_TEN || ""),
+          chi_tiet_diem: {
+            chuyen_can: getPartScore("chuy.n.c.n|chuyencan|cc$"),
+            bai_tap: getPartScore("b.i.t.p|baitap|bt$"),
+            giua_ky: getPartScore("gi.a.k|giuaky|gk$"),
+            cuoi_ky: getPartScore("cu.i.k|cuoiky|cu.i.thi|ck$|thi.k.t.th.c"),
+          },
+        };
+      });
+    } else if (Array.isArray(rawInput)) {
+      rawSubjects = rawInput;
+    } else {
+      throw new HttpError(400, "Định dạng dữ liệu bảng điểm không hợp lệ.");
+    }
+  }
+
+  if (body.student && typeof body.student === "object") {
+    studentInfo = { ...studentInfo, ...body.student };
   }
 
   const processed = processAcademicTranscript(rawSubjects, studentInfo);
@@ -2194,6 +2269,16 @@ async function routeApi(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
   const method = request.method.toUpperCase();
+  if (method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "access-control-allow-origin": "*",
+        "access-control-allow-methods": "GET, POST, OPTIONS, PATCH, DELETE",
+        "access-control-allow-headers": "content-type, authorization"
+      }
+    });
+  }
   if (method === "GET" && path === "/api/health") return respond({ ok: true });
   if (method === "GET" && path === "/api/subjects") return respond({ subjects: await apiSubjects(env) });
   if (path === "/api/session" && method === "POST") return createSession(request, env);
@@ -2214,9 +2299,16 @@ async function routeApi(request, env) {
     const visitor = await sessionUser(request, env);
     return respond(await subjectDetails(Number(publicSubjectMatch[1]), visitor ? visitor.userId : null, env));
   }
+  if (path === "/api/academic/import-data" && method === "POST") {
+    let visitor = await sessionUser(request, env);
+    if (!visitor) {
+      const lastUser = await env.DB.prepare("SELECT user_id FROM profiles ORDER BY id DESC LIMIT 1").first();
+      visitor = lastUser ? { userId: lastUser.user_id } : { userId: "default_student" };
+    }
+    return respond(await handleAcademicImportData(request, visitor, env));
+  }
   const user = await requireUser(request, env);
   if (path === "/api/academic/login-iu" && method === "POST") return respond(await handleAcademicLoginIU(request, user, env));
-  if (path === "/api/academic/import-data" && method === "POST") return respond(await handleAcademicImportData(request, user, env));
   if (path === "/api/academic/transcript" && method === "GET") return respond(await handleGetAcademicTranscript(user, env));
   if (path === "/api/academic/advisor" && method === "POST") return respond(await handleAcademicAdvisor(request, user, env));
   if (path === "/api/me" && method === "GET") {

@@ -5520,6 +5520,180 @@ button:focus-visible, input:focus-visible {
   line-height: 1.5;
 }
 
+/* MICROSOFT SSO BUTTON & GUIDED FLOW */
+.btn-microsoft-sso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 18px;
+  border-radius: 14px;
+  border: 2px solid #e2e8f0;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.btn-microsoft-sso:hover {
+  border-color: #0078d4;
+  background: #f0f7ff;
+  color: #0078d4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 120, 212, 0.15);
+}
+
+.academic-modal-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 18px 0;
+  color: #a1a1aa;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.academic-modal-divider::before,
+.academic-modal-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #f1e6ea;
+}
+
+.academic-modal-divider span {
+  padding: 0 12px;
+}
+
+.ms-guide-box {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px;
+  margin-top: 8px;
+}
+
+.ms-guide-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+.ms-step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ms-step-row:last-child {
+  margin-bottom: 0;
+}
+
+.ms-step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #0078d4;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ms-step-content {
+  flex: 1;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.ms-step-content strong {
+  color: #0f172a;
+}
+
+.ms-step-actions {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ms-btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.ms-btn-blue {
+  background: #0078d4;
+  color: #ffffff;
+}
+
+.ms-btn-blue:hover {
+  background: #0060aa;
+}
+
+.ms-btn-pink {
+  background: var(--lumi-pink);
+  color: #ffffff;
+}
+
+.ms-btn-pink:hover {
+  background: var(--lumi-pink-hover);
+}
+
+.ms-btn-outline {
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.ms-btn-outline:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.ms-bookmark-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #fdf2f8;
+  color: #db2777;
+  border: 1.5px dashed #f472b6;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 12.5px;
+  cursor: grab;
+  text-decoration: none;
+}
+
+.ms-bookmark-pill:hover {
+  background: #fce7f3;
+}
+
 /* RESPONSIVE DESIGN */
 @media (max-width: 900px) {
   .grades-features-grid {
