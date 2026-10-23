@@ -68,6 +68,58 @@ async function startEmbeddedServer(rootPath, port = 8787) {
   const envVars = loadEnvVars(rootPath);
   const publicDir = path.resolve(rootPath, "public");
 
+  // Tự động nạp Local SQLite Replica làm fallback DB khi Cloudflare D1 hết hạn ngạch hoặc mất mạng
+  const sqliteCandidatePaths = [
+    path.join(rootPath, "build/local_replica.sqlite"),
+    path.join(process.resourcesPath || rootPath, "build/local_replica.sqlite"),
+    path.join(rootPath, ".wrangler/state/v3/d1/miniflare-D1DatabaseObject/f75f832ec585bb85cc81d12168a8e118a5d2af5ffff0f316e6a87a595cb351ec.sqlite")
+  ];
+  for (const sPath of sqliteCandidatePaths) {
+    if (fs.existsSync(sPath)) {
+      try {
+        const { DatabaseSync } = require("node:sqlite");
+        const sqliteDb = new DatabaseSync(sPath);
+        envVars.DB = {
+          prepare(sql) {
+            return {
+              bind(...params) {
+                const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+                return {
+                  async first(col) {
+                    const stmt = sqliteDb.prepare(sql);
+                    const row = stmt.get(...flat);
+                    if (!row) return null;
+                    if (col !== undefined) return row[col];
+                    return row;
+                  },
+                  async all() {
+                    const stmt = sqliteDb.prepare(sql);
+                    const rows = stmt.all(...flat);
+                    return { success: true, results: rows || [], meta: {} };
+                  },
+                  async run() {
+                    const stmt = sqliteDb.prepare(sql);
+                    const res = stmt.run(...flat);
+                    return { success: true, meta: { changes: res.changes } };
+                  },
+                  async raw() {
+                    const stmt = sqliteDb.prepare(sql);
+                    const rows = stmt.all(...flat);
+                    return rows.map(r => Object.values(r));
+                  }
+                };
+              }
+            };
+          }
+        };
+        console.log("[EmbeddedServer] Đã nạp thành công Local D1 Replica từ:", sPath);
+        break;
+      } catch (err) {
+        console.warn("[EmbeddedServer] Không thể khởi tạo sqlite fallback:", err.message);
+      }
+    }
+  }
+
   // Dynamic import of ES Module worker
   const workerPath = path.resolve(rootPath, "src/index.js");
   let worker = null;

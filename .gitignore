@@ -15,3 +15,5 @@ desktop.ini
 ~$*
 dist-electron/
 build/test_screenshots/
+*.sqlite
+*.sqlite*

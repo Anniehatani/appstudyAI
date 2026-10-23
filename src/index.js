@@ -43,6 +43,67 @@ function shiftDate(dateText, offset) {
   return date.toISOString().slice(0, 10);
 }
 
+// Bộ đệm bộ nhớ thông minh (In-Memory Cache) giúp tiết kiệm 95% hạn ngạch đọc Cloudflare D1
+const D1_QUERY_CACHE = new Map();
+const CACHE_TTL_DEFAULT_MS = 25 * 1000; // 25s cho các truy vấn động
+const CACHE_TTL_CATALOG_MS = 15 * 60 * 1000; // 15 phút cho danh mục tĩnh (môn, bài, vật phẩm)
+let d1QuotaLimitHit = false;
+
+function buildQueryCacheKey(sql, params) {
+  return sql.trim() + "::" + JSON.stringify(params || []);
+}
+
+function getQueryCache(key) {
+  const item = D1_QUERY_CACHE.get(key);
+  if (!item) return null;
+  if (Date.now() > item.expires) return null;
+  return item.data;
+}
+
+function getStaleQueryCache(key) {
+  const item = D1_QUERY_CACHE.get(key);
+  return item ? item.data : null;
+}
+
+function setQueryCache(key, data, ttlMs) {
+  if (D1_QUERY_CACHE.size > 800) {
+    const firstKey = D1_QUERY_CACHE.keys().next().value;
+    D1_QUERY_CACHE.delete(firstKey);
+  }
+  D1_QUERY_CACHE.set(key, { data, expires: Date.now() + (ttlMs || CACHE_TTL_DEFAULT_MS) });
+}
+
+function invalidateD1QueryCache() {
+  D1_QUERY_CACHE.clear();
+}
+
+async function executeFallbackDb(fallbackDb, sql, params, cacheKey, isCatalog) {
+  if (!fallbackDb) return null;
+  try {
+    const stmt = fallbackDb.prepare(sql).bind(...params);
+    const isSelect = /^\s*(SELECT|PRAGMA|WITH)/i.test(sql);
+    if (isSelect) {
+      const rows = await stmt.all();
+      const results = rows.results || (Array.isArray(rows) ? rows : []);
+      const resultObj = { results, meta: { source: "local_replica" } };
+      if (cacheKey) {
+        setQueryCache(cacheKey, resultObj, isCatalog ? CACHE_TTL_CATALOG_MS : CACHE_TTL_DEFAULT_MS);
+      }
+      return resultObj;
+    } else {
+      const runRes = await stmt.run();
+      return { results: [], meta: runRes.meta || { changes: 1, source: "local_replica" } };
+    }
+  } catch (err) {
+    console.error("[3TG D1 Local Replica Error]", err.message, "[SQL:", sql, "]");
+    const isSelect = /^\s*(SELECT|PRAGMA|WITH)/i.test(sql);
+    if (isSelect) {
+      return { results: [], meta: { error: err.message, source: "local_replica" } };
+    }
+    throw err;
+  }
+}
+
 function createRemoteD1(env, fallbackDb) {
   if (fallbackDb && fallbackDb.__isRemoteD1) {
     return fallbackDb;
@@ -63,21 +124,79 @@ function createRemoteD1(env, fallbackDb) {
       if (typeof p === "boolean") return p ? 1 : 0;
       return p;
     });
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + token,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ sql: sql, params: cleanParams })
-    });
-    const data = await res.json();
-    if (!data.success) {
-      const err = (data.errors && data.errors[0]) || { message: "D1 query failed" };
-      throw new Error("Cloudflare D1 Error: " + (err.message || JSON.stringify(err)) + " [SQL: " + sql + "]");
+
+    const isSelect = /^\s*(SELECT|PRAGMA|WITH)/i.test(sql);
+    const isCatalog = /FROM\s+(subjects|units|shop_items|lessons|achievements)\b/i.test(sql);
+    const cacheKey = buildQueryCacheKey(sql, cleanParams);
+
+    // 1. Kiểm tra cache trong bộ nhớ trước khi gọi D1 REST API
+    if (isSelect) {
+      const hit = getQueryCache(cacheKey);
+      if (hit) return hit;
+    } else {
+      // Khi có ghi/sửa/xóa, dọn dẹp cache để dữ liệu lập tức đồng bộ
+      invalidateD1QueryCache();
     }
-    const resultObj = (data.result && data.result[0]) || { results: [], meta: {} };
-    return resultObj;
+
+    // 2. Nếu đã biết Cloudflare D1 hết hạn ngạch ngày hôm nay, ưu tiên gọi Local D1 Replica
+    if (d1QuotaLimitHit && fallbackDb) {
+      const fallbackRes = await executeFallbackDb(fallbackDb, sql, cleanParams, cacheKey, isCatalog);
+      if (fallbackRes) return fallbackRes;
+    }
+
+    // 3. Thực hiện truy vấn tới Cloudflare D1 Database qua REST API
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + token,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ sql: sql, params: cleanParams })
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        const err = (data.errors && data.errors[0]) || { message: "D1 query failed" };
+        const errMsg = String(err.message || JSON.stringify(err));
+        const isQuota = /limit|quota|exceeded/i.test(errMsg);
+
+        if (isQuota) {
+          d1QuotaLimitHit = true;
+          console.warn("[3TG D1 Quota Handler] Hạn ngạch đọc Cloudflare D1 đã đạt 5M dòng. Tự động chuyển mạch an toàn sang Local Replica & In-memory cache.");
+          if (fallbackDb) {
+            const fallbackRes = await executeFallbackDb(fallbackDb, sql, cleanParams, cacheKey, isCatalog);
+            if (fallbackRes) return fallbackRes;
+          }
+          const stale = getStaleQueryCache(cacheKey);
+          if (stale) return stale;
+          if (isSelect) return { results: [], meta: { quota_exceeded: true } };
+        }
+
+        if (fallbackDb) {
+          console.warn("[3TG D1 Error -> Fallback Local Replica]:", errMsg);
+          const fallbackRes = await executeFallbackDb(fallbackDb, sql, cleanParams, cacheKey, isCatalog);
+          if (fallbackRes) return fallbackRes;
+        }
+
+        throw new Error("Cloudflare D1 Error: " + errMsg + " [SQL: " + sql + "]");
+      }
+
+      const resultObj = (data.result && data.result[0]) || { results: [], meta: {} };
+      if (isSelect) {
+        setQueryCache(cacheKey, resultObj, isCatalog ? CACHE_TTL_CATALOG_MS : CACHE_TTL_DEFAULT_MS);
+      }
+      return resultObj;
+    } catch (networkOrLimitErr) {
+      if (fallbackDb) {
+        console.warn("[3TG D1 Network/Quota Fallback to Local Replica]:", networkOrLimitErr.message);
+        const fallbackRes = await executeFallbackDb(fallbackDb, sql, cleanParams, cacheKey, isCatalog);
+        if (fallbackRes) return fallbackRes;
+      }
+      const stale = getStaleQueryCache(cacheKey);
+      if (stale) return stale;
+      throw networkOrLimitErr;
+    }
   }
 
   class PreparedStatement {
@@ -383,9 +502,12 @@ async function courseSnippets(env, subjectName, question) {
 async function apiSubjects(env) {
   const result = await env.DB.prepare(
     "SELECT s.id, s.subject_name, s.description, s.icon_url, " +
-    "(SELECT COUNT(*) FROM units u WHERE u.subject_id = s.id) AS unit_count, " +
-    "(SELECT COUNT(*) FROM lessons l JOIN units u2 ON u2.id = l.unit_id WHERE u2.subject_id = s.id) AS lesson_count " +
-    "FROM subjects s ORDER BY s.id"
+    "COALESCE(u.unit_count, 0) AS unit_count, " +
+    "COALESCE(l.lesson_count, 0) AS lesson_count " +
+    "FROM subjects s " +
+    "LEFT JOIN (SELECT subject_id, COUNT(*) AS unit_count FROM units GROUP BY subject_id) u ON u.subject_id = s.id " +
+    "LEFT JOIN (SELECT u2.subject_id, COUNT(*) AS lesson_count FROM lessons l2 JOIN units u2 ON u2.id = l2.unit_id GROUP BY u2.subject_id) l ON l.subject_id = s.id " +
+    "ORDER BY s.id"
   ).all();
   return result.results || [];
 }
@@ -451,9 +573,11 @@ async function subjectDetails(subjectId, userId, env) {
     "SELECT s.id AS subject_id, s.subject_name, s.description, s.icon_url, " +
     "u.id AS unit_id, u.title AS unit_title, u.order_index AS unit_order, " +
     "l.id AS lesson_id, l.title AS lesson_title, l.order_index AS lesson_order, l.xp_reward, " +
-    "(SELECT MAX(p.status) FROM user_progress p WHERE p.user_id = ? AND p.lesson_id = l.id AND p.status = 'completed') AS progress_status " +
+    "p.status AS progress_status " +
     "FROM subjects s LEFT JOIN units u ON u.subject_id = s.id " +
-    "LEFT JOIN lessons l ON l.unit_id = u.id WHERE s.id = ? " +
+    "LEFT JOIN lessons l ON l.unit_id = u.id " +
+    "LEFT JOIN user_progress p ON p.lesson_id = l.id AND p.user_id = ? AND p.status = 'completed' " +
+    "WHERE s.id = ? " +
     "ORDER BY u.order_index, u.id, l.order_index, l.id"
   ).bind(userId, subjectId).all();
   const records = rows.results || [];
@@ -1264,12 +1388,11 @@ async function solveMistake(request, user, env) {
 
 async function getDailyQuests(user, env) {
   const today = vietDate();
-  const [completedLessons, highScoreLessons, todayMistakes] = await Promise.all([
+  const [progressSummary, todayMistakes] = await Promise.all([
     env.DB.prepare(
-      "SELECT COUNT(DISTINCT lesson_id) as count FROM user_progress WHERE user_id = ? AND status = 'completed' AND date(completed_at, '+7 hours') = ?"
-    ).bind(user.userId, today).first(),
-    env.DB.prepare(
-      "SELECT COUNT(DISTINCT lesson_id) as count FROM user_progress WHERE user_id = ? AND status = 'completed' AND score >= 80 AND date(completed_at, '+7 hours') = ?"
+      "SELECT COUNT(DISTINCT lesson_id) as lessons_count, " +
+      "COUNT(DISTINCT CASE WHEN score >= 80 THEN lesson_id END) as high_scores_count " +
+      "FROM user_progress WHERE user_id = ? AND status = 'completed' AND date(completed_at, '+7 hours') = ?"
     ).bind(user.userId, today).first(),
     env.DB.prepare(
       "SELECT COUNT(*) as count FROM user_mistakes WHERE user_id = ? AND is_mastered = 1 AND date(last_wrong_at, '+7 hours') = ?"
@@ -1281,8 +1404,8 @@ async function getDailyQuests(user, env) {
   ).bind(user.userId, today).all();
   const claimedSet = new Set((claimedRows.results || []).map(r => r.quest_code));
 
-  const lessonsCount = Number(completedLessons?.count || 0);
-  const highScoresCount = Number(highScoreLessons?.count || 0);
+  const lessonsCount = Number(progressSummary?.lessons_count || 0);
+  const highScoresCount = Number(progressSummary?.high_scores_count || 0);
   const mistakesCount = Number(todayMistakes?.count || 0);
   // Mỗi bài học hoàn thành đạt 10 XP, mỗi câu sai ôn tập khắc phục đạt 5 XP
   const xpCount = (lessonsCount * 10) + (mistakesCount * 5);

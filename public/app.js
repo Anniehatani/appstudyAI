@@ -5427,8 +5427,13 @@ async function navigateToPage(targetPage) {
   }
 }
 
+let lastSyncTime = 0;
 async function syncLiveData(silent = true) {
   if (!state.profile || state.lesson) return;
+  const now = Date.now();
+  // Tránh spam D1: nếu chạy nền thì tối thiểu cách nhau 45 giây
+  if (silent && (now - lastSyncTime < 45000)) return;
+  lastSyncTime = now;
   try {
     const ov = await api("/api/overview");
     if (ov && ov.stats) {
@@ -5448,15 +5453,17 @@ async function syncLiveData(silent = true) {
   }
 }
 
-// Tự động đồng bộ số liệu khi người dùng chuyển lại tab trình duyệt
+// Tự động đồng bộ số liệu khi người dùng chuyển lại tab trình duyệt (đã có throttle 45s)
 window.addEventListener("focus", () => {
   syncLiveData(true);
 });
 
-// Tự động đồng bộ số liệu định kỳ mỗi 12 giây trong nền
+// Tự động đồng bộ định kỳ mỗi 2 phút (thay vì 12s tránh cạn kiệt 5M lượt đọc D1)
 setInterval(() => {
-  syncLiveData(true);
-}, 12000);
+  if (document.visibilityState === "visible") {
+    syncLiveData(true);
+  }
+}, 120000);
 
 document.getElementById("connection-status")?.addEventListener("click", () => {
   syncLiveData(false);
