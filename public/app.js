@@ -45,6 +45,7 @@ const state = {
   noteLessonId: "",
   noteSearch: "",
   noteSaveTimers: new Map(),
+  editingNoteIds: new Set(),
   activeNoteLesson: null,
   activeQuickLessonId: null,
   quickDrawerTab: "guide",
@@ -52,11 +53,186 @@ const state = {
   reviewMistakes: [],
   reviewCurrentIndex: 0,
   reviewPracticeActive: false,
+  reviewSubjectFilter: "all",
+  reviewSelectedChoice: "",
+  reviewCheckedResult: null,
+  reviewChecking: false,
+  reviewPracticeList: [],
   authTab: "register", // register | login
-  fbProfileTab: "intro" // intro | badges | inventory
+  fbProfileTab: "intro", // intro | badges | inventory
+  isOffline: typeof navigator !== "undefined" ? !navigator.onLine : false,
+  networkChecking: false
 };
 
 window.state = state;
+
+// ========================================================
+// CUTE MASCOT SPLASH LOADER CONTROLLER (SIÊU ĐẸP & MƯỢT)
+// ========================================================
+const splashLoader = document.getElementById("app-splash-loader");
+const splashMascotBox = document.getElementById("splash-mascot-container");
+const splashLoadingText = document.getElementById("splash-loading-text");
+const splashProgressBar = document.getElementById("splash-progress-bar");
+const splashTips = document.getElementById("splash-tips");
+
+const CUTE_LOADING_TIPS = [
+  "Thỏ Bảy Màu đang nạp năng lượng và đồng bộ bài học cho bạn… 🥕",
+  "Mỗi ngày học 15 phút cùng 3TG để thắp sáng ngọn lửa tri thức! 🔥",
+  "Đang tải hơn 29.000 câu hỏi chất lượng cao từ Cloudflare D1… ✨",
+  "Bạn có biết: Giữ chuỗi học liên tục sẽ nhận được nhiều Đá quý hơn đấy! 💎",
+  "Học vui, nhớ lâu cùng Mascot Thỏ Bảy Màu và Trợ giảng AI! 🌸",
+  "Sắp hoàn tất rồi, cùng chuẩn bị chinh phục đỉnh cao tri thức nhé! 🏆"
+];
+let tipRotateTimer = null;
+
+function initSplashMascot() {
+  if (splashMascotBox && !splashMascotBox.querySelector("svg")) {
+    const svgHtml = generateThoBayMauSvg({ state: THO_STATES.CLOUD_FLOAT, size: 160 });
+    const div = document.createElement("div");
+    div.innerHTML = svgHtml;
+    if (div.firstElementChild) {
+      splashMascotBox.prepend(div.firstElementChild);
+    }
+  }
+}
+
+let hideLoaderTimeout = null;
+let closeClassTimeout = null;
+
+export function showAppLoader(text = "Đang chuẩn bị kho bài học 3TG… 🌸", tip = null) {
+  if (!splashLoader) return;
+  if (hideLoaderTimeout) { clearTimeout(hideLoaderTimeout); hideLoaderTimeout = null; }
+  if (closeClassTimeout) { clearTimeout(closeClassTimeout); closeClassTimeout = null; }
+  initSplashMascot();
+  splashLoader.style.display = "flex";
+  splashLoader.classList.remove("hidden", "closing");
+  if (splashLoadingText) splashLoadingText.textContent = text;
+  if (splashProgressBar) splashProgressBar.style.width = "40%";
+  if (splashTips) {
+    splashTips.textContent = tip || CUTE_LOADING_TIPS[Math.floor(Math.random() * CUTE_LOADING_TIPS.length)];
+  }
+  if (!tipRotateTimer) {
+    tipRotateTimer = setInterval(() => {
+      if (splashTips && !splashLoader.classList.contains("hidden")) {
+        splashTips.style.opacity = "0";
+        setTimeout(() => {
+          splashTips.textContent = CUTE_LOADING_TIPS[Math.floor(Math.random() * CUTE_LOADING_TIPS.length)];
+          splashTips.style.opacity = "1";
+        }, 200);
+      }
+    }, 2800);
+  }
+}
+
+export function setAppLoaderProgress(percent) {
+  if (splashProgressBar) {
+    splashProgressBar.style.width = `${Math.min(100, Math.max(10, percent))}%`;
+  }
+}
+
+export function hideAppLoader() {
+  if (!splashLoader) return;
+  if (splashProgressBar) splashProgressBar.style.width = "100%";
+  if (tipRotateTimer) {
+    clearInterval(tipRotateTimer);
+    tipRotateTimer = null;
+  }
+  if (hideLoaderTimeout) clearTimeout(hideLoaderTimeout);
+  if (closeClassTimeout) clearTimeout(closeClassTimeout);
+  hideLoaderTimeout = setTimeout(() => {
+    splashLoader.classList.add("closing");
+    closeClassTimeout = setTimeout(() => {
+      splashLoader.classList.add("hidden");
+      splashLoader.classList.remove("closing");
+      splashLoader.style.display = "none";
+    }, 380);
+  }, 220);
+}
+
+window.showAppLoader = showAppLoader;
+window.hideAppLoader = hideAppLoader;
+window.setAppLoaderProgress = setAppLoaderProgress;
+// Khởi tạo ngay SVG linh vật trong splash loader khi tệp JS được nạp
+initSplashMascot();
+
+// ========================================================
+// OFFLINE & LOST NETWORK CONTROLLER (MẤT KẾT NỐI MẠNG)
+// ========================================================
+const offlineBanner = document.getElementById("app-offline-banner");
+const connectionStatusEl = document.getElementById("connection-status");
+const offlineRetryBtn = document.getElementById("offline-retry-btn");
+
+function updateNetworkUI(isOffline) {
+  state.isOffline = isOffline;
+  if (offlineBanner) {
+    if (isOffline) {
+      offlineBanner.classList.remove("hidden");
+    } else {
+      offlineBanner.classList.add("hidden");
+    }
+  }
+  if (connectionStatusEl) {
+    if (isOffline) {
+      connectionStatusEl.className = "footer-live footer-offline";
+      connectionStatusEl.innerHTML = `<i></i> Mất kết nối mạng`;
+      connectionStatusEl.setAttribute("title", "Không có mạng Internet! Nhấn để thử kết nối lại");
+    } else {
+      connectionStatusEl.className = "footer-live";
+      connectionStatusEl.innerHTML = `<i></i> Active`;
+      connectionStatusEl.setAttribute("title", "Hệ thống đang trực tuyến (Online) và kết nối Cloudflare D1");
+    }
+  }
+}
+
+export function handleOffline() {
+  if (state.isOffline) return;
+  updateNetworkUI(true);
+  try { playSound("wrong"); } catch {}
+  showToast("Mất kết nối mạng! Bạn đang ở chế độ ngoại tuyến.", true);
+}
+
+export async function handleOnline() {
+  updateNetworkUI(false);
+  try { playSound("fanfare"); } catch {}
+  showToast("Đã kết nối lại mạng thành công! Đang đồng bộ…");
+  if (state.profile) {
+    try {
+      await loadAuthenticatedData();
+    } catch {}
+  } else if (!state.subjects.length) {
+    try {
+      const subRes = await api("/api/subjects").catch(() => ({ subjects: [] }));
+      state.subjects = subRes.subjects || [];
+      render();
+    } catch {}
+  }
+}
+
+window.checkNetworkAndRetry = async function() {
+  if (offlineRetryBtn) offlineRetryBtn.classList.add("loading");
+  try {
+    playSound("click");
+    const res = await fetch("/api/health?t=" + Date.now(), { method: "GET", cache: "no-store" });
+    if (res.ok) {
+      await handleOnline();
+      return;
+    }
+    throw new Error("Chưa có phản hồi từ máy chủ");
+  } catch (err) {
+    updateNetworkUI(true);
+    playSound("wrong");
+    showToast("Vẫn chưa có kết nối mạng. Hãy kiểm tra lại Wi-Fi hoặc 4G/5G nhé!", true);
+  } finally {
+    if (offlineRetryBtn) offlineRetryBtn.classList.remove("loading");
+  }
+};
+
+window.addEventListener("online", handleOnline);
+window.addEventListener("offline", handleOffline);
+if (typeof navigator !== "undefined" && !navigator.onLine) {
+  updateNetworkUI(true);
+}
+
 window.switchAuthTab = function(tab) {
   playSound("click");
   state.authTab = tab;
@@ -156,63 +332,14 @@ function getPageDefaultState(page) {
   }
 }
 
-export function updateGlobalCompanion(overrideState = null, overrideSpeech = null) {
-  let container = document.getElementById("global-mascot-companion");
-  if (!container) {
-    container = document.createElement("div");
-    container.id = "global-mascot-companion";
-    container.className = "tho-companion-floating-wrap";
-    document.body.appendChild(container);
-  }
-
-  // Inline mascots belong to their page; use the floating one where a page has none.
-  const inlineMascot = document.querySelector("#app-view .page-inline-mascot");
-  if (state.lesson || inlineMascot || (state.page === "chat" && !state.chatMessages.length)) {
-    container.style.display = "none";
-    container.classList.add("hidden-in-quiz");
-    return;
-  } else {
-    container.style.display = "";
-    container.classList.remove("hidden-in-quiz");
-  }
-
-  const curState = overrideState || (isUserAfk ? THO_STATES.SLEEPY_AFK : getPageDefaultState(state.page));
-  const pageSpeech = {
-    home: "Cố lên bạn ơi! Chinh phục từng bài học để tích XP lên cấp nhé! 🌸✨",
-    notes: "Ghi chú lại bí kíp ngay kẻo quên! Chữ đẹp điểm cao nha! 📝💖",
-    chat: "Để Giáo sư Thỏ giảng công thức từng bước cho bạn nghe! 🎓📘",
-    settings: "Kính chào chủ nhân! Hôm nay người muốn học bài nào ạ? 🎀",
-    review: "Ngã ở đâu mình gấp đôi XP ở đó! Quét sạch câu sai thôi nào! 🎯💪",
-    shop: "Đá quý rủng rỉnh quá! Sắm đồ đẹp hoặc đua Top giải đấu thôi! 💎🏆",
-    leaderboard: "Đá quý rủng rỉnh quá! Sắm đồ đẹp hoặc đua Top giải đấu thôi! 💎🏆"
-  }[state.page];
-  const curSpeech = overrideSpeech !== null 
-    ? overrideSpeech 
-    : (isUserAfk ? "Khò... khò... Ngủ gật mất tiêu rồi! Zzz... 💤" : (pageSpeech || THO_METADATA[curState]?.quote || ""));
-
-  container.innerHTML = `
-    <div class="tho-companion-inner" onclick="handleCompanionClick(event)" title="Bấm vào Thỏ Bảy Màu để đổi 20 Animation & nghe câu thoại hài hước!">
-      ${curSpeech ? `<div class="tho-companion-bubble">${esc(curSpeech)}</div>` : ''}
-      <div style="width:115px; height:115px; filter:drop-shadow(0 8px 20px rgba(225, 29, 72, 0.22));">
-        ${generateThoBayMauSvg({ state: curState, size: 115 })}
-      </div>
-    </div>
-  `;
+export function updateGlobalCompanion() {
+  const container = document.getElementById("global-mascot-companion");
+  if (container) container.remove();
 }
 window.updateGlobalCompanion = updateGlobalCompanion;
 
 window.handleCompanionClick = function(e) {
-  e.stopPropagation();
-  playSound("fanfare");
-  const allStates = Object.values(THO_STATES);
-  const randomState = allStates[Math.floor(Math.random() * allStates.length)];
-  const quote = THO_METADATA[randomState]?.quote || "Học vui vẻ cùng 3TG nhé! 🌸";
-  updateGlobalCompanion(randomState, quote);
-
-  if (companionTimeout) clearTimeout(companionTimeout);
-  companionTimeout = setTimeout(() => {
-    updateGlobalCompanion();
-  }, 4500);
+  // Floating mascot is disabled per user request
 };
 
 function resetIdleTimer() {
@@ -315,20 +442,40 @@ function setupTopbarPopovers() {
 window.setupTopbarPopovers = setupTopbarPopovers;
 
 // ========================================================
-// API CLIENT
+// API CLIENT (VỚI BẮT MẤT KẾT NỐI MẠNG & TỰ HỒI PHỤC)
 // ========================================================
 async function api(path, options) {
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    handleOffline();
+    const error = new Error("Mất kết nối mạng! Vui lòng kiểm tra lại Internet.");
+    error.isOffline = true;
+    throw error;
+  }
   const config = Object.assign({ method: "GET", credentials: "same-origin" }, options || {});
   config.headers = Object.assign({}, config.headers || {});
   if (config.body && !(config.body instanceof FormData) && typeof config.body !== "string") {
     config.headers["content-type"] = "application/json";
     config.body = JSON.stringify(config.body);
   }
-  const response = await fetch(path, config);
+
+  let response;
+  try {
+    response = await fetch(path, config);
+  } catch (netErr) {
+    handleOffline();
+    const error = new Error("Không thể kết nối đến máy chủ. Mất mạng hoặc gián đoạn đường truyền.");
+    error.isOffline = true;
+    throw error;
+  }
+
+  if (state.isOffline) {
+    handleOnline();
+  }
+
   let data = {};
   try { data = await response.json(); } catch {}
   if (!response.ok) {
-    const error = new Error(data.error || "Lumi chưa tải được dữ liệu.");
+    const error = new Error(data.error || "3TG chưa tải được dữ liệu.");
     error.status = response.status;
     throw error;
   }
@@ -340,6 +487,46 @@ function esc(value) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char];
   });
 }
+
+function normalizeAnswer(value) {
+  return String(value == null ? "" : value).trim().replace(/^[[(]\s*|\s*[)\].]$/g, "").toUpperCase();
+}
+window.normalizeAnswer = normalizeAnswer;
+
+const MASCOT_DEFAULT_KEYS = ["idle", "thinking", "calm-wrong", "confused-phone", "sleepy-afk", "typing-fast"];
+
+const MASCOT_PACKS = {
+  mascot_pack_champions: {
+    id: "mascot_pack_champions",
+    name: "Gói Thỏ Chiến Thần & Đỉnh Cao",
+    description: "Bộ 7 mascot phong cách chiến thần rực lửa: Vua Vô Địch, Kiếm Sĩ Yasuo, Ăn Mừng VN, Bùng Cháy Lửa Streak, Cưỡi Mây, Thám Tử Bắt Lỗi, Siêu Sao XP.",
+    price: 150,
+    keys: ["vietnam-celebrate", "cloud-float", "sword-master", "streak-fire", "king-champion", "xp-boost", "detective-fix"],
+    aura: "glow-fire",
+    tag: "7 Mascot Siêu Phẩm"
+  },
+  mascot_pack_cosplay: {
+    id: "mascot_pack_cosplay",
+    name: "Gói Thỏ Hóa Trang Anime & Siêu Dễ Thương",
+    description: "Bộ 7 mascot hóa trang siêu cute: Hầu Gái Kawaii, Giáo Sư AI, Đại Gia Đá Quý, Cổ Vũ Pom-Pom, Hốt Hoảng, Mếu Máo, Giận Dỗi.",
+    price: 150,
+    keys: ["maid-service", "ai-professor", "gem-rich", "cheering-pom", "shocked-walking", "heart-broken", "angry-remind"],
+    aura: "glow-sakura",
+    tag: "7 Mascot Kawaii"
+  }
+};
+window.MASCOT_PACKS = MASCOT_PACKS;
+window.MASCOT_DEFAULT_KEYS = MASCOT_DEFAULT_KEYS;
+
+function isMascotUnlocked(stateKey) {
+  if (MASCOT_DEFAULT_KEYS.includes(stateKey)) return true;
+  const invCodes = new Set((state.inventory || []).map(i => i.item_code));
+  if (MASCOT_PACKS.mascot_pack_champions.keys.includes(stateKey) && invCodes.has("mascot_pack_champions")) return true;
+  if (MASCOT_PACKS.mascot_pack_cosplay.keys.includes(stateKey) && invCodes.has("mascot_pack_cosplay")) return true;
+  if (stateKey === "maid-service" && invCodes.has("mascot_maid_outfit")) return true;
+  return false;
+}
+window.isMascotUnlocked = isMascotUnlocked;
 
 function showToast(message, isError) {
   const toast = document.createElement("div");
@@ -399,6 +586,21 @@ function updateShell() {
   document.querySelectorAll(".nav-item[data-page]").forEach(button => {
     button.classList.toggle("active", button.dataset.page === state.page);
   });
+
+  // Active Mobile Bottom Nav button
+  document.querySelectorAll(".mobile-nav-btn[data-page]").forEach(button => {
+    button.classList.toggle("active", button.dataset.page === state.page);
+  });
+
+  const mobileReviewBadge = document.getElementById("mobile-review-badge");
+  if (mobileReviewBadge) {
+    if (state.reviewMistakes.length > 0) {
+      mobileReviewBadge.style.display = "block";
+      mobileReviewBadge.textContent = state.reviewMistakes.length;
+    } else {
+      mobileReviewBadge.style.display = "none";
+    }
+  }
 
   // Course Count
   const courseCount = document.getElementById("course-count");
@@ -478,11 +680,35 @@ function renderWeek(rows, today) {
     const weekday = dayNames[d.getUTCDay()];
     const status = history.get(key) || "";
     const isToday = key === refDate;
-    const done = status === "completed" || status === "freeze_used";
+    const done = status === "completed";
+    const frozen = status === "freeze_used";
+
+    let stateClass = "";
+    let dotHtml = "";
+    let tooltip = "";
+
+    if (done) {
+      stateClass = "done";
+      dotHtml = "✓";
+      tooltip = `${key} - Đã học giữ lửa 🔥`;
+    } else if (frozen) {
+      stateClass = "frozen";
+      dotHtml = "🧊";
+      tooltip = `${key} - Được bảo vệ bằng Bùa Băng 🧊`;
+    } else if (isToday) {
+      stateClass = "today";
+      dotHtml = "•";
+      tooltip = `${key} - Hôm nay (chưa hoàn thành) ⚡`;
+    } else {
+      stateClass = "empty";
+      dotHtml = "•";
+      tooltip = `${key} - Chưa học`;
+    }
+
     days.push(
-      `<span class="week-day ${done ? 'done' : ''} ${isToday ? 'today' : ''}" title="${key}${done ? ' (Đã học)' : ''}">
+      `<span class="week-day ${stateClass} ${isToday ? 'today' : ''}" title="${esc(tooltip)}">
         <span>${esc(weekday)}</span>
-        <b class="week-dot">${done ? '✓' : isToday ? '•' : '·'}</b>
+        <b class="week-dot">${dotHtml}</b>
       </span>`
     );
   }
@@ -634,18 +860,24 @@ window.handleRegisterSubmit = async function(e) {
 
   try {
     playSound("click");
+    showAppLoader("Đang tạo tài khoản & nạp quà tân thủ… 🌸", "Tặng ngay 50 Đá quý 💎 và 1 Đóng băng chuỗi ❄️ chào mừng!");
+    setAppLoaderProgress(35);
     const res = await api("/api/auth/register", {
       method: "POST",
       body: { username, password, fullName }
     });
+    setAppLoaderProgress(70);
     playSound("fanfare");
     showToast(res.message);
     state.profile = res.user;
     state.stats = res.stats;
     await loadAuthenticatedData();
+    setAppLoaderProgress(100);
   } catch (err) {
     playSound("wrong");
     showToast(err.message, true);
+  } finally {
+    hideAppLoader();
   }
 };
 
@@ -661,18 +893,24 @@ window.handleLoginSubmit = async function(e) {
 
   try {
     playSound("click");
+    showAppLoader("Đang đăng nhập vào 3TG… ✨", "Thỏ Bảy Màu đang mở khóa không gian học tập của bạn…");
+    setAppLoaderProgress(35);
     const res = await api("/api/auth/login", {
       method: "POST",
       body: { username, password }
     });
+    setAppLoaderProgress(70);
     playSound("fanfare");
     showToast(res.message);
     state.profile = res.user;
     state.stats = res.stats;
     await loadAuthenticatedData();
+    setAppLoaderProgress(100);
   } catch (err) {
     playSound("wrong");
     showToast(err.message, true);
+  } finally {
+    hideAppLoader();
   }
 };
 
@@ -1124,8 +1362,23 @@ function renderNoteCard(note, index) {
     : (note.subject_name ? esc(note.subject_name) : "Ghi chú tự do");
   const parsedContent = parseNoteContent(note.content);
   const styleJson = esc(JSON.stringify(parsedContent.style));
+  const isEditing = note.id == null || state.editingNoteIds.has(noteKey);
+  if (!isEditing) {
+    const contentHtml = noteBodyHtml(parsedContent).trim();
+    const linkedLabel = linkedLesson
+      ? `📌 ${esc(note.subject_name || "Môn học")} · ${esc(note.lesson_title || "Bài học")}`
+      : `📓 ${esc(note.subject_name || "Ghi chú tự do")}`;
+    return `
+      <article class="note-card note-card-readonly note-card-${palettes[index % palettes.length]} note-paper-${parsedContent.style.paper} note-font-${parsedContent.style.font} note-editor" data-note-index="${index}" data-note-style="${styleJson}" data-note-id="${esc(noteKey)}" data-note-subject="${esc(note.subject_id || "")}" data-note-lesson="${esc(note.lesson_id || "")}">
+        <div class="note-card-topline"><span class="note-card-meta">${meta}</span><span class="note-save-state">Đã lưu</span></div>
+        <h3 class="note-preview-title">${esc(note.title || "Ghi chú mới")}</h3>
+        <div class="note-preview-content">${contentHtml || '<span class="note-content-empty">Chưa có nội dung ghi chú.</span>'}</div>
+        ${renderNoteDrawingPreview(parsedContent.style)}
+        <div class="note-card-view-footer"><span class="note-linked-label">${linkedLabel}</span><div class="note-view-actions"><button type="button" class="note-edit-btn" onclick="editStudentNote(this)">✏️ Chỉnh sửa</button><button type="button" class="note-delete-btn" onclick="deleteStudentNote(this)" aria-label="Xóa ghi chú">Xóa</button></div></div>
+      </article>`;
+  }
   return `
-    <article class="note-card note-card-${palettes[index % palettes.length]} note-paper-${parsedContent.style.paper} note-font-${parsedContent.style.font} note-editor" data-note-style="${styleJson}" data-note-id="${esc(noteKey)}" data-note-subject="${esc(note.subject_id || "")}" data-note-lesson="${esc(note.lesson_id || "")}">
+    <article class="note-card note-card-${palettes[index % palettes.length]} note-paper-${parsedContent.style.paper} note-font-${parsedContent.style.font} note-editor" data-note-index="${index}" data-note-style="${styleJson}" data-note-id="${esc(noteKey)}" data-note-subject="${esc(note.subject_id || "")}" data-note-lesson="${esc(note.lesson_id || "")}">
       <div class="note-card-topline"><span class="note-card-meta">${meta}</span><span class="note-save-state">${note.id ? "Đã lưu" : "Bản nháp"}</span></div>
       <input class="note-title-input" data-note-field="title" maxlength="160" aria-label="Tiêu đề ghi chú" value="${esc(note.title || "Ghi chú mới")}" oninput="queueNoteSave(this)">
       ${renderNoteStyleBar(parsedContent.style)}
@@ -1178,9 +1431,10 @@ window.filterStudentNotes = function(query) {
   const needle = state.noteSearch.trim().toLocaleLowerCase("vi");
   let visibleCount = 0;
   document.querySelectorAll(".note-card").forEach(card => {
-    const title = card.querySelector("[data-note-field='title']")?.value || "";
-    const content = card.querySelector("[data-note-field='content']")?.innerText || "";
-    card.hidden = Boolean(needle && !`${card.textContent} ${title} ${content}`.toLocaleLowerCase("vi").includes(needle));
+    const title = card.querySelector("[data-note-field='title']")?.value || card.querySelector(".note-preview-title")?.textContent || "";
+    const content = card.querySelector("[data-note-field='content']")?.innerText || card.querySelector(".note-preview-content")?.innerText || "";
+    const meta = card.querySelector(".note-card-meta")?.textContent || "";
+    card.hidden = Boolean(needle && !`${title} ${content} ${meta}`.toLocaleLowerCase("vi").includes(needle));
     if (!card.hidden) visibleCount++;
   });
   const empty = document.getElementById("notes-filter-empty");
@@ -1201,12 +1455,26 @@ window.setNotesLesson = function(value) {
 window.addStudentNote = function() {
   state.noteSearch = "";
   const tempId = "draft-" + crypto.randomUUID();
+  state.editingNoteIds.add(tempId);
   state.notes.unshift({ id: null, _tempId: tempId, subject_id: state.noteSubjectId || null, lesson_id: null, title: "Ghi chú mới", content: "", subject_name: "", lesson_title: "" });
   state.noteLessonId = "";
   render();
   const card = document.querySelector(`[data-note-id="${tempId}"]`);
   card?.querySelector("[data-note-field='content']")?.focus();
   if (card) window.queueNoteSave(card.querySelector("[data-note-field='title']"));
+};
+
+window.editStudentNote = function(button) {
+  const card = button.closest(".note-card");
+  const key = card?.dataset.noteId;
+  const note = state.notes.find(item => String(item.id) === String(key) || item._tempId === key);
+  if (!card || !note) return;
+  state.editingNoteIds.add(String(note.id ?? note._tempId));
+  const index = Number(card.dataset.noteIndex || 0);
+  card.insertAdjacentHTML("beforebegin", renderNoteCard(note, index));
+  const editor = card.previousElementSibling;
+  card.remove();
+  editor?.querySelector("[data-note-field='content']")?.focus();
 };
 
 function getNoteEditor(element) {
@@ -1305,6 +1573,7 @@ async function persistNoteEditor(editor, key) {
     const saved = result.note;
     if (!saved) throw new Error("Không nhận được ghi chú đã lưu.");
     const oldTemp = editor.dataset.noteId;
+    if (state.editingNoteIds.delete(String(oldTemp))) state.editingNoteIds.add(String(saved.id));
     editor.dataset.noteId = String(saved.id);
     editor.dataset.noteSubject = saved.subject_id == null ? "" : String(saved.subject_id);
     editor.dataset.noteLesson = saved.lesson_id == null ? "" : String(saved.lesson_id);
@@ -1338,6 +1607,17 @@ window.saveNoteNow = async function(button) {
   button.disabled = true;
   button.textContent = "Đang lưu…";
   const saved = await persistNoteEditor(editor, key);
+  if (saved && editor.classList.contains("note-card")) {
+    const savedId = String(editor.dataset.noteId || key);
+    state.editingNoteIds.delete(savedId);
+    if (activeFullscreenNoteEditor === editor) window.closeNoteFullscreen();
+    const note = state.notes.find(item => String(item.id) === savedId);
+    if (note && editor.isConnected) {
+      const index = Number(editor.dataset.noteIndex || 0);
+      editor.outerHTML = renderNoteCard(note, index);
+      return;
+    }
+  }
   if (button.isConnected) {
     button.disabled = false;
     button.textContent = saved ? "Đã lưu ✓" : "Lưu lại";
@@ -1756,6 +2036,7 @@ window.deleteStudentNote = async function(button) {
     catch (err) { showToast("Không xóa được ghi chú: " + err.message, true); return; }
   }
   state.notes = state.notes.filter(note => String(note.id) !== String(key) && note._tempId !== key);
+  state.editingNoteIds.delete(String(key));
   render();
   showToast("Đã xóa ghi chú.");
 };
@@ -1924,6 +2205,25 @@ async function fetchLeaderboard() {
   }
 }
 
+window.claimLeaderboardReward = async function(weekStart) {
+  try {
+    playSound("click");
+    const res = await api("/api/leaderboard/claim", {
+      method: "POST",
+      body: { weekStart }
+    });
+    playSound("fanfare");
+    showToast(`Chúc mừng! Bạn đã nhận phần thưởng Top ${res.rank}: +${res.gemsAwarded} 💎 Đá quý! 🏆`);
+    state.stats = res.stats;
+    updateShell();
+    if (leaderboardData) leaderboardData.pendingReward = null;
+    render();
+  } catch (err) {
+    playSound("wrong");
+    showToast(err.message, true);
+  }
+};
+
 function renderLeaderboard() {
   if (!leaderboardData) {
     fetchLeaderboard();
@@ -1931,6 +2231,7 @@ function renderLeaderboard() {
   }
 
   const rows = leaderboardData.rows || [];
+  const pendingReward = leaderboardData.pendingReward;
 
   const rowsHtml = rows.map((row) => {
     const isMe = row.isMe;
@@ -1939,14 +2240,23 @@ function renderLeaderboard() {
       ? `<img src="${esc(row.avatar_url)}" alt="">`
       : Array.from(row.full_name || "L")[0] || "L";
 
+    let prizeBadge = "";
+    if (row.rank === 1) prizeBadge = '<span class="lb-prize-pill gold">+100 💎</span>';
+    else if (row.rank === 2) prizeBadge = '<span class="lb-prize-pill silver">+60 💎</span>';
+    else if (row.rank === 3) prizeBadge = '<span class="lb-prize-pill bronze">+40 💎</span>';
+
     return `
-      <div class="leader-row ${isMe ? 'me' : ''}">
+      <div class="leader-row ${isMe ? 'me' : ''}" onclick="openUserProfileModal('${esc(row.user_id)}')" title="Nhấp để xem hồ sơ & kết bạn 👤">
         <span class="leader-rank">${medal}</span>
         <span class="avatar avatar-small" style="font-size:14px;">${avatarHtml}</span>
         <span class="leader-name">
           ${esc(row.full_name)} ${isMe ? '<strong style="color:var(--lumi-pink);">(Bạn)</strong>' : ''}
         </span>
-        <span class="leader-xp">${row.weekly_xp} XP</span>
+        <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+          ${prizeBadge}
+          <span class="leader-xp">${row.weekly_xp} XP</span>
+        </div>
+        <span style="font-size:12px; color:var(--lumi-pink); font-weight:800; margin-left:12px;">Hồ sơ ➔</span>
       </div>
     `;
   }).join("");
@@ -1956,15 +2266,30 @@ function renderLeaderboard() {
       <div class="league-banner" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
         <div style="flex:1; min-width:260px;">
           <span style="font-size:42px;">🏆</span>
-          <h1 style="font-size:26px; font-weight:900; margin-top:8px;">Giải đấu Đồng (Bronze League)</h1>
+          <h1 style="font-size:26px; font-weight:900; margin-top:8px;">Giải đấu Tuần — Thưởng Đá Quý 💎</h1>
           <p style="font-size:14px; opacity:0.95; margin-top:4px;">
-            Bảng xếp hạng tuần từ Cloudflare D1. Tích lũy XP qua các bài học để dẫn đầu bảng xếp hạng!
+            Bảng xếp hạng. Top 1, 2, 3 mỗi tuần nhận kim cương siêu khủng! Bấm vào bất kỳ học viên nào để <strong>Soi acc, kết bạn và nhắn tin</strong> nhé.
           </p>
         </div>
         <div class="banner-mascot-aside page-inline-mascot">
-          ${renderThoBayMau({ state: THO_STATES.KING_CHAMPION, size: 132, speech: "Tích XP rồi leo hạng thôi!", speechDirection: "top" })}
+          ${renderThoBayMau({ state: THO_STATES.KING_CHAMPION, size: 132, speech: "Đua Top 1 2 3 tuần này để ẵm kim cương nào! 💎👑", speechDirection: "top" })}
         </div>
       </div>
+
+      ${pendingReward ? `
+        <div class="lb-claim-banner" style="background:linear-gradient(135deg, #fffbeb, #fef3c7); border:3px solid #f59e0b; border-radius:24px; padding:20px 24px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; gap:16px; box-shadow:0 6px 0 #d97706;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <span style="font-size:38px;">🎉</span>
+            <div>
+              <h3 style="margin:0; font-size:18px; font-weight:900; color:#92400e;">Chúc mừng bạn đã đạt Top ${pendingReward.rank} Tuần Trước!</h3>
+              <p style="margin:4px 0 0; font-size:13.5px; color:#b45309;">Nhận ngay phần thưởng vinh quang: <strong>+${pendingReward.gems} 💎 Đá quý</strong></p>
+            </div>
+          </div>
+          <button type="button" class="btn-duo btn-duo-pink" style="padding:12px 24px; font-size:15px; white-space:nowrap;" onclick="claimLeaderboardReward('${pendingReward.weekStart}')">
+            🎁 Nhận Thưởng Ngay
+          </button>
+        </div>
+      ` : ''}
 
       <div class="leader-list">
         ${rowsHtml || `
@@ -1982,6 +2307,593 @@ function renderLeaderboard() {
 }
 
 // ========================================================
+// HỒ SƠ CÔNG KHAI HỌC VIÊN ("SOI ACC" & KẾT BẠN)
+// ========================================================
+window.openUserProfileModal = async function(userId) {
+  if (!userId) return;
+  playSound("click");
+  const modalRoot = document.getElementById("modal-root");
+  if (!modalRoot) return;
+
+  modalRoot.innerHTML = `
+    <div class="user-profile-modal-overlay" onclick="closeUserProfileModal(event)">
+      <div class="user-profile-card" onclick="event.stopPropagation()">
+        <button type="button" class="user-profile-close-btn" onclick="closeUserProfileModal()">✕</button>
+        <div style="padding:40px 20px; text-align:center;">
+          <span class="quiz-spinner" style="width:24px; height:24px; border-width:3px;"></span>
+          <p style="margin-top:10px; font-weight:700; color:var(--ink-500);">Đang lấy thông tin...</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  try {
+    const res = await api(`/api/users/${userId}`);
+    const prof = res.profile;
+    const stats = res.stats;
+    const isSelf = res.isSelf;
+    const isFriend = res.isFriend;
+
+    let avatarContent = "";
+    if (prof.avatar_url) {
+      if (prof.avatar_url.startsWith("mascot:")) {
+        const key = prof.avatar_url.slice(7);
+        if (window.renderThoBayMau && window.THO_METADATA && window.THO_METADATA[key]) {
+          avatarContent = renderThoBayMau({ state: key, size: 76 });
+        } else {
+          avatarContent = esc(key);
+        }
+      } else {
+        avatarContent = `<img src="${esc(prof.avatar_url)}" alt="">`;
+      }
+    } else {
+      avatarContent = esc(Array.from(prof.full_name || "L")[0] || "L");
+    }
+
+    const coverStyle = prof.cover_url
+      ? `background-image: url('${esc(prof.cover_url)}');`
+      : `background: linear-gradient(135deg, #ff71a2, #ff4b82, #c084fc);`;
+
+    modalRoot.innerHTML = `
+      <div class="user-profile-modal-overlay" onclick="closeUserProfileModal(event)">
+        <div class="user-profile-card" onclick="event.stopPropagation()">
+          <button type="button" class="user-profile-close-btn" onclick="closeUserProfileModal()">✕</button>
+          
+          <div class="user-profile-cover" style="${coverStyle}"></div>
+
+          <div class="user-profile-body">
+            <div class="user-profile-avatar-row">
+              <div class="user-profile-avatar-wrap">
+                ${avatarContent}
+              </div>
+              <div class="user-profile-actions">
+                ${isSelf ? `
+                  <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="closeUserProfileModal(); state.page='settings'; render();">
+                    ✏️ Sửa hồ sơ
+                  </button>
+                ` : `
+                  <button type="button" id="btn-toggle-friend-${esc(prof.user_id)}" class="btn-duo ${isFriend ? 'btn-duo-white' : 'btn-duo-pink'}" style="padding:8px 16px; font-size:13px;" onclick="toggleFriendship('${esc(prof.user_id)}')">
+                    ${isFriend ? '✓ Bạn bè (Hủy)' : '➕ Kết bạn'}
+                  </button>
+                  <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="closeUserProfileModal(); openDirectChat('${esc(prof.user_id)}')">
+                    💬 Nhắn tin
+                  </button>
+                `}
+              </div>
+            </div>
+
+            <h2 class="user-profile-name">${esc(prof.full_name || "Học viên 3TG")}</h2>
+            <div class="user-profile-handle">@${esc(prof.username || "hocvien")}</div>
+
+            ${prof.bio ? `<div class="user-profile-bio">${esc(prof.bio)}</div>` : ''}
+
+            <div class="user-profile-meta">
+              ${prof.school ? `<span>🏫 ${esc(prof.school)}</span>` : '<span>🏫 Đại học</span>'}
+              ${prof.major ? `<span>🎓 ${esc(prof.major)}</span>` : '<span>🎓 Sinh viên</span>'}
+              <span>📅 Tham gia: ${esc(String(prof.created_at || '').slice(0, 10))}</span>
+            </div>
+
+            <div class="user-profile-stats-grid">
+              <div class="user-profile-stat-box">
+                <span class="user-profile-stat-icon">⭐</span>
+                <div>
+                  <div class="user-profile-stat-val">${stats.total_xp || 0}</div>
+                  <div class="user-profile-stat-lbl">Tổng điểm XP</div>
+                </div>
+              </div>
+              <div class="user-profile-stat-box">
+                <span class="user-profile-stat-icon">🔥</span>
+                <div>
+                  <div class="user-profile-stat-val">${stats.current_streak || 0} ngày</div>
+                  <div class="user-profile-stat-lbl">Chuỗi Streak</div>
+                </div>
+              </div>
+              <div class="user-profile-stat-box">
+                <span class="user-profile-stat-icon">🏆</span>
+                <div>
+                  <div class="user-profile-stat-val">${esc(res.league || "Bronze")}</div>
+                  <div class="user-profile-stat-lbl">Giải đấu tuần</div>
+                </div>
+              </div>
+              <div class="user-profile-stat-box">
+                <span class="user-profile-stat-icon">📚</span>
+                <div>
+                  <div class="user-profile-stat-val">${res.completedLessons || 0} bài</div>
+                  <div class="user-profile-stat-lbl">Đã hoàn thành</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    showToast(err.message || "Không thể tải hồ sơ học viên.", true);
+    closeUserProfileModal();
+  }
+};
+
+window.closeUserProfileModal = function(e) {
+  if (e && e.target && !e.target.classList.contains("user-profile-modal-overlay") && !e.target.classList.contains("user-profile-close-btn")) {
+    return;
+  }
+  const modalRoot = document.getElementById("modal-root");
+  if (modalRoot) modalRoot.innerHTML = "";
+};
+
+window.toggleFriendship = async function(targetUserId) {
+  playSound("click");
+  try {
+    const res = await api("/api/friends/toggle", {
+      method: "POST",
+      body: { targetUserId }
+    });
+    showToast(res.message);
+    const btn = document.getElementById(`btn-toggle-friend-${targetUserId}`);
+    if (btn) {
+      if (res.isFriend) {
+        btn.className = "btn-duo btn-duo-white";
+        btn.textContent = "✓ Bạn bè (Hủy)";
+      } else {
+        btn.className = "btn-duo btn-duo-pink";
+        btn.textContent = "➕ Kết bạn";
+      }
+    }
+    // Refresh friends list if currently on friends page
+    if (state.page === "friends") {
+      fetchFriends();
+    }
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+// ========================================================
+// HỘP THOẠI NHẮN TIN 1-1 TRỰC TIẾP (DIRECT MESSAGES)
+// ========================================================
+let chatPollInterval = null;
+
+window.openDirectChat = async function(targetUserId) {
+  if (!targetUserId) return;
+  playSound("click");
+  const modalRoot = document.getElementById("modal-root");
+  if (!modalRoot) return;
+
+  modalRoot.innerHTML = `
+    <div class="user-profile-modal-overlay" onclick="closeDirectChat(event)">
+      <div class="direct-chat-modal" onclick="event.stopPropagation()">
+        <div class="chat-header">
+          <div class="chat-header-user">
+            <span class="chat-header-avatar">✿</span>
+            <div>
+              <h4 class="chat-header-title">Đang kết nối tin nhắn...</h4>
+              <span class="chat-header-subtitle">Trò chuyện trực tiếp</span>
+            </div>
+          </div>
+          <button type="button" class="user-profile-close-btn" style="position:static;" onclick="closeDirectChat()">✕</button>
+        </div>
+        <div class="chat-messages-container" id="chat-messages-container">
+          <div style="padding:40px; text-align:center;"><span class="quiz-spinner"></span></div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  async function loadChatMessages() {
+    try {
+      const data = await api(`/api/messages/${targetUserId}`);
+      const targetUser = data.targetUser || {};
+      const messages = data.messages || [];
+
+      let avatarHtml = targetUser.avatar_url
+        ? `<img src="${esc(targetUser.avatar_url)}" alt="">`
+        : esc(Array.from(targetUser.full_name || "L")[0] || "L");
+
+      const msgsHtml = messages.length ? messages.map(m => `
+        <div class="chat-bubble-wrap ${m.isMine ? 'mine' : 'other'}">
+          <div class="chat-bubble">${esc(m.message)}</div>
+          <span class="chat-time">${esc(String(m.createdAt || '').slice(11, 16))}</span>
+        </div>
+      `).join("") : `
+        <div style="text-align:center; padding:30px 16px; color:var(--ink-400);">
+          ${renderThoBayMau({ state: THO_STATES.CHEERING, size: 100, speech: "Gửi lời chào đầu tiên nào! 💬" })}
+          <p style="font-weight:700; margin-top:10px;">Chưa có tin nhắn nào giữa hai bạn.</p>
+          <span style="font-size:13px;">Hãy gửi một tin nhắn hoặc sticker bên dưới để bắt đầu trò chuyện nhé!</span>
+        </div>
+      `;
+
+      modalRoot.innerHTML = `
+        <div class="user-profile-modal-overlay" onclick="closeDirectChat(event)">
+          <div class="direct-chat-modal" onclick="event.stopPropagation()">
+            <div class="chat-header">
+              <div class="chat-header-user" onclick="openUserProfileModal('${esc(targetUserId)}')">
+                <span class="chat-header-avatar">${avatarHtml}</span>
+                <div>
+                  <h4 class="chat-header-title">${esc(targetUser.full_name || "Học viên")}</h4>
+                  <span class="chat-header-subtitle">● Đang hoạt động • Nhấp xem hồ sơ</span>
+                </div>
+              </div>
+              <button type="button" class="user-profile-close-btn" style="position:static;" onclick="closeDirectChat()">✕</button>
+            </div>
+
+            <div class="chat-messages-container" id="chat-messages-container">
+              ${msgsHtml}
+            </div>
+
+            <div class="chat-footer-bar">
+              <div class="chat-quick-emojis">
+                <span class="chat-emoji-pill" onclick="sendQuickEmoji('👋 Chào bạn!', '${esc(targetUserId)}')">👋 Chào bạn</span>
+                <span class="chat-emoji-pill" onclick="sendQuickEmoji('🐰 Cùng học bài nhé!', '${esc(targetUserId)}')">🐰 Cùng học bài</span>
+                <span class="chat-emoji-pill" onclick="sendQuickEmoji('🔥 Quyết tâm giữ Streak!', '${esc(targetUserId)}')">🔥 Giữ Streak</span>
+                <span class="chat-emoji-pill" onclick="sendQuickEmoji('⭐ Cố lên nhé!', '${esc(targetUserId)}')">⭐ Cố lên</span>
+                <span class="chat-emoji-pill" onclick="sendQuickEmoji('🎉 Chúc mừng bạn!', '${esc(targetUserId)}')">🎉 Chúc mừng</span>
+              </div>
+              <form class="chat-input-row" onsubmit="event.preventDefault(); sendDirectMessage('${esc(targetUserId)}');">
+                <input type="text" id="direct-chat-input" class="chat-input" placeholder="Nhập tin nhắn..." autocomplete="off" maxlength="500">
+                <button type="submit" class="btn-duo btn-duo-pink" style="padding:10px 18px; font-size:14px;">
+                  Gửi ➔
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const box = document.getElementById("chat-messages-container");
+      if (box) box.scrollTop = box.scrollHeight;
+
+      const inp = document.getElementById("direct-chat-input");
+      if (inp) inp.focus();
+
+    } catch (err) {
+      showToast(err.message, true);
+      closeDirectChat();
+    }
+  }
+
+  await loadChatMessages();
+
+  if (chatPollInterval) clearInterval(chatPollInterval);
+  chatPollInterval = setInterval(async () => {
+    const box = document.getElementById("chat-messages-container");
+    if (!box) {
+      clearInterval(chatPollInterval);
+      chatPollInterval = null;
+      return;
+    }
+    try {
+      const data = await api(`/api/messages/${targetUserId}`);
+      const messages = data.messages || [];
+      const msgsHtml = messages.map(m => `
+        <div class="chat-bubble-wrap ${m.isMine ? 'mine' : 'other'}">
+          <div class="chat-bubble">${esc(m.message)}</div>
+          <span class="chat-time">${esc(String(m.createdAt || '').slice(11, 16))}</span>
+        </div>
+      `).join("");
+      box.innerHTML = msgsHtml;
+    } catch {}
+  }, 4000);
+};
+
+window.closeDirectChat = function(e) {
+  if (e && e.target && !e.target.classList.contains("user-profile-modal-overlay") && !e.target.classList.contains("user-profile-close-btn")) {
+    return;
+  }
+  if (chatPollInterval) {
+    clearInterval(chatPollInterval);
+    chatPollInterval = null;
+  }
+  const modalRoot = document.getElementById("modal-root");
+  if (modalRoot) modalRoot.innerHTML = "";
+};
+
+window.sendDirectMessage = async function(targetUserId) {
+  const inp = document.getElementById("direct-chat-input");
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = "";
+  playSound("click");
+
+  const box = document.getElementById("chat-messages-container");
+  if (box) {
+    const div = document.createElement("div");
+    div.className = "chat-bubble-wrap mine";
+    div.innerHTML = `<div class="chat-bubble">${esc(text)}</div><span class="chat-time">Vừa xong</span>`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  try {
+    await api(`/api/messages/${targetUserId}`, {
+      method: "POST",
+      body: { message: text }
+    });
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.sendQuickEmoji = function(text, targetUserId) {
+  const inp = document.getElementById("direct-chat-input");
+  if (inp) inp.value = text;
+  sendDirectMessage(targetUserId);
+};
+
+// ========================================================
+// TRANG BẠN BÈ & KẾT NỐI (FRIENDS HUB)
+// ========================================================
+let friendsData = null;
+let conversationsData = null;
+let searchFriendsResults = null;
+let currentFriendsTab = "messages"; // Tin nhắn là phần chính mặc định!
+
+async function fetchFriends() {
+  try {
+    const res = await api("/api/friends");
+    friendsData = res.friends || [];
+    render();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+async function fetchConversations() {
+  try {
+    const res = await api("/api/messages/conversations");
+    conversationsData = res.conversations || [];
+    const totalUnread = conversationsData.reduce((s, c) => s + (Number(c.unreadCount) || 0), 0);
+    
+    // Cập nhật thông báo tin nhắn trên sidebar
+    const navBadge = document.getElementById("nav-friends-count");
+    if (navBadge) {
+      if (totalUnread > 0) {
+        navBadge.style.display = "inline-flex";
+        navBadge.textContent = totalUnread;
+        navBadge.className = "nav-count friends-count badge-unread-pulse";
+      } else {
+        navBadge.style.display = "none";
+      }
+    }
+    const mobileBadge = document.getElementById("mobile-friends-badge");
+    if (mobileBadge) {
+      mobileBadge.style.display = totalUnread > 0 ? "inline-block" : "none";
+      mobileBadge.textContent = totalUnread;
+    }
+
+    render();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+
+window.searchFriendsInput = async function(val) {
+  const q = String(val || "").trim();
+  if (!q) {
+    searchFriendsResults = null;
+    render();
+    return;
+  }
+  try {
+    const res = await api(`/api/friends/search?q=${encodeURIComponent(q)}`);
+    searchFriendsResults = res.users || [];
+    render();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.switchFriendsTab = function(tab) {
+  playSound("click");
+  currentFriendsTab = tab;
+  if (tab === "friends" && !friendsData) fetchFriends();
+  if (tab === "messages") fetchConversations();
+  render();
+};
+
+function renderFriends() {
+  if (currentFriendsTab === "messages" && !conversationsData) {
+    fetchConversations();
+    return `<div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải tin nhắn...</span></div>`;
+  }
+  if (currentFriendsTab === "friends" && !friendsData) {
+    fetchFriends();
+    return `<div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải danh sách bạn bè từ Cloudflare D1...</span></div>`;
+  }
+
+  const friends = friendsData || [];
+  const convos = conversationsData || [];
+  const totalUnread = convos.reduce((s, c) => s + (Number(c.unreadCount) || 0), 0);
+
+  return `
+    <div class="friends-hub-wrap">
+      <div class="banner-with-mascot" style="margin-bottom:20px;">
+        <div style="flex:1;">
+          <h1 class="page-title" style="margin-bottom:6px;">Bạn bè & Nhắn tin 👥</h1>
+          <p class="page-subtitle" style="margin:0 0 14px 0;">Trò chuyện 1-1 trực tiếp, kết bạn và học cùng nhau trên Cloudflare D1!</p>
+          
+          <!-- THANH TAB GỌN GÀNG ĐỒNG NHẤT KHÔNG RỚT DÒNG -->
+          <div class="friends-tab-bar">
+            <button type="button" class="friends-tab-btn ${currentFriendsTab === 'messages' ? 'active' : ''}" onclick="switchFriendsTab('messages')">
+              <span>💬 Tin nhắn</span>
+              ${totalUnread > 0 ? `<span class="tab-unread-pill">${totalUnread} mới</span>` : `<span class="tab-count-pill">${convos.length}</span>`}
+            </button>
+            <button type="button" class="friends-tab-btn ${currentFriendsTab === 'friends' ? 'active' : ''}" onclick="switchFriendsTab('friends')">
+              <span>👥 Bạn bè</span>
+              <span class="tab-count-pill">${friends.length}</span>
+            </button>
+            <button type="button" class="friends-tab-btn ${currentFriendsTab === 'search' ? 'active' : ''}" onclick="switchFriendsTab('search')">
+              <span>🔍 Tìm học viên</span>
+            </button>
+          </div>
+        </div>
+        <div class="banner-mascot-aside page-inline-mascot">
+          ${renderThoBayMau({ state: THO_STATES.CHEERING, size: 126, speech: "Học cùng bạn bè là vui nhất! 🌟", speechDirection: "top" })}
+        </div>
+      </div>
+
+      ${currentFriendsTab === 'friends' ? `
+        <div class="friends-list-container">
+          ${friends.length ? friends.map(f => {
+            const avatarHtml = f.avatar_url
+              ? `<img src="${esc(f.avatar_url)}" alt="">`
+              : Array.from(f.full_name || "L")[0] || "L";
+            return `
+              <div class="friend-card">
+                <div class="friend-info-left" onclick="openUserProfileModal('${esc(f.friend_user_id)}')">
+                  <span class="friend-avatar-badge">${avatarHtml}</span>
+                  <div>
+                    <h3 style="font-size:16.5px; font-weight:900; margin:0 0 2px 0; color:var(--ink-900);">
+                      ${esc(f.full_name)}
+                    </h3>
+                    <div style="font-size:12.5px; color:var(--ink-500); font-weight:700;">
+                      @${esc(f.username || 'hocvien')} • ⭐ ${f.total_xp} XP • 🔥 ${f.current_streak} ngày
+                    </div>
+                    ${f.school ? `<div style="font-size:11.5px; color:var(--lumi-pink); margin-top:2px;">🏫 ${esc(f.school)}</div>` : ''}
+                  </div>
+                </div>
+                <div class="friend-card-actions">
+                  <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="openDirectChat('${esc(f.friend_user_id)}')">
+                    💬 Nhắn tin
+                  </button>
+                  <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="openUserProfileModal('${esc(f.friend_user_id)}')">
+                    Hồ sơ
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join("") : `
+            <div class="empty-state" style="background:#fff; border:2.5px dashed var(--lumi-pink-border); border-radius:28px; padding:44px 20px; text-align:center;">
+              <span style="font-size:48px;">👥</span>
+              <h3 style="font-weight:900; color:var(--ink-900); font-size:20px; margin-top:12px;">Bạn chưa có người bạn nào!</h3>
+              <p style="font-size:14.5px; color:var(--ink-500); max-width:420px; margin:6px auto 18px;">Hãy sang tab Tìm kiếm học viên hoặc vào Bảng xếp hạng để soi hồ sơ và bấm Kết bạn nhé!</p>
+              <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 22px;" onclick="switchFriendsTab('search')">
+                🔍 Tìm kiếm học viên ngay ➔
+              </button>
+            </div>
+          `}
+        </div>
+      ` : currentFriendsTab === 'search' ? `
+        <div class="friends-search-container">
+          <div style="background:#fff; border:2.5px solid var(--ink-900); border-radius:22px; padding:18px 24px; box-shadow:0 6px 0 var(--ink-900); margin-bottom:20px;">
+            <div style="display:flex; gap:12px; align-items:center;">
+              <span style="font-size:20px;">🔍</span>
+              <input type="text" class="chat-input" placeholder="Tìm kiếm theo Tên học viên, Tên đăng nhập (@username) hoặc Trường..." oninput="searchFriendsInput(this.value)" autofocus style="font-size:15px; border-radius:14px;">
+            </div>
+            <p style="font-size:12.5px; color:var(--ink-500); margin:8px 0 0 32px;">Gợi ý: Nhập tên bạn bè hoặc trường học để kết nối trực tiếp từ Cloudflare D1.</p>
+          </div>
+
+          <div class="friends-search-results">
+            ${searchFriendsResults ? (searchFriendsResults.length ? searchFriendsResults.map(u => {
+              const avatarHtml = u.avatar_url
+                ? `<img src="${esc(u.avatar_url)}" alt="">`
+                : Array.from(u.full_name || "L")[0] || "L";
+              return `
+                <div class="friend-card">
+                  <div class="friend-info-left" onclick="openUserProfileModal('${esc(u.user_id)}')">
+                    <span class="friend-avatar-badge">${avatarHtml}</span>
+                    <div>
+                      <h3 style="font-size:16px; font-weight:900; margin:0 0 2px 0; color:var(--ink-900);">
+                        ${esc(u.full_name)}
+                      </h3>
+                      <div style="font-size:12.5px; color:var(--ink-500); font-weight:700;">
+                        @${esc(u.username || 'hocvien')} • ⭐ ${u.total_xp} XP
+                      </div>
+                      ${u.school ? `<div style="font-size:11.5px; color:var(--lumi-pink);">🏫 ${esc(u.school)}</div>` : ''}
+                    </div>
+                  </div>
+                  <div class="friend-card-actions">
+                    <button type="button" class="btn-duo ${u.is_friend ? 'btn-duo-white' : 'btn-duo-pink'}" style="padding:8px 16px; font-size:13px;" onclick="toggleFriendship('${esc(u.user_id)}')">
+                      ${u.is_friend ? '✓ Đã kết bạn' : '➕ Kết bạn'}
+                    </button>
+                    <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="openUserProfileModal('${esc(u.user_id)}')">
+                      Hồ sơ
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join("") : `
+              <div style="text-align:center; padding:32px; color:var(--ink-400); font-weight:700;">
+                Không tìm thấy học viên nào phù hợp với từ khóa này.
+              </div>
+            `) : `
+              <div style="text-align:center; padding:36px; color:var(--ink-400); font-weight:700;">
+                Nhập tên hoặc username vào ô tìm kiếm ở trên để tìm học viên nhé! 🔎
+              </div>
+            `}
+          </div>
+        </div>
+      ` : `
+        <div class="friends-messages-container">
+          ${convos.length ? convos.map(c => {
+            const u = c.user;
+            const avatarHtml = u.avatar_url
+              ? `<img src="${esc(u.avatar_url)}" alt="">`
+              : Array.from(u.full_name || "L")[0] || "L";
+            return `
+              <div class="friend-card" style="cursor:pointer;" onclick="openDirectChat('${esc(u.user_id)}')">
+                <div class="friend-info-left">
+                  <span class="friend-avatar-badge">${avatarHtml}</span>
+                  <div>
+                    <h3 style="font-size:16px; font-weight:900; margin:0 0 3px 0; color:var(--ink-900);">
+                      ${esc(u.full_name)}
+                    </h3>
+                    <div style="font-size:13.5px; color:var(--ink-700); font-weight:600; max-width:440px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                      ${c.isMine ? '<strong>Bạn:</strong> ' : ''}${esc(c.lastMessage)}
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                  <span style="font-size:11px; font-weight:700; color:var(--ink-400);">${esc(String(c.lastTime || '').slice(11, 16))}</span>
+                  ${c.unreadCount ? `<span style="background:#ef4444; color:#fff; font-size:10.5px; font-weight:900; padding:2px 7px; border-radius:999px;">${c.unreadCount} mới</span>` : ''}
+                  <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 12px; font-size:12.5px;">Mở chat ➔</button>
+                </div>
+              </div>
+            `;
+          }).join("") : `
+            <div class="empty-state" style="background:#fff; border:2.5px dashed var(--lumi-pink-border); border-radius:28px; padding:40px 20px; text-align:center;">
+              <div style="display:flex; justify-content:center; margin-bottom:12px;">
+                ${renderThoBayMau({ state: THO_STATES.CONFUSED_PHONE, size: 120, speech: "Hộp thư chưa có tin nhắn nào nè! Kết bạn rồi trò chuyện nhé! 💬", speechDirection: "top" })}
+              </div>
+              <h3 style="font-weight:900; color:var(--ink-900); font-size:20px; margin-top:10px;">Chưa có tin nhắn nào</h3>
+              <p style="font-size:14.5px; color:var(--ink-500); max-width:440px; margin:6px auto 20px;">Hộp thư của bạn hiện đang trống. Hãy kết bạn hoặc tìm kiếm học viên khác để bắt đầu trò chuyện nhé!</p>
+              <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+                <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 22px; font-size:14px;" onclick="switchFriendsTab('search')">
+                  🔍 Tìm kiếm học viên ➔
+                </button>
+                <button type="button" class="btn-duo btn-duo-white" style="padding:10px 22px; font-size:14px;" onclick="switchFriendsTab('friends')">
+                  👥 Danh sách bạn bè ➔
+                </button>
+              </div>
+            </div>
+          `}
+        </div>
+      `}
+    </div>
+  `;
+}
+
+// ========================================================
 // SHOP (CỬA HÀNG ĐÁ QUÝ)
 // ========================================================
 let shopData = null;
@@ -1994,6 +2906,25 @@ async function fetchShop() {
   }
 }
 
+window.equipMascot = async function(stateKey) {
+  try {
+    playSound("click");
+    const avatarUrl = `mascot:${stateKey}`;
+    const res = await api("/api/profile/avatar/preset", {
+      method: "POST",
+      body: { preset: avatarUrl }
+    });
+    if (res.profile) state.profile = res.profile;
+    playSound("fanfare");
+    showToast(`Đã cài đặt Mascot "${THO_METADATA[stateKey]?.name || stateKey}" làm đại diện đồng hành! 🌸`);
+    updateShell();
+    render();
+  } catch (err) {
+    playSound("wrong");
+    showToast(err.message, true);
+  }
+};
+
 function renderShop() {
   if (!shopData) {
     fetchShop();
@@ -2001,9 +2932,46 @@ function renderShop() {
   }
 
   const items = shopData.items || [];
-  const icons = { streak_freeze: "🧊", refill_hearts: "❤️", xp_boost: "⚡" };
+  const icons = { streak_freeze: "🧊", refill_hearts: "❤️", xp_boost: "⚡", double_xp_potion: "🧪" };
 
-  const itemsHtml = items.map(item => {
+  const pack1Item = items.find(i => i.item_code === "mascot_pack_champions");
+  const pack2Item = items.find(i => i.item_code === "mascot_pack_cosplay");
+  const consumableItems = items.filter(i => !i.item_code.startsWith("mascot_pack"));
+
+  const isPack1Owned = pack1Item && pack1Item.owned >= 1;
+  const isPack2Owned = pack2Item && pack2Item.owned >= 1;
+
+  // Mascot Card Renderer
+  const renderMascotBadge = (key, isUnlocked, packName = "") => {
+    const meta = THO_METADATA[key] || { name: key, quote: "" };
+    const isEquipped = state.profile && (state.profile.avatar_url === `mascot:${key}`);
+
+    return `
+      <div class="mascot-wardrobe-card ${isUnlocked ? 'unlocked' : 'locked'} ${isEquipped ? 'equipped' : ''}" style="background:#fff; border:2px solid ${isEquipped ? 'var(--lumi-pink)' : isUnlocked ? '#fbcfe8' : '#e2e8f0'}; border-radius:20px; padding:12px; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; box-shadow:0 4px 0 ${isEquipped ? 'var(--lumi-pink)' : '#f1f5f9'};">
+        ${isEquipped ? `<span style="position:absolute; top:8px; right:8px; background:var(--lumi-pink); color:#fff; font-size:10px; font-weight:900; padding:2px 8px; border-radius:999px;">Đang dùng</span>` : ''}
+        ${!isUnlocked ? `<span style="position:absolute; top:8px; right:8px; background:#64748b; color:#fff; font-size:10px; font-weight:900; padding:2px 8px; border-radius:999px;">🔒 Khóa</span>` : ''}
+        
+        <div style="width:78px; height:78px; margin:4px 0; filter:${isUnlocked ? 'none' : 'grayscale(80%) opacity(0.6)'};">
+          ${generateThoBayMauSvg({ state: key, size: 78 })}
+        </div>
+
+        <strong style="font-size:13px; font-weight:900; color:var(--ink-900); margin-top:4px;">${esc(meta.name.split('(')[0].trim())}</strong>
+        <small style="font-size:11px; color:var(--ink-500); max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:8px;">${esc(meta.quote)}</small>
+
+        ${isUnlocked ? `
+          <button type="button" class="btn-duo ${isEquipped ? 'btn-duo-green' : 'btn-duo-pink'}" style="padding:6px 12px; font-size:11.5px; width:100%;" onclick="equipMascot('${esc(key)}')">
+            ${isEquipped ? '✓ Đang dùng' : 'Chọn dùng 🌸'}
+          </button>
+        ` : `
+          <button type="button" class="btn-duo btn-duo-white" style="padding:6px 12px; font-size:11.5px; width:100%; opacity:0.85;" disabled>
+            Gói ${esc(packName)}
+          </button>
+        `}
+      </div>
+    `;
+  };
+
+  const consumablesHtml = consumableItems.map(item => {
     const isHearts = item.item_code === "refill_hearts";
     const displayName = isHearts ? "Trái Tim Vô Hạn (Vĩnh viễn)" : item.name;
     const displayDesc = isHearts ? "Đặc quyền VIP: Bạn đang sở hữu Vô Hạn Tim (∞) vĩnh viễn, không bao giờ bị trừ tim khi trả lời sai!" : item.description;
@@ -2031,20 +2999,116 @@ function renderShop() {
 
   return `
     <div>
-      <div class="banner-with-mascot">
+      <div class="banner-with-mascot" style="margin-bottom:24px;">
         <div>
           <h1 class="page-title" style="margin-bottom:6px;">Tiệm Tạp Hóa 3TG 🏪</h1>
-          <p class="page-subtitle" style="margin:0 0 12px 0;">Dùng Đá quý 💎 tích lũy từ các bài học để sắm vật phẩm bảo vệ chuỗi học!</p>
+          <p class="page-subtitle" style="margin:0 0 12px 0;">Dùng Đá quý 💎 tích lũy từ các bài học để mở khóa 2 Gói Mascot Thỏ Bảy Màu độc quyền và sắm bùa bảo vệ chuỗi!</p>
           <div class="top-stat top-gems" style="font-size:18px; display:inline-flex;">
             <span>💎</span> <b>${state.stats.gems || 0}</b> Đá quý hiện có
           </div>
         </div>
         <div class="banner-mascot-aside page-inline-mascot">
-          ${renderThoBayMau({ state: THO_STATES.GEM_RICH, size: 126, speech: "Đổi đá quý lấy món xịn nào!", speechDirection: "top" })}
+          ${renderThoBayMau({ state: THO_STATES.GEM_RICH, size: 126, speech: "Đổi đá quý lấy Mascot xịn thôi!", speechDirection: "top" })}
         </div>
       </div>
-      <div class="shop-grid">
-        ${itemsHtml}
+
+      <!-- SECTION 1: 20 MASCOTS COLLECTION (2 GÓI MỞ KHÓA + 6 SẴN CÓ) -->
+      <div style="margin-bottom:36px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+          <div>
+            <h2 style="font-size:20px; font-weight:900; color:var(--ink-900); margin:0;">Bộ Sưu Tập 20 Mascot Thỏ Bảy Màu 🐰✨</h2>
+            <p style="font-size:13.5px; color:var(--ink-500); margin:4px 0 0;">Gồm 6 biểu cảm mặc định sẵn có + 2 gói mở khóa đặc biệt (mỗi gói 7 biểu cảm hiệu ứng xịn xò).</p>
+          </div>
+        </div>
+
+        <!-- GÓI 1: THỎ CHIẾN THẦN (7 CON XỊN) -->
+        <div class="mascot-pack-card" style="background:linear-gradient(135deg, #fff9f0, #fff2e0); border:3px solid #f59e0b; border-radius:28px; padding:22px; margin-bottom:24px; box-shadow:0 8px 0 #d97706;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px; border-bottom:2px dashed #fcd34d; padding-bottom:14px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="font-size:36px;">🔥</span>
+              <div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <h3 style="font-size:19px; font-weight:900; color:#92400e; margin:0;">Gói 1: Thỏ Chiến Thần & Đỉnh Cao</h3>
+                  <span style="background:#ea580c; color:#fff; font-size:11px; font-weight:900; padding:2px 10px; border-radius:999px;">7 Mascot Xịn</span>
+                </div>
+                <p style="font-size:13.5px; color:#b45309; margin:4px 0 0;">Hiệu ứng rực lửa, hào quang vô địch: Vua Vô Địch, Kiếm Sĩ Yasuo, Ăn Mừng VN, Lửa Streak, Cưỡi Mây, Thám Tử Bắt Lỗi, Siêu Sao XP.</p>
+              </div>
+            </div>
+
+            <div>
+              ${isPack1Owned ? `
+                <button type="button" class="btn-duo btn-duo-green" style="padding:10px 22px; font-size:14px; opacity:0.95;" disabled>
+                  ✓ Đã mở khóa trọn gói
+                </button>
+              ` : `
+                <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 24px; font-size:14px; font-weight:900;" onclick="buyItem('mascot_pack_champions')">
+                  Mở khóa trọn gói (💎 150)
+                </button>
+              `}
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(135px, 1fr)); gap:12px;">
+            ${MASCOT_PACKS.mascot_pack_champions.keys.map(k => renderMascotBadge(k, isPack1Owned, "Chiến Thần")).join("")}
+          </div>
+        </div>
+
+        <!-- GÓI 2: THỎ HÓA TRANG ANIME (7 CON XỊN) -->
+        <div class="mascot-pack-card" style="background:linear-gradient(135deg, #fff0f5, #ffe4ef); border:3px solid var(--lumi-pink); border-radius:28px; padding:22px; margin-bottom:24px; box-shadow:0 8px 0 var(--lumi-pink-dark);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px; border-bottom:2px dashed #fbcfe8; padding-bottom:14px;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="font-size:36px;">🎀</span>
+              <div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <h3 style="font-size:19px; font-weight:900; color:var(--lumi-pink-dark); margin:0;">Gói 2: Thỏ Hóa Trang Anime & Siêu Dễ Thương</h3>
+                  <span style="background:var(--lumi-pink); color:#fff; font-size:11px; font-weight:900; padding:2px 10px; border-radius:999px;">7 Mascot Kawaii</span>
+                </div>
+                <p style="font-size:13.5px; color:#be185d; margin:4px 0 0;">Hiệu ứng hoa anh đào & tim bay: Hầu Gái Kawaii, Giáo Sư AI, Đại Gia Đá Quý, Cổ Vũ Pom-Pom, Hốt Hoảng, Mếu Máo, Giận Dỗi.</p>
+              </div>
+            </div>
+
+            <div>
+              ${isPack2Owned ? `
+                <button type="button" class="btn-duo btn-duo-green" style="padding:10px 22px; font-size:14px; opacity:0.95;" disabled>
+                  ✓ Đã mở khóa trọn gói
+                </button>
+              ` : `
+                <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 24px; font-size:14px; font-weight:900;" onclick="buyItem('mascot_pack_cosplay')">
+                  Mở khóa trọn gói (💎 150)
+                </button>
+              `}
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(135px, 1fr)); gap:12px;">
+            ${MASCOT_PACKS.mascot_pack_cosplay.keys.map(k => renderMascotBadge(k, isPack2Owned, "Hóa Trang")).join("")}
+          </div>
+        </div>
+
+        <!-- 6 CON MẶC ĐỊNH SẴN CÓ -->
+        <div style="background:#fff; border:2.5px solid #e2e8f0; border-radius:28px; padding:22px; box-shadow:0 6px 0 #cbd5e1;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h3 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0;">6 Mascot Mặc Định (Có Sẵn 100% Miễn Phí) 🌸</h3>
+              <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">Tất cả học viên đều tự động sở hữu 6 biểu cảm đáng yêu này ngay khi tạo tài khoản.</p>
+            </div>
+            <span style="font-size:12px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 12px; border-radius:999px;">
+              ✓ Miễn phí vĩnh viễn
+            </span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(135px, 1fr)); gap:12px;">
+            ${MASCOT_DEFAULT_KEYS.map(k => renderMascotBadge(k, true, "Mặc định")).join("")}
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: VẬT PHẨM HỖ TRỢ HỌC TẬP & BÙA CHUỖI -->
+      <div>
+        <h2 style="font-size:20px; font-weight:900; color:var(--ink-900); margin:0 0 16px 0;">Vật Phẩm Hỗ Trợ Học Tập 🛡️✨</h2>
+        <div class="shop-grid">
+          ${consumablesHtml}
+        </div>
       </div>
     </div>
   `;
@@ -2073,6 +3137,8 @@ window.buyItem = async function(itemCode) {
 // ACHIEVEMENTS (THÀNH TÍCH HUY HIỆU)
 // ========================================================
 let achievementsData = null;
+let dailyQuestsData = null;
+
 async function fetchAchievements() {
   try {
     achievementsData = await api("/api/achievements");
@@ -2082,16 +3148,54 @@ async function fetchAchievements() {
   }
 }
 
+async function fetchDailyQuests() {
+  try {
+    dailyQuestsData = await api("/api/quests/daily");
+    render();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+}
+window.fetchDailyQuests = fetchDailyQuests;
+
+window.claimDailyQuest = async function(questCode) {
+  try {
+    playSound("click");
+    const res = await api("/api/quests/claim", {
+      method: "POST",
+      body: { questCode }
+    });
+    playSound("fanfare");
+    showToast(`Chúc mừng! Bạn đã nhận thưởng +${res.gemsAwarded} 💎 Đá quý! 🎉`);
+    state.stats = res.stats;
+    updateShell();
+    if (dailyQuestsData) {
+      const q = (dailyQuestsData.quests || []).find(x => x.code === questCode);
+      if (q) q.isClaimed = true;
+    }
+    render();
+  } catch (err) {
+    playSound("wrong");
+    showToast(err.message, true);
+  }
+};
+
 function renderAchievements() {
-  if (!achievementsData) {
+  const currentTab = state.achievementTab || "quests";
+
+  if (currentTab === "quests" && !dailyQuestsData) {
+    fetchDailyQuests();
+    return `<div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải nhiệm vụ hàng ngày...</span></div>`;
+  }
+  if (currentTab === "permanent" && !achievementsData) {
     fetchAchievements();
     return `<div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải thành tích...</span></div>`;
   }
 
-  const items = achievementsData.achievements || [];
+  const items = (achievementsData && achievementsData.achievements) || [];
   const badges = ["🌟", "🔥", "⚡", "👑", "🎯", "💎", "🏆", "🎓", "🚀", "🪐"];
 
-  const itemsHtml = items.map((item, idx) => {
+  const permanentHtml = items.map((item, idx) => {
     const badge = badges[idx % badges.length];
     const progress = Math.min(100, Math.round((item.current_value / item.required_value) * 100));
 
@@ -2112,20 +3216,95 @@ function renderAchievements() {
     `;
   }).join("");
 
+  const quests = (dailyQuestsData && dailyQuestsData.quests) || [];
+  const questsHtml = quests.map(q => {
+    let actionBtn = "";
+    if (q.isClaimed) {
+      actionBtn = `<button type="button" class="btn-duo btn-duo-green" style="padding:10px 18px; font-size:13.5px; opacity:0.9;" disabled>✓ Đã nhận thưởng</button>`;
+    } else if (q.isCompleted) {
+      actionBtn = `<button type="button" class="btn-duo btn-duo-pink" style="padding:10px 20px; font-size:13.5px; font-weight:900;" onclick="claimDailyQuest('${esc(q.code)}')">🎁 Nhận +${q.gems} 💎</button>`;
+    } else {
+      actionBtn = `<button type="button" class="btn-duo btn-duo-white" style="padding:10px 18px; font-size:13px; opacity:0.75;" disabled>Đang làm (${q.current}/${q.target})</button>`;
+    }
+
+    return `
+      <div class="quest-card ${q.isCompleted ? 'completed' : ''} ${q.isClaimed ? 'claimed' : ''}" style="background:#fff; border:2.5px solid var(--lumi-pink-border); border-radius:24px; padding:20px; box-shadow:0 6px 0 #ffd4e2; display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:32px; background:#fff0f5; width:52px; height:52px; border-radius:16px; display:grid; place-items:center; border:2px solid #ffd4e2;">${q.icon}</span>
+            <div>
+              <h3 style="margin:0; font-size:16.5px; font-weight:900; color:var(--ink-900);">${esc(q.title)}</h3>
+              <p style="margin:4px 0 0; font-size:13px; color:var(--ink-500);">${esc(q.description)}</p>
+            </div>
+          </div>
+          <span style="font-size:13px; font-weight:900; color:var(--lumi-pink); background:#fff0f5; padding:4px 10px; border-radius:999px; white-space:nowrap;">
+            +${q.gems} 💎
+          </span>
+        </div>
+
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:800; color:var(--ink-500); margin-bottom:6px;">
+            <span>Tiến độ nhiệm vụ</span>
+            <span style="color:var(--lumi-pink);">${q.current} / ${q.target}</span>
+          </div>
+          <div style="height:10px; background:#f1f5f9; border-radius:999px; overflow:hidden; border:1.5px solid #ffd4e2;">
+            <div style="height:100%; width:${q.progressPercent}%; background:linear-gradient(90deg, #ff4b82, #ff2d78); transition:width 0.3s ease;"></div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end;">
+          ${actionBtn}
+        </div>
+      </div>
+    `;
+  }).join("");
+
   return `
     <div>
-      <div class="banner-with-mascot">
+      <div class="banner-with-mascot" style="margin-bottom:20px;">
         <div>
-          <h1 class="page-title" style="margin-bottom:6px;">Huy hiệu Thành tích 🎖️</h1>
-          <p class="page-subtitle" style="margin:0;">Mỗi cột mốc hoàn thành sẽ thưởng thêm Đá quý 💎 để mua sắm trong Cửa hàng.</p>
+          <h1 class="page-title" style="margin-bottom:6px;">Nhiệm Vụ & Thành Tích 🎖️</h1>
+          <p class="page-subtitle" style="margin:0 0 14px 0;">Hoàn thành nhiệm vụ mỗi ngày và các cột mốc trọn đời để nhận kim cương 💎 sắm Mascot và vật phẩm!</p>
+          <div class="top-stat top-gems" style="font-size:16px; display:inline-flex;">
+            <span>💎</span> <b>${state.stats.gems || 0}</b> Đá quý hiện có
+          </div>
         </div>
         <div class="banner-mascot-aside page-inline-mascot">
-          ${renderThoBayMau({ state: THO_STATES.SWORD_MASTER, size: 126, speech: "Thêm một huy hiệu sắp mở khóa!", speechDirection: "top" })}
+          ${renderThoBayMau({ state: THO_STATES.SWORD_MASTER, size: 126, speech: "Làm hết nhiệm vụ hôm nay chưa bạn ơi? 💎✨", speechDirection: "top" })}
         </div>
       </div>
-      <div class="achievements-grid">
-        ${itemsHtml}
+
+      <!-- SWITCH TABS: NHIỆM VỤ HÀNG NGÀY vs THÀNH TÍCH TRỌN ĐỜI -->
+      <div class="auth-switch-tabs" style="margin-bottom:24px; max-width:540px;">
+        <button type="button" class="auth-switch-tab ${currentTab === 'quests' ? 'active' : ''}" onclick="state.achievementTab='quests'; render();">
+          ⚡ Nhiệm vụ Hàng Ngày (Mỗi ngày 1 lần)
+        </button>
+        <button type="button" class="auth-switch-tab ${currentTab === 'permanent' ? 'active' : ''}" onclick="state.achievementTab='permanent'; render();">
+          🎖️ Cột Mốc Trọn Đời
+        </button>
       </div>
+
+      ${currentTab === 'quests' ? `
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0;">Nhiệm vụ Ngày ${dailyQuestsData ? esc(dailyQuestsData.date) : ''}</h2>
+              <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">Làm mới mỗi ngày lúc 00:00 (GMT+7) · Tích lũy tối đa 100 💎 mỗi ngày!</p>
+            </div>
+            <span style="font-size:12.5px; font-weight:800; color:var(--lumi-pink); background:#fff0f5; padding:6px 14px; border-radius:999px; border:1.5px solid #ffd4e2;">
+              ⏳ Hết hạn: 23:59:59 hôm nay
+            </span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px;">
+            ${questsHtml}
+          </div>
+        </div>
+      ` : `
+        <div class="achievements-grid">
+          ${permanentHtml}
+        </div>
+      `}
     </div>
   `;
 }
@@ -2137,6 +3316,8 @@ async function fetchReview() {
   try {
     const res = await api("/api/review");
     state.reviewMistakes = res.mistakes || [];
+    const reviewCount = document.getElementById("nav-review-count");
+    if (reviewCount) reviewCount.textContent = state.reviewMistakes.length;
     render();
   } catch (err) {
     showToast(err.message, true);
@@ -2146,71 +3327,248 @@ async function fetchReview() {
 function renderReview() {
   const mistakes = state.reviewMistakes || [];
 
-  if (state.reviewPracticeActive && mistakes.length > 0) {
-    const cur = mistakes[state.reviewCurrentIndex];
-    if (!cur) {
-      state.reviewPracticeActive = false;
-      return renderReview();
+  // Phân chia danh sách câu sai theo từng môn học
+  const subjectGroups = new Map();
+  mistakes.forEach(m => {
+    const sId = m.subject_id || 0;
+    const sName = m.subject_name || "Môn học khác";
+    if (!subjectGroups.has(sId)) {
+      subjectGroups.set(sId, { id: sId, name: sName, items: [] });
     }
-    return `
-      <div style="max-width:640px; margin:30px auto; display:flex; flex-direction:column; gap:20px;">
-        <div class="page-inline-mascot" style="display:flex; justify-content:flex-end;">
-          ${renderThoBayMau({ state: THO_STATES.DETECTIVE_FIX, size: 100, speech: "Mình cùng gỡ từng câu nhé!", speechDirection: "left" })}
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <button type="button" class="btn-duo btn-duo-white" onclick="stopReview()">✕ Dừng ôn tập</button>
-          <span style="font-weight:800; color:var(--lumi-pink);">Câu ${state.reviewCurrentIndex + 1} / ${mistakes.length}</span>
-        </div>
-        <div style="background:#fff; border:2px solid var(--lumi-pink-border); border-radius:24px; padding:32px; box-shadow:0 8px 24px rgba(255, 75, 130, 0.08);">
-          <span style="font-size:13px; font-weight:900; color:var(--lumi-pink); text-transform:uppercase;">${esc(cur.subject_name)} • ${esc(cur.lesson_title)}</span>
-          <h2 style="font-size:22px; font-weight:900; color:var(--ink-900); margin-top:10px; line-height:1.4;">${esc(cur.question_text)}</h2>
-          <div style="display:flex; gap:12px; margin-top:32px;">
-            <button class="btn-duo btn-duo-pink" style="flex:1;" onclick="solveMistakeCurrent(${Number(cur.id)}, true)">
-              ✓ Đã nhớ & Làm đúng (+5 XP ⭐)
+    subjectGroups.get(sId).items.push(m);
+  });
+  const subjects = Array.from(subjectGroups.values());
+
+  // 1. CHẾ ĐỘ LUYỆN TẬP LÀM LẠI CÂU HỎI TRẮC NGHIỆM THỰC THỤ
+  if (state.reviewPracticeActive) {
+    const practiceList = (state.reviewPracticeList && state.reviewPracticeList.length)
+      ? state.reviewPracticeList
+      : mistakes;
+    const cur = practiceList[state.reviewCurrentIndex];
+
+    // Khi đã hoàn thành toàn bộ câu hỏi trong danh sách ôn tập
+    if (!cur) {
+      return `
+        <div style="max-width:640px; margin:40px auto; text-align:center; background:#fff; border:3px solid var(--ink-900); border-radius:32px; padding:44px 32px; box-shadow:0 12px 0 var(--ink-900);">
+          ${renderThoBayMau({ state: THO_STATES.KING_CHAMPION, size: 160, speech: "Tuyệt đỉnh! Đã vượt qua toàn bộ câu ôn tập! 👑" })}
+          <h2 style="font-size:26px; font-weight:900; color:var(--ink-900); margin:18px 0 8px;">Hoàn thành ôn tập câu sai!</h2>
+          <p style="font-size:15px; color:var(--ink-500); max-width:440px; margin:0 auto 24px;">
+            Bạn đã khắc phục thành công các câu hỏi chưa nhớ và tích lũy thêm điểm thưởng XP. Hãy tiếp tục giữ vững phong độ nhé!
+          </p>
+          <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <button type="button" class="btn-duo btn-duo-pink" style="padding:14px 28px;" onclick="stopReview()">
+              Quay lại danh mục Ôn tập 🎯
             </button>
-            <button class="btn-duo btn-duo-white" style="flex:1;" onclick="solveMistakeCurrent(${Number(cur.id)}, false)">
-              Cần ôn lại thêm
+            <button type="button" class="btn-duo btn-duo-white" style="padding:14px 28px;" onclick="state.page='home'; state.reviewPracticeActive=false; render();">
+              Về lộ trình học 🗺️
             </button>
           </div>
+        </div>
+      `;
+    }
+
+    const progressPercent = Math.round((state.reviewCurrentIndex / practiceList.length) * 100);
+    const checked = state.reviewCheckedResult;
+    const options = cur.options || [];
+
+    const optionsHtml = options.map((opt, idx) => {
+      const isSelected = state.reviewSelectedChoice === opt.key;
+      const isCorrectOption = checked && normalizeAnswer(checked.correctAnswer) === normalizeAnswer(opt.key);
+      const isWrongSelection = checked && isSelected && !checked.isCorrect;
+
+      let extraClass = isSelected ? "selected" : "";
+      let inlineStyle = "";
+      if (checked) {
+        if (isCorrectOption) {
+          extraClass = "selected";
+          inlineStyle = 'style="border-color:var(--feedback-green); background:var(--feedback-green-light); color:var(--feedback-green-text);"';
+        } else if (isWrongSelection) {
+          extraClass = "selected";
+          inlineStyle = 'style="border-color:var(--duo-red); background:var(--duo-red-light); color:var(--duo-red-dark);"';
+        }
+      }
+
+      return `
+        <button type="button" class="quiz-choice-btn ${extraClass}" data-choice-key="${esc(opt.key)}" ${inlineStyle} onclick="selectReviewChoice('${esc(opt.key)}')" ${checked || state.reviewChecking ? 'disabled' : ''}>
+          <span class="quiz-key-pill">${esc(opt.key || String(idx + 1))}</span>
+          <span class="quiz-choice-text">${esc(opt.text || opt.key)}</span>
+        </button>
+      `;
+    }).join("");
+
+    let footerStatusClass = "";
+    let feedbackHtml = `
+      <button type="button" class="btn-duo btn-duo-pink" style="min-width:200px; padding:15px; font-size:15px;" onclick="checkReviewAnswer()" ${!state.reviewSelectedChoice || state.reviewChecking ? 'disabled' : ''}>
+        ${state.reviewChecking ? '<span class="quiz-spinner"></span> Đang kiểm tra…' : 'Kiểm tra đáp án'}
+      </button>
+    `;
+
+    if (checked) {
+      if (checked.isCorrect) {
+        footerStatusClass = "status-correct";
+        feedbackHtml = `
+          <div class="quiz-feedback-box">
+            <span class="feedback-icon-badge">✓</span>
+            <div class="feedback-text">
+              <span class="feedback-headline">Chính xác! Đã khắc phục câu sai thành công! (+5 XP ⭐)</span>
+              <span class="feedback-explanation">${esc(checked.explanation || "Rất tốt! Câu hỏi này đã được hoàn thành xuất sắc.")}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-duo btn-duo-pink" style="min-width:180px; padding:15px; font-size:15px;" onclick="nextReviewQuestion()">
+            Tiếp tục ➔
+          </button>
+        `;
+      } else {
+        footerStatusClass = "status-wrong";
+        feedbackHtml = `
+          <div class="quiz-feedback-box">
+            <span class="feedback-icon-badge">✕</span>
+            <div class="feedback-text">
+              <span class="feedback-headline">Chưa chính xác rồi! Đừng nản nhé.</span>
+              <span class="feedback-explanation">Đáp án đúng là: <strong>${esc(checked.correctAnswer)}</strong>. ${esc(checked.explanation || "")}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-duo btn-duo-red" style="min-width:180px; padding:15px; font-size:15px;" onclick="nextReviewQuestion()">
+            Tiếp tục ➔
+          </button>
+        `;
+      }
+    }
+
+    return `
+      <div style="max-width:720px; margin:20px auto 40px; display:flex; flex-direction:column; gap:16px;">
+        <!-- Thanh tiến độ & Dừng làm -->
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:14px;">
+          <button type="button" class="btn-duo btn-duo-white" style="padding:8px 16px; font-size:13.5px;" onclick="stopReview()">
+            ✕ Dừng ôn tập
+          </button>
+          <div style="flex:1; max-width:320px; height:12px; background:#f1f5f9; border:2px solid var(--ink-900); border-radius:999px; overflow:hidden;">
+            <div style="height:100%; width:${progressPercent}%; background:var(--lumi-pink); transition:width 0.3s ease;"></div>
+          </div>
+          <span style="font-weight:900; font-size:14px; color:var(--lumi-pink);">Câu ${state.reviewCurrentIndex + 1} / ${practiceList.length}</span>
+        </div>
+
+        <!-- Khung nội dung câu hỏi trắc nghiệm -->
+        <div class="quiz-card" style="padding:28px 24px; border:3px solid var(--ink-900); border-radius:28px; box-shadow:0 8px 0 var(--ink-900); background:#fff;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+            <span style="font-size:13px; font-weight:900; color:var(--lumi-pink); text-transform:uppercase; letter-spacing:0.5px;">
+              📚 ${esc(cur.subject_name)} • ${esc(cur.lesson_title)}
+            </span>
+            <span style="font-size:12px; font-weight:800; color:#ef4444; background:#fee2e2; border-radius:999px; padding:2px 10px;">
+              Đã sai ${cur.wrong_count} lần
+            </span>
+          </div>
+
+          <h2 style="font-size:20px; font-weight:900; color:var(--ink-900); line-height:1.45; margin:0 0 20px 0;">
+            ${esc(cur.question_text)}
+          </h2>
+
+          <!-- Danh sách lựa chọn A, B, C, D -->
+          <div class="quiz-choices-grid" style="display:flex; flex-direction:column; gap:10px;">
+            ${optionsHtml}
+          </div>
+        </div>
+
+        <!-- Khung phản hồi đáp án & nút tiếp tục -->
+        <div class="quiz-footer ${footerStatusClass}" style="border-radius:24px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; gap:16px; border:2.5px solid var(--ink-900); box-shadow:0 6px 0 var(--ink-900); background:#fff;">
+          ${feedbackHtml}
         </div>
       </div>
     `;
   }
 
-  const itemsHtml = mistakes.map(m => {
+  // 2. MÀN HÌNH TỔNG QUAN CÂU SAI (PHÂN CHIA RÕ RÀNG THEO TỪNG MÔN HỌC)
+  const activeSubjectId = state.reviewSubjectFilter || "all";
+  const displaySubjects = (activeSubjectId === "all")
+    ? subjects
+    : subjects.filter(s => String(s.id) === String(activeSubjectId));
+
+  const subjectTabsHtml = `
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin:16px 0 24px;">
+      <button type="button" class="btn-duo ${activeSubjectId === 'all' ? 'btn-duo-pink' : 'btn-duo-white'}" style="padding:8px 18px; font-size:13.5px;" onclick="filterReviewSubject('all')">
+        Tất cả môn (${mistakes.length})
+      </button>
+      ${subjects.map(s => `
+        <button type="button" class="btn-duo ${String(activeSubjectId) === String(s.id) ? 'btn-duo-pink' : 'btn-duo-white'}" style="padding:8px 18px; font-size:13.5px;" onclick="filterReviewSubject('${s.id}')">
+          📚 ${esc(s.name)} (${s.items.length})
+        </button>
+      `).join("")}
+    </div>
+  `;
+
+  const subjectSectionsHtml = displaySubjects.map(sub => {
     return `
-      <div class="leader-row" style="padding:18px 24px;">
-        <div style="flex:1;">
-          <small style="font-weight:900; color:var(--lumi-pink);">${esc(m.subject_name)}</small>
-          <h4 style="font-size:16px; font-weight:800; color:var(--ink-900); margin-top:4px;">${esc(m.question_text)}</h4>
-          <span style="font-size:12px; color:var(--ink-500); margin-top:4px; display:block;">Đã sai ${m.wrong_count} lần</span>
+      <div style="background:#fff; border:3px solid var(--ink-900); border-radius:28px; box-shadow:0 8px 0 var(--ink-900); padding:24px; margin-bottom:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:2px dashed #fbcfe8; padding-bottom:14px; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h3 style="font-size:19px; font-weight:900; color:var(--ink-900); margin:0 0 4px 0;">
+              📚 ${esc(sub.name)}
+            </h3>
+            <span style="font-size:13px; font-weight:800; color:var(--lumi-pink);">
+              Có ${sub.items.length} câu trắc nghiệm cần củng cố
+            </span>
+          </div>
+          <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 20px; font-size:14px;" onclick="startReviewSubject('${sub.id}')">
+            🎯 Luyện tập môn này (${sub.items.length} câu)
+          </button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          ${sub.items.map((m, idx) => `
+            <div style="background:#fff7fa; border:2px solid #ffd6e5; border-radius:18px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; gap:16px; transition:all 0.2s ease;">
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                  <span style="font-size:12px; font-weight:900; color:var(--lumi-pink); text-transform:uppercase;">Bài: ${esc(m.lesson_title)}</span>
+                  <span style="font-size:11px; font-weight:800; color:#dc2626; background:#fee2e2; border-radius:999px; padding:2px 8px;">Đã sai ${m.wrong_count} lần</span>
+                </div>
+                <h4 style="font-size:15.5px; font-weight:900; color:var(--ink-900); margin:0; line-height:1.4;">
+                  ${idx + 1}. ${esc(m.question_text)}
+                </h4>
+                <div style="font-size:12px; color:var(--ink-500); margin-top:6px;">
+                  ${m.options && m.options.length ? `Gồm ${m.options.length} lựa chọn trắc nghiệm` : 'Câu hỏi trắc nghiệm'}
+                </div>
+              </div>
+              <button type="button" class="btn-duo btn-duo-white" style="padding:8px 16px; font-size:13px; white-space:nowrap;" onclick="startReviewSingle(${Number(m.id)})">
+                Làm lại câu này ➔
+              </button>
+            </div>
+          `).join("")}
         </div>
       </div>
     `;
   }).join("");
 
   return `
-    <div style="max-width:760px; margin:0 auto;">
-      <div class="banner-with-mascot">
+    <div style="max-width:820px; margin:0 auto 40px;">
+      <!-- Hero Banner -->
+      <div class="banner-with-mascot" style="margin-bottom:16px;">
         <div>
           <h1 class="page-title" style="margin-bottom:6px;">Ôn tập Câu sai 🎯</h1>
-          <p class="page-subtitle" style="margin:0 0 12px 0;">Khắc phục các câu đã làm sai để củng cố kiến thức và tích lũy thêm XP ⭐</p>
+          <p class="page-subtitle" style="margin:0 0 14px 0;">Khắc phục các câu đã làm sai, phân chia theo từng môn học để củng cố kiến thức và nhận +5 XP mỗi câu!</p>
           ${mistakes.length ? `
-            <button type="button" class="btn-duo btn-duo-pink" onclick="startReview()">
-              Luyện tập ngay (${mistakes.length} câu) 🎯
+            <button type="button" class="btn-duo btn-duo-pink" style="padding:14px 28px; font-size:15px;" onclick="startReviewSubject('all')">
+              Luyện tập tất cả (${mistakes.length} câu) 🎯
             </button>
           ` : ''}
         </div>
         <div class="banner-mascot-aside page-inline-mascot">
-          ${renderThoBayMau({ state: THO_STATES.DETECTIVE_FIX, size: 126, speech: "Ôn lại là nhớ lâu hơn đó!", speechDirection: "top" })}
+          ${renderThoBayMau({ state: THO_STATES.DETECTIVE_FIX, size: 126, speech: "Ôn lại câu sai là nhớ lâu nhất đó! 🔍", speechDirection: "top" })}
         </div>
       </div>
+
+      <!-- Tab lọc theo từng môn học -->
+      ${mistakes.length ? subjectTabsHtml : ''}
+
+      <!-- Danh sách nhóm câu sai theo môn -->
       <div>
-        ${itemsHtml || `
-          <div class="empty-state" style="background:#fff; border:2px dashed var(--lumi-pink-border); border-radius:24px; padding:48px 24px; text-align:center;">
-            <span style="font-size:54px;">🎉</span>
-            <h3 style="font-weight:900; color:var(--ink-900); margin-top:12px;">Tuyệt vời! Bạn không có câu sai nào!</h3>
-            <p style="font-size:15px; color:var(--ink-500); margin-top:4px;">Tiếp tục học bài mới để giữ vững phong độ nhé!</p>
+        ${mistakes.length ? subjectSectionsHtml : `
+          <div class="empty-state" style="background:#fff; border:3px dashed var(--lumi-pink-border); border-radius:32px; padding:54px 24px; text-align:center;">
+            <span style="font-size:58px;">🎉</span>
+            <h3 style="font-weight:900; color:var(--ink-900); font-size:22px; margin-top:14px;">Tuyệt vời! Bạn không có câu sai nào!</h3>
+            <p style="font-size:15px; color:var(--ink-500); margin-top:6px; max-width:440px; margin-left:auto; margin-right:auto;">Toàn bộ bài trắc nghiệm bạn làm đều đạt chuẩn hoặc đã được khắc phục hoàn toàn. Hãy tiếp tục học bài mới nhé!</p>
+            <button type="button" class="btn-duo btn-duo-pink" style="margin-top:18px; padding:12px 24px;" onclick="state.page='home'; render();">
+              Khám phá bài học mới ➔
+            </button>
           </div>
         `}
       </div>
@@ -2218,26 +3576,121 @@ function renderReview() {
   `;
 }
 
-window.solveMistakeCurrent = async function(mistakeId, isCorrect) {
+window.filterReviewSubject = function(subjectId) {
+  playSound("click");
+  state.reviewSubjectFilter = subjectId;
+  render();
+};
+
+window.startReviewSubject = function(subjectId) {
+  playSound("click");
+  const mistakes = state.reviewMistakes || [];
+  const list = (subjectId === "all" || !subjectId)
+    ? mistakes
+    : mistakes.filter(m => String(m.subject_id) === String(subjectId));
+
+  if (!list.length) {
+    showToast("Không có câu sai nào cần ôn tập trong môn này!");
+    return;
+  }
+
+  state.reviewSubjectFilter = subjectId;
+  state.reviewPracticeList = list;
+  state.reviewCurrentIndex = 0;
+  state.reviewSelectedChoice = "";
+  state.reviewCheckedResult = null;
+  state.reviewChecking = false;
+  state.reviewPracticeActive = true;
+  render();
+};
+
+window.startReviewSingle = function(mistakeId) {
+  playSound("click");
+  const mistakes = state.reviewMistakes || [];
+  const single = mistakes.filter(m => Number(m.id) === Number(mistakeId));
+  if (!single.length) return;
+
+  state.reviewPracticeList = single;
+  state.reviewCurrentIndex = 0;
+  state.reviewSelectedChoice = "";
+  state.reviewCheckedResult = null;
+  state.reviewChecking = false;
+  state.reviewPracticeActive = true;
+  render();
+};
+
+window.selectReviewChoice = function(key) {
+  if (state.reviewCheckedResult || state.reviewChecking) return;
+  playSound("click");
+  state.reviewSelectedChoice = key;
+  render();
+};
+
+window.checkReviewAnswer = async function() {
+  if (!state.reviewSelectedChoice || state.reviewChecking) return;
+  const practiceList = state.reviewPracticeList || [];
+  const cur = practiceList[state.reviewCurrentIndex];
+  if (!cur) return;
+
+  state.reviewChecking = true;
+  render();
+
   try {
-    playSound(isCorrect ? "correct" : "click");
     const res = await api("/api/review/solve", {
       method: "POST",
-      body: { mistakeId, isCorrect }
+      body: {
+        mistakeId: cur.id || cur.question_id,
+        selectedChoice: state.reviewSelectedChoice
+      }
     });
-    state.stats = res.stats;
-    updateShell();
-    if (state.reviewCurrentIndex + 1 < state.reviewMistakes.length) {
-      state.reviewCurrentIndex++;
+
+    state.reviewCheckedResult = res;
+    if (res.isCorrect) {
+      playSound("correct");
+      if (res.stats) {
+        state.stats = res.stats;
+        updateShell();
+      }
+      // Loại câu hỏi này ra khỏi danh sách câu sai
+      state.reviewMistakes = state.reviewMistakes.filter(m => Number(m.id) !== Number(cur.id) && Number(m.question_id) !== Number(cur.question_id));
+      const reviewCount = document.getElementById("nav-review-count");
+      if (reviewCount) reviewCount.textContent = state.reviewMistakes.length;
     } else {
-      state.reviewPracticeActive = false;
-      showToast("Đã hoàn thành buổi ôn tập câu sai!");
-      fetchReview();
+      playSound("wrong");
     }
-    render();
   } catch (err) {
     showToast(err.message, true);
+  } finally {
+    state.reviewChecking = false;
+    render();
   }
+};
+
+window.nextReviewQuestion = function() {
+  playSound("click");
+  state.reviewSelectedChoice = "";
+  state.reviewCheckedResult = null;
+  state.reviewCurrentIndex++;
+  const practiceList = state.reviewPracticeList || [];
+  if (state.reviewCurrentIndex >= practiceList.length) {
+    state.reviewPracticeActive = false;
+    showToast("Chúc mừng bạn đã hoàn thành bài ôn tập! 🎉");
+    fetchReview();
+  }
+  render();
+};
+
+window.stopReview = function() {
+  playSound("click");
+  state.reviewPracticeActive = false;
+  state.reviewSelectedChoice = "";
+  state.reviewCheckedResult = null;
+  state.reviewChecking = false;
+  render();
+};
+
+window.startReview = function() {
+  window.startReviewSubject(state.reviewSubjectFilter || "all");
 };
 
 // ========================================================
@@ -2600,7 +4053,22 @@ window.toggleChatDropdown = function(e) {
   if (e) e.stopPropagation();
   playSound("click");
   state.isChatDropdownOpen = !state.isChatDropdownOpen;
+  if (state.isChatDropdownOpen) state.isChatConvoDropdownOpen = false;
   render();
+};
+
+window.toggleChatConvoDropdown = function(e) {
+  if (e) e.stopPropagation();
+  playSound("click");
+  state.isChatConvoDropdownOpen = !state.isChatConvoDropdownOpen;
+  if (state.isChatConvoDropdownOpen) state.isChatDropdownOpen = false;
+  render();
+};
+
+window.selectChatConversation = function(convoId) {
+  playSound("click");
+  state.isChatConvoDropdownOpen = false;
+  loadChatConversation(convoId);
 };
 
 window.selectChatSubject = function(subId) {
@@ -2610,12 +4078,18 @@ window.selectChatSubject = function(subId) {
   render();
 };
 
-// Global click-outside to close chat dropdown
+// Global click-outside to close chat dropdowns
 document.addEventListener("click", function(e) {
+  let changed = false;
   if (state.isChatDropdownOpen && !e.target.closest("#chat-dropdown-wrap")) {
     state.isChatDropdownOpen = false;
-    render();
+    changed = true;
   }
+  if (state.isChatConvoDropdownOpen && !e.target.closest("#chat-convo-dropdown-wrap")) {
+    state.isChatConvoDropdownOpen = false;
+    changed = true;
+  }
+  if (changed) render();
 });
 
 // ========================================================
@@ -2626,9 +4100,10 @@ function renderChat() {
   const currentSub = isFreeMode ? null : (state.subjects.find(s => Number(s.id) === Number(state.chatSubjectId || state.currentSubjectId)) || state.subjects[0]);
   const currentSubjectLabel = isFreeMode ? "AI tự do · mọi môn" : (currentSub?.subject_name || "Chọn môn học");
   const currentSubjectIcon = isFreeMode ? "✨" : subjectIcon(currentSub);
-  const conversationOptions = `<option value="">Cuộc trò chuyện mới</option>` + state.chatConversations.map(item =>
-    `<option value="${esc(item.id)}" ${item.id === state.chatConversationId ? "selected" : ""}>${esc(item.title || "Phiên hỏi đáp")}</option>`
-  ).join("");
+  
+  const activeConvo = state.chatConversations.find(c => c.id === state.chatConversationId);
+  const activeConvoTitle = activeConvo ? (activeConvo.title || "Phiên hỏi đáp") : "Cuộc trò chuyện mới";
+
   const chatAttachmentsHtml = state.chatAttachments.length ? `
     <div class="chat-attachment-list" aria-label="Tệp đính kèm">
       ${state.chatAttachments.map((file, index) => `<span class="chat-attachment-chip">${file.kind === "image" ? "🖼️" : "📄"} ${esc(file.name)}<button type="button" onclick="removeChatAttachment(${index})" aria-label="Gỡ ${esc(file.name)}">×</button></span>`).join("")}
@@ -2663,33 +4138,74 @@ function renderChat() {
           <p class="page-subtitle">Trợ giảng 3TG AI giải thích chi tiết, từng bước kèm công thức dễ hiểu</p>
         </div>
 
-        <div class="chat-header-actions">
-        <div class="chat-conversation-actions"><select aria-label="Chọn cuộc trò chuyện" onchange="loadChatConversation(this.value)">${conversationOptions}</select><button type="button" onclick="startNewChat()">＋ Mới</button></div>
-        <!-- CUSTOM ANIMATED DROPDOWN FOR SUBJECT SELECTION -->
-        <div class="lumi-dropdown-wrapper" id="chat-dropdown-wrap">
-          <button type="button" class="lumi-dropdown-btn ${state.isChatDropdownOpen ? 'active' : ''}" onclick="toggleChatDropdown(event)">
-            <span style="font-size:18px;">${currentSubjectIcon}</span>
-            <span>${esc(currentSubjectLabel)}</span>
-            <span class="chevron-arrow">▾</span>
-          </button>
-          ${state.isChatDropdownOpen ? `
-            <div class="lumi-dropdown-panel">
-              <div class="lumi-dropdown-item ${isFreeMode ? 'selected' : ''}" onclick="selectChatSubject('free')">
-                <div class="lumi-dropdown-item-left"><span style="font-size:18px;">✨</span><span>AI tự do · mọi môn</span></div>
-                ${isFreeMode ? '<span class="lumi-dropdown-check">✓</span>' : ''}
-              </div>
-              ${state.subjects.map(s => `
-                <div class="lumi-dropdown-item ${!isFreeMode && Number(s.id) === Number(currentSub?.id) ? 'selected' : ''}" onclick="selectChatSubject(${Number(s.id)})">
-                  <div class="lumi-dropdown-item-left">
-                    <span style="font-size:18px;">${subjectIcon(s)}</span>
-                    <span>${esc(s.subject_name)}</span>
-                  </div>
-                  ${!isFreeMode && Number(s.id) === Number(currentSub?.id) ? '<span class="lumi-dropdown-check">✓</span>' : ''}
+        <div class="chat-header-actions" style="display:flex; align-items:center; gap:10px;">
+          <!-- CUSTOM ANIMATED DROPDOWN CHO LỊCH SỬ CHAT AI -->
+          <div class="lumi-dropdown-wrapper" id="chat-convo-dropdown-wrap">
+            <button type="button" class="lumi-dropdown-btn ${state.isChatConvoDropdownOpen ? 'active' : ''}" onclick="toggleChatConvoDropdown(event)" style="min-width:180px; max-width:240px;">
+              <span style="font-size:16px;">💬</span>
+              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; text-align:left;">${esc(activeConvoTitle)}</span>
+              <span class="chevron-arrow">▾</span>
+            </button>
+            ${state.isChatConvoDropdownOpen ? `
+              <div class="lumi-dropdown-panel convo-history-panel" style="width:280px; max-height:360px; overflow-y:auto;">
+                <div class="convo-panel-header">
+                  <span>💬 Lịch sử trò chuyện</span>
+                  <span class="tab-count-pill">${state.chatConversations.length}</span>
                 </div>
-              `).join("")}
-            </div>
-          ` : ''}
-        </div>
+                <div class="lumi-dropdown-item ${!state.chatConversationId ? 'selected' : ''}" onclick="selectChatConversation('')">
+                  <div class="lumi-dropdown-item-left">
+                    <span style="font-size:16px;">✨</span>
+                    <strong style="color:var(--lumi-pink);">+ Cuộc trò chuyện mới</strong>
+                  </div>
+                  ${!state.chatConversationId ? '<span class="lumi-dropdown-check">✓</span>' : ''}
+                </div>
+                <div style="height:1px; background:#f4f4f5; margin:4px 0;"></div>
+                ${state.chatConversations.length ? state.chatConversations.map(item => `
+                  <div class="lumi-dropdown-item ${item.id === state.chatConversationId ? 'selected' : ''}" onclick="selectChatConversation('${esc(item.id)}')">
+                    <div class="lumi-dropdown-item-left" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:210px;">
+                      <span style="font-size:15px;">💭</span>
+                      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(item.title || "Phiên hỏi đáp")}</span>
+                    </div>
+                    ${item.id === state.chatConversationId ? '<span class="lumi-dropdown-check">✓</span>' : ''}
+                  </div>
+                `).join("") : `
+                  <div style="padding:16px; text-align:center; color:var(--ink-400); font-size:12.5px;">
+                    Chưa có lịch sử trò chuyện nào
+                  </div>
+                `}
+              </div>
+            ` : ''}
+          </div>
+
+          <button type="button" class="btn-duo btn-duo-pink" style="height:42px; padding:0 16px; font-size:13.5px; border-radius:14px; white-space:nowrap;" onclick="startNewChat()">
+            ＋ Mới
+          </button>
+
+          <!-- CUSTOM ANIMATED DROPDOWN FOR SUBJECT SELECTION -->
+          <div class="lumi-dropdown-wrapper" id="chat-dropdown-wrap">
+            <button type="button" class="lumi-dropdown-btn ${state.isChatDropdownOpen ? 'active' : ''}" onclick="toggleChatDropdown(event)">
+              <span style="font-size:18px;">${currentSubjectIcon}</span>
+              <span>${esc(currentSubjectLabel)}</span>
+              <span class="chevron-arrow">▾</span>
+            </button>
+            ${state.isChatDropdownOpen ? `
+              <div class="lumi-dropdown-panel">
+                <div class="lumi-dropdown-item ${isFreeMode ? 'selected' : ''}" onclick="selectChatSubject('free')">
+                  <div class="lumi-dropdown-item-left"><span style="font-size:18px;">✨</span><span>AI tự do · mọi môn</span></div>
+                  ${isFreeMode ? '<span class="lumi-dropdown-check">✓</span>' : ''}
+                </div>
+                ${state.subjects.map(s => `
+                  <div class="lumi-dropdown-item ${!isFreeMode && Number(s.id) === Number(currentSub?.id) ? 'selected' : ''}" onclick="selectChatSubject(${Number(s.id)})">
+                    <div class="lumi-dropdown-item-left">
+                      <span style="font-size:18px;">${subjectIcon(s)}</span>
+                      <span>${esc(s.subject_name)}</span>
+                    </div>
+                    ${!isFreeMode && Number(s.id) === Number(currentSub?.id) ? '<span class="lumi-dropdown-check">✓</span>' : ''}
+                  </div>
+                `).join("")}
+              </div>
+            ` : ''}
+          </div>
         </div>
       </div>
 
@@ -3187,11 +4703,11 @@ function renderSettings() {
 
           <div class="fb-user-titles">
             <h1 class="fb-user-name">
-              ${esc(profile.full_name || "Học viên Lumi")}
+              ${esc(profile.full_name || "Bạn học mới")}
               <span class="fb-verified-badge" title="Học viên chính thức">✿</span>
             </h1>
-            <div class="fb-user-handle">@${esc(profile.username || "hocvien")}</div>
-            <p class="fb-user-bio">${profile.bio ? esc(profile.bio) : '<span style="color:var(--ink-500); font-style:italic;">Chưa có tiểu sử. Nhấn "Chỉnh sửa tiểu sử" để thêm.</span>'}</p>
+            <div class="fb-user-handle">${profile.username ? `@${esc(profile.username)}` : ""}</div>
+            <p class="fb-user-bio">${profile.bio ? esc(profile.bio) : '<span style="color:var(--ink-500); font-style:italic;">(Chưa có tiểu sử. Nhấn "Chỉnh sửa tiểu sử" để thêm)</span>'}</p>
           </div>
 
           <!-- TABS BAR -->
@@ -3593,7 +5109,7 @@ window.openStreakModal = function() {
   const refDate = today || new Date().toISOString().slice(0, 10);
   const [tY, tM, tD] = refDate.split("-").map(Number);
   const historyMap = new Map((historyRows || []).map(r => [String(r.activity_date).slice(0, 10), r.status]));
-  const cells = [];
+  let freezeCountRendered = 0;
   for (let i = 27; i >= 0; i--) {
     const d = new Date(Date.UTC(tY, tM - 1, tD - i));
     const key = d.toISOString().slice(0, 10);
@@ -3601,21 +5117,30 @@ window.openStreakModal = function() {
     const isCurToday = key === refDate;
     const status = historyMap.get(key);
     const done = status === "completed";
-    const frozen = status === "freeze_used";
+    
+    // Tối đa 2 lần hóa đá (bảo vệ chuỗi) theo đúng cơ chế Duolingo:
+    const isFreezeUsed = (status === "freeze_used") && (freezeCountRendered < 2);
+    if (isFreezeUsed) freezeCountRendered++;
 
     let cellClass = "streak-cell";
     let icon = dayNum;
     if (done) {
       cellClass += " done";
       icon = "🔥";
-    } else if (frozen) {
+    } else if (isFreezeUsed) {
       cellClass += " frozen";
-      icon = "❄️";
+      icon = "🧊";
+    } else if (isCurToday) {
+      cellClass += " today";
+      icon = dayNum;
+    } else {
+      // Tất cả ngày nghỉ thông thường khác hiển thị lịch số bình thường!
+      cellClass += " normal-date";
+      icon = dayNum;
     }
-    if (isCurToday) cellClass += " today";
 
     cells.push(`
-      <div class="${cellClass}" title="${key}${done ? ' - Đã hoàn thành' : isCurToday ? ' - Hôm nay' : ''}">
+      <div class="${cellClass}" title="${key}${done ? ' - Đã hoàn thành 🔥' : isFreezeUsed ? ' - Đóng băng chuỗi 🧊' : isCurToday ? ' - Hôm nay ⚡' : ' - Ngày ' + dayNum}">
         <span>${icon}</span>
       </div>
     `);
@@ -3685,10 +5210,10 @@ window.openStreakModal = function() {
         <div style="margin-top:20px; background:#fff5f8; border:2px solid var(--lumi-pink-border); border-radius:20px; padding:16px; display:flex; align-items:center; gap:16px;">
           <div style="font-size:32px;">❄️</div>
           <div style="flex:1;">
-            <strong style="display:block; font-size:14px; color:#18181b;">Bảo Vệ Chuỗi (Streak Freeze)</strong>
-            <small style="color:#71717a; font-size:12px;">Bạn đang có: <strong>${freezeCount}</strong> lần bảo vệ khi lỡ quên học 1 ngày.</small>
+            <strong style="display:block; font-size:14px; color:#18181b;">Bảo Vệ Chuỗi Chuẩn Duolingo</strong>
+            <small style="color:#71717a; font-size:12px;">Đang có: <strong>${freezeCount} / 2</strong> bùa bảo vệ. Tối đa 2 ngày nghỉ không đứt chuỗi. Quá 2 ngày lịch sẽ về số thường và mất chuỗi. Hết bùa thì mua trong Shop nhé!</small>
           </div>
-          <button class="btn-duo btn-duo-pink" style="padding:8px 14px; font-size:12px;" onclick="closeStreakModal(); state.page='shop'; render();">
+          <button class="btn-duo btn-duo-pink" style="padding:8px 14px; font-size:12px; white-space:nowrap;" onclick="closeStreakModal(); state.page='shop'; render();">
             Mua thêm 💎
           </button>
         </div>
@@ -3723,6 +5248,28 @@ function render() {
   }
   lastRenderedViewKey = viewKey;
 
+  // Nếu đang mất kết nối mạng và chưa có dữ liệu, hiển thị màn hình Mascot ngoại tuyến thân thiện
+  if (state.isOffline && !state.profile && !state.subjects.length) {
+    view.innerHTML = `
+      <div class="offline-full-view">
+        ${renderThoBayMau({ state: THO_STATES.CONFUSED_PHONE, size: 180, speech: "Ủa, sóng Wi-Fi đâu mất tiêu rồi?! 📡", speechDirection: "top" })}
+        <h2 class="offline-full-title">Mất kết nối mạng rồi bạn ơi!</h2>
+        <p class="offline-full-desc">
+          Thỏ Bảy Màu không thể tải dữ liệu lúc này vì thiết bị đang ngoại tuyến. Bạn hãy kiểm tra lại Wi-Fi hoặc dữ liệu di động (4G/5G) rồi bấm nút bên dưới nhé!
+        </p>
+        <div class="offline-full-actions">
+          <button type="button" class="btn-duo btn-duo-pink" style="padding:14px 28px; font-size:15px;" onclick="window.checkNetworkAndRetry()">
+            🔄 Thử kết nối lại ngay
+          </button>
+        </div>
+      </div>
+    `;
+    updateShell();
+    const companion = document.getElementById("global-mascot-companion");
+    if (companion) companion.style.display = "none";
+    return;
+  }
+
   // If not authenticated, always show the mandatory Login/Register screen
   if (!state.profile) {
     view.innerHTML = renderAuthScreen();
@@ -3754,6 +5301,9 @@ function render() {
       break;
     case "leaderboard":
       view.innerHTML = renderLeaderboard();
+      break;
+    case "friends":
+      view.innerHTML = renderFriends();
       break;
     case "shop":
       view.innerHTML = renderShop();
@@ -3827,6 +5377,7 @@ document.addEventListener("click", function (e) {
 });
 
 async function navigateToPage(targetPage) {
+  if (state.page === "notes" && targetPage !== "notes") state.editingNoteIds.clear();
   state.page = targetPage;
   closeMobileMenu();
   updateShell();
@@ -3993,8 +5544,11 @@ document.getElementById("mobile-overlay")?.addEventListener("click", closeMobile
 // ========================================================
 async function initialize() {
   try {
+    showAppLoader("Đang chuẩn bị kho bài học 3TG… 🌸", "Thỏ Bảy Màu đang kiểm tra phiên học và đồng bộ Cloudflare D1…");
+    setAppLoaderProgress(25);
     // Check if user already has an authenticated session
     const sessionRes = await api("/api/session").catch(() => null);
+    setAppLoaderProgress(55);
     if (sessionRes && sessionRes.profile) {
       state.profile = sessionRes.profile;
       state.account = sessionRes.account;
@@ -4006,12 +5560,14 @@ async function initialize() {
       state.profile = null;
       render();
     }
+    setAppLoaderProgress(100);
   } catch (err) {
     state.apiError = err.message;
     view.innerHTML = `<div class="empty-state">Lỗi kết nối: ${esc(err.message)}</div>`;
   } finally {
     setupTopbarPopovers();
     updateGlobalCompanion();
+    hideAppLoader();
   }
 }
 

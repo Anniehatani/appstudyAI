@@ -23,6 +23,7 @@
           <button class="nav-item" data-page="courses"><span class="nav-icon">📚</span><span>Môn học</span><span class="nav-count" id="course-count">10</span></button>
           <button class="nav-item" data-page="notes"><span class="nav-icon">📝</span><span>Sổ tay ghi chú</span></button>
           <button class="nav-item" data-page="leaderboard"><span class="nav-icon">🏆</span><span>Bảng xếp hạng</span></button>
+          <button class="nav-item" data-page="friends"><span class="nav-icon">👥</span><span>Bạn bè & Nhắn tin</span><span class="nav-count friends-count" id="nav-friends-count" style="display:none;">0</span></button>
           <button class="nav-item" data-page="shop"><span class="nav-icon">🏪</span><span>Cửa hàng</span><span class="nav-badge-gems" id="nav-gems-badge">💎</span></button>
           <button class="nav-item" data-page="achievements"><span class="nav-icon">🎖️</span><span>Thành tích</span></button>
           <button class="nav-item" data-page="review"><span class="nav-icon">🎯</span><span>Ôn câu sai</span><span class="nav-count review-count" id="nav-review-count">0</span></button>
@@ -84,14 +85,78 @@
           <div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải lộ trình học 3TG…</span></div>
         </main>
         <footer class="app-footer">
-          <span>✿ Web học 3TG</span>
-          <span>• Đồng hành cùng Mascot Thỏ Bảy Màu & Cloudflare D1</span>
-          <span class="footer-live" id="connection-status"><i></i> Đã kết nối D1</span>
+          <span>Power By Tone Pink Group</span>
+          <span>Đồng hành cùng Mascot Thỏ Bảy Màu</span>
+          <span class="footer-live" id="connection-status"><i></i> Active</span>
         </footer>
+        <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Điều hướng nhanh mobile">
+          <button type="button" class="mobile-nav-btn active" data-page="home">
+            <span class="mobile-nav-icon">🗺️</span>
+            <span>Lộ trình</span>
+          </button>
+          <button type="button" class="mobile-nav-btn" data-page="courses">
+            <span class="mobile-nav-icon">📚</span>
+            <span>Môn học</span>
+          </button>
+          <button type="button" class="mobile-nav-btn" data-page="leaderboard">
+            <span class="mobile-nav-icon">🏆</span>
+            <span>Xếp hạng</span>
+          </button>
+          <button type="button" class="mobile-nav-btn" data-page="friends">
+            <span class="mobile-nav-icon">👥</span>
+            <span>Bạn bè</span>
+            <span class="mobile-nav-badge" id="mobile-friends-badge" style="display:none;">0</span>
+          </button>
+          <button type="button" class="mobile-nav-btn" data-page="review">
+            <span class="mobile-nav-icon">🎯</span>
+            <span>Ôn tập</span>
+            <span class="mobile-nav-badge" id="mobile-review-badge" style="display:none;">0</span>
+          </button>
+          <button type="button" class="mobile-nav-btn" data-page="settings">
+            <span class="mobile-nav-icon">👤</span>
+            <span>Hồ sơ</span>
+          </button>
+        </nav>
       </section>
     </div>
     <div class="mobile-overlay" id="mobile-overlay"></div>
     <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
     <div id="modal-root"></div>
+
+    <!-- OFFLINE BANNER (MẤT KẾT NỐI MẠNG) -->
+    <div id="app-offline-banner" class="app-offline-banner hidden" role="alert" aria-live="assertive">
+      <div class="offline-banner-left">
+        <div class="offline-icon-pulse">📡</div>
+        <div class="offline-text-wrap">
+          <strong class="offline-title">Mất kết nối mạng!</strong>
+          <span class="offline-desc">Bạn đang ngoại tuyến. Vui lòng kiểm tra lại Wi-Fi hoặc 4G/5G để tiếp tục học nhé.</span>
+        </div>
+      </div>
+      <button type="button" class="offline-retry-btn" id="offline-retry-btn" onclick="window.checkNetworkAndRetry()">
+        <span class="retry-spin-icon">🔄</span> Thử kết nối lại
+      </button>
+    </div>
+
+    <!-- CUTE MASCOT SPLASH LOADER (HIỆU ỨNG TẢI DỮ LIỆU SIÊU MƯỢT) -->
+    <div id="app-splash-loader" class="app-splash-loader" aria-label="Đang nạp dữ liệu vào ứng dụng">
+      <div class="splash-card">
+        <div class="splash-badge">3TG STUDY</div>
+        <div class="splash-mascot-wrap" id="splash-mascot-container">
+          <div class="splash-sparkle s1">✨</div>
+          <div class="splash-sparkle s2">⭐</div>
+          <div class="splash-sparkle s3">🌸</div>
+          <div class="splash-sparkle s4">🥕</div>
+        </div>
+        <div class="splash-speech" id="splash-loading-text">
+          Đang chuẩn bị kho bài học 3TG… 🌸
+        </div>
+        <div class="splash-progress-track">
+          <div class="splash-progress-bar" id="splash-progress-bar" style="width: 45%;"></div>
+        </div>
+        <div class="splash-tips" id="splash-tips">
+          Thỏ Bảy Màu đang nạp năng lượng và đồng bộ hơn 29.000 câu hỏi…
+        </div>
+      </div>
+    </div>
   </body>
 </html>

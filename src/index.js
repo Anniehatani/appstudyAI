@@ -156,20 +156,23 @@ async function evaluateUserStreak(userId, db, today) {
   const last = String(stats.last_active_date).slice(0, 10);
   const yesterday = shiftDate(today, -1);
   const twoDaysAgo = shiftDate(today, -2);
+  const threeDaysAgo = shiftDate(today, -3);
 
   // If last was today or yesterday -> streak is safe and active!
   if (last === today || last === yesterday) {
     return stats;
   }
 
-  // If last was twoDaysAgo -> missed exactly yesterday
-  if (last === twoDaysAgo) {
-    const freeze = await db.prepare(
-      "SELECT id, quantity FROM user_inventory WHERE user_id = ? AND item_code = 'streak_freeze' AND quantity > 0 LIMIT 1"
-    ).bind(userId).first();
+  // Lấy số lượng Bùa bảo vệ chuỗi trong kho
+  const freeze = await db.prepare(
+    "SELECT id, quantity FROM user_inventory WHERE user_id = ? AND item_code = 'streak_freeze' LIMIT 1"
+  ).bind(userId).first();
+  const freezeQty = Number(freeze?.quantity) || 0;
 
-    if (freeze) {
-      // Use streak freeze to protect yesterday!
+  // Trường hợp 1: Nghỉ 1 ngày (hôm qua)
+  if (last === twoDaysAgo) {
+    if (freezeQty >= 1) {
+      // Dùng 1 bùa bảo vệ chuỗi để đóng băng hôm qua
       await db.batch([
         db.prepare("UPDATE user_inventory SET quantity = quantity - 1 WHERE id = ?").bind(freeze.id),
         db.prepare(
@@ -181,7 +184,7 @@ async function evaluateUserStreak(userId, db, today) {
       stats.last_active_date = yesterday;
       return stats;
     } else {
-      // No streak freeze -> HỦY CHUỖI!
+      // Hết bùa bảo vệ chuỗi -> Chuỗi bị đứt về 0!
       await db.batch([
         db.prepare(
           "INSERT INTO user_streak_history (user_id, activity_date, status) VALUES (?, ?, 'missed') " +
@@ -194,7 +197,33 @@ async function evaluateUserStreak(userId, db, today) {
     }
   }
 
-  // If last was 3 or more days ago -> HỦY CHUỖI!
+  // Trường hợp 2: Nghỉ 2 ngày liên tiếp (hôm kia và hôm qua)
+  if (last === threeDaysAgo) {
+    if (freezeQty >= 2) {
+      // Dùng 2 bùa bảo vệ chuỗi để đóng băng cả 2 ngày
+      await db.batch([
+        db.prepare("UPDATE user_inventory SET quantity = quantity - 2 WHERE id = ?").bind(freeze.id),
+        db.prepare(
+          "INSERT INTO user_streak_history (user_id, activity_date, status) VALUES (?, ?, 'freeze_used') " +
+          "ON CONFLICT(user_id, activity_date) DO UPDATE SET status = 'freeze_used'"
+        ).bind(userId, twoDaysAgo),
+        db.prepare(
+          "INSERT INTO user_streak_history (user_id, activity_date, status) VALUES (?, ?, 'freeze_used') " +
+          "ON CONFLICT(user_id, activity_date) DO UPDATE SET status = 'freeze_used'"
+        ).bind(userId, yesterday),
+        db.prepare("UPDATE user_stats SET last_active_date = ? WHERE user_id = ?").bind(yesterday, userId)
+      ]);
+      stats.last_active_date = yesterday;
+      return stats;
+    } else {
+      // Không đủ 2 bùa bảo vệ -> Chuỗi bị đứt về 0!
+      await db.prepare("UPDATE user_stats SET current_streak = 0 WHERE user_id = ?").bind(userId).run();
+      stats.current_streak = 0;
+      return stats;
+    }
+  }
+
+  // Trường hợp 3: Quá 2 ngày không học (từ ngày thứ 3 trở đi) -> Chuỗi bị đứt về 0!
   if (streak !== 0) {
     await db.prepare("UPDATE user_stats SET current_streak = 0 WHERE user_id = ?").bind(userId).run();
     stats.current_streak = 0;
@@ -592,6 +621,7 @@ async function submitLesson(request, lessonId, user, env) {
   const today = vietDate();
   const yesterday = shiftDate(today, -1);
   const twoDaysAgo = shiftDate(today, -2);
+  const threeDaysAgo = shiftDate(today, -3);
 
   const stats = await env.DB.prepare(
     "SELECT total_xp, current_streak, longest_streak, hearts, gems, last_active_date " +
@@ -639,6 +669,17 @@ async function submitLesson(request, lessonId, user, env) {
       } else {
         streak = 1; // Hủy chuỗi cũ, bắt đầu chuỗi mới
       }
+    }
+  } else if (last === threeDaysAgo) {
+    // Cách 2 ngày (hôm kia và hôm qua) -> kiểm tra cả 2 ngày đã được đóng băng chuỗi chưa
+    const freezes = await env.DB.prepare(
+      "SELECT activity_date FROM user_streak_history WHERE user_id = ? AND activity_date IN (?, ?) AND status = 'freeze_used'"
+    ).bind(user.userId, twoDaysAgo, yesterday).all();
+
+    if ((freezes.results || []).length >= 2) {
+      streak = streak + 1;
+    } else {
+      streak = 1;
     }
   } else {
     // Quá 2 ngày không học -> chuỗi đã mất, bắt đầu chuỗi mới từ 1
@@ -840,12 +881,18 @@ async function serveMedia(path, env) {
 
 async function reviewList(user, env) {
   const response = await env.DB.prepare(
-    "SELECT m.id, m.wrong_count, m.last_wrong_at, q.id AS question_id, q.question_text, q.lesson_id, " +
-    "l.title AS lesson_title, s.subject_name FROM user_mistakes m JOIN questions q ON q.id = m.question_id " +
+    "SELECT m.id, m.wrong_count, m.last_wrong_at, " +
+    "q.id AS question_id, q.question_type, q.question_text, q.options, q.correct_answer, q.explanation, q.lesson_id, " +
+    "l.title AS lesson_title, s.id AS subject_id, s.subject_name " +
+    "FROM user_mistakes m JOIN questions q ON q.id = m.question_id " +
     "JOIN lessons l ON l.id = q.lesson_id JOIN units u ON u.id = l.unit_id JOIN subjects s ON s.id = u.subject_id " +
-    "WHERE m.user_id = ? AND m.is_mastered = 0 ORDER BY m.wrong_count DESC, m.last_wrong_at DESC LIMIT 15"
+    "WHERE m.user_id = ? AND m.is_mastered = 0 " +
+    "ORDER BY s.id ASC, m.wrong_count DESC, m.last_wrong_at DESC LIMIT 100"
   ).bind(user.userId).all();
-  return response.results || [];
+  return (response.results || []).map(row => ({
+    ...row,
+    options: parseOptions(row.options)
+  }));
 }
 
 async function listNotes(request, user, env) {
@@ -947,8 +994,8 @@ async function registerAccount(request, env) {
     throw new HttpError(409, "Tên đăng nhập này đã được sử dụng. Hãy chọn tên khác nhé.");
   }
 
-  const currentGuest = await sessionUser(request, env);
-  const userId = currentGuest ? currentGuest.userId : crypto.randomUUID();
+  // Luôn tạo userId hoàn toàn mới cho tài khoản đăng ký mới để thông tin trang cá nhân luôn trống và sạch sẽ
+  const userId = crypto.randomUUID();
   const encryptedPassword = await hashPassword(password);
   const accountId = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
   const profileId = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
@@ -958,21 +1005,20 @@ async function registerAccount(request, env) {
   const ops = [
     env.DB.prepare(
       "INSERT INTO accounts (id, user_id, service_name, username, encrypted_password, created_at) VALUES (?, ?, 'local', ?, ?, ?)"
-    ).bind(accountId, userId, username, encryptedPassword, today)
+    ).bind(accountId, userId, username, encryptedPassword, today),
+    env.DB.prepare(
+      "INSERT INTO profiles (id, user_id, full_name, avatar_url, bio, cover_url, school, major, created_at) VALUES (?, ?, ?, NULL, '', NULL, '', '', ?)"
+    ).bind(profileId, userId, fullName, today),
+    env.DB.prepare(
+      "INSERT OR IGNORE INTO user_stats (user_id, total_xp, current_streak, longest_streak, hearts, gems, last_active_date) VALUES (?, 0, 0, 0, 5, 50, ?)"
+    ).bind(userId, today),
+    env.DB.prepare(
+      "INSERT OR IGNORE INTO user_inventory (user_id, item_code, quantity) VALUES (?, 'streak_freeze', 1)"
+    ).bind(userId),
+    env.DB.prepare(
+      "INSERT OR IGNORE INTO weekly_leaderboards (user_id, league_name, weekly_xp, week_start_date) VALUES (?, 'Bronze', 0, ?)"
+    ).bind(userId, weekStart)
   ];
-
-  if (currentGuest) {
-    ops.push(
-      env.DB.prepare("UPDATE profiles SET full_name = ? WHERE user_id = ?").bind(fullName, userId)
-    );
-  } else {
-    ops.push(
-      env.DB.prepare("INSERT INTO profiles (id, user_id, full_name, avatar_url, bio, cover_url, school, major, created_at) VALUES (?, ?, ?, NULL, '', NULL, NULL, NULL, ?)").bind(profileId, userId, fullName, today),
-      env.DB.prepare("INSERT OR IGNORE INTO user_stats (user_id, total_xp, current_streak, longest_streak, hearts, gems, last_active_date) VALUES (?, 0, 0, 0, 5, 50, ?)").bind(userId, today),
-      env.DB.prepare("INSERT OR IGNORE INTO user_inventory (user_id, item_code, quantity) VALUES (?, 'streak_freeze', 1)").bind(userId),
-      env.DB.prepare("INSERT OR IGNORE INTO weekly_leaderboards (user_id, league_name, weekly_xp, week_start_date) VALUES (?, 'Bronze', 0, ?)").bind(userId, weekStart)
-    );
-  }
 
   await env.DB.batch(ops);
 
@@ -983,8 +1029,22 @@ async function registerAccount(request, env) {
     "SELECT * FROM user_stats WHERE user_id = ? LIMIT 1"
   ).bind(userId).first();
 
+  const cleanProfile = {
+    ...(profile || {}),
+    id: profile?.id || profileId,
+    user_id: userId,
+    username: username,
+    full_name: fullName,
+    avatar_url: null,
+    bio: "",
+    cover_url: null,
+    school: "",
+    major: "",
+    created_at: today
+  };
+
   return respond(
-    { ok: true, user: profile, stats: stats || {}, message: "Tạo tài khoản thành công! Tặng bạn 50 Đá quý 💎 chào mừng!" },
+    { ok: true, user: cleanProfile, stats: stats || {}, message: "Tạo tài khoản thành công! Tặng bạn 50 Đá quý 💎 chào mừng!" },
     200,
     { "set-cookie": cookieHeader(request, userId, COOKIE_AGE) }
   );
@@ -1010,11 +1070,18 @@ async function loginAccount(request, env) {
   }
 
   const profile = await env.DB.prepare(
-    "SELECT id, user_id, full_name, avatar_url, bio, cover_url FROM profiles WHERE user_id = ? LIMIT 1"
+    "SELECT id, user_id, full_name, avatar_url, bio, cover_url, school, major, created_at FROM profiles WHERE user_id = ? LIMIT 1"
   ).bind(account.user_id).first();
   const stats = await env.DB.prepare(
     "SELECT * FROM user_stats WHERE user_id = ? LIMIT 1"
   ).bind(account.user_id).first();
+
+  if (profile) {
+    profile.username = account.username;
+    profile.bio = profile.bio || "";
+    profile.school = profile.school || "";
+    profile.major = profile.major || "";
+  }
 
   return respond(
     { ok: true, user: profile, stats: stats || {}, message: "Đăng nhập thành công! Chào mừng trở lại." },
@@ -1103,6 +1170,9 @@ async function buyShopItem(request, user, env) {
   const existingInv = await env.DB.prepare(
     "SELECT id, quantity FROM user_inventory WHERE user_id = ? AND item_code = ? LIMIT 1"
   ).bind(user.userId, itemCode).first();
+  if (itemCode.startsWith("mascot_") && existingInv && Number(existingInv.quantity) >= 1) {
+    throw new HttpError(400, "Bạn đã sở hữu gói Mascot này rồi, không thể mua lại!");
+  }
   if (existingInv) {
     ops.push(env.DB.prepare("UPDATE user_inventory SET quantity = quantity + 1 WHERE id = ?").bind(existingInv.id));
   } else {
@@ -1145,27 +1215,227 @@ async function achievementsList(user, env) {
 async function solveMistake(request, user, env) {
   const body = await readJson(request);
   const mistakeId = Number(body.mistakeId);
-  const isCorrect = Boolean(body.isCorrect);
 
-  const mistake = await env.DB.prepare(
-    "SELECT id, question_id, is_mastered FROM user_mistakes WHERE id = ? AND user_id = ? LIMIT 1"
-  ).bind(mistakeId, user.userId).first();
-  if (!mistake) throw new HttpError(404, "Không tìm thấy câu hỏi ôn tập này.");
+  let mistake = await env.DB.prepare(
+    "SELECT m.id, m.question_id, m.is_mastered, q.correct_answer, q.explanation " +
+    "FROM user_mistakes m JOIN questions q ON q.id = m.question_id " +
+    "WHERE (m.id = ? OR m.question_id = ?) AND m.user_id = ? LIMIT 1"
+  ).bind(mistakeId, mistakeId, user.userId).first();
+
+  if (!mistake) {
+    const q = await env.DB.prepare("SELECT id, correct_answer, explanation FROM questions WHERE id = ? LIMIT 1").bind(mistakeId).first();
+    if (q) {
+      mistake = { id: 0, question_id: q.id, is_mastered: 0, correct_answer: q.correct_answer, explanation: q.explanation };
+    } else {
+      throw new HttpError(404, "Không tìm thấy câu hỏi ôn tập này.");
+    }
+  }
+
+  let isCorrect = Boolean(body.isCorrect);
+  if (body.selectedChoice !== undefined && body.selectedChoice !== null) {
+    isCorrect = normalizeAnswer(body.selectedChoice) === normalizeAnswer(mistake.correct_answer);
+  }
 
   const ops = [];
   if (isCorrect) {
-    ops.push(env.DB.prepare("UPDATE user_mistakes SET is_mastered = 1 WHERE id = ?").bind(mistakeId));
+    if (mistake.id > 0) {
+      ops.push(env.DB.prepare("UPDATE user_mistakes SET is_mastered = 1 WHERE id = ?").bind(mistake.id));
+    }
     ops.push(env.DB.prepare("UPDATE user_stats SET hearts = MIN(5, hearts + 1), total_xp = total_xp + 5 WHERE user_id = ?").bind(user.userId));
   } else {
-    ops.push(env.DB.prepare("UPDATE user_mistakes SET wrong_count = wrong_count + 1, last_wrong_at = CURRENT_TIMESTAMP WHERE id = ?").bind(mistakeId));
+    if (mistake.id > 0) {
+      ops.push(env.DB.prepare("UPDATE user_mistakes SET wrong_count = wrong_count + 1, last_wrong_at = CURRENT_TIMESTAMP WHERE id = ?").bind(mistake.id));
+    }
   }
-  await env.DB.batch(ops);
+  if (ops.length > 0) {
+    await env.DB.batch(ops);
+  }
+
   const updatedStats = await env.DB.prepare("SELECT * FROM user_stats WHERE user_id = ? LIMIT 1").bind(user.userId).first();
-  return { ok: true, stats: updatedStats, restoredHeart: isCorrect };
+  return {
+    ok: true,
+    isCorrect: isCorrect,
+    correctAnswer: normalizeAnswer(mistake.correct_answer),
+    explanation: mistake.explanation || "",
+    stats: updatedStats,
+    restoredHeart: isCorrect
+  };
+}
+
+async function getDailyQuests(user, env) {
+  const today = vietDate();
+  const [completedLessons, highScoreLessons, todayMistakes] = await Promise.all([
+    env.DB.prepare(
+      "SELECT COUNT(DISTINCT lesson_id) as count FROM user_progress WHERE user_id = ? AND status = 'completed' AND date(completed_at, '+7 hours') = ?"
+    ).bind(user.userId, today).first(),
+    env.DB.prepare(
+      "SELECT COUNT(DISTINCT lesson_id) as count FROM user_progress WHERE user_id = ? AND status = 'completed' AND score >= 80 AND date(completed_at, '+7 hours') = ?"
+    ).bind(user.userId, today).first(),
+    env.DB.prepare(
+      "SELECT COUNT(*) as count FROM user_mistakes WHERE user_id = ? AND is_mastered = 1 AND date(last_wrong_at, '+7 hours') = ?"
+    ).bind(user.userId, today).first()
+  ]);
+
+  const claimedRows = await env.DB.prepare(
+    "SELECT quest_code, claimed_at FROM user_daily_quests WHERE user_id = ? AND quest_date = ?"
+  ).bind(user.userId, today).all();
+  const claimedSet = new Set((claimedRows.results || []).map(r => r.quest_code));
+
+  const lessonsCount = Number(completedLessons?.count || 0);
+  const highScoresCount = Number(highScoreLessons?.count || 0);
+  const mistakesCount = Number(todayMistakes?.count || 0);
+  // Mỗi bài học hoàn thành đạt 10 XP, mỗi câu sai ôn tập khắc phục đạt 5 XP
+  const xpCount = (lessonsCount * 10) + (mistakesCount * 5);
+
+  const questDefs = [
+    {
+      code: "first_lesson",
+      title: "Khởi động ngày mới 🌅",
+      description: "Hoàn thành bài học đầu tiên trong ngày",
+      target: 1,
+      current: Math.min(1, lessonsCount),
+      gems: 10,
+      icon: "🌅"
+    },
+    {
+      code: "study_3_lessons",
+      title: "Chăm chỉ rèn luyện 📚",
+      description: "Hoàn thành 3 bài học trong ngày hôm nay",
+      target: 3,
+      current: Math.min(3, lessonsCount),
+      gems: 15,
+      icon: "📚"
+    },
+    {
+      code: "study_5_lessons",
+      title: "Chiến thần tri thức ⚡",
+      description: "Chinh phục 5 bài học trong ngày",
+      target: 5,
+      current: Math.min(5, lessonsCount),
+      gems: 25,
+      icon: "⚡"
+    },
+    {
+      code: "high_score_80",
+      title: "Học bá xuất sắc 🎯",
+      description: "Đạt điểm số từ 80% trở lên ở 2 bài học",
+      target: 2,
+      current: Math.min(2, highScoresCount),
+      gems: 15,
+      icon: "🎯"
+    },
+    {
+      code: "earn_50_xp",
+      title: "Tích lũy kinh nghiệm ⭐",
+      description: "Gặt hái ít nhất 50 điểm kinh nghiệm XP hôm nay",
+      target: 50,
+      current: Math.min(50, xpCount),
+      gems: 20,
+      icon: "⭐"
+    },
+    {
+      code: "review_3_mistakes",
+      title: "Ôn nhuần nhuyễn 🔍",
+      description: "Khắc phục thành công 3 câu hỏi ôn tập",
+      target: 3,
+      current: Math.min(3, mistakesCount),
+      gems: 15,
+      icon: "🔍"
+    }
+  ];
+
+  const quests = questDefs.map(q => ({
+    ...q,
+    progressPercent: Math.min(100, Math.round((q.current / q.target) * 100)),
+    isCompleted: q.current >= q.target,
+    isClaimed: claimedSet.has(q.code)
+  }));
+
+  return {
+    date: today,
+    quests,
+    totalGemsAvailable: quests.reduce((sum, q) => sum + q.gems, 0),
+    totalGemsClaimed: quests.filter(q => q.isClaimed).reduce((sum, q) => sum + q.gems, 0)
+  };
+}
+
+async function claimDailyQuest(request, user, env) {
+  const body = await readJson(request);
+  const questCode = String(body.questCode || "").trim();
+  const daily = await getDailyQuests(user, env);
+  const targetQuest = daily.quests.find(q => q.code === questCode);
+  if (!targetQuest) throw new HttpError(404, "Không tìm thấy nhiệm vụ này.");
+  if (!targetQuest.isCompleted) throw new HttpError(400, "Bạn chưa hoàn thành mục tiêu của nhiệm vụ này.");
+  if (targetQuest.isClaimed) throw new HttpError(400, "Bạn đã nhận thưởng nhiệm vụ này hôm nay rồi.");
+
+  const today = vietDate();
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO user_daily_quests (user_id, quest_date, quest_code) VALUES (?, ?, ?)"
+    ).bind(user.userId, today, questCode),
+    env.DB.prepare(
+      "UPDATE user_stats SET gems = gems + ? WHERE user_id = ?"
+    ).bind(targetQuest.gems, user.userId)
+  ]);
+
+  const updatedStats = await env.DB.prepare("SELECT * FROM user_stats WHERE user_id = ? LIMIT 1").bind(user.userId).first();
+  return {
+    ok: true,
+    claimedCode: questCode,
+    gemsAwarded: targetQuest.gems,
+    stats: updatedStats
+  };
+}
+
+async function claimLeaderboardReward(request, user, env) {
+  const body = await readJson(request);
+  const weekStart = String(body.weekStart || "").trim();
+  if (!weekStart) throw new HttpError(400, "Thiếu thông tin tuần giải đấu.");
+
+  const existing = await env.DB.prepare(
+    "SELECT id FROM user_leaderboard_rewards WHERE user_id = ? AND week_start_date = ? LIMIT 1"
+  ).bind(user.userId, weekStart).first();
+  if (existing) throw new HttpError(400, "Bạn đã nhận phần thưởng giải đấu của tuần này rồi.");
+
+  const board = await env.DB.prepare(
+    "SELECT user_id, weekly_xp FROM weekly_leaderboards WHERE week_start_date = ? ORDER BY weekly_xp DESC, user_id LIMIT 3"
+  ).bind(weekStart).all();
+  const list = board.results || [];
+  let userRank = 0;
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].user_id === user.userId) {
+      userRank = i + 1;
+      break;
+    }
+  }
+  if (userRank < 1 || userRank > 3) {
+    throw new HttpError(400, "Bạn không nằm trong Top 1, 2, 3 của tuần này để nhận thưởng.");
+  }
+
+  const gemsByRank = { 1: 100, 2: 60, 3: 40 };
+  const gemsAwarded = gemsByRank[userRank] || 40;
+
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO user_leaderboard_rewards (user_id, week_start_date, rank, gems_awarded) VALUES (?, ?, ?, ?)"
+    ).bind(user.userId, weekStart, userRank, gemsAwarded),
+    env.DB.prepare(
+      "UPDATE user_stats SET gems = gems + ? WHERE user_id = ?"
+    ).bind(gemsAwarded, user.userId)
+  ]);
+
+  const updatedStats = await env.DB.prepare("SELECT * FROM user_stats WHERE user_id = ? LIMIT 1").bind(user.userId).first();
+  return {
+    ok: true,
+    rank: userRank,
+    gemsAwarded: gemsAwarded,
+    stats: updatedStats
+  };
 }
 
 async function leaderboard(user, env) {
-  const weekStart = mondayDate(vietDate());
+  const today = vietDate();
+  const weekStart = mondayDate(today);
   const response = await env.DB.prepare(
     "SELECT w.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, w.league_name, w.weekly_xp " +
     "FROM weekly_leaderboards w " +
@@ -1178,7 +1448,251 @@ async function leaderboard(user, env) {
     return Object.assign({}, row, { rank: index + 1, isMe: row.user_id === user.userId });
   });
 
-  return { weekStart: weekStart, league: "Bronze", rows: rows };
+  const lastWeekStart = mondayDate(shiftDate(today, -7));
+  let pendingReward = null;
+
+  try {
+    const lastWeekTop = await env.DB.prepare(
+      "SELECT user_id, weekly_xp FROM weekly_leaderboards WHERE week_start_date = ? ORDER BY weekly_xp DESC, user_id LIMIT 3"
+    ).bind(lastWeekStart).all();
+
+    const top3 = lastWeekTop.results || [];
+    for (let i = 0; i < top3.length; i++) {
+      if (top3[i].user_id === user.userId) {
+        const rank = i + 1;
+        const gemsReward = rank === 1 ? 100 : rank === 2 ? 60 : 40;
+        const claimed = await env.DB.prepare(
+          "SELECT id FROM user_leaderboard_rewards WHERE user_id = ? AND week_start_date = ? LIMIT 1"
+        ).bind(user.userId, lastWeekStart).first();
+
+        if (!claimed) {
+          pendingReward = {
+            weekStart: lastWeekStart,
+            rank: rank,
+            gems: gemsReward
+          };
+        }
+        break;
+      }
+    }
+  } catch {}
+
+  return {
+    weekStart: weekStart,
+    league: "Bronze",
+    rows: rows,
+    prizes: [
+      { rank: 1, gems: 100, title: "Quán Quân Tuần 👑", badge: "🥇" },
+      { rank: 2, gems: 60, title: "Á Quân Tuần 🥈", badge: "🥈" },
+      { rank: 3, gems: 40, title: "Hạng Ba Tuần 🥉", badge: "🥉" }
+    ],
+    pendingReward: pendingReward
+  };
+}
+
+async function getUserPublicProfile(targetUserId, currentUser, env) {
+  const profile = await env.DB.prepare(
+    "SELECT p.id, p.user_id, p.full_name, p.avatar_url, p.bio, p.cover_url, p.school, p.major, p.created_at, a.username " +
+    "FROM profiles p LEFT JOIN accounts a ON a.user_id = p.user_id WHERE p.user_id = ? LIMIT 1"
+  ).bind(targetUserId).first();
+  if (!profile) throw new HttpError(404, "Không tìm thấy hồ sơ học viên này.");
+
+  const stats = await env.DB.prepare(
+    "SELECT total_xp, current_streak, longest_streak, hearts, gems, last_active_date FROM user_stats WHERE user_id = ? LIMIT 1"
+  ).bind(targetUserId).first() || { total_xp: 0, current_streak: 0, longest_streak: 0, hearts: 5, gems: 0 };
+
+  const weekStart = mondayDate(vietDate());
+  const lb = await env.DB.prepare(
+    "SELECT league_name, weekly_xp FROM weekly_leaderboards WHERE user_id = ? AND week_start_date = ? LIMIT 1"
+  ).bind(targetUserId, weekStart).first();
+
+  const progress = await env.DB.prepare(
+    "SELECT COUNT(DISTINCT lesson_id) AS completed_count FROM user_progress WHERE user_id = ? AND status = 'completed'"
+  ).bind(targetUserId).first();
+
+  const ach = await env.DB.prepare(
+    "SELECT COUNT(*) AS ach_count FROM user_achievements WHERE user_id = ?"
+  ).bind(targetUserId).first();
+
+  const friend = await env.DB.prepare(
+    "SELECT id, status FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?) LIMIT 1"
+  ).bind(currentUser.userId, targetUserId, targetUserId, currentUser.userId).first();
+
+  return {
+    profile: profile,
+    stats: stats,
+    league: lb?.league_name || "Bronze",
+    weeklyXp: lb?.weekly_xp || 0,
+    completedLessons: progress?.completed_count || 0,
+    achievementsCount: ach?.ach_count || 0,
+    isSelf: currentUser.userId === targetUserId,
+    isFriend: !!friend,
+    friendStatus: friend?.status || null
+  };
+}
+
+async function toggleFriend(request, currentUser, env) {
+  const body = await readJson(request);
+  const targetUserId = String(body.targetUserId || "").trim();
+  if (!targetUserId) throw new HttpError(400, "Thiếu mã học viên.");
+  if (targetUserId === currentUser.userId) throw new HttpError(400, "Bạn không thể kết bạn với chính mình.");
+
+  const target = await env.DB.prepare("SELECT user_id FROM profiles WHERE user_id = ? LIMIT 1").bind(targetUserId).first();
+  if (!target) throw new HttpError(404, "Học viên không tồn tại.");
+
+  const existing = await env.DB.prepare(
+    "SELECT id FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?) LIMIT 1"
+  ).bind(currentUser.userId, targetUserId, targetUserId, currentUser.userId).first();
+
+  const now = vietDate();
+  if (existing) {
+    await env.DB.prepare(
+      "DELETE FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)"
+    ).bind(currentUser.userId, targetUserId, targetUserId, currentUser.userId).run();
+    return { isFriend: false, message: "Đã hủy kết bạn thành công." };
+  } else {
+    await env.DB.prepare(
+      "INSERT INTO friendships (user_id, friend_id, status, created_at) VALUES (?, ?, 'accepted', ?)"
+    ).bind(currentUser.userId, targetUserId, now).run();
+    return { isFriend: true, message: "Đã kết bạn thành công! 🎉" };
+  }
+}
+
+async function getFriendsList(currentUser, env) {
+  const query = 
+    "SELECT " +
+      "CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END AS friend_user_id, " +
+      "f.created_at AS friendship_date, " +
+      "COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
+      "p.avatar_url, p.school, p.major, a.username, " +
+      "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak, " +
+      "COALESCE(w.league_name, 'Bronze') AS league_name " +
+    "FROM friendships f " +
+    "JOIN profiles p ON p.user_id = (CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END) " +
+    "LEFT JOIN accounts a ON a.user_id = p.user_id " +
+    "LEFT JOIN user_stats s ON s.user_id = p.user_id " +
+    "LEFT JOIN weekly_leaderboards w ON w.user_id = p.user_id " +
+    "WHERE f.user_id = ? OR f.friend_id = ? " +
+    "GROUP BY friend_user_id " +
+    "ORDER BY s.total_xp DESC";
+
+  const res = await env.DB.prepare(query).bind(currentUser.userId, currentUser.userId, currentUser.userId, currentUser.userId).all();
+  return { friends: res.results || [] };
+}
+
+async function searchUsers(request, currentUser, env) {
+  const url = new URL(request.url);
+  const q = String(url.searchParams.get("q") || "").trim();
+  if (!q) return { users: [] };
+  const pattern = "%" + q + "%";
+
+  const res = await env.DB.prepare(
+    "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
+    "p.avatar_url, p.school, p.major, a.username, " +
+    "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak, " +
+    "EXISTS (SELECT 1 FROM friendships f WHERE (f.user_id = ? AND f.friend_id = p.user_id) OR (f.user_id = p.user_id AND f.friend_id = ?)) AS is_friend " +
+    "FROM profiles p " +
+    "LEFT JOIN accounts a ON a.user_id = p.user_id " +
+    "LEFT JOIN user_stats s ON s.user_id = p.user_id " +
+    "WHERE p.user_id != ? AND (p.full_name LIKE ? OR a.username LIKE ? OR p.school LIKE ?) " +
+    "ORDER BY s.total_xp DESC LIMIT 20"
+  ).bind(currentUser.userId, currentUser.userId, currentUser.userId, pattern, pattern, pattern).all();
+
+  return { users: res.results || [] };
+}
+
+async function getConversations(currentUser, env) {
+  const query = 
+    "SELECT " +
+      "CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS other_user_id, " +
+      "message AS last_message, " +
+      "created_at, " +
+      "sender_id " +
+    "FROM direct_messages " +
+    "WHERE sender_id = ? OR receiver_id = ? " +
+    "ORDER BY id DESC";
+
+  const raw = await env.DB.prepare(query).bind(currentUser.userId, currentUser.userId, currentUser.userId).all();
+  const seen = new Set();
+  const convos = [];
+
+  for (const row of (raw.results || [])) {
+    if (!seen.has(row.other_user_id)) {
+      seen.add(row.other_user_id);
+      const other = await env.DB.prepare(
+        "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, a.username " +
+        "FROM profiles p LEFT JOIN accounts a ON a.user_id = p.user_id WHERE p.user_id = ? LIMIT 1"
+      ).bind(row.other_user_id).first();
+
+      const unread = await env.DB.prepare(
+        "SELECT COUNT(*) AS c FROM direct_messages WHERE sender_id = ? AND receiver_id = ? AND is_read = 0"
+      ).bind(row.other_user_id, currentUser.userId).first();
+
+      if (other) {
+        convos.push({
+          user: other,
+          lastMessage: row.last_message,
+          lastTime: row.created_at,
+          isMine: row.sender_id === currentUser.userId,
+          unreadCount: unread?.c || 0
+        });
+      }
+    }
+  }
+
+  return { conversations: convos };
+}
+
+async function getMessagesWithUser(targetUserId, currentUser, env) {
+  await env.DB.prepare(
+    "UPDATE direct_messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ? AND is_read = 0"
+  ).bind(targetUserId, currentUser.userId).run();
+
+  const messages = await env.DB.prepare(
+    "SELECT id, sender_id, receiver_id, message, is_read, created_at " +
+    "FROM direct_messages " +
+    "WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) " +
+    "ORDER BY id ASC LIMIT 100"
+  ).bind(currentUser.userId, targetUserId, targetUserId, currentUser.userId).all();
+
+  const targetUser = await env.DB.prepare(
+    "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, a.username " +
+    "FROM profiles p LEFT JOIN accounts a ON a.user_id = p.user_id WHERE p.user_id = ? LIMIT 1"
+  ).bind(targetUserId).first();
+
+  return {
+    messages: (messages.results || []).map(m => ({
+      id: m.id,
+      message: m.message,
+      isMine: m.sender_id === currentUser.userId,
+      createdAt: m.created_at
+    })),
+    targetUser: targetUser || { user_id: targetUserId, full_name: "Học viên 3TG" }
+  };
+}
+
+async function sendMessageToUser(request, targetUserId, currentUser, env) {
+  const body = await readJson(request);
+  const text = String(body.message || "").trim().slice(0, 1000);
+  if (!text) throw new HttpError(400, "Nội dung tin nhắn không được để trống.");
+
+  const target = await env.DB.prepare("SELECT user_id FROM profiles WHERE user_id = ? LIMIT 1").bind(targetUserId).first();
+  if (!target) throw new HttpError(404, "Học viên không tồn tại.");
+
+  const now = new Date().toISOString();
+  const res = await env.DB.prepare(
+    "INSERT INTO direct_messages (sender_id, receiver_id, message, is_read, created_at) VALUES (?, ?, ?, 0, ?)"
+  ).bind(currentUser.userId, targetUserId, text, now).run();
+
+  return {
+    ok: true,
+    message: {
+      id: res.meta?.last_row_id || Date.now(),
+      message: text,
+      isMine: true,
+      createdAt: now
+    }
+  };
 }
 
 async function askAI(request, user, env) {
@@ -1222,15 +1736,23 @@ async function askAI(request, user, env) {
   } else {
     conversationId = crypto.randomUUID();
   }
-  const endpoint = String(env.LOCAL_AI_ENDPOINT || "").trim();
-  if (!endpoint) throw new HttpError(503, "Chưa cấu hình LOCAL_AI_ENDPOINT. Hãy kết nối Worker tới máy chủ Local AI để bảo vệ dữ liệu học tập.");
+  let endpoint = String(env.LOCAL_AI_ENDPOINT || "").trim();
+  const apiKey = env.LOCAL_AI_API_KEY || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || "";
+  const configuredModel = env.LOCAL_AI_MODEL || env.DEEPSEEK_MODEL || env.VITE_DEEPSEEK_MODEL || "";
+
+  if (!endpoint && apiKey) {
+    endpoint = "https://api.deepseek.com/chat/completions";
+  }
+
+  if (!endpoint) throw new HttpError(503, "Chưa cấu hình AI. Hãy thiết lập LOCAL_AI_ENDPOINT hoặc DEEPSEEK_API_KEY trong file .env / .dev.vars.");
   let parsedEndpoint;
-  try { parsedEndpoint = new URL(endpoint); } catch { throw new HttpError(503, "LOCAL_AI_ENDPOINT chưa phải URL hợp lệ."); }
-  if (!["http:", "https:"].includes(parsedEndpoint.protocol)) throw new HttpError(503, "LOCAL_AI_ENDPOINT chỉ hỗ trợ HTTP hoặc HTTPS.");
-  const apiKey = env.LOCAL_AI_API_KEY || "";
+  try { parsedEndpoint = new URL(endpoint); } catch { throw new HttpError(503, "Endpoint AI chưa phải URL hợp lệ."); }
+  if (!["http:", "https:"].includes(parsedEndpoint.protocol)) throw new HttpError(503, "Endpoint AI chỉ hỗ trợ HTTP hoặc HTTPS.");
+
+  const defaultModel = apiKey.startsWith("sk-") ? "deepseek-chat" : "qwen2.5:14b-instruct";
   const model = imageParts.length
-    ? (env.LOCAL_AI_VISION_MODEL || env.LOCAL_AI_MODEL || "qwen2.5:14b-instruct")
-    : (env.LOCAL_AI_MODEL || "qwen2.5:14b-instruct");
+    ? (env.LOCAL_AI_VISION_MODEL || configuredModel || defaultModel)
+    : (configuredModel || defaultModel);
   const freeMode = body.freeMode === true;
   let courseTitle = "";
   let context = "";
@@ -1241,7 +1763,7 @@ async function askAI(request, user, env) {
       context = await courseSnippets(env, courseTitle, message);
     }
   }
-  const systemText = "Bạn là 3TG AI, trợ giảng học tập thân thiện và thông minh bằng tiếng Việt của Web học 3TG. " +
+  const systemText = "Bạn là Lumi AI, trợ giảng học tập thân thiện và thông minh bằng tiếng Việt của Lumi Study. " +
     "Giải thích rõ ràng, gần gũi, theo từng bước khi phù hợp. Không bịa thông tin về tài liệu môn học. " +
     "Nếu câu hỏi cần dữ liệu mà phần ngữ cảnh không có, hãy nói rõ điều đó rồi giải thích phần kiến thức chung với nhãn phân biệt. " +
     "Khuyến khích người học tự suy nghĩ và không tiết lộ đáp án trắc nghiệm nếu họ chưa hỏi.";
@@ -1272,16 +1794,21 @@ async function askAI(request, user, env) {
           { role: "user", content: userContent }
         ],
         temperature: 0.55,
-        max_tokens: 900
+        max_tokens: 1500
       }),
       signal: AbortSignal.timeout(90000)
     });
-  } catch {
-    throw new HttpError(502, "3TG chưa kết nối được với trợ giảng AI. Thử gửi lại sau một chút nhé.");
+  } catch (err) {
+    console.error("AI fetch error:", err);
+    throw new HttpError(502, "Lumi chưa kết nối được với trợ giảng AI. Thử gửi lại sau một chút nhé.");
   }
-  if (!response.ok) throw new HttpError(502, imageParts.length
-      ? "AI chưa đọc được ảnh. Hãy kiểm tra LOCAL_AI_VISION_MODEL có hỗ trợ vision hoặc gửi ảnh nhỏ hơn."
-    : "Trợ giảng 3TG AI đang bận. Bạn thử lại sau một chút nhé.");
+  if (!response.ok) {
+    const errText = await response.text().catch(() => "");
+    console.error("AI response error:", response.status, errText);
+    throw new HttpError(502, imageParts.length
+      ? "AI chưa đọc được ảnh. Hãy kiểm tra model có hỗ trợ vision hoặc gửi ảnh nhỏ hơn."
+      : "Trợ giảng Lumi AI đang bận hoặc gặp sự cố (" + response.status + "). Bạn thử lại sau một chút nhé.");
+  }
   let result;
   try {
     result = await response.json();
@@ -1291,7 +1818,7 @@ async function askAI(request, user, env) {
   const reply = result && result.choices && result.choices[0] && result.choices[0].message
     ? String(result.choices[0].message.content || "")
     : "";
-  if (!reply) throw new HttpError(502, "3TG chưa nhận được câu trả lời. Thử hỏi lại nhé.");
+  if (!reply) throw new HttpError(502, "Lumi chưa nhận được câu trả lời. Thử hỏi lại nhé.");
   const now = new Date().toISOString();
   const isNewConversation = !body.conversationId;
   const storedMessage = message + (attachmentNames.length ? "\n\n[Tệp đính kèm: " + attachmentNames.join(", ") + "]" : "");
@@ -1393,7 +1920,19 @@ async function routeApi(request, env) {
   if (path === "/api/shop" && method === "GET") return respond(await shopList(user, env));
   if (path === "/api/shop/buy" && method === "POST") return respond(await buyShopItem(request, user, env));
   if (path === "/api/achievements" && method === "GET") return respond(await achievementsList(user, env));
+  if (path === "/api/quests/daily" && method === "GET") return respond(await getDailyQuests(user, env));
+  if (path === "/api/quests/claim" && method === "POST") return respond(await claimDailyQuest(request, user, env));
   if (path === "/api/leaderboard" && method === "GET") return respond(await leaderboard(user, env));
+  if (path === "/api/leaderboard/claim" && method === "POST") return respond(await claimLeaderboardReward(request, user, env));
+  const userMatch = path.match(/^\/api\/users\/([0-9a-f-]{36})$/i);
+  if (userMatch && method === "GET") return respond(await getUserPublicProfile(userMatch[1], user, env));
+  if (path === "/api/friends" && method === "GET") return respond(await getFriendsList(user, env));
+  if (path === "/api/friends/toggle" && method === "POST") return respond(await toggleFriend(request, user, env));
+  if (path === "/api/friends/search" && method === "GET") return respond(await searchUsers(request, user, env));
+  if (path === "/api/messages/conversations" && method === "GET") return respond(await getConversations(user, env));
+  const messageMatch = path.match(/^\/api\/messages\/([0-9a-f-]{36})$/i);
+  if (messageMatch && method === "GET") return respond(await getMessagesWithUser(messageMatch[1], user, env));
+  if (messageMatch && method === "POST") return respond(await sendMessageToUser(request, messageMatch[1], user, env));
   if (path === "/api/chat/conversations" && method === "GET") return respond(await listAiConversations(user, env));
   const conversationMatch = path.match(/^\/api\/chat\/conversations\/([0-9a-f-]{36})$/i);
   if (conversationMatch && method === "GET") return respond(await readAiConversation(conversationMatch[1], user, env));
