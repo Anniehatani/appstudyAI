@@ -20,7 +20,16 @@ const state = {
   account: null,
   stats: { total_xp: 0, current_streak: 0, longest_streak: 0, hearts: 5, gems: 50 },
   inventory: [],
-  page: "home", // home | courses | notes | leaderboard | shop | achievements | review | chat | settings
+  academicTranscript: null,
+  academicLoginModalOpen: false,
+  academicActiveTab: "login",
+  academicSemesterFilter: "all",
+  academicGradeFilter: "all",
+  academicExpandedSubjects: new Set(),
+  academicSimulatedScores: new Map(),
+  academicAdvisorTarget: 3.2,
+  academicAdvisorBusy: false,
+  page: "home", // home | courses | grades | notes | leaderboard | shop | achievements | review | chat | settings
   apiError: "",
   lesson: null,
   questionIndex: 0,
@@ -610,6 +619,18 @@ function updateShell() {
   const reviewCount = document.getElementById("nav-review-count");
   if (reviewCount) reviewCount.textContent = state.reviewMistakes.length;
 
+  // GPA Badge
+  const gpaBadge = document.getElementById("nav-gpa-badge");
+  if (gpaBadge) {
+    if (state.academicTranscript?.transcript?.gpa?.overall_4) {
+      gpaBadge.textContent = "GPA " + state.academicTranscript.transcript.gpa.overall_4;
+      gpaBadge.classList.add("has-gpa");
+    } else {
+      gpaBadge.textContent = "IU";
+      gpaBadge.classList.remove("has-gpa");
+    }
+  }
+
   // Top Subject Quick Selector
   const currentSub = state.subjects.find(s => Number(s.id) === Number(state.currentSubjectId)) || state.subjects[0];
   const topSubIcon = document.getElementById("top-subject-icon");
@@ -916,10 +937,11 @@ window.handleLoginSubmit = async function(e) {
 
 async function loadAuthenticatedData() {
   try {
-    const [subRes, overviewRes, reviewRes] = await Promise.all([
+    const [subRes, overviewRes, reviewRes, academicRes] = await Promise.all([
       api("/api/subjects"),
       api("/api/overview").catch(() => null),
-      api("/api/review").catch(() => ({ mistakes: [] }))
+      api("/api/review").catch(() => ({ mistakes: [] })),
+      api("/api/academic/transcript").catch(() => null)
     ]);
     state.subjects = subRes.subjects || [];
     if (state.subjects.length && !state.currentSubjectId) {
@@ -927,6 +949,9 @@ async function loadAuthenticatedData() {
     }
     state.overview = overviewRes;
     state.reviewMistakes = reviewRes.mistakes || [];
+    if (academicRes && academicRes.hasTranscript) {
+      state.academicTranscript = academicRes;
+    }
     if (overviewRes && overviewRes.stats) {
       state.stats = overviewRes.stats;
     }
@@ -5235,6 +5260,850 @@ window.closeStreakModal = function(e) {
 };
 
 // ========================================================
+// TRUNG TÂM CẢI THIỆN ĐIỂM & CỐ VẤN HỌC VỤ IU CMCU
+// ========================================================
+
+function formatAdvisorMarkdown(text) {
+  if (!text) return "";
+  let html = esc(text);
+
+  // Bold **...**
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  // Italic *...*
+  html = html.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+
+  const lines = html.split("\n");
+  const result = [];
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line) continue;
+
+    if (line.startsWith("### ")) {
+      result.push('<h4 class="advisor-h3">' + line.slice(4) + '</h4>');
+      continue;
+    }
+    if (line.startsWith("## ")) {
+      result.push('<h3 class="advisor-h2">' + line.slice(3) + '</h3>');
+      continue;
+    }
+    if (line.startsWith("# ")) {
+      result.push('<h2 class="advisor-h1">' + line.slice(2) + '</h2>');
+      continue;
+    }
+
+    const numMatch = line.match(/^(\d+)[\.\)]\s*(.*)$/);
+    if (numMatch) {
+      result.push('<div class="advisor-list-item"><span class="advisor-num">' + numMatch[1] + '.</span><div>' + numMatch[2] + '</div></div>');
+      continue;
+    }
+
+    const bulletMatch = line.match(/^[-•*]\s+(.*)$/);
+    if (bulletMatch) {
+      result.push('<div class="advisor-bullet-item"><span class="advisor-bullet">🥕</span><div>' + bulletMatch[1] + '</div></div>');
+      continue;
+    }
+
+    if (line.startsWith("&gt; ") || line.startsWith("> ")) {
+      result.push('<div class="advisor-callout">' + line.replace(/^(&gt;|>)\s*/, '') + '</div>');
+      continue;
+    }
+
+    result.push('<p class="advisor-p">' + line + '</p>');
+  }
+
+  return result.join("");
+}
+
+function renderGradesView() {
+  const hasData = state.academicTranscript && state.academicTranscript.hasTranscript && state.academicTranscript.transcript;
+
+  if (!hasData) {
+    return `
+      <div class="grades-onboarding-container">
+        <div class="grades-hero-card">
+          <div class="grades-hero-mascot">
+            ${renderThoBayMau({
+              state: THO_STATES.GENIUS,
+              size: 170,
+              speech: "Chào bạn học! Hãy kết nối tài khoản IU trường để Thỏ soi bảng điểm và bày mưu tính kế nâng GPA lên đỉnh chóp nhé! 🐰🎓",
+              speechDirection: "top"
+            })}
+          </div>
+          <div class="grades-hero-content">
+            <span class="grades-pill-badge">CMC UNIVERSITY • CỔNG THÔNG TIN IU</span>
+            <h1 class="grades-hero-title">Trung Tâm Cải Thiện Điểm & Cố Vấn Học Vụ 3TG AI</h1>
+            <p class="grades-hero-desc">
+              Kết nối trực tiếp tài khoản sinh viên cổng <strong>iu.cmcu.edu.vn</strong> để tra cứu điểm số, tổng kết GPA Hệ 10 & Hệ 4, bóc tách môn học theo từng học kỳ, tự động phát hiện "hòn đá tảng" kéo điểm và nhận lộ trình nâng điểm cá nhân hóa bằng <strong>Trợ giảng AI DeepSeek</strong>!
+            </p>
+            <div class="grades-hero-actions">
+              <button type="button" class="btn-duo btn-duo-pink grades-main-btn" onclick="window.openAcademicLoginModal('login')">
+                🔑 Đăng Nhập Cổng IU Trường Để Lấy Điểm
+              </button>
+              <button type="button" class="btn-duo btn-duo-outline grades-sub-btn" onclick="window.openAcademicLoginModal('token')">
+                📋 Nhập Cookie / Token / Dán JSON Bảng Điểm
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grades-features-grid">
+          <div class="grades-feature-card">
+            <div class="feature-icon-wrap" style="background: rgba(255, 117, 151, 0.15); color: #ff4d80;">📊</div>
+            <h3>Bảng Điểm Chia Kỳ Chuẩn Xác</h3>
+            <p>Tra cứu điểm tích lũy hệ 10 và hệ 4, phân loại rõ ràng từng kỳ học, đầy đủ các cột điểm Chuyên cần, Bài tập, Giữa kỳ và Cuối kỳ.</p>
+          </div>
+          <div class="grades-feature-card">
+            <div class="feature-icon-wrap" style="background: rgba(0, 180, 216, 0.15); color: #00b4d8;">🎯</div>
+            <h3>Bắt Bệnh & Mô Phỏng Nâng Điểm</h3>
+            <p>Thuật toán tự động tìm ra các môn điểm C, D, F kéo tụt GPA nhiều nhất. Mô phỏng ngay GPA mới nếu bạn học lại hoặc cải thiện môn đó.</p>
+          </div>
+          <div class="grades-feature-card">
+            <div class="feature-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">🤖</div>
+            <h3>Cố Vấn AI DeepSeek Độc Quyền</h3>
+            <p>Giáo sư Thỏ Bảy Màu phân tích chiến lược chọn môn gỡ điểm, hướng dẫn phương pháp học Active Recall và lập lịch ôn thi 4 tuần cụ thể.</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const { transcript, aiAnalysis, targetGpa = 3.2, lastSyncedAt } = state.academicTranscript;
+  const { student = {}, gpa = {}, semesters = [], weak_subjects = [], raw_subjects = [] } = transcript || {};
+
+  // Tính toán mô phỏng GPA What-If
+  let simWeighted4 = gpa.overall_4 * gpa.total_credits;
+  let simCount = 0;
+  for (const [code, targetScore] of state.academicSimulatedScores.entries()) {
+    const s = raw_subjects.find(x => x.ma_mon === code);
+    if (s && targetScore > s.diem_he_4) {
+      simWeighted4 += (targetScore - s.diem_he_4) * s.so_tin_chi;
+      simCount++;
+    }
+  }
+  const simulatedGpa4 = gpa.total_credits > 0 ? Math.round((simWeighted4 / gpa.total_credits) * 100) / 100 : gpa.overall_4;
+  const simulatedDiff = Math.round((simulatedGpa4 - gpa.overall_4) * 100) / 100;
+
+  // Lọc học kỳ và môn học
+  const semFilter = state.academicSemesterFilter || "all";
+  const gradeFilter = state.academicGradeFilter || "all";
+
+  const filteredSemesters = semesters.filter(sem => {
+    if (semFilter !== "all" && sem.semester_name !== semFilter) return false;
+    return true;
+  });
+
+  return `
+    <div class="grades-dashboard">
+      <!-- HEADER SINH VIÊN IU -->
+      <div class="grades-profile-header">
+        <div class="grades-profile-info">
+          <div class="grades-profile-avatar-wrap">
+            <span class="grades-student-icon">🎓</span>
+          </div>
+          <div class="grades-profile-details">
+            <div class="grades-student-tag">SINH VIÊN ĐẠI HỌC CMC (IU CMCU)</div>
+            <h2 class="grades-student-name">${esc(student.ho_ten || "Sinh viên")}</h2>
+            <div class="grades-student-meta">
+              <span><strong>Mã SV:</strong> ${esc(student.ma_sinh_vien || "Chưa có")}</span>
+              <span>•</span>
+              <span><strong>Ngành:</strong> ${esc(student.nganh || "Công nghệ thông tin")}</span>
+              ${student.lop ? `<span>•</span><span><strong>Lớp:</strong> ${esc(student.lop)}</span>` : ""}
+            </div>
+            ${lastSyncedAt ? `<div class="grades-last-sync">⏱️ Đồng bộ lúc: ${new Date(lastSyncedAt).toLocaleString('vi-VN')}</div>` : ""}
+          </div>
+        </div>
+        <div class="grades-profile-actions">
+          <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="window.openAcademicLoginModal('login')">
+            🔄 Cập nhật từ IU
+          </button>
+          <button type="button" class="btn-duo btn-duo-outline btn-duo-sm" onclick="window.resetAcademicTranscript()">
+            🚪 Ngắt kết nối IU
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 THẺ KPI ĐIỂM SỐ & HỌC LỰC -->
+      <div class="grades-kpi-grid">
+        <div class="grades-kpi-card kpi-gpa-4">
+          <div class="kpi-top-row">
+            <span class="kpi-label">GPA TÍCH LŨY (HỆ 4)</span>
+            <span class="kpi-icon">🏆</span>
+          </div>
+          <div class="kpi-number-wrap">
+            <span class="kpi-big-num">${gpa.overall_4}</span>
+            <span class="kpi-max">/ 4.0</span>
+          </div>
+          <div class="kpi-badge-wrap">
+            <span class="grades-rank-badge" style="background: ${gpa.badgeColor || '#ff7597'};">
+              ${esc(gpa.classification || "Chưa xếp loại")}
+            </span>
+          </div>
+        </div>
+
+        <div class="grades-kpi-card kpi-gpa-10">
+          <div class="kpi-top-row">
+            <span class="kpi-label">GPA TÍCH LŨY (HỆ 10)</span>
+            <span class="kpi-icon">⭐</span>
+          </div>
+          <div class="kpi-number-wrap">
+            <span class="kpi-big-num">${gpa.overall_10}</span>
+            <span class="kpi-max">/ 10.0</span>
+          </div>
+          <div class="kpi-sub-note">Thang điểm chuẩn đào tạo tín chỉ</div>
+        </div>
+
+        <div class="grades-kpi-card kpi-credits">
+          <div class="kpi-top-row">
+            <span class="kpi-label">TÍN CHỈ TÍCH LŨY</span>
+            <span class="kpi-icon">📚</span>
+          </div>
+          <div class="kpi-number-wrap">
+            <span class="kpi-big-num">${gpa.passed_credits}</span>
+            <span class="kpi-max">/ ${gpa.total_credits} TC</span>
+          </div>
+          <div class="kpi-progress-bar">
+            <div class="kpi-progress-fill" style="width: ${gpa.total_credits > 0 ? Math.min(100, Math.round((gpa.passed_credits / gpa.total_credits) * 100)) : 0}%;"></div>
+          </div>
+        </div>
+
+        <div class="grades-kpi-card kpi-weak">
+          <div class="kpi-top-row">
+            <span class="kpi-label">MÔN CẦN CẢI THIỆN</span>
+            <span class="kpi-icon">🎯</span>
+          </div>
+          <div class="kpi-number-wrap">
+            <span class="kpi-big-num" style="color: ${weak_subjects.length > 0 ? '#f97316' : '#10b981'};">${weak_subjects.length}</span>
+            <span class="kpi-max">môn</span>
+          </div>
+          <div class="kpi-sub-note">${weak_subjects.length > 0 ? 'Điểm C, D, F kéo tụt GPA' : 'Phong độ học tập xuất sắc!'}</div>
+        </div>
+      </div>
+
+      <!-- KHU VỰC BẮT BỆNH MÔN ĐIỂM THẤP & BỘ GIẢ LẬP NÂNG GPA -->
+      <div class="grades-section-box grades-simulator-box">
+        <div class="section-box-header">
+          <div class="section-box-title">
+            <span class="section-box-emoji">🎯</span>
+            <div>
+              <h3>Bắt Bệnh Môn Kéo Tụt GPA & Mô Phỏng Nâng Điểm (What-If)</h3>
+              <p>Thỏ Bảy Màu đã lọc ra các môn học đang kéo tụt GPA nhiều nhất do số tín chỉ cao mà điểm thấp. Thử chọn điểm cải thiện để xem GPA tổng nhảy số tức thì nhé!</p>
+            </div>
+          </div>
+          ${simCount > 0 ? `
+            <button type="button" class="btn-duo btn-duo-outline btn-duo-sm" onclick="window.resetSimulatedScores()">
+              🔄 Hoàn tác giả lập
+            </button>
+          ` : ""}
+        </div>
+
+        ${weak_subjects.length === 0 ? `
+          <div class="grades-clean-state">
+            <span style="font-size:36px;">🎉</span>
+            <strong>Thật tuyệt vời! Không có môn nào điểm dưới 6.5.</strong>
+            <span>Bạn đang duy trì phong độ học tập rất đáng khen ngợi!</span>
+          </div>
+        ` : `
+          <div class="weak-subjects-table-wrap">
+            <table class="grades-table">
+              <thead>
+                <tr>
+                  <th>Mã môn</th>
+                  <th>Tên học phần</th>
+                  <th>Số TC</th>
+                  <th>Kỳ học</th>
+                  <th>Điểm Hệ 10</th>
+                  <th>Hệ 4</th>
+                  <th>Điểm chữ</th>
+                  <th>Mô phỏng nâng điểm</th>
+                  <th>Tiềm năng GPA</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${weak_subjects.map(s => {
+                  const currentSim = state.academicSimulatedScores.get(s.ma_mon) || 0;
+                  return `
+                    <tr class="weak-row ${currentSim > 0 ? 'is-simulated' : ''}">
+                      <td><code>${esc(s.ma_mon)}</code></td>
+                      <td><strong>${esc(s.ten_hoc_phan)}</strong></td>
+                      <td>${s.so_tin_chi}</td>
+                      <td><small>${esc(s.hoc_ky || "")} ${esc(s.nam_hoc || "")}</small></td>
+                      <td><b style="color:#f43f5e;">${s.diem_he_10}</b></td>
+                      <td>${s.diem_he_4}</td>
+                      <td><span class="grade-letter-pill grade-${s.diem_chu}">${s.diem_chu}</span></td>
+                      <td>
+                        <select class="sim-select" onchange="window.setSimulatedScore('${s.ma_mon}', this.value)">
+                          <option value="0" ${currentSim === 0 ? 'selected' : ''}>-- Giữ nguyên (${s.diem_chu}) --</option>
+                          <option value="3.5" ${currentSim === 3.5 ? 'selected' : ''}>Nâng lên B+ (3.5)</option>
+                          <option value="4.0" ${currentSim === 4.0 ? 'selected' : ''}>Nâng lên A (4.0) 🌟</option>
+                        </select>
+                      </td>
+                      <td>
+                        <span class="gain-badge">+${s.gpaGainIfA} GPA</span>
+                      </td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- THANH KẾT QUẢ GIẢ LẬP TRỰC TIẾP -->
+          <div class="sim-result-bar ${simCount > 0 ? 'active' : ''}">
+            <div class="sim-result-left">
+              <span class="sim-sparkle">✨</span>
+              <div class="sim-result-text">
+                ${simCount > 0 ? `
+                  <strong>Dự báo kết quả: Cải thiện ${simCount} môn đã chọn sẽ đưa GPA từ <span class="old-gpa">${gpa.overall_4}</span> ➜ <span class="new-gpa">${simulatedGpa4}</span> (+${simulatedDiff} điểm)!</strong>
+                  <span>Một bước nhảy vọt giúp bạn nâng hạng học lực và mở rộng cơ hội học bổng / việc làm!</span>
+                ` : `
+                  <strong>Hãy chọn mức điểm bạn muốn đạt ở các môn trên để xem dự báo GPA nhảy số tức thì!</strong>
+                  <span>Học cải thiện môn 3-4 tín chỉ sẽ mang lại tỉ lệ tăng điểm (ROI) cao nhất.</span>
+                `}
+              </div>
+            </div>
+            <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="window.requestAcademicAdvisor(${simulatedGpa4 > gpa.overall_4 ? simulatedGpa4 : targetGpa})">
+              🐰 Nhờ Thỏ Lên Lộ Trình Nâng Điểm Ngay
+            </button>
+          </div>
+        `}
+      </div>
+
+      <!-- KHU VỰC CỐ VẤN HỌC THUẬT & LỘ TRÌNH HỌC AI DEEPSEEK -->
+      <div class="grades-section-box grades-ai-advisor-box">
+        <div class="advisor-header-row">
+          <div class="advisor-title-wrap">
+            <span class="advisor-mascot-badge">🐰🎓</span>
+            <div>
+              <h3>Cố Vấn Học Vụ AI DeepSeek: Lộ Trình & Phương Pháp Nâng Điểm</h3>
+              <p>Trợ giảng AI phân tích ma trận điểm cá nhân, chỉ ra nguyên nhân kéo điểm và thiết kế lộ trình 4 tuần thực chiến.</p>
+            </div>
+          </div>
+          <div class="advisor-target-controls">
+            <label>Mục tiêu GPA:</label>
+            <div class="target-pills">
+              <button type="button" class="target-pill ${targetGpa === 3.2 ? 'active' : ''}" onclick="window.requestAcademicAdvisor(3.2)">
+                3.2 (Giỏi)
+              </button>
+              <button type="button" class="target-pill ${targetGpa === 3.6 ? 'active' : ''}" onclick="window.requestAcademicAdvisor(3.6)">
+                3.6 (Xuất sắc)
+              </button>
+              <button type="button" class="target-pill ${targetGpa === 4.0 ? 'active' : ''}" onclick="window.requestAcademicAdvisor(4.0)">
+                4.0 (Tuyệt đối)
+              </button>
+            </div>
+            <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="window.requestAcademicAdvisor(${targetGpa})" ${state.academicAdvisorBusy ? 'disabled' : ''}>
+              ${state.academicAdvisorBusy ? '<span class="spinner-dot"></span> Đang phân tích…' : '🔄 Phân Tích & Lập Lộ Trình Mới'}
+            </button>
+          </div>
+        </div>
+
+        <div class="advisor-content-body">
+          ${state.academicAdvisorBusy ? `
+            <div class="advisor-loading-card">
+              <div class="advisor-loading-mascot">
+                ${renderThoBayMau({
+                  state: THO_STATES.STUDY_LAPTOP,
+                  size: 140,
+                  speech: "Thỏ Bảy Màu đang cùng DeepSeek AI 'vắt óc' lập kế hoạch gỡ điểm cho bạn đây! Đợi Thỏ xíu nha... 🥕💻",
+                  speechDirection: "top"
+                })}
+              </div>
+              <div class="advisor-loading-text">
+                <strong>Đang triệu hồi Trí Tuệ Nhân Tạo DeepSeek…</strong>
+                <p>Hệ thống đang rà soát từng môn học, tính toán trọng số tín chỉ và tối ưu hóa thời khóa biểu học tập 4 tuần nước rút.</p>
+              </div>
+            </div>
+          ` : aiAnalysis ? `
+            <div class="advisor-report-view">
+              ${formatAdvisorMarkdown(aiAnalysis)}
+            </div>
+            <div class="advisor-footer-row">
+              <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="state.page='chat'; render();">
+                💬 Đặt Câu Hỏi Thêm Cho Trợ Giảng AI DeepSeek
+              </button>
+            </div>
+          ` : `
+            <div class="advisor-empty-prompt">
+              ${renderThoBayMau({
+                state: THO_STATES.SURPRISED_CARROT,
+                size: 130,
+                speech: "Bấm nút 'Phân Tích & Lập Lộ Trình Mới' bên trên để Thỏ Bảy Màu mách nước chiến lược nâng điểm cho bạn nhé! 🐰✨",
+                speechDirection: "top"
+              })}
+              <div style="margin-top:14px;">
+                <button type="button" class="btn-duo btn-duo-pink" onclick="window.requestAcademicAdvisor(${targetGpa})">
+                  ✨ Khởi Tạo Lộ Trình Cải Thiện Điểm Ngay (AI DeepSeek)
+                </button>
+              </div>
+            </div>
+          `}
+        </div>
+      </div>
+
+      <!-- BẢNG ĐIỂM CHI TIẾT PHÂN CHIA THEO TỪNG HỌC KỲ RÕ RÀNG -->
+      <div class="grades-section-box">
+        <div class="section-box-header">
+          <div class="section-box-title">
+            <span class="section-box-emoji">📚</span>
+            <div>
+              <h3>Bảng Điểm Chi Tiết Phân Chia Theo Từng Học Kỳ (Đại học CMC)</h3>
+              <p>Toàn bộ học phần qua các kỳ, có đầy đủ điểm chữ, điểm hệ 10 & hệ 4 và chi tiết điểm thành phần (chuyên cần, bài tập, giữa kỳ, cuối kỳ).</p>
+            </div>
+          </div>
+
+          <!-- BỘ LỌC KỲ HỌC -->
+          <div class="grades-filter-bar">
+            <div class="sem-filter-pills">
+              <button type="button" class="sem-pill ${semFilter === 'all' ? 'active' : ''}" onclick="window.setAcademicSemesterFilter('all')">
+                Tất cả học kỳ (${semesters.length})
+              </button>
+              ${semesters.map(sem => `
+                <button type="button" class="sem-pill ${semFilter === sem.semester_name ? 'active' : ''}" onclick="window.setAcademicSemesterFilter('${esc(sem.semester_name)}')">
+                  ${esc(sem.semester_name)}
+                </button>
+              `).join("")}
+            </div>
+
+            <div class="grade-filter-btns">
+              <button type="button" class="grade-filter-btn ${gradeFilter === 'all' ? 'active' : ''}" onclick="window.setAcademicGradeFilter('all')">
+                Tất cả môn (${raw_subjects.length})
+              </button>
+              <button type="button" class="grade-filter-btn ${gradeFilter === 'weak' ? 'active' : ''}" onclick="window.setAcademicGradeFilter('weak')">
+                Cần gỡ điểm C/D/F (${weak_subjects.length})
+              </button>
+              <button type="button" class="grade-filter-btn ${gradeFilter === 'high' ? 'active' : ''}" onclick="window.setAcademicGradeFilter('high')">
+                Điểm cao A/B+ (${raw_subjects.filter(s => ['A', 'A+', 'B+'].includes(s.diem_chu)).length})
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="semesters-list-container">
+          ${filteredSemesters.map(sem => {
+            const subjectsToRender = sem.subjects.filter(s => {
+              if (gradeFilter === "weak") return ['F', 'D', 'D+', 'C'].includes(s.diem_chu) || s.diem_he_10 < 6.5;
+              if (gradeFilter === "high") return ['A', 'A+', 'B+'].includes(s.diem_chu);
+              return true;
+            });
+
+            if (subjectsToRender.length === 0) return "";
+
+            return `
+              <div class="semester-card">
+                <div class="semester-card-header">
+                  <div class="semester-name-wrap">
+                    <span class="semester-calendar-icon">📅</span>
+                    <h4>${esc(sem.semester_name)}</h4>
+                  </div>
+                  <div class="semester-stats-wrap">
+                    <span>GPA Kỳ Hệ 4: <strong>${sem.gpa_4}</strong></span>
+                    <span>•</span>
+                    <span>Hệ 10: <strong>${sem.gpa_10}</strong></span>
+                    <span>•</span>
+                    <span>Số tín chỉ: <strong>${sem.total_credits} TC</strong></span>
+                    <span>•</span>
+                    <span><strong>${subjectsToRender.length}</strong> môn</span>
+                  </div>
+                </div>
+
+                <div class="semester-table-wrap">
+                  <table class="grades-table">
+                    <thead>
+                      <tr>
+                        <th>Mã môn</th>
+                        <th>Tên học phần</th>
+                        <th>Số TC</th>
+                        <th>Điểm Hệ 10</th>
+                        <th>Điểm Hệ 4</th>
+                        <th>Điểm chữ</th>
+                        <th>Đánh giá</th>
+                        <th>Chi tiết</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${subjectsToRender.map(s => {
+                        const isExpanded = state.academicExpandedSubjects.has(s.ma_mon);
+                        const parts = s.chi_tiet_diem || {};
+                        return `
+                          <tr class="subject-row ${isExpanded ? 'expanded' : ''}" onclick="window.toggleAcademicSubjectDetail('${s.ma_mon}')">
+                            <td><code>${esc(s.ma_mon)}</code></td>
+                            <td>
+                              <strong>${esc(s.ten_hoc_phan)}</strong>
+                            </td>
+                            <td>${s.so_tin_chi}</td>
+                            <td><b>${s.diem_he_10}</b></td>
+                            <td>${s.diem_he_4}</td>
+                            <td><span class="grade-letter-pill grade-${s.diem_chu}">${s.diem_chu}</span></td>
+                            <td>
+                              <span class="status-pill ${s.passed ? 'status-pass' : 'status-fail'}">
+                                ${s.passed ? 'Đạt ✓' : 'Chưa đạt ✗'}
+                              </span>
+                            </td>
+                            <td>
+                              <button type="button" class="btn-toggle-detail" aria-label="Xem chi tiết điểm thành phần">
+                                ${isExpanded ? '▲ Thu gọn' : '▼ Điểm TP'}
+                              </button>
+                            </td>
+                          </tr>
+                          ${isExpanded ? `
+                            <tr class="detail-row">
+                              <td colspan="8">
+                                <div class="detail-breakdown-card">
+                                  <div class="breakdown-title">
+                                    <span>🔍 Chi tiết điểm thành phần môn <strong>${esc(s.ten_hoc_phan)}</strong> (${esc(s.ma_mon)}):</span>
+                                  </div>
+                                  <div class="breakdown-grid">
+                                    <div class="breakdown-item">
+                                      <span class="breakdown-label">Chuyên cần (10%)</span>
+                                      <span class="breakdown-val">${parts.chuyen_can !== null && parts.chuyen_can !== undefined ? parts.chuyen_can : '--'}</span>
+                                    </div>
+                                    <div class="breakdown-item">
+                                      <span class="breakdown-label">Bài tập / Quá trình (20%)</span>
+                                      <span class="breakdown-val">${parts.bai_tap !== null && parts.bai_tap !== undefined ? parts.bai_tap : '--'}</span>
+                                    </div>
+                                    <div class="breakdown-item">
+                                      <span class="breakdown-label">Giữa kỳ (20%)</span>
+                                      <span class="breakdown-val">${parts.giua_ky !== null && parts.giua_ky !== undefined ? parts.giua_ky : '--'}</span>
+                                    </div>
+                                    <div class="breakdown-item">
+                                      <span class="breakdown-label">Cuối kỳ / Thi kết thúc (50%)</span>
+                                      <span class="breakdown-val" style="color:#e11d48; font-weight:700;">${parts.cuoi_ky !== null && parts.cuoi_ky !== undefined ? parts.cuoi_ky : '--'}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          ` : ""}
+                        `;
+                      }).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ========================================================
+// MODAL ĐĂNG NHẬP CỔNG IU & NHẬP BẢNG ĐIỂM
+// ========================================================
+
+window.openAcademicLoginModal = function(tab = "login") {
+  state.academicActiveTab = tab;
+  renderAcademicLoginModal();
+};
+
+window.closeAcademicModal = function(e) {
+  if (e && e.target !== e.currentTarget && !e.target.classList.contains("academic-modal-close")) return;
+  const modalRoot = document.getElementById("modal-root");
+  if (modalRoot) modalRoot.innerHTML = "";
+};
+
+window.switchAcademicTab = function(tab) {
+  state.academicActiveTab = tab;
+  renderAcademicLoginModal();
+};
+
+function renderAcademicLoginModal() {
+  const modalRoot = document.getElementById("modal-root");
+  if (!modalRoot) return;
+
+  const tab = state.academicActiveTab || "login";
+
+  modalRoot.innerHTML = `
+    <div class="modal-backdrop" onclick="window.closeAcademicModal(event)">
+      <div class="academic-modal-card">
+        <button type="button" class="academic-modal-close" onclick="window.closeAcademicModal()" aria-label="Đóng">×</button>
+
+        <div class="academic-modal-header">
+          <div class="academic-modal-mascot">
+            ${renderThoBayMau({
+              state: THO_STATES.SURPRISED_CARROT,
+              size: 90,
+              speech: "Nhập tài khoản cổng IU để Thỏ cào bảng điểm ngay nhé! 🐰✨",
+              speechDirection: "top"
+            })}
+          </div>
+          <div>
+            <h3 class="academic-modal-title">Đăng Nhập Cổng Thông Tin IU Trường</h3>
+            <p class="academic-modal-subtitle">Trường Đại học CMC (CMC University) • <strong>iu.cmcu.edu.vn</strong></p>
+          </div>
+        </div>
+
+        <div class="academic-modal-tabs">
+          <button type="button" class="academic-tab-btn ${tab === 'login' ? 'active' : ''}" onclick="window.switchAcademicTab('login')">
+            🔑 Đăng nhập trực tiếp
+          </button>
+          <button type="button" class="academic-tab-btn ${tab === 'token' ? 'active' : ''}" onclick="window.switchAcademicTab('token')">
+            🍪 Cookie / Token (SSO)
+          </button>
+          <button type="button" class="academic-tab-btn ${tab === 'json' ? 'active' : ''}" onclick="window.switchAcademicTab('json')">
+            📋 Dán JSON crawler
+          </button>
+        </div>
+
+        <div class="academic-modal-body">
+          ${tab === 'login' ? `
+            <form onsubmit="window.submitAcademicLogin(event)">
+              <div class="academic-field-group">
+                <label for="iu-login-user">Mã sinh viên / Tài khoản cổng IU:</label>
+                <input type="text" id="iu-login-user" class="academic-input" placeholder="Ví dụ: 23010123 hoặc anlv.23it" required autocomplete="username">
+              </div>
+              <div class="academic-field-group">
+                <label for="iu-login-pass">Mật khẩu cổng trường:</label>
+                <input type="password" id="iu-login-pass" class="academic-input" placeholder="Mật khẩu cổng iu.cmcu.edu.vn" required autocomplete="current-password">
+              </div>
+              <div class="academic-note-box">
+                🔒 <strong>Bảo mật tuyệt đối:</strong> Thông tin đăng nhập chỉ được gửi trực tiếp tới máy chủ cổng IU để xác thực và tải bảng điểm, hoàn toàn không lưu trữ mật khẩu trên máy chủ 3TG.
+              </div>
+              <div class="academic-form-actions">
+                <button type="submit" id="iu-submit-btn" class="btn-duo btn-duo-pink academic-submit-btn">
+                  🚀 Đăng Nhập & Cào Điểm Ngay
+                </button>
+              </div>
+            </form>
+          ` : tab === 'token' ? `
+            <form onsubmit="window.submitAcademicToken(event)">
+              <p class="tab-desc">Dành cho sinh viên đăng nhập qua <strong>Microsoft 365 SSO</strong> hoặc muốn nhập phiên thủ công.</p>
+              <div class="academic-field-group">
+                <label for="iu-cookie-input">Cookie phiên đăng nhập IU (bắt buộc):</label>
+                <textarea id="iu-cookie-input" class="academic-textarea" rows="3" placeholder="Dán chuỗi Cookie từ trình duyệt (F12 -> Application -> Cookies)..." required></textarea>
+              </div>
+              <div class="academic-field-group">
+                <label for="iu-token-input">JWT Token (nếu có):</label>
+                <input type="text" id="iu-token-input" class="academic-input" placeholder="Bearer Token JWT (tuỳ chọn)">
+              </div>
+              <div class="academic-field-group">
+                <label for="iu-userid-input">Mã sinh viên / User ID:</label>
+                <input type="text" id="iu-userid-input" class="academic-input" placeholder="Mã SV (Ví dụ: 23010123)">
+              </div>
+              <div class="academic-form-actions">
+                <button type="submit" id="iu-token-submit-btn" class="btn-duo btn-duo-pink academic-submit-btn">
+                  Xác Nhận & Cào Điểm
+                </button>
+              </div>
+            </form>
+          ` : `
+            <form onsubmit="window.submitAcademicJson(event)">
+              <p class="tab-desc">Dán trực tiếp kết quả chạy lệnh <code>node crawler.js iu login</code> hoặc <code>node crawler.js iu pull</code>.</p>
+              <div class="academic-field-group">
+                <label for="iu-json-input">Dữ liệu JSON:</label>
+                <textarea id="iu-json-input" class="academic-textarea" rows="6" placeholder="Dán toàn bộ chuỗi JSON bảng điểm vào đây..." required></textarea>
+              </div>
+              <div class="academic-form-actions">
+                <button type="submit" class="btn-duo btn-duo-pink academic-submit-btn">
+                  Nhập Bảng Điểm
+                </button>
+              </div>
+            </form>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+window.submitAcademicLogin = async function(e) {
+  if (e) e.preventDefault();
+  const username = document.getElementById("iu-login-user")?.value.trim();
+  const password = document.getElementById("iu-login-pass")?.value.trim();
+  if (!username || !password) {
+    showToast("Vui lòng nhập tài khoản và mật khẩu cổng IU!", true);
+    return;
+  }
+  const btn = document.getElementById("iu-submit-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-dot"></span> Đang kết nối cổng trường IU…`;
+  }
+  try {
+    showAppLoader("Đang cào dữ liệu từ cổng IU CMCU… 🎓", "Đăng nhập xác thực và tải bảng điểm chi tiết các kỳ…");
+    setAppLoaderProgress(30);
+    const res = await api("/api/academic/login-iu", {
+      method: "POST",
+      body: { username, password }
+    });
+    setAppLoaderProgress(85);
+    if (res.ok && res.transcript) {
+      state.academicTranscript = {
+        hasTranscript: true,
+        transcript: res.transcript,
+        lastSyncedAt: res.lastSyncedAt
+      };
+      window.closeAcademicModal();
+      showToast(`✅ Đã kết nối thành công bảng điểm của sinh viên ${res.transcript.student.ho_ten}!`, false);
+      updateShell();
+      render();
+    }
+  } catch (err) {
+    showToast("Đăng nhập IU thất bại: " + err.message, true);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `🚀 Đăng Nhập & Cào Điểm Ngay`;
+    }
+  } finally {
+    hideAppLoader();
+  }
+};
+
+window.submitAcademicToken = async function(e) {
+  if (e) e.preventDefault();
+  const cookie = document.getElementById("iu-cookie-input")?.value.trim();
+  const token = document.getElementById("iu-token-input")?.value.trim();
+  const userId = document.getElementById("iu-userid-input")?.value.trim();
+  if (!cookie) {
+    showToast("Vui lòng nhập Cookie phiên đăng nhập IU!", true);
+    return;
+  }
+  const btn = document.getElementById("iu-token-submit-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-dot"></span> Đang cào dữ liệu…`;
+  }
+  try {
+    showAppLoader("Đang cào dữ liệu từ cổng IU… 🎓", "Đang kết nối qua Cookie/Token xác thực…");
+    setAppLoaderProgress(40);
+    const res = await api("/api/academic/login-iu", {
+      method: "POST",
+      body: { cookie, token, userId }
+    });
+    setAppLoaderProgress(85);
+    if (res.ok && res.transcript) {
+      state.academicTranscript = {
+        hasTranscript: true,
+        transcript: res.transcript,
+        lastSyncedAt: res.lastSyncedAt
+      };
+      window.closeAcademicModal();
+      showToast(`✅ Đã kết nối thành công bảng điểm của sinh viên ${res.transcript.student.ho_ten}!`, false);
+      updateShell();
+      render();
+    }
+  } catch (err) {
+    showToast("Cào dữ liệu IU thất bại: " + err.message, true);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `Xác Nhận & Cào Điểm`;
+    }
+  } finally {
+    hideAppLoader();
+  }
+};
+
+window.submitAcademicJson = async function(e) {
+  if (e) e.preventDefault();
+  const jsonText = document.getElementById("iu-json-input")?.value.trim();
+  if (!jsonText) {
+    showToast("Vui lòng dán dữ liệu JSON bảng điểm!", true);
+    return;
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    showToast("Định dạng JSON không hợp lệ!", true);
+    return;
+  }
+  try {
+    showAppLoader("Đang nạp bảng điểm… 🎓", "Đang xử lý ma trận điểm và phân kỳ…");
+    const res = await api("/api/academic/import-data", {
+      method: "POST",
+      body: { rawData: parsed }
+    });
+    if (res.ok && res.transcript) {
+      state.academicTranscript = {
+        hasTranscript: true,
+        transcript: res.transcript,
+        lastSyncedAt: res.lastSyncedAt
+      };
+      window.closeAcademicModal();
+      showToast(`✅ Đã nạp thành công bảng điểm của ${res.transcript.student.ho_ten}!`, false);
+      updateShell();
+      render();
+    }
+  } catch (err) {
+    showToast("Lỗi nhập dữ liệu: " + err.message, true);
+  } finally {
+    hideAppLoader();
+  }
+};
+
+window.requestAcademicAdvisor = async function(targetGpa) {
+  if (state.academicAdvisorBusy) return;
+  state.academicAdvisorBusy = true;
+  state.academicAdvisorTarget = targetGpa || state.academicAdvisorTarget || 3.2;
+  render();
+
+  try {
+    showToast("🐰 Thỏ Bảy Màu đang gọi DeepSeek AI phân tích bảng điểm...", false);
+    const res = await api("/api/academic/advisor", {
+      method: "POST",
+      body: { targetGpa: state.academicAdvisorTarget }
+    });
+    if (res.ok && res.advice) {
+      if (state.academicTranscript) {
+        state.academicTranscript.aiAnalysis = res.advice;
+        state.academicTranscript.targetGpa = res.targetGpa;
+      }
+      showToast("🎉 Đã có lộ trình cải thiện điểm từ Giáo sư Thỏ Bảy Màu!", false);
+    }
+  } catch (err) {
+    showToast("Lỗi khi tạo lộ trình AI: " + err.message, true);
+  } finally {
+    state.academicAdvisorBusy = false;
+    render();
+  }
+};
+
+window.toggleAcademicSubjectDetail = function(maMon) {
+  if (state.academicExpandedSubjects.has(maMon)) {
+    state.academicExpandedSubjects.delete(maMon);
+  } else {
+    state.academicExpandedSubjects.add(maMon);
+  }
+  render();
+};
+
+window.setAcademicSemesterFilter = function(semKey) {
+  state.academicSemesterFilter = semKey;
+  render();
+};
+
+window.setAcademicGradeFilter = function(filter) {
+  state.academicGradeFilter = filter;
+  render();
+};
+
+window.setSimulatedScore = function(maMon, score4) {
+  const val = Number(score4);
+  if (val <= 0) {
+    state.academicSimulatedScores.delete(maMon);
+  } else {
+    state.academicSimulatedScores.set(maMon, val);
+  }
+  render();
+};
+
+window.resetSimulatedScores = function() {
+  state.academicSimulatedScores.clear();
+  render();
+};
+
+window.resetAcademicTranscript = function() {
+  if (!confirm("Bạn có chắc chắn muốn ngắt kết nối và xóa dữ liệu bảng điểm IU hiện tại khỏi phiên học không?")) return;
+  state.academicTranscript = null;
+  state.academicSimulatedScores.clear();
+  updateShell();
+  render();
+  showToast("Đã ngắt kết nối tài khoản IU.", false);
+};
+
+// ========================================================
 // MAIN RENDER ENGINE
 // ========================================================
 function render() {
@@ -5295,6 +6164,9 @@ function render() {
       break;
     case "courses":
       view.innerHTML = renderCourses();
+      break;
+    case "grades":
+      view.innerHTML = renderGradesView();
       break;
     case "notes":
       view.innerHTML = renderNotes();

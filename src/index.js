@@ -1,3 +1,5 @@
+import { loginIUPortal, layBangDiemVaHoSoIU, processAcademicTranscript, generateAcademicAdvisorPlan } from "./academic_service.js";
+
 const COOKIE_NAME = "lumi_session";
 const COOKIE_AGE = 60 * 60 * 24 * 365;
 const DEFAULT_SETTINGS = { dailyGoal: 15 };
@@ -1979,6 +1981,194 @@ async function readAiConversation(conversationId, user, env) {
   return { conversation: conversation, messages: result.results || [] };
 }
 
+async function handleAcademicLoginIU(request, user, env) {
+  const body = await readJson(request);
+  const { username, password, cookie, token, userId } = body;
+  
+  let session = null;
+  let finalCookie = cookie || "";
+
+  if (username && password) {
+    const loginResult = await loginIUPortal({ username, password });
+    session = loginResult.session;
+    finalCookie = loginResult.cookie;
+  } else if (cookie) {
+    session = {
+      userId: userId || username || "SV",
+      token: token || "",
+      tokenJWT: token || "",
+      appId: "Portal_SinhVien"
+    };
+  } else {
+    throw new HttpError(400, "Vui lòng nhập tài khoản và mật khẩu cổng IU hoặc cung cấp phiên cookie/token.");
+  }
+
+  const { studentInfo, rawSubjects } = await layBangDiemVaHoSoIU(session, finalCookie);
+  if (!rawSubjects || !rawSubjects.length) {
+    throw new HttpError(404, "Cổng IU chưa có dữ liệu điểm hoặc phiên đăng nhập đã hết hạn.");
+  }
+
+  const processed = processAcademicTranscript(rawSubjects, studentInfo);
+  const now = new Date().toISOString();
+  const rawDataJson = JSON.stringify(processed);
+
+  // Lưu vào database Cloudflare D1 / Local Replica
+  try {
+    await env.DB.prepare(`
+      INSERT INTO user_academic_transcripts (
+        user_id, student_code, full_name, major, class_name,
+        gpa_10, gpa_4, total_credits, raw_data, last_synced_at, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        student_code = excluded.student_code,
+        full_name = excluded.full_name,
+        major = excluded.major,
+        class_name = excluded.class_name,
+        gpa_10 = excluded.gpa_10,
+        gpa_4 = excluded.gpa_4,
+        total_credits = excluded.total_credits,
+        raw_data = excluded.raw_data,
+        last_synced_at = excluded.last_synced_at
+    `).bind(
+      user.userId,
+      processed.student.ma_sinh_vien || "",
+      processed.student.ho_ten || "",
+      processed.student.nganh || "",
+      processed.student.lop || "",
+      processed.gpa.overall_10 || 0,
+      processed.gpa.overall_4 || 0,
+      processed.gpa.total_credits || 0,
+      rawDataJson,
+      now,
+      now
+    ).run();
+  } catch (err) {
+    console.warn("[Academic DB Save]", err.message);
+  }
+
+  return { ok: true, transcript: processed, lastSyncedAt: now };
+}
+
+async function handleAcademicImportData(request, user, env) {
+  const body = await readJson(request);
+  const rawInput = body.rawData || body;
+  let rawSubjects = [];
+  let studentInfo = {};
+
+  if (rawInput.raw_subjects) {
+    rawSubjects = rawInput.raw_subjects;
+    studentInfo = rawInput.student || {};
+  } else if (rawInput.IU && rawInput.IU.goc_hoc_tap && rawInput.IU.goc_hoc_tap.tra_cuu_diem && rawInput.IU.goc_hoc_tap.tra_cuu_diem.bang_diem) {
+    rawSubjects = rawInput.IU.goc_hoc_tap.tra_cuu_diem.bang_diem;
+    studentInfo = (rawInput.IU.ho_so_sinh_vien && rawInput.IU.ho_so_sinh_vien.thong_tin_ca_nhan) || {};
+  } else if (Array.isArray(rawInput)) {
+    rawSubjects = rawInput;
+  } else {
+    throw new HttpError(400, "Định dạng dữ liệu bảng điểm không hợp lệ.");
+  }
+
+  const processed = processAcademicTranscript(rawSubjects, studentInfo);
+  const now = new Date().toISOString();
+  const rawDataJson = JSON.stringify(processed);
+
+  try {
+    await env.DB.prepare(`
+      INSERT INTO user_academic_transcripts (
+        user_id, student_code, full_name, major, class_name,
+        gpa_10, gpa_4, total_credits, raw_data, last_synced_at, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        student_code = excluded.student_code,
+        full_name = excluded.full_name,
+        major = excluded.major,
+        class_name = excluded.class_name,
+        gpa_10 = excluded.gpa_10,
+        gpa_4 = excluded.gpa_4,
+        total_credits = excluded.total_credits,
+        raw_data = excluded.raw_data,
+        last_synced_at = excluded.last_synced_at
+    `).bind(
+      user.userId,
+      processed.student.ma_sinh_vien || "",
+      processed.student.ho_ten || "",
+      processed.student.nganh || "",
+      processed.student.lop || "",
+      processed.gpa.overall_10 || 0,
+      processed.gpa.overall_4 || 0,
+      processed.gpa.total_credits || 0,
+      rawDataJson,
+      now,
+      now
+    ).run();
+  } catch (err) {
+    console.warn("[Academic DB Import]", err.message);
+  }
+
+  return { ok: true, transcript: processed, lastSyncedAt: now };
+}
+
+async function handleGetAcademicTranscript(user, env) {
+  try {
+    const row = await env.DB.prepare(`
+      SELECT student_code, full_name, major, class_name, gpa_10, gpa_4, total_credits, raw_data, ai_analysis, target_gpa, last_synced_at
+      FROM user_academic_transcripts WHERE user_id = ? LIMIT 1
+    `).bind(user.userId).first();
+
+    if (!row || !row.raw_data) {
+      return { hasTranscript: false, transcript: null };
+    }
+
+    const transcript = JSON.parse(row.raw_data);
+    return {
+      hasTranscript: true,
+      transcript,
+      aiAnalysis: row.ai_analysis || null,
+      targetGpa: row.target_gpa || 3.2,
+      lastSyncedAt: row.last_synced_at
+    };
+  } catch (err) {
+    console.warn("[Get Academic Transcript]", err.message);
+    return { hasTranscript: false, transcript: null };
+  }
+}
+
+async function handleAcademicAdvisor(request, user, env) {
+  const body = await readJson(request);
+  const targetGpa = Number(body.targetGpa) || 3.2;
+
+  let transcriptData = null;
+  try {
+    const row = await env.DB.prepare(`
+      SELECT raw_data FROM user_academic_transcripts WHERE user_id = ? LIMIT 1
+    `).bind(user.userId).first();
+    if (row && row.raw_data) {
+      transcriptData = JSON.parse(row.raw_data);
+    }
+  } catch {}
+
+  if (!transcriptData && body.transcript) {
+    transcriptData = body.transcript;
+  }
+
+  if (!transcriptData) {
+    throw new HttpError(400, "Chưa có dữ liệu bảng điểm để AI DeepSeek phân tích. Vui lòng kết nối tài khoản IU trước nhé!");
+  }
+
+  const advice = await generateAcademicAdvisorPlan(transcriptData, targetGpa, env);
+
+  try {
+    await env.DB.prepare(`
+      UPDATE user_academic_transcripts
+      SET ai_analysis = ?, target_gpa = ?
+      WHERE user_id = ?
+    `).bind(advice, targetGpa, user.userId).run();
+  } catch (err) {
+    console.warn("[Save Academic Advisor]", err.message);
+  }
+
+  return { ok: true, advice, targetGpa };
+}
+
 async function createSession(request, env) {
   const existing = await sessionUser(request, env);
   if (existing) return respond({ profile: existing.profile, existing: true });
@@ -2022,6 +2212,10 @@ async function routeApi(request, env) {
     return respond(await subjectDetails(Number(publicSubjectMatch[1]), visitor ? visitor.userId : null, env));
   }
   const user = await requireUser(request, env);
+  if (path === "/api/academic/login-iu" && method === "POST") return respond(await handleAcademicLoginIU(request, user, env));
+  if (path === "/api/academic/import-data" && method === "POST") return respond(await handleAcademicImportData(request, user, env));
+  if (path === "/api/academic/transcript" && method === "GET") return respond(await handleGetAcademicTranscript(user, env));
+  if (path === "/api/academic/advisor" && method === "POST") return respond(await handleAcademicAdvisor(request, user, env));
   if (path === "/api/me" && method === "GET") {
     const stats = await env.DB.prepare("SELECT * FROM user_stats WHERE user_id = ? LIMIT 1").bind(user.userId).first();
     const inv = await env.DB.prepare("SELECT item_code, quantity FROM user_inventory WHERE user_id = ?").bind(user.userId).all();
