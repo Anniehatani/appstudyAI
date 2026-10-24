@@ -2923,16 +2923,6 @@ function renderFriends() {
 // DISCORD-STYLE PROFILE EFFECTS & AVATAR DECORATIONS
 // ========================================================
 export const DISCORD_EFFECTS_REGISTRY = {
-  deco_cyber_neon: {
-    code: "deco_cyber_neon",
-    name: "Khung Neon Cyberpunk 2077",
-    type: "avatar_decoration",
-    category: "decoration",
-    badge: "Cyber Nitro",
-    color: "#00f0ff",
-    description: "Vòng xoay năng lượng công nghệ cao phát quang tia sét neon xanh lam & tím rực rỡ chuẩn Discord Nitro.",
-    price: 0
-  },
   deco_sakura_bloom: {
     code: "deco_sakura_bloom",
     name: "Vòng Hoa Anh Đào Sakura",
@@ -2941,37 +2931,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Sakura Nitro",
     color: "#ff71a2",
     description: "Cánh hoa anh đào lượn sóng xoay vòng và rơi lấp lánh nhẹ nhàng quanh ảnh đại diện.",
-    price: 0
-  },
-  deco_flame_dragon: {
-    code: "deco_flame_dragon",
-    name: "Hào Quang Hỏa Long Siêu Cấp",
-    type: "avatar_decoration",
-    category: "decoration",
-    badge: "Flame Nitro",
-    color: "#ff7b00",
-    description: "Ngọn lửa rực cháy đỏ cam bập bùng dữ dội bao quanh avatar cực kỳ chiến và nổi bật.",
-    price: 0
-  },
-  deco_galaxy_portal: {
-    code: "deco_galaxy_portal",
-    name: "Cổng Vũ Trụ Tinh Vân Galaxy",
-    type: "avatar_decoration",
-    category: "decoration",
-    badge: "Cosmic Nitro",
-    color: "#a855f7",
-    description: "Vòng xoáy không gian vũ trụ huyền ảo với bụi sao lấp lánh và tinh vân xoay tròn kỳ ảo.",
-    price: 0
-  },
-  deco_manga_ghoul: {
-    code: "deco_manga_ghoul",
-    name: "Quỷ Hồn Hắc Ám (Manga Ghoul)",
-    type: "avatar_decoration",
-    category: "decoration",
-    badge: "Horror Nitro",
-    color: "#64748b",
-    description: "Linh hồn quỷ dị và bàn tay xương xẩu manga kinh dị Junji Ito ôm lấy avatar cực kỳ ma mị chuẩn Discord VIP.",
-    price: 0
+    price: 60
   },
   deco_hello_kitty: {
     code: "deco_hello_kitty",
@@ -2981,7 +2941,27 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Kitty Kawaii",
     color: "#ff2a7a",
     description: "Khung nơ đỏ Hello Kitty siêu cấp đáng yêu với tai mèo trắng, ria mèo xinh xắn và ánh sao hồng lấp lánh.",
-    price: 0
+    price: 80
+  },
+  deco_flame_dragon: {
+    code: "deco_flame_dragon",
+    name: "Hào Quang Hỏa Long Siêu Cấp",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Flame Nitro",
+    color: "#ff7b00",
+    description: "Ngọn lửa rực cháy đỏ cam bập bùng dữ dội bao quanh avatar cực kỳ chiến và nổi bật.",
+    price: 90
+  },
+  deco_cyber_neon: {
+    code: "deco_cyber_neon",
+    name: "Khung Neon Cyberpunk 2077",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Cyber Nitro",
+    color: "#00f0ff",
+    description: "Vòng xoay năng lượng công nghệ cao phát quang tia sét neon xanh lam & tím rực rỡ chuẩn Discord Nitro.",
+    price: 100
   },
   deco_kuromi_punk: {
     code: "deco_kuromi_punk",
@@ -2991,7 +2971,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Kuromi Punk",
     color: "#a855f7",
     description: "Phong cách tiểu quỷ Kuromi tím đen cá tính với tai thỏ ác quỷ, đầu lâu mini và gai hoa hồng neon.",
-    price: 0
+    price: 110
   },
   deco_cyber_mecha: {
     code: "deco_cyber_mecha",
@@ -3001,17 +2981,17 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Mecha HUD",
     color: "#06b6d4",
     description: "Vòng radar ngắm bắn công nghệ cao Gundam với giáp lục giác kim loại và lưỡi dao năng lượng plasma cực ngầu.",
-    price: 0
+    price: 120
   },
-  deco_susanoo_demon: {
-    code: "deco_susanoo_demon",
-    name: "Khung Ma Thần Susanoo Hắc Hỏa",
+  deco_galaxy_portal: {
+    code: "deco_galaxy_portal",
+    name: "Cổng Vũ Trụ Tinh Vân Galaxy",
     type: "avatar_decoration",
     category: "decoration",
-    badge: "Susanoo Dark",
-    color: "#818cf8",
-    description: "Hào quang Ma Thần Susanoo tím thẫm rực cháy với sừng quỷ giác đấu và ngọn lửa chakra hắc ám cuộn trào.",
-    price: 0
+    badge: "Cosmic Nitro",
+    color: "#a855f7",
+    description: "Vòng xoáy không gian vũ trụ huyền ảo với bụi sao lấp lánh và tinh vân xoay tròn kỳ ảo.",
+    price: 130
   },
   deco_frost_phoenix: {
     code: "deco_frost_phoenix",
@@ -3021,7 +3001,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Frost Ice",
     color: "#38bdf8",
     description: "Vòng pha lê băng giá vĩnh cửu phát quang ánh tuyết xanh ngọc cùng những bông tuyết kim cương xoay tròn.",
-    price: 0
+    price: 140
   },
   deco_blood_moon: {
     code: "deco_blood_moon",
@@ -3031,45 +3011,32 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Blood Moon",
     color: "#ef4444",
     description: "Trăng máu đỏ thẫm huyền bí cùng đôi cánh dơi ma cà rồng gothic và ngọc huyết quang rực cháy.",
-    price: 0
+    price: 150
+  },
+  deco_manga_ghoul: {
+    code: "deco_manga_ghoul",
+    name: "Quỷ Hồn Hắc Ám (Manga Ghoul)",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Horror Nitro",
+    color: "#64748b",
+    description: "Linh hồn quỷ dị và bàn tay xương xẩu manga kinh dị Junji Ito ôm lấy avatar cực kỳ ma mị chuẩn Discord VIP.",
+    price: 160
+  },
+  deco_susanoo_demon: {
+    code: "deco_susanoo_demon",
+    name: "Khung Ma Thần Susanoo Hắc Hỏa",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Susanoo Dark",
+    color: "#818cf8",
+    description: "Hào quang Ma Thần Susanoo tím thẫm rực cháy với sừng quỷ giác đấu và ngọn lửa chakra hắc ám cuộn trào.",
+    price: 180
   }
 };
 window.DISCORD_EFFECTS_REGISTRY = DISCORD_EFFECTS_REGISTRY;
 
 export const DISCORD_WALLPAPERS_REGISTRY = {
-  bg_2b_monochrome: {
-    code: "bg_2b_monochrome",
-    name: "2B Nier Tối Giản",
-    type: "wallpaper",
-    category: "wallpaper",
-    badge: "HD WEBP",
-    color: "#64748b",
-    url: "/media/hinhnen/2b-monochrome.webp",
-    description: "Hình nền nghệ thuật 2B NieR:Automata phong cách đen trắng đơn sắc huyền bí, sang trọng.",
-    price: 0
-  },
-  bg_cartoon_white_bird: {
-    code: "bg_cartoon_white_bird",
-    name: "Chim Trắng Cute (GIF)",
-    type: "wallpaper",
-    category: "wallpaper",
-    badge: "GIF ĐỘNG",
-    color: "#38bdf8",
-    url: "/media/hinhnen/cartoon-white-bird-dark-background.gif",
-    description: "Hoạt ảnh chú chim trắng chibi nhấp nháy dễ thương trên nền tối tối giản phong cách hoạt hình.",
-    price: 0
-  },
-  bg_goth_smoker: {
-    code: "bg_goth_smoker",
-    name: "Goth Girl Khói Thuốc (GIF)",
-    type: "wallpaper",
-    category: "wallpaper",
-    badge: "GIF ĐỘNG",
-    color: "#a855f7",
-    url: "/media/hinhnen/goth-smoker.gif",
-    description: "Ảnh động cô gái phong cách gothic khói thuốc mờ ảo, nét vẽ anime vintage hoài niệm cực chất.",
-    price: 0
-  },
   bg_meow_doodle: {
     code: "bg_meow_doodle",
     name: "Mèo Doodle Hài Hước",
@@ -3079,7 +3046,18 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#f59e0b",
     url: "/media/hinhnen/meow-doodle.jpeg",
     description: "Bản vẽ vẽ tay phác họa chú mèo ngộ nghĩnh hài hước, tạo cảm giác thư giãn gần gũi.",
-    price: 0
+    price: 60
+  },
+  bg_2b_monochrome: {
+    code: "bg_2b_monochrome",
+    name: "2B Nier Tối Giản",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "HD WEBP",
+    color: "#64748b",
+    url: "/media/hinhnen/2b-monochrome.webp",
+    description: "Hình nền nghệ thuật 2B NieR:Automata phong cách đen trắng đơn sắc huyền bí, sang trọng.",
+    price: 70
   },
   bg_sakura_pastel: {
     code: "bg_sakura_pastel",
@@ -3090,62 +3068,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#ec4899",
     url: "/media/hinhnen/pink-cherry-blossoms-sakura-pastel.webp",
     description: "Cảnh sắc hoa anh đào rực rỡ tông màu hồng pastel ngọt ngào, đậm chất anime lãng mạn.",
-    price: 0
-  },
-  bg_storm_cloudscape: {
-    code: "bg_storm_cloudscape",
-    name: "Mây Bão Hoàng Hôn",
-    type: "wallpaper",
-    category: "wallpaper",
-    badge: "HD WEBP",
-    color: "#f97316",
-    url: "/media/hinhnen/pink-orange-storm-cloudscape-text.webp",
-    description: "Bầu trời bão mây cuồn cuộn pha trộn giữa ánh cam hoàng hôn và sắc hồng rực rỡ tráng lệ.",
-    price: 0
-  },
-  bg_purple_gaze: {
-    code: "bg_purple_gaze",
-    name: "Ánh Nhìn Tím Huyền Bí",
-    type: "wallpaper",
-    category: "wallpaper",
-    badge: "HD WEBP",
-    color: "#8b5cf6",
-    url: "/media/hinhnen/purple-gaze.webp",
-    description: "Ánh mắt anime tím biếc sâu thẳm đầy cuốn hút trong màn đêm huyền ảo.",
-    price: 0
-  },
-  bg_purple_moon: {
-    code: "bg_purple_moon",
-    name: "Trăng Tím Mộng Mơ",
-    type: "wallpaper",
-    category: "wallpaper",
-    badge: "HD WEBP",
-    color: "#c084fc",
-    url: "/media/hinhnen/purple-moon.webp",
-    description: "Vầng trăng tím phát sáng giữa dải ngân hà tĩnh mịch, tông màu chill êm dịu.",
-    price: 0
-  },
-  bg_rainy_rooftop: {
-    code: "bg_rainy_rooftop",
-    name: "Mưa Trên Mái Nhà (GIF)",
-    type: "wallpaper",
-    category: "wallpaper",
-    badge: "GIF ĐỘNG",
-    color: "#06b6d4",
-    url: "/media/hinhnen/rainy-rooftop.gif",
-    description: "Ảnh động mưa rơi tí tách trên sân thượng thành phố về đêm phong cách Lo-Fi chill thư giãn.",
-    price: 0
-  },
-  bg_sakura_bridge: {
-    code: "bg_sakura_bridge",
-    name: "Cầu Hoa Anh Đào (GIF)",
-    type: "wallpaper",
-    category: "wallpaper",
-    badge: "GIF ĐỘNG",
-    color: "#f43f5e",
-    url: "/media/hinhnen/sakura-bridge.gif",
-    description: "Ảnh động cầu gỗ cổ kính soi bóng dòng sông dưới tán hoa anh đào bay lượn tuyệt đẹp.",
-    price: 0
+    price: 70
   },
   bg_sakura_canopy: {
     code: "bg_sakura_canopy",
@@ -3156,18 +3079,40 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#fb7185",
     url: "/media/hinhnen/sakura-canopy.webp",
     description: "Tán hoa anh đào bung nở rợp bóng trời xuân Nhật Bản, tươi sáng và tràn ngập sinh khí.",
-    price: 0
+    price: 70
   },
-  bg_anime_girl_windblown: {
-    code: "bg_anime_girl_windblown",
-    name: "Thiếu Nữ Gió Lộng (GIF)",
+  bg_purple_moon: {
+    code: "bg_purple_moon",
+    name: "Trăng Tím Mộng Mơ",
     type: "wallpaper",
     category: "wallpaper",
-    badge: "GIF ĐỘNG",
-    color: "#64748b",
-    url: "/media/hinhnen/windblown-anime-girl-fence-monochrome.gif",
-    description: "Ảnh động cô gái anime đứng bên hàng rào với mái tóc tung bay trong gió đầy cảm xúc.",
-    price: 0
+    badge: "HD WEBP",
+    color: "#c084fc",
+    url: "/media/hinhnen/purple-moon.webp",
+    description: "Vầng trăng tím phát sáng giữa dải ngân hà tĩnh mịch, tông màu chill êm dịu.",
+    price: 75
+  },
+  bg_storm_cloudscape: {
+    code: "bg_storm_cloudscape",
+    name: "Mây Bão Hoàng Hôn",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "HD WEBP",
+    color: "#f97316",
+    url: "/media/hinhnen/pink-orange-storm-cloudscape-text.webp",
+    description: "Bầu trời bão mây cuồn cuộn pha trộn giữa ánh cam hoàng hôn và sắc hồng rực rỡ tráng lệ.",
+    price: 80
+  },
+  bg_purple_gaze: {
+    code: "bg_purple_gaze",
+    name: "Ánh Nhìn Tím Huyền Bí",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "HD WEBP",
+    color: "#8b5cf6",
+    url: "/media/hinhnen/purple-gaze.webp",
+    description: "Ánh mắt anime tím biếc sâu thẳm đầy cuốn hút trong màn đêm huyền ảo.",
+    price: 80
   },
   bg_wing_shadow: {
     code: "bg_wing_shadow",
@@ -3178,7 +3123,62 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#6366f1",
     url: "/media/hinhnen/wing-shadow.webp",
     description: "Hình tượng đôi cánh sải rộng giữa ánh sáng mờ ảo, tạo chiều sâu nghệ thuật độc đáo.",
-    price: 0
+    price: 85
+  },
+  bg_cartoon_white_bird: {
+    code: "bg_cartoon_white_bird",
+    name: "Chim Trắng Cute (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#38bdf8",
+    url: "/media/hinhnen/cartoon-white-bird-dark-background.gif",
+    description: "Hoạt ảnh chú chim trắng chibi nhấp nháy dễ thương trên nền tối tối giản phong cách hoạt hình.",
+    price: 120
+  },
+  bg_rainy_rooftop: {
+    code: "bg_rainy_rooftop",
+    name: "Mưa Trên Mái Nhà (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#06b6d4",
+    url: "/media/hinhnen/rainy-rooftop.gif",
+    description: "Ảnh động mưa rơi tí tách trên sân thượng thành phố về đêm phong cách Lo-Fi chill thư giãn.",
+    price: 130
+  },
+  bg_sakura_bridge: {
+    code: "bg_sakura_bridge",
+    name: "Cầu Hoa Anh Đào (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#f43f5e",
+    url: "/media/hinhnen/sakura-bridge.gif",
+    description: "Ảnh động cầu gỗ cổ kính soi bóng dòng sông dưới tán hoa anh đào bay lượn tuyệt đẹp.",
+    price: 140
+  },
+  bg_goth_smoker: {
+    code: "bg_goth_smoker",
+    name: "Goth Girl Khói Thuốc (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#a855f7",
+    url: "/media/hinhnen/goth-smoker.gif",
+    description: "Ảnh động cô gái phong cách gothic khói thuốc mờ ảo, nét vẽ anime vintage hoài niệm cực chất.",
+    price: 150
+  },
+  bg_anime_girl_windblown: {
+    code: "bg_anime_girl_windblown",
+    name: "Thiếu Nữ Gió Lộng (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#64748b",
+    url: "/media/hinhnen/windblown-anime-girl-fence-monochrome.gif",
+    description: "Ảnh động cô gái anime đứng bên hàng rào với mái tóc tung bay trong gió đầy cảm xúc.",
+    price: 150
   },
   bg_winged_maiden: {
     code: "bg_winged_maiden",
@@ -3189,7 +3189,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#10b981",
     url: "/media/hinhnen/winged-maiden.gif",
     description: "Ảnh động thiếu nữ với đôi cánh lấp lánh cử động mềm mại bay bổng tựa thiên thần.",
-    price: 0
+    price: 160
   }
 };
 window.DISCORD_WALLPAPERS_REGISTRY = DISCORD_WALLPAPERS_REGISTRY;
@@ -4160,8 +4160,8 @@ window.previewDiscordItem = function(itemCode) {
         ? (isCurCoverGradient ? `background:${currentCover};` : `background-image:url('${esc(currentCover)}'); background-size:cover; background-position:center;`)
         : `background: linear-gradient(135deg, #6366f1, #a855f7);`);
 
-  const owned = (state.inventory || []).some(i => i.item_code === itemCode && Number(i.quantity) > 0) ||
-                (shopData?.items || []).some(i => i.item_code === itemCode && Number(i.owned) > 0);
+  const owned = (state.inventory || []).some(i => (i.item_code === itemCode || (item.url && i.item_code === item.url)) && Number(i.quantity) > 0) ||
+                (shopData?.items || []).some(i => (i.item_code === itemCode || (item.url && i.item_code === item.url)) && Number(i.owned) > 0);
 
   const isEquipped = isDeco
     ? (state.profile?.avatar_decoration === itemCode)
@@ -4185,9 +4185,12 @@ window.previewDiscordItem = function(itemCode) {
           <div style="font-size:13.5px; font-weight:700; color:#64748b; margin-bottom:14px;">@${esc(userHandle)}</div>
           
           <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:18px; padding:14px 16px; margin-bottom:18px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
-            <div style="font-size:14px; font-weight:900; color:${item.color || '#ec4899'}; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-              <span>${isWp ? '🌄' : '🖼️'}</span>
-              <span>${esc(item.name)}</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div style="font-size:14px; font-weight:900; color:${item.color || '#ec4899'}; display:flex; align-items:center; gap:6px;">
+                <span>${isWp ? '🌄' : '🖼️'}</span>
+                <span>${esc(item.name)}</span>
+              </div>
+              <span style="font-size:13px; font-weight:900; color:#2563eb; background:#eff6ff; border:1px solid #bfdbfe; border-radius:999px; padding:2px 8px;">💎 ${item.price || 0} ĐQ</span>
             </div>
             <div style="font-size:13px; color:#475569; line-height:1.45; font-weight:500;">
               ${esc(item.description)}
@@ -4205,7 +4208,7 @@ window.previewDiscordItem = function(itemCode) {
               </button>
             ` : `
               <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:11px; font-weight:900;" onclick="buyItem('${esc(item.code)}'); closeUserProfileModal();">
-                Nhận miễn phí (0 💎)
+                💎 Mua ngay (${item.price || 0} 💎)
               </button>
             `}
             <button type="button" class="btn-duo btn-duo-white" style="padding:11px 20px; font-weight:800;" onclick="closeUserProfileModal()">
@@ -4576,7 +4579,7 @@ function renderShop() {
                   
                   <div class="discord-nitro-card-bot" onclick="event.stopPropagation()">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                      <span class="discord-nitro-price-tag">💎 0 ĐQ</span>
+                      <span class="discord-nitro-price-tag">💎 ${item.price} ĐQ</span>
                       <button type="button" class="btn-duo btn-duo-white" style="padding:3px 8px; font-size:11px;" onclick="previewDiscordItem('${esc(item.code)}')">
                         👁️ Xem
                       </button>
@@ -4592,7 +4595,7 @@ function renderShop() {
                       </button>
                     ` : `
                       <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 10px; font-size:11.5px; width:100%; font-weight:800;" onclick="buyItem('${esc(item.code)}')">
-                        Nhận (0 💎)
+                        Mua (${item.price} 💎)
                       </button>
                     `}
                   </div>
@@ -4612,18 +4615,18 @@ function renderShop() {
                 Kho 14 Hình Nền VIP & Ảnh Bìa Động R2 (Cloudflare Storage) 🌄✨
               </h2>
               <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">
-                Tất cả hình nền lưu trữ an toàn trên Cloudflare R2 và lưu riêng theo từng tài khoản học viên. Nhấp vào ảnh để xem trước & trang bị!
+                Tất cả hình nền lưu trữ an toàn trên Cloudflare R2 và lưu riêng theo từng tài khoản học viên. Mua bằng Đá quý để trang bị!
               </p>
             </div>
             <span style="background:linear-gradient(135deg, #0ea5e9, #6366f1); color:#fff; font-size:11px; font-weight:900; padding:4px 12px; border-radius:999px; box-shadow:0 2px 8px rgba(14,165,233,0.3);">
-              🎁 0 💎 Miễn Phí Trải Nghiệm
+              💎 Mua Bằng Đá Quý
             </span>
           </div>
 
           <div class="discord-wallpaper-grid">
             ${Object.values(DISCORD_WALLPAPERS_REGISTRY).map(item => {
               const shopItem = items.find(i => i.item_code === item.code);
-              const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => inv.item_code === item.code && Number(inv.quantity) >= 1);
+              const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => (inv.item_code === item.code || inv.item_code === item.url) && Number(inv.quantity) >= 1);
               const isEquipped = state.profile && (state.profile.cover_url === item.url || state.profile.cover_url === item.code);
 
               return `
@@ -4643,21 +4646,24 @@ function renderShop() {
                     <p class="discord-wallpaper-desc">${esc(item.description)}</p>
 
                     <div class="discord-wallpaper-actions" onclick="event.stopPropagation()">
-                      <button type="button" class="btn-duo btn-duo-white" style="padding:6px 10px; font-size:11px;" onclick="previewDiscordItem('${esc(item.code)}')">
-                        👁️ Xem
-                      </button>
+                      <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;">
+                        <span style="font-size:12.5px; font-weight:900; color:#2563eb;">💎 ${item.price} ĐQ</span>
+                        <button type="button" class="btn-duo btn-duo-white" style="padding:4px 8px; font-size:11px;" onclick="previewDiscordItem('${esc(item.code)}')">
+                          👁️ Xem
+                        </button>
+                      </div>
 
                       ${isEquipped ? `
-                        <button type="button" class="btn-duo btn-duo-green" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', null)">
+                        <button type="button" class="btn-duo btn-duo-green" style="width:100%; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', null)">
                           ✓ Đang dùng
                         </button>
                       ` : isOwned ? `
-                        <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', '${esc(item.code)}')">
+                        <button type="button" class="btn-duo btn-duo-pink" style="width:100%; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', '${esc(item.code)}')">
                           Trang bị
                         </button>
                       ` : `
-                        <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="buyItem('${esc(item.code)}')">
-                          Nhận (0 💎)
+                        <button type="button" class="btn-duo btn-duo-pink" style="width:100%; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="buyItem('${esc(item.code)}')">
+                          Mua (${item.price} 💎)
                         </button>
                       `}
                     </div>
@@ -6666,7 +6672,7 @@ window.openCoverModal = function() {
         📷 Chọn Ảnh bìa / Hình nền Profile
       </h2>
       <p style="font-size:13px; color:var(--ink-500); margin-bottom:16px;">
-        Chọn bộ hình nền Cloudflare R2 VIP sắc nét hoặc các chủ đề màu sắc gradient:
+        Chọn hình nền R2 VIP bạn đã sở hữu hoặc chạm vào hình nền để xem trước & mua bằng Đá quý:
       </p>
 
       <h4 style="font-size:13.5px; font-weight:900; color:#475569; margin:14px 0 8px; display:flex; align-items:center; gap:6px;">
@@ -6675,16 +6681,24 @@ window.openCoverModal = function() {
       <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; margin-bottom:18px;">
         ${Object.values(DISCORD_WALLPAPERS_REGISTRY).map(w => {
           const isSelected = state.profile?.cover_url === w.url || state.profile?.cover_url === w.code;
+          const isOwned = (state.inventory || []).some(inv => (inv.item_code === w.code || inv.item_code === w.url) && Number(inv.quantity) >= 1) ||
+                          (shopData?.items || []).some(i => (i.item_code === w.code || i.item_code === w.url) && Number(i.owned) >= 1);
           return `
-            <div style="cursor:pointer; border-radius:12px; overflow:hidden; border:2.5px solid ${isSelected ? '#ec4899' : '#e2e8f0'}; background:#0f172a; position:relative; aspect-ratio:16/9; transition:all .2s; box-shadow:0 2px 8px rgba(0,0,0,0.06);" 
-                 onclick="handleSelectCover('${w.url}')">
-              <img src="${esc(w.url)}" alt="${esc(w.name)}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy">
-              <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.85)); padding:3px 6px; font-size:10px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            <div style="cursor:pointer; border-radius:12px; overflow:hidden; border:2.5px solid ${isSelected ? '#ec4899' : (isOwned ? '#38bdf8' : '#e2e8f0')}; background:#0f172a; position:relative; aspect-ratio:16/9; transition:all .2s; box-shadow:0 2px 8px rgba(0,0,0,0.06);" 
+                 onclick="${isOwned ? `handleSelectCover('${w.url}')` : `closeModal(); previewDiscordItem('${w.code}')`}">
+              <img src="${esc(w.url)}" alt="${esc(w.name)}" style="width:100%; height:100%; object-fit:cover; display:block; ${isOwned ? '' : 'filter:brightness(0.7);'}" loading="lazy">
+              <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.88)); padding:3px 6px; font-size:10px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                 ${esc(w.name)}
               </div>
               ${isSelected ? `
                 <div style="position:absolute; top:4px; right:4px; background:#ec4899; color:#fff; font-size:9.5px; border-radius:999px; padding:1px 6px; font-weight:900;">✓ Đang dùng</div>
-              ` : ''}
+              ` : isOwned ? `
+                <div style="position:absolute; top:4px; right:4px; background:rgba(56,189,248,0.9); color:#fff; font-size:9px; border-radius:999px; padding:1px 6px; font-weight:900;">✓ Đã có</div>
+              ` : `
+                <div style="position:absolute; top:4px; right:4px; background:rgba(15,23,42,0.85); backdrop-filter:blur(4px); color:#facc15; font-size:9.5px; border-radius:999px; padding:2px 6px; font-weight:900; border:1px solid rgba(250,204,21,0.5); display:flex; align-items:center; gap:2px;">
+                  🔒 ${w.price} 💎
+                </div>
+              `}
             </div>
           `;
         }).join("")}
