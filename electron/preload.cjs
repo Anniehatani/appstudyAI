@@ -11,3 +11,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   close: () => ipcRenderer.invoke("window:close"),
   openIuLogin: () => ipcRenderer.invoke("academic:open-iu-login")
 });
+
+contextBridge.exposeInMainWorld("__uniStudyIU", {
+  isAvailable: true,
+  loginIU: () => ipcRenderer.invoke("academic:open-iu-login")
+});

@@ -6,8 +6,10 @@
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
-    "dev": "wrangler dev",
-    "start": "wrangler dev",
+    "start": "electron .",
+    "dev": "electron .",
+    "web": "wrangler dev",
+    "dev:web": "wrangler dev",
     "deploy": "wrangler deploy",
     "build:icon": "python scripts/convert_icon.py",
     "electron": "electron .",

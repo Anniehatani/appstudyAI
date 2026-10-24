@@ -5802,16 +5802,19 @@ window.closeAcademicModal = function(e) {
 
 window.handleIuPortalLogin = async function() {
   const btn = document.getElementById("btn-iu-popup-login");
+  const isDesktop = Boolean(window.electronAPI?.openIuLogin || window.__uniStudyIU?.loginIU);
+
   if (btn) {
     btn.disabled = true;
     btn.innerHTML = `<span class="spinner-dot"></span> Đang mở cửa sổ đăng nhập cổng IU…`;
   }
 
-  // 1. NẾU CHẠY TRONG ELECTRON DESKTOP: Tự mở cửa sổ, tự đóng khi đăng nhập xong, tự đục bảng điểm!
-  if (window.electronAPI && typeof window.electronAPI.openIuLogin === "function") {
+  // 1. CHẠY TRONG APP ELECTRON (Cơ chế 100% tự động như Smart Study Hub):
+  if (isDesktop) {
     try {
-      showAppLoader("Đang mở cửa sổ đăng nhập IU… 🎓", "Vui lòng đăng nhập trên cửa sổ cổng trường. Sau khi đăng nhập xong, cửa sổ sẽ tự đóng và điểm sẽ tự động được đục về!");
-      const res = await window.electronAPI.openIuLogin();
+      showAppLoader("Đang mở cửa sổ đăng nhập IU… 🎓", "Vui lòng đăng nhập tài khoản Microsoft trường trên cửa sổ cổng IU. Cửa sổ sẽ TỰ ĐỘNG ĐÓNG và bảng điểm sẽ được tự động đục về ngay sau khi đăng nhập!");
+      const loginFn = window.electronAPI?.openIuLogin || window.__uniStudyIU?.loginIU;
+      const res = await loginFn();
       if (res && res.ok && res.transcript) {
         state.academicTranscript = {
           hasTranscript: true,
@@ -5826,7 +5829,7 @@ window.handleIuPortalLogin = async function() {
       } else if (res && res.cancelled) {
         showToast("Đã đóng cửa sổ đăng nhập IU.", true);
       } else {
-        showToast("Lỗi khi đục dữ liệu IU: " + (res?.error || "Không thể tải bảng điểm"), true);
+        showToast("Lỗi khi đục dữ liệu IU: " + (res?.error || res?.message || "Không thể tải bảng điểm"), true);
       }
     } catch (err) {
       showToast("Lỗi kết nối Electron: " + err.message, true);
@@ -5848,17 +5851,27 @@ window.handleIuPortalLogin = async function() {
     return;
   }
 
-  // 2. NẾU CHẠY TRÊN TRÌNH DUYỆT WEB (Chrome / Edge / Firefox):
+  // 2. CHẠY TRÊN TRÌNH DUYỆT WEB (Google Chrome / Edge):
   const loginUrl = "https://iu.cmcu.edu.vn/congthongtin/login.aspx";
-  const popup = window.open(loginUrl, "iu_login_popup", "width=900,height=750,left=200,top=100");
+  const popup = window.open(loginUrl, "iu_login_popup", "width=1000,height=780,left=200,top=100");
+  window._activeIuPopup = popup;
 
-  showToast("🐰 Đã mở cửa sổ đăng nhập Cổng IU! Bạn đăng nhập xong thì đóng cửa sổ lại để Thỏ đục điểm nhé!", false);
+  showToast("🐰 Đã mở cửa sổ đăng nhập Cổng IU! Bạn đăng nhập Microsoft xong bấm nút 'Đã đăng nhập xong' để Thỏ đóng cửa sổ và đồng bộ nhé!", false);
 
-  if (btn) {
-    btn.innerHTML = `<span class="spinner-dot"></span> Đang chờ bạn đăng nhập trên Cổng IU…`;
+  const container = document.querySelector(".iu-single-action-box");
+  if (container) {
+    container.innerHTML = `
+      <div class="iu-browser-sync-active">
+        <p class="iu-browser-status-title">🌐 Đang mở cửa sổ cổng trường IU...</p>
+        <p class="iu-browser-status-desc">Vui lòng đăng nhập tài khoản Microsoft trường trên cửa sổ vừa mở. Sau khi đăng nhập thành công, bấm nút bên dưới để đóng cửa sổ ngay:</p>
+        <button type="button" class="btn-duo btn-duo-green iu-btn-confirm-done" onclick="window.confirmBrowserIuDone()">
+          ✅ Tôi đã đăng nhập xong (Đóng cửa sổ & Đồng bộ)
+        </button>
+      </div>
+    `;
   }
 
-  // Bật polling kiểm tra dữ liệu hoặc khi cửa sổ đóng
+  // Polling tự động nếu cửa sổ đóng hoặc nếu có dữ liệu
   let hasScraped = false;
   const pollTimer = setInterval(async () => {
     try {
@@ -5879,65 +5892,39 @@ window.handleIuPortalLogin = async function() {
     if (popup && popup.closed && !hasScraped) {
       hasScraped = true;
       clearInterval(pollTimer);
-
-      showAppLoader("Đang kích hoạt tool đục bảng điểm IU… 🎓", "Cửa sổ đã đóng, đang đồng bộ dữ liệu bảng điểm và GPA…");
-      try {
-        const scrapeRes = await api("/api/academic/scrape-iu", { method: "POST" });
-        if (scrapeRes && scrapeRes.ok && scrapeRes.transcript) {
-          state.academicTranscript = {
-            hasTranscript: true,
-            transcript: scrapeRes.transcript,
-            lastSyncedAt: scrapeRes.lastSyncedAt
-          };
-          window.closeAcademicModal();
-          showToast(`🎉 Tool đã đục thành công bảng điểm của ${scrapeRes.transcript.student.ho_ten}!`, false);
-          if (typeof launchConfetti === "function") launchConfetti();
-          updateShell();
-          render();
-        } else {
-          const finalCheck = await api("/api/academic/transcript");
-          if (finalCheck && finalCheck.hasTranscript && finalCheck.transcript) {
-            state.academicTranscript = finalCheck;
-            window.closeAcademicModal();
-            showToast(`🎉 Đã cập nhật bảng điểm của ${finalCheck.transcript.student.ho_ten}!`, false);
-            if (typeof launchConfetti === "function") launchConfetti();
-            updateShell();
-            render();
-          } else {
-            showToast("Chưa nhận được bảng điểm. Vui lòng thử đăng nhập lại hoặc nhập mã sinh viên bên dưới!", true);
-            if (btn) {
-              btn.disabled = false;
-              btn.innerHTML = `
-                <svg width="22" height="22" viewBox="0 0 21 21">
-                  <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-                  <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-                  <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-                  <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-                </svg>
-                <span>Đăng Nhập Cổng Trường IU (Microsoft)</span>
-              `;
-            }
-          }
-        }
-      } catch (err) {
-        showToast("Lỗi khi đục dữ liệu: " + err.message, true);
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = `
-            <svg width="22" height="22" viewBox="0 0 21 21">
-              <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-              <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-              <rect x="11" y="11" width="9" height="9" fill="#00a4ef"/>
-              <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-            </svg>
-            <span>Đăng Nhập Cổng Trường IU (Microsoft)</span>
-          `;
-        }
-      } finally {
-        hideAppLoader();
-      }
     }
-  }, 1000);
+  }, 1200);
+};
+
+window.confirmBrowserIuDone = async function() {
+  try {
+    if (window._activeIuPopup && !window._activeIuPopup.closed) {
+      window._activeIuPopup.close();
+    }
+  } catch {}
+
+  showAppLoader("Đang kiểm tra dữ liệu bảng điểm IU… 🎓", "Đang đồng bộ dữ liệu kết quả học tập từ cổng trường…");
+  try {
+    const chk = await api("/api/academic/transcript");
+    if (chk && chk.hasTranscript && chk.transcript) {
+      state.academicTranscript = chk;
+      window.closeAcademicModal();
+      showToast(`🎉 Đã kết nối thành công bảng điểm của ${chk.transcript.student.ho_ten}!`, false);
+      if (typeof launchConfetti === "function") launchConfetti();
+      updateShell();
+      render();
+      return;
+    }
+
+    // Nếu chưa có bảng điểm, gợi ý người dùng nhập mã SV/pass hoặc mở bằng npm start
+    showToast("💡 Trên bản Web, hãy nhập Mã SV và Mật khẩu ở form bên dưới để cào điểm, HOẶC mở app bằng lệnh 'npm start' để tự động 100%!", true);
+    renderAcademicLoginModal();
+  } catch (err) {
+    showToast("Chưa tải được bảng điểm: " + err.message, true);
+    renderAcademicLoginModal();
+  } finally {
+    hideAppLoader();
+  }
 };
 
 window.openAcademicLoginModal = function() {
@@ -5947,6 +5934,8 @@ window.openAcademicLoginModal = function() {
 function renderAcademicLoginModal() {
   const modalRoot = document.getElementById("modal-root");
   if (!modalRoot) return;
+
+  const isDesktop = Boolean(window.electronAPI?.openIuLogin || window.__uniStudyIU?.loginIU);
 
   modalRoot.innerHTML = `
     <div class="modal-backdrop" onclick="window.closeAcademicModal(event)">
@@ -5958,7 +5947,9 @@ function renderAcademicLoginModal() {
             ${renderThoBayMau({
               state: THO_STATES.SURPRISED_CARROT,
               size: 90,
-              speech: "Nhấn nút để đăng nhập cổng IU, Thỏ sẽ tự động đục bảng điểm về nhé! 🐰✨",
+              speech: isDesktop
+                ? "Bấm nút đăng nhập IU, cửa sổ sẽ TỰ ĐỘNG ĐÓNG và Thỏ sẽ tự cào điểm về ngay! 🐰✨"
+                : "Đăng nhập cổng IU để Thỏ phân tích điểm và lộ trình nâng GPA nhé! 🐰✨",
               speechDirection: "top"
             })}
           </div>
@@ -5969,6 +5960,16 @@ function renderAcademicLoginModal() {
         </div>
 
         <div class="academic-modal-body">
+          ${isDesktop ? `
+            <div class="iu-mode-banner iu-mode-desktop">
+              ⚡ <strong>Chế độ App Desktop:</strong> Sau khi đăng nhập Microsoft xong trên cổng trường, cửa sổ sẽ <strong>TỰ ĐỘNG ĐÓNG</strong> và hệ thống tự động đục bảng điểm 100%!
+            </div>
+          ` : `
+            <div class="iu-mode-banner iu-mode-web">
+              💡 <strong>Mẹo chuyên nghiệp:</strong> Chạy ứng dụng bằng lệnh <code>npm start</code> (hoặc <code>npm run electron</code>) để trải nghiệm cơ chế <strong>Tự động đóng cửa sổ & cào điểm 100%</strong> giống Smart Study Hub!
+            </div>
+          `}
+
           <!-- NÚT DUY NHẤT: ĐĂNG NHẬP CỔNG IU -->
           <div class="iu-single-action-box">
             <button type="button" id="btn-iu-popup-login" class="btn-microsoft-sso" onclick="window.handleIuPortalLogin()">
@@ -5981,7 +5982,9 @@ function renderAcademicLoginModal() {
               <span>Đăng Nhập Cổng Trường IU (Microsoft)</span>
             </button>
             <p class="iu-single-hint">
-              Nhấn nút để mở cửa sổ đăng nhập cổng trường. Sau khi đăng nhập xong, đóng cửa sổ lại và Thỏ sẽ tự động dùng tool đục bảng điểm về cho bạn!
+              ${isDesktop
+                ? "Nhấn nút để mở cửa sổ đăng nhập cổng trường. Đăng nhập xong, cửa sổ sẽ tự động đóng và Thỏ đục bảng điểm về cho bạn!"
+                : "Nhấn nút để mở cửa sổ cổng IU. Đăng nhập xong, bấm xác nhận để đóng cửa sổ và đồng bộ bảng điểm!"}
             </p>
           </div>
 

@@ -17,3 +17,4 @@ dist-electron/
 build/test_screenshots/
 *.sqlite
 *.sqlite*
+smart_study_hub_cmc_uni-main/
