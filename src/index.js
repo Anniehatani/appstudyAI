@@ -996,17 +996,24 @@ async function equipDecoration(request, user, env) {
   const type = String(body.type || "avatar_decoration").trim();
   const itemCode = body.itemCode ? String(body.itemCode).trim() : null;
 
+  const expectedType = FREE_PROFILE_ITEMS_BY_CODE.get(itemCode)?.type;
+  if (type !== "avatar_decoration" && type !== "profile_effect" && type !== "profile_theme") {
+    throw new HttpError(400, "Loại hiệu ứng hồ sơ không hợp lệ.");
+  }
+  if (expectedType && type !== expectedType) {
+    throw new HttpError(400, "Hiệu ứng này không đúng loại hồ sơ.");
+  }
+
   if (itemCode) {
     const owned = await env.DB.prepare(
       "SELECT id FROM user_inventory WHERE user_id = ? AND item_code = ? AND quantity > 0 LIMIT 1"
     ).bind(user.userId, itemCode).first();
     if (!owned) {
-      // Check if it's a 0-gem free item in shop_items
-      const shopItem = await env.DB.prepare(
+      const freeItem = FREE_PROFILE_ITEMS_BY_CODE.get(itemCode);
+      const shopItem = freeItem ? null : await env.DB.prepare(
         "SELECT id, price_gems FROM shop_items WHERE item_code = ? LIMIT 1"
       ).bind(itemCode).first();
-      if (shopItem && Number(shopItem.price_gems) <= 0) {
-        // Auto-grant free Discord item to user inventory
+      if (freeItem || (shopItem && Number(shopItem.price_gems) <= 0)) {
         await env.DB.prepare(
           "INSERT INTO user_inventory (user_id, item_code, quantity) VALUES (?, ?, 1)"
         ).bind(user.userId, itemCode).run();
@@ -1305,7 +1312,15 @@ async function shopList(user, env) {
     env.DB.prepare("SELECT gems, hearts FROM user_stats WHERE user_id = ? LIMIT 1").bind(user.userId).first()
   ]);
   const inventoryMap = new Map((inventoryRes.results || []).map(function (r) { return [r.item_code, Number(r.quantity) || 0]; }));
-  const items = (itemsRes.results || []).map(function (item) {
+  const itemsByCode = new Map((itemsRes.results || []).map(function (item) { return [item.item_code, item]; }));
+  for (const freeItem of FREE_PROFILE_ITEMS) {
+    const storedItem = itemsByCode.get(freeItem.item_code);
+    itemsByCode.set(freeItem.item_code, Object.assign({}, storedItem || {}, freeItem, {
+      id: storedItem ? storedItem.id : null,
+      price_gems: 0
+    }));
+  }
+  const items = Array.from(itemsByCode.values()).map(function (item) {
     return Object.assign({}, item, {
       owned: inventoryMap.get(item.item_code) || 0
     });
@@ -1317,16 +1332,32 @@ async function shopList(user, env) {
   };
 }
 
+const FREE_PROFILE_ITEMS = [
+  { item_code: "deco_cyber_neon", name: "Khung Neon Cyberpunk 2077", description: "Vòng xoay năng lượng công nghệ cao phát quang tia sét neon xanh lam & tím rực rỡ chuẩn Discord Nitro.", price_gems: 0, type: "avatar_decoration" },
+  { item_code: "deco_sakura_bloom", name: "Vòng Hoa Anh Đào Sakura", description: "Cánh hoa anh đào lượn sóng xoay vòng và rơi lấp lánh nhẹ nhàng quanh ảnh đại diện.", price_gems: 0, type: "avatar_decoration" },
+  { item_code: "deco_flame_dragon", name: "Hào Quang Hỏa Long Siêu Cấp", description: "Ngọn lửa rực cháy đỏ cam bập bùng dữ dội bao quanh avatar cực kỳ chiến và nổi bật.", price_gems: 0, type: "avatar_decoration" },
+  { item_code: "deco_galaxy_portal", name: "Cổng Vũ Trụ Tinh Vân Galaxy", description: "Vòng xoáy không gian vũ trụ huyền ảo với bụi sao lấp lánh và tinh vân xoay tròn kỳ ảo.", price_gems: 0, type: "avatar_decoration" },
+  { item_code: "deco_retro_glitch", name: "Hiệu Ứng Glitch Hacker Ma Trận", description: "Nhiễu sóng điện tử RGB glitch nhấp nháy chuyển động phong cách hacker công nghệ.", price_gems: 0, type: "avatar_decoration" },
+  { item_code: "fx_matrix_rain", name: "Hiệu Ứng Hồ Sơ: Ma Trận Số Cyber", description: "Dòng mưa mã nhị phân màu xanh lá rơi mượt mà bao phủ toàn bộ thẻ hồ sơ cá nhân.", price_gems: 0, type: "profile_effect" },
+  { item_code: "fx_stardust_magic", name: "Hiệu Ứng Hồ Sơ: Bụi Sao Thần Thoại", description: "Những hạt bụi sao ánh kim lung linh bay bổng và phát sáng huyền ảo trên thẻ cá nhân.", price_gems: 0, type: "profile_effect" },
+  { item_code: "fx_fire_sparks", name: "Hiệu Ứng Hồ Sơ: Tàn Lửa Địa Ngục", description: "Những tàn lửa than hồng bay lơ lửng bốc lên từ đáy hồ sơ, tạo vẻ đẹp rực cháy.", price_gems: 0, type: "profile_effect" }
+];
+const FREE_PROFILE_ITEMS_BY_CODE = new Map(FREE_PROFILE_ITEMS.map(function (item) { return [item.item_code, item]; }));
+
 async function buyShopItem(request, user, env) {
   const body = await readJson(request);
   const itemCode = String(body.itemCode || "").trim();
-  const item = await env.DB.prepare(
+  const storedItem = await env.DB.prepare(
     "SELECT id, item_code, name, price_gems FROM shop_items WHERE item_code = ? LIMIT 1"
   ).bind(itemCode).first();
+  const freeItem = FREE_PROFILE_ITEMS_BY_CODE.get(itemCode);
+  const item = freeItem
+    ? Object.assign({}, storedItem || {}, freeItem, { id: storedItem ? storedItem.id : null, price_gems: 0 })
+    : storedItem;
   if (!item) throw new HttpError(404, "Vật phẩm không tồn tại trong Cửa hàng.");
 
   const stats = await env.DB.prepare(
-    "SELECT gems, hearts FROM user_stats WHERE user_id = ? LIMIT 1"
+    "SELECT * FROM user_stats WHERE user_id = ? LIMIT 1"
   ).bind(user.userId).first();
   const currentGems = Number(stats && stats.gems) || 0;
   if (currentGems < item.price_gems) {
@@ -1342,6 +1373,10 @@ async function buyShopItem(request, user, env) {
   const existingInv = await env.DB.prepare(
     "SELECT id, quantity FROM user_inventory WHERE user_id = ? AND item_code = ? LIMIT 1"
   ).bind(user.userId, itemCode).first();
+  if (freeItem && existingInv && Number(existingInv.quantity) >= 1) {
+    const shopData = await shopList(user, env);
+    return { ok: true, message: "Bạn đã nhận hiệu ứng này rồi!", stats: stats, shop: shopData };
+  }
   if ((itemCode.startsWith("mascot_") || itemCode.startsWith("deco_") || itemCode.startsWith("fx_")) && existingInv && Number(existingInv.quantity) >= 1) {
     throw new HttpError(400, "Bạn đã sở hữu gói vật phẩm này rồi, không thể mua lại!");
   }

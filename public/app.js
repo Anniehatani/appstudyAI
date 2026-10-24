@@ -3192,6 +3192,8 @@ window.equipDecoration = async function(type, itemCode) {
   } catch (err) {
     playSound("wrong");
     showToast(err.message, true);
+    updateShell();
+    render();
   }
 };
 
@@ -3654,7 +3656,7 @@ window.buyItem = async function(itemCode) {
       body: { itemCode }
     });
     showToast(res.message);
-    state.stats = res.stats;
+    state.stats = Object.assign({}, state.stats, res.stats || {});
     shopData = res.shop;
     if (res.shop && res.shop.items) {
       state.inventory = res.shop.items.filter(i => i.owned > 0).map(i => ({ item_code: i.item_code, quantity: i.owned }));
