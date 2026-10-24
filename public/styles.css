@@ -6002,8 +6002,429 @@ button:focus-visible, input:focus-visible {
 
 .active-course-action {
   margin-top: auto;
+
+/* ========================================================
+   DISCORD-STYLE ANIMATED PROFILE EFFECTS & AVATAR DECORATIONS
+   ======================================================== */
+
+.discord-avatar-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  vertical-align: middle;
+  border-radius: 50%;
 }
 
+.discord-avatar-container .avatar-base {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(135deg, #ff71a2, #c084fc);
+  color: #fff;
+  font-weight: 900;
+}
 
+.discord-avatar-container .avatar-base img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
 
+.discord-avatar-container .avatar-base svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
+/* Avatar Decoration Overlay (Sit over avatar like Discord Nitro) */
+.discord-avatar-decoration {
+  position: absolute;
+  top: -16%;
+  left: -16%;
+  width: 132%;
+  height: 132%;
+  pointer-events: none;
+  z-index: 4;
+  transform-origin: center center;
+}
+
+.discord-avatar-decoration svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* 1. CYBER NEON 2077 DECORATION */
+.deco-cyber-ring-outer {
+  animation: discordCyberOuterRotate 7s linear infinite;
+  transform-origin: 50px 50px;
+}
+.deco-cyber-ring-inner {
+  animation: discordCyberInnerRotate 3.5s linear infinite reverse;
+  transform-origin: 50px 50px;
+}
+.deco-cyber-glow-wrap {
+  animation: discordCyberPulse 2.4s ease-in-out infinite alternate;
+}
+@keyframes discordCyberOuterRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes discordCyberInnerRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes discordCyberPulse {
+  0% { filter: drop-shadow(0 0 4px #00f0ff) drop-shadow(0 0 8px #7000ff); }
+  100% { filter: drop-shadow(0 0 8px #ff007b) drop-shadow(0 0 16px #00f0ff); }
+}
+
+/* 2. SAKURA BLOOM DECORATION */
+.deco-sakura-ring {
+  animation: discordSakuraSpin 14s linear infinite;
+  transform-origin: 50px 50px;
+}
+.deco-sakura-petals {
+  animation: discordSakuraPulse 3s ease-in-out infinite alternate;
+  transform-origin: 50px 50px;
+}
+@keyframes discordSakuraSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes discordSakuraPulse {
+  0% { filter: drop-shadow(0 0 3px #ff85c0); transform: scale(0.98); }
+  100% { filter: drop-shadow(0 0 9px #ff4b82) drop-shadow(0 0 14px #fbcfe8); transform: scale(1.04); }
+}
+
+/* 3. FLAME DRAGON AURA DECORATION */
+.deco-flame-tongues {
+  animation: discordFlameLick 1.2s ease-in-out infinite alternate;
+  transform-origin: 50px 50px;
+}
+.deco-flame-ring {
+  animation: discordFlameRotate 9s linear infinite;
+  transform-origin: 50px 50px;
+}
+@keyframes discordFlameLick {
+  0% { filter: drop-shadow(0 0 6px #ff7b00) drop-shadow(0 0 12px #ff1a1a); transform: scale(0.97) rotate(-2deg); }
+  100% { filter: drop-shadow(0 0 14px #ffee55) drop-shadow(0 0 22px #ff7b00); transform: scale(1.05) rotate(3deg); }
+}
+@keyframes discordFlameRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 4. GALAXY PORTAL DECORATION */
+.deco-galaxy-swirl {
+  animation: discordGalaxySpin 10s linear infinite;
+  transform-origin: 50px 50px;
+}
+.deco-galaxy-stars circle {
+  animation: discordStarTwinkle 1.8s ease-in-out infinite alternate;
+}
+.deco-galaxy-stars circle:nth-child(2) { animation-delay: 0.4s; }
+.deco-galaxy-stars circle:nth-child(3) { animation-delay: 0.8s; }
+.deco-galaxy-stars circle:nth-child(4) { animation-delay: 1.2s; }
+.deco-galaxy-stars circle:nth-child(5) { animation-delay: 1.6s; }
+@keyframes discordGalaxySpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes discordStarTwinkle {
+  0% { opacity: 0.35; transform: scale(0.7); }
+  100% { opacity: 1; transform: scale(1.35); filter: drop-shadow(0 0 5px #fff); }
+}
+
+/* 5. RETRO GLITCH DECORATION */
+.deco-glitch-wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  animation: discordGlitchShake 2s steps(2, start) infinite;
+}
+.deco-glitch-border {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid #00f0ff;
+  box-shadow: 0 0 10px #00f0ff, inset 0 0 8px #7000ff;
+}
+.deco-glitch-tag {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ff007b;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 6px #ff007b;
+}
+@keyframes discordGlitchShake {
+  0%, 90% { transform: translate(0, 0); }
+  92% { transform: translate(-3px, 2px); filter: hue-rotate(90deg); }
+  94% { transform: translate(3px, -2px); filter: hue-rotate(180deg); }
+  96% { transform: translate(-2px, -1px); filter: hue-rotate(270deg); }
+  98% { transform: translate(2px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ========================================================
+   PROFILE FULL CARD EFFECTS (DISCORD PROFILE EFFECTS)
+   ======================================================== */
+
+.discord-profile-fx-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+/* FX 1: MATRIX CODE RAIN */
+.discord-fx-matrix {
+  background: rgba(10, 20, 15, 0.45);
+}
+.discord-matrix-column {
+  position: absolute;
+  top: -100%;
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 18px;
+  color: #00ff66;
+  text-shadow: 0 0 8px #00ff66, 0 0 14px #00aa44;
+  white-space: pre;
+  writing-mode: vertical-rl;
+  animation: discordMatrixFall 4s linear infinite;
+  opacity: 0.75;
+}
+@keyframes discordMatrixFall {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 0.85; }
+  90% { opacity: 0.85; }
+  100% { transform: translateY(220%); opacity: 0; }
+}
+
+/* FX 2: STARDUST MAGIC */
+.discord-fx-stardust {
+  background: radial-gradient(circle at 50% 20%, rgba(192, 132, 252, 0.15), transparent 70%);
+}
+.discord-stardust-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffeb3b;
+  box-shadow: 0 0 10px #ffeb3b, 0 0 18px #ff71a2;
+  animation: discordStardustRise 3.5s ease-in-out infinite;
+  opacity: 0;
+}
+@keyframes discordStardustRise {
+  0% { transform: translateY(120%) scale(0.4); opacity: 0; }
+  30% { opacity: 0.95; }
+  70% { opacity: 0.95; }
+  100% { transform: translateY(-30%) scale(1.3) rotate(45deg); opacity: 0; }
+}
+
+/* FX 3: FIRE SPARKS EMBERS */
+.discord-fx-fire {
+  background: radial-gradient(ellipse at bottom, rgba(239, 68, 68, 0.18), transparent 70%);
+}
+.discord-fire-ember {
+  position: absolute;
+  bottom: -10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ff9800;
+  box-shadow: 0 0 8px #ff5722, 0 0 14px #ffeb3b;
+  animation: discordEmberRise 2.8s ease-out infinite;
+}
+@keyframes discordEmberRise {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 0.8; }
+  100% { transform: translateY(-320px) translateX(25px) scale(0.2); opacity: 0; }
+}
+
+/* ========================================================
+   DISCORD NITRO SHOP SECTION STYLING
+   ======================================================== */
+
+.discord-nitro-shop-section {
+  background: linear-gradient(135deg, #1e1f2b 0%, #2b2d42 50%, #1e1f2b 100%);
+  border: 3px solid #5865f2;
+  border-radius: 28px;
+  padding: 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 10px 30px rgba(88, 101, 242, 0.25), 0 4px 0 #3c45a5;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.discord-nitro-shop-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.15);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+
+.discord-nitro-badge {
+  background: linear-gradient(135deg, #5865f2, #eb459e);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 4px 12px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 0 12px rgba(235, 69, 158, 0.5);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.discord-nitro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.discord-nitro-card {
+  background: rgba(43, 45, 66, 0.75);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+.discord-nitro-card:hover {
+  transform: translateY(-4px);
+  border-color: #5865f2;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35), 0 0 16px rgba(88, 101, 242, 0.4);
+}
+
+.discord-nitro-card.equipped {
+  border-color: #22c55e;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+}
+
+.discord-nitro-preview-box {
+  width: 96px;
+  height: 96px;
+  margin: 10px 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.discord-nitro-card-title {
+  font-size: 14.5px;
+  font-weight: 900;
+  color: #fff;
+  margin: 0 0 4px 0;
+}
+
+.discord-nitro-card-desc {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.4;
+  margin: 0 0 14px 0;
+  flex-grow: 1;
+}
+
+.discord-nitro-card-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.discord-nitro-price-badge {
+  font-size: 13px;
+  font-weight: 900;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.15);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* PREVIEW MODAL FOR DISCORD PROFILE */
+.discord-preview-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.discord-preview-card {
+  width: 100%;
+  max-width: 420px;
+  background: #18191c;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(88, 101, 242, 0.3);
+  border: 2px solid #5865f2;
+  position: relative;
+  color: #fff;
+  animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.discord-preview-banner {
+  height: 120px;
+  background: linear-gradient(135deg, #5865f2, #eb459e, #8b5cf6);
+  position: relative;
+}
+
+.discord-preview-body {
+  padding: 0 20px 24px;
+  position: relative;
+}
+
+.discord-preview-avatar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: -50px;
+  margin-bottom: 14px;
+}
+
+.discord-preview-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}

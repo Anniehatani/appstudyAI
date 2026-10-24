@@ -662,16 +662,7 @@ function updateShell() {
     if (loginBtn) loginBtn.style.display = "none";
     if (avatarBtn) avatarBtn.style.display = "flex";
 
-    let avatarHtml = "";
-    if (state.profile.avatar_url) {
-      if (state.profile.avatar_url.startsWith("mascot:")) {
-        avatarHtml = state.profile.avatar_url.slice(7);
-      } else {
-        avatarHtml = `<img src="${esc(state.profile.avatar_url)}" alt="">`;
-      }
-    } else {
-      avatarHtml = Array.from(name.trim())[0] || "L";
-    }
+    const avatarHtml = renderDecoratedAvatar(state.profile.avatar_url, state.profile.avatar_decoration, 38, name);
     if (sideAvatar) sideAvatar.innerHTML = avatarHtml;
     if (topAvatar) topAvatar.innerHTML = avatarHtml;
   }
@@ -2261,9 +2252,7 @@ function renderLeaderboard() {
   const rowsHtml = rows.map((row) => {
     const isMe = row.isMe;
     const medal = row.rank === 1 ? "🥇" : row.rank === 2 ? "🥈" : row.rank === 3 ? "🥉" : `${row.rank}`;
-    const avatarHtml = row.avatar_url
-      ? `<img src="${esc(row.avatar_url)}" alt="">`
-      : Array.from(row.full_name || "L")[0] || "L";
+    const avatarDecorated = renderDecoratedAvatar(row.avatar_url, row.avatar_decoration, 34, row.full_name);
 
     let prizeBadge = "";
     if (row.rank === 1) prizeBadge = '<span class="lb-prize-pill gold">+100 💎</span>';
@@ -2273,7 +2262,7 @@ function renderLeaderboard() {
     return `
       <div class="leader-row ${isMe ? 'me' : ''}" onclick="openUserProfileModal('${esc(row.user_id)}')" title="Nhấp để xem hồ sơ & kết bạn 👤">
         <span class="leader-rank">${medal}</span>
-        <span class="avatar avatar-small" style="font-size:14px;">${avatarHtml}</span>
+        ${avatarDecorated}
         <span class="leader-name">
           ${esc(row.full_name)} ${isMe ? '<strong style="color:var(--lumi-pink);">(Bạn)</strong>' : ''}
         </span>
@@ -2381,18 +2370,22 @@ window.openUserProfileModal = async function(userId) {
 
     modalRoot.innerHTML = `
       <div class="user-profile-modal-overlay" onclick="closeUserProfileModal(event)">
-        <div class="user-profile-card" onclick="event.stopPropagation()">
-          <button type="button" class="user-profile-close-btn" onclick="closeUserProfileModal()">✕</button>
+        <div class="user-profile-card" style="position:relative; overflow:hidden;" onclick="event.stopPropagation()">
+          ${renderProfileEffectHtml(prof.profile_effect)}
+          <button type="button" class="user-profile-close-btn" style="z-index:10;" onclick="closeUserProfileModal()">✕</button>
           
           <div class="user-profile-cover" style="${coverStyle}"></div>
 
-          <div class="user-profile-body">
+          <div class="user-profile-body" style="position:relative; z-index:2;">
             <div class="user-profile-avatar-row">
-              <div class="user-profile-avatar-wrap">
-                ${avatarContent}
+              <div class="user-profile-avatar-wrap" style="overflow:visible; display:flex; align-items:center; justify-content:center;">
+                ${renderDecoratedAvatar(prof.avatar_url, prof.avatar_decoration, 84, prof.full_name)}
               </div>
               <div class="user-profile-actions">
                 ${isSelf ? `
+                  <button type="button" class="btn-duo btn-duo-purple" style="padding:8px 14px; font-size:12.5px; background:#5865f2; color:#fff;" onclick="closeUserProfileModal(); state.page='shop'; render();">
+                    ✨ Hiệu ứng Nitro
+                  </button>
                   <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="closeUserProfileModal(); state.page='settings'; render();">
                     ✏️ Sửa hồ sơ
                   </button>
@@ -2919,6 +2912,350 @@ function renderFriends() {
 }
 
 // ========================================================
+// DISCORD-STYLE PROFILE EFFECTS & AVATAR DECORATIONS
+// ========================================================
+export const DISCORD_EFFECTS_REGISTRY = {
+  deco_cyber_neon: {
+    code: "deco_cyber_neon",
+    name: "Khung Neon Cyberpunk 2077",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Cyber Nitro",
+    color: "#00f0ff",
+    description: "Vòng xoay năng lượng công nghệ cao phát quang tia sét neon xanh lam & tím rực rỡ chuẩn Discord Nitro.",
+    price: 0
+  },
+  deco_sakura_bloom: {
+    code: "deco_sakura_bloom",
+    name: "Vòng Hoa Anh Đào Sakura",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Sakura Nitro",
+    color: "#ff71a2",
+    description: "Cánh hoa anh đào lượn sóng xoay vòng và rơi lấp lánh nhẹ nhàng quanh ảnh đại diện.",
+    price: 0
+  },
+  deco_flame_dragon: {
+    code: "deco_flame_dragon",
+    name: "Hào Quang Hỏa Long Siêu Cấp",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Flame Nitro",
+    color: "#ff7b00",
+    description: "Ngọn lửa rực cháy đỏ cam bập bùng dữ dội bao quanh avatar cực kỳ chiến và nổi bật.",
+    price: 0
+  },
+  deco_galaxy_portal: {
+    code: "deco_galaxy_portal",
+    name: "Cổng Vũ Trụ Tinh Vân Galaxy",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Cosmic Nitro",
+    color: "#a855f7",
+    description: "Vòng xoáy không gian vũ trụ huyền ảo với bụi sao lấp lánh và tinh vân xoay tròn kỳ ảo.",
+    price: 0
+  },
+  deco_retro_glitch: {
+    code: "deco_retro_glitch",
+    name: "Hiệu Ứng Glitch Hacker Ma Trận",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Glitch Nitro",
+    color: "#06b6d4",
+    description: "Nhiễu sóng điện tử RGB glitch nhấp nháy chuyển động phong cách hacker công nghệ.",
+    price: 0
+  },
+  fx_matrix_rain: {
+    code: "fx_matrix_rain",
+    name: "Hiệu Ứng Hồ Sơ: Ma Trận Số Cyber",
+    type: "profile_effect",
+    category: "effect",
+    badge: "Matrix FX",
+    color: "#22c55e",
+    description: "Dòng mưa mã nhị phân màu xanh lá rơi mượt mà bao phủ toàn bộ thẻ hồ sơ cá nhân.",
+    price: 0
+  },
+  fx_stardust_magic: {
+    code: "fx_stardust_magic",
+    name: "Hiệu Ứng Hồ Sơ: Bụi Sao Thần Thoại",
+    type: "profile_effect",
+    category: "effect",
+    badge: "Stardust FX",
+    color: "#f59e0b",
+    description: "Những hạt bụi sao ánh kim lung linh bay bổng và phát sáng huyền ảo trên thẻ cá nhân.",
+    price: 0
+  },
+  fx_fire_sparks: {
+    code: "fx_fire_sparks",
+    name: "Hiệu Ứng Hồ Sơ: Tàn Lửa Địa Ngục",
+    type: "profile_effect",
+    category: "effect",
+    badge: "Inferno FX",
+    color: "#ef4444",
+    description: "Những tàn lửa than hồng bay lơ lửng bốc lên từ đáy hồ sơ, tạo vẻ đẹp rực cháy.",
+    price: 0
+  }
+};
+window.DISCORD_EFFECTS_REGISTRY = DISCORD_EFFECTS_REGISTRY;
+
+export function generateAvatarDecorationSvg(decoCode) {
+  if (decoCode === "deco_cyber_neon") {
+    return `
+      <div class="discord-avatar-decoration">
+        <svg viewBox="0 0 100 100" class="deco-cyber-glow-wrap">
+          <defs>
+            <linearGradient id="cyber-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#00f0ff"/>
+              <stop offset="50%" stop-color="#7000ff"/>
+              <stop offset="100%" stop-color="#ff007b"/>
+            </linearGradient>
+          </defs>
+          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#cyber-grad)" stroke-width="3" stroke-dasharray="14 6 8 4" class="deco-cyber-ring-outer"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#00f0ff" stroke-width="1.5" stroke-dasharray="5 7" class="deco-cyber-ring-inner"/>
+          <polygon points="50,2 53,7 47,7" fill="#00f0ff" />
+          <polygon points="50,98 53,93 47,93" fill="#ff007b" />
+          <polygon points="2,50 7,47 7,53" fill="#7000ff" />
+          <polygon points="98,50 93,47 93,53" fill="#00f0ff" />
+        </svg>
+      </div>
+    `;
+  }
+  if (decoCode === "deco_sakura_bloom") {
+    return `
+      <div class="discord-avatar-decoration">
+        <svg viewBox="0 0 100 100" class="deco-sakura-petals">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="#f472b6" stroke-width="2.5" stroke-dasharray="16 4 8 4" class="deco-sakura-ring"/>
+          <g transform-origin="50 50">
+            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#ff85c0" transform="rotate(15 50 50)"/>
+            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#fbcfe8" transform="rotate(75 50 50)"/>
+            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#ff4b82" transform="rotate(135 50 50)"/>
+            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#ff85c0" transform="rotate(195 50 50)"/>
+            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#fbcfe8" transform="rotate(255 50 50)"/>
+            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#ff4b82" transform="rotate(315 50 50)"/>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
+  if (decoCode === "deco_flame_dragon") {
+    return `
+      <div class="discord-avatar-decoration">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="dragon-flame-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stop-color="#ff1a1a"/>
+              <stop offset="50%" stop-color="#ff7b00"/>
+              <stop offset="100%" stop-color="#ffee55"/>
+            </linearGradient>
+          </defs>
+          <circle cx="50" cy="50" r="44" fill="none" stroke="url(#dragon-flame-grad)" stroke-width="3" stroke-dasharray="24 6 12 4" class="deco-flame-ring"/>
+          <g class="deco-flame-tongues">
+            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)"/>
+            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)" transform="rotate(60 50 50)"/>
+            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)" transform="rotate(120 50 50)"/>
+            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)" transform="rotate(180 50 50)"/>
+            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)" transform="rotate(240 50 50)"/>
+            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)" transform="rotate(300 50 50)"/>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
+  if (decoCode === "deco_galaxy_portal") {
+    return `
+      <div class="discord-avatar-decoration">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="portal-galaxy-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#8b5cf6"/>
+              <stop offset="50%" stop-color="#3b82f6"/>
+              <stop offset="100%" stop-color="#ec4899"/>
+            </linearGradient>
+          </defs>
+          <circle cx="50" cy="50" r="45" fill="none" stroke="url(#portal-galaxy-grad)" stroke-width="3.5" stroke-dasharray="18 6 12 4" class="deco-galaxy-swirl"/>
+          <g class="deco-galaxy-stars">
+            <circle cx="50" cy="5" r="2.5" fill="#fff"/>
+            <circle cx="89" cy="27" r="2" fill="#a5f3fc"/>
+            <circle cx="85" cy="74" r="3" fill="#fbcfe8"/>
+            <circle cx="22" cy="80" r="2" fill="#e0e7ff"/>
+            <circle cx="11" cy="34" r="2.5" fill="#fff"/>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
+  if (decoCode === "deco_retro_glitch") {
+    return `
+      <div class="discord-avatar-decoration">
+        <div class="deco-glitch-wrap">
+          <div class="deco-glitch-border"></div>
+          <span class="deco-glitch-tag">GLITCH</span>
+        </div>
+      </div>
+    `;
+  }
+  return "";
+}
+window.generateAvatarDecorationSvg = generateAvatarDecorationSvg;
+
+export function renderDecoratedAvatar(avatarUrl, decoCode, size = 48, name = "3TG") {
+  let innerHtml = "";
+  if (avatarUrl) {
+    if (avatarUrl.startsWith("mascot:")) {
+      const key = avatarUrl.slice(7);
+      if (window.renderThoBayMau && window.THO_METADATA && window.THO_METADATA[key]) {
+        innerHtml = renderThoBayMau({ state: key, size: Math.round(size * 0.9) });
+      } else {
+        innerHtml = esc(key);
+      }
+    } else {
+      innerHtml = `<img src="${esc(avatarUrl)}" alt="">`;
+    }
+  } else {
+    innerHtml = esc(Array.from(name || "L")[0] || "L");
+  }
+
+  const decoHtml = decoCode ? generateAvatarDecorationSvg(decoCode) : "";
+
+  return `
+    <div class="discord-avatar-container" style="width:${size}px; height:${size}px; font-size:${Math.round(size * 0.42)}px;">
+      <div class="avatar-base">
+        ${innerHtml}
+      </div>
+      ${decoHtml}
+    </div>
+  `;
+}
+window.renderDecoratedAvatar = renderDecoratedAvatar;
+
+export function renderProfileEffectHtml(fxCode) {
+  if (fxCode === "fx_matrix_rain") {
+    const chars = "10101011001";
+    return `
+      <div class="discord-profile-fx-layer discord-fx-matrix">
+        <div class="discord-matrix-column" style="left:8%; animation-duration:3.2s; animation-delay:0s;">${chars}</div>
+        <div class="discord-matrix-column" style="left:26%; animation-duration:4.5s; animation-delay:1.1s;">01101001</div>
+        <div class="discord-matrix-column" style="left:48%; animation-duration:3.8s; animation-delay:0.5s;">10011010</div>
+        <div class="discord-matrix-column" style="left:72%; animation-duration:4.1s; animation-delay:1.7s;">01011100</div>
+        <div class="discord-matrix-column" style="left:90%; animation-duration:3.5s; animation-delay:0.8s;">11001010</div>
+      </div>
+    `;
+  }
+  if (fxCode === "fx_stardust_magic") {
+    return `
+      <div class="discord-profile-fx-layer discord-fx-stardust">
+        <div class="discord-stardust-particle" style="left:12%; animation-delay:0s; animation-duration:3.4s;"></div>
+        <div class="discord-stardust-particle" style="left:34%; animation-delay:1.2s; animation-duration:4.1s; width:8px; height:8px;"></div>
+        <div class="discord-stardust-particle" style="left:58%; animation-delay:0.6s; animation-duration:3.7s;"></div>
+        <div class="discord-stardust-particle" style="left:76%; animation-delay:2.1s; animation-duration:4.6s; width:7px; height:7px;"></div>
+        <div class="discord-stardust-particle" style="left:88%; animation-delay:1.5s; animation-duration:3.1s;"></div>
+      </div>
+    `;
+  }
+  if (fxCode === "fx_fire_sparks") {
+    return `
+      <div class="discord-profile-fx-layer discord-fx-fire">
+        <div class="discord-fire-ember" style="left:18%; animation-delay:0s; animation-duration:2.5s;"></div>
+        <div class="discord-fire-ember" style="left:38%; animation-delay:0.9s; animation-duration:3.1s; width:6px; height:6px;"></div>
+        <div class="discord-fire-ember" style="left:55%; animation-delay:0.4s; animation-duration:2.7s;"></div>
+        <div class="discord-fire-ember" style="left:72%; animation-delay:1.4s; animation-duration:3.3s; width:7px; height:7px;"></div>
+        <div class="discord-fire-ember" style="left:86%; animation-delay:0.7s; animation-duration:2.2s;"></div>
+      </div>
+    `;
+  }
+  return "";
+}
+window.renderProfileEffectHtml = renderProfileEffectHtml;
+
+window.equipDecoration = async function(type, itemCode) {
+  try {
+    playSound("click");
+    const res = await api("/api/profile/equip", {
+      method: "POST",
+      body: { type, itemCode }
+    });
+    if (res.profile) {
+      state.profile = Object.assign({}, state.profile, res.profile);
+    }
+    playSound("fanfare");
+    showToast(itemCode ? "Đã trang bị hiệu ứng thành công! 🌸" : "Đã tháo hiệu ứng.");
+    updateShell();
+    render();
+  } catch (err) {
+    playSound("wrong");
+    showToast(err.message, true);
+  }
+};
+
+window.previewDiscordItem = function(itemCode) {
+  const item = DISCORD_EFFECTS_REGISTRY[itemCode];
+  if (!item) return;
+
+  const userAvatar = state.profile?.avatar_url || "";
+  const userName = state.profile?.full_name || state.profile?.username || "Bạn học 3TG";
+  const userHandle = state.profile?.username || "hocvien";
+
+  const isDeco = item.type === "avatar_decoration";
+  const previewDeco = isDeco ? item.code : (state.profile?.avatar_decoration || null);
+  const previewFx = !isDeco ? item.code : (state.profile?.profile_effect || null);
+
+  const owned = (state.inventory || []).some(i => i.item_code === itemCode && Number(i.quantity) > 0) ||
+                (shopData?.items || []).some(i => i.item_code === itemCode && Number(i.owned) > 0);
+
+  const isEquipped = isDeco
+    ? (state.profile?.avatar_decoration === itemCode)
+    : (state.profile?.profile_effect === itemCode);
+
+  modalRoot.innerHTML = `
+    <div class="discord-preview-modal-overlay" onclick="closeUserProfileModal(event)">
+      <div class="discord-preview-card" onclick="event.stopPropagation()">
+        ${renderProfileEffectHtml(previewFx)}
+        <div class="discord-preview-banner">
+          <button type="button" class="user-profile-close-btn" style="z-index:10;" onclick="closeUserProfileModal()">✕</button>
+        </div>
+        <div class="discord-preview-body">
+          <div class="discord-preview-avatar-row">
+            ${renderDecoratedAvatar(userAvatar, previewDeco, 92, userName)}
+            <span class="discord-nitro-badge">✨ Live Preview</span>
+          </div>
+          <h2 style="font-size:20px; font-weight:900; margin:0 0 2px 0;">${esc(userName)}</h2>
+          <div style="font-size:13px; color:#94a3b8; margin-bottom:12px;">@${esc(userHandle)}</div>
+          
+          <div style="background:rgba(255,255,255,0.06); border-radius:14px; padding:12px; margin-bottom:16px;">
+            <div style="font-size:13px; font-weight:900; color:${item.color}; margin-bottom:4px;">
+              ${esc(item.name)}
+            </div>
+            <div style="font-size:12px; color:#cbd5e1; line-height:1.4;">
+              ${esc(item.description)}
+            </div>
+          </div>
+
+          <div class="discord-preview-btn-row">
+            ${isEquipped ? `
+              <button type="button" class="btn-duo btn-duo-white" style="flex:1; padding:10px;" onclick="equipDecoration('${item.type}', null); closeUserProfileModal();">
+                Tháo hiệu ứng
+              </button>
+            ` : owned ? `
+              <button type="button" class="btn-duo btn-duo-green" style="flex:1; padding:10px; font-weight:900;" onclick="equipDecoration('${item.type}', '${esc(item.code)}'); closeUserProfileModal();">
+                ✓ Trang bị ngay 🌸
+              </button>
+            ` : `
+              <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:10px; font-weight:900;" onclick="buyItem('${esc(item.code)}'); closeUserProfileModal();">
+                Mua miễn phí (0 💎)
+              </button>
+            `}
+            <button type="button" class="btn-duo btn-duo-white" style="padding:10px 18px;" onclick="closeUserProfileModal()">
+              Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+window.previewDiscordItem = previewDiscordItem;
+
+// ========================================================
 // SHOP (CỬA HÀNG ĐÁ QUÝ)
 // ========================================================
 let shopData = null;
@@ -2961,7 +3298,7 @@ function renderShop() {
 
   const pack1Item = items.find(i => i.item_code === "mascot_pack_champions");
   const pack2Item = items.find(i => i.item_code === "mascot_pack_cosplay");
-  const consumableItems = items.filter(i => !i.item_code.startsWith("mascot_pack"));
+  const consumableItems = items.filter(i => !i.item_code.startsWith("mascot_pack") && !i.item_code.startsWith("deco_") && !i.item_code.startsWith("fx_"));
 
   const isPack1Owned = pack1Item && pack1Item.owned >= 1;
   const isPack2Owned = pack2Item && pack2Item.owned >= 1;
@@ -3034,6 +3371,91 @@ function renderShop() {
         </div>
         <div class="banner-mascot-aside page-inline-mascot">
           ${renderThoBayMau({ state: THO_STATES.GEM_RICH, size: 126, speech: "Đổi đá quý lấy Mascot xịn thôi!", speechDirection: "top" })}
+        </div>
+      </div>
+
+      <!-- SECTION 0: TIỆM HIỆU ỨNG PROFILE & AVATAR NITRO (DISCORD STYLE) -->
+      <div class="discord-nitro-shop-section">
+        <div class="discord-nitro-shop-header">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:36px;">✨</span>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h2 style="font-size:20px; font-weight:900; color:#fff; margin:0;">
+                  Tiệm Hiệu Ứng Profile & Khung Avatar Nitro (Discord Style)
+                </h2>
+                <span class="discord-nitro-badge">⚡ Nitro Shop</span>
+                <span style="background:#22c55e; color:#fff; font-size:11px; font-weight:900; padding:3px 10px; border-radius:999px;">
+                  🎁 0 💎 Miễn Phí Test
+                </span>
+              </div>
+              <p style="font-size:13.5px; color:#cbd5e1; margin:4px 0 0;">
+                Trang bị khung viền chuyển động sống động và hiệu ứng thẻ cá nhân cực ngầu y hệt Discord Nitro! Nhấp <b>Xem trước</b> để xem hiệu ứng xoay ngay trên avatar của bạn.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="discord-nitro-grid">
+          ${Object.values(DISCORD_EFFECTS_REGISTRY).map(item => {
+            const isDeco = item.type === "avatar_decoration";
+            const shopItem = items.find(i => i.item_code === item.code);
+            const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => inv.item_code === item.code && Number(inv.quantity) >= 1);
+            const isEquipped = isDeco
+              ? (state.profile && state.profile.avatar_decoration === item.code)
+              : (state.profile && state.profile.profile_effect === item.code);
+
+            const userAvatar = state.profile?.avatar_url || "";
+            const userName = state.profile?.full_name || state.profile?.username || "3TG";
+
+            let previewHtml = "";
+            if (isDeco) {
+              previewHtml = renderDecoratedAvatar(userAvatar, item.code, 72, userName);
+            } else {
+              previewHtml = `
+                <div style="width:100%; height:82px; border-radius:14px; position:relative; overflow:hidden; border:1px solid rgba(255,255,255,0.15); background:#111216; display:flex; align-items:center; justify-content:center;">
+                  ${renderProfileEffectHtml(item.code)}
+                  <span style="position:relative; z-index:2; font-size:12px; font-weight:800; color:#fff; text-shadow:0 0 8px rgba(0,0,0,0.8);">${esc(item.badge)}</span>
+                </div>
+              `;
+            }
+
+            return `
+              <div class="discord-nitro-card ${isEquipped ? 'equipped' : ''}">
+                <span class="discord-nitro-badge" style="position:absolute; top:10px; right:10px; font-size:9.5px; padding:2px 8px;">${esc(item.badge)}</span>
+                
+                <div class="discord-nitro-preview-box">
+                  ${previewHtml}
+                </div>
+
+                <h4 class="discord-nitro-card-title">${esc(item.name)}</h4>
+                <p class="discord-nitro-card-desc">${esc(item.description)}</p>
+
+                <div class="discord-nitro-card-footer">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <span class="discord-nitro-price-badge">💎 0 Đá quý</span>
+                    <button type="button" class="btn-duo btn-duo-white" style="padding:4px 10px; font-size:11px;" onclick="previewDiscordItem('${esc(item.code)}')">
+                      👁️ Xem trước
+                    </button>
+                  </div>
+
+                  ${isEquipped ? `
+                    <button type="button" class="btn-duo btn-duo-green" style="padding:7px 12px; font-size:12px; width:100%;" onclick="equipDecoration('${esc(item.type)}', null)">
+                      ✓ Đang dùng (Tháo)
+                    </button>
+                  ` : isOwned ? `
+                    <button type="button" class="btn-duo btn-duo-pink" style="padding:7px 12px; font-size:12px; width:100%; font-weight:900;" onclick="equipDecoration('${esc(item.type)}', '${esc(item.code)}')">
+                      Trang bị ngay 🌸
+                    </button>
+                  ` : `
+                    <button type="button" class="btn-duo btn-duo-pink" style="padding:7px 12px; font-size:12px; width:100%; font-weight:900;" onclick="buyItem('${esc(item.code)}')">
+                      Mua Miễn Phí (0 💎)
+                    </button>
+                  `}
+                </div>
+              </div>
+            `;
+          }).join("")}
         </div>
       </div>
 

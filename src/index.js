@@ -359,7 +359,7 @@ async function sessionUser(request, env) {
   const userId = getCookie(request, COOKIE_NAME);
   if (!/^[0-9a-f-]{36}$/i.test(userId)) return null;
   const account = await env.DB.prepare(
-    "SELECT a.id AS account_id, a.username, a.created_at AS account_created_at, p.id AS profile_id, p.full_name, p.avatar_url, p.bio, p.cover_url, p.school, p.major, p.created_at AS profile_created_at " +
+    "SELECT a.id AS account_id, a.username, a.created_at AS account_created_at, p.id AS profile_id, p.full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.profile_theme, p.bio, p.cover_url, p.school, p.major, p.created_at AS profile_created_at " +
     "FROM accounts a LEFT JOIN profiles p ON p.user_id = a.user_id " +
     "WHERE a.user_id = ? LIMIT 1"
   ).bind(userId).first();
@@ -369,6 +369,9 @@ async function sessionUser(request, env) {
     user_id: userId,
     full_name: account.full_name || account.username,
     avatar_url: account.avatar_url,
+    avatar_decoration: account.avatar_decoration || null,
+    profile_effect: account.profile_effect || null,
+    profile_theme: account.profile_theme || null,
     bio: account.bio || "",
     cover_url: account.cover_url || "",
     school: account.school || "",
@@ -987,6 +990,34 @@ async function removeAvatar(user, env) {
   return { ok: true };
 }
 
+async function equipDecoration(request, user, env) {
+  const body = await readJson(request);
+  const type = String(body.type || "avatar_decoration").trim();
+  const itemCode = body.itemCode ? String(body.itemCode).trim() : null;
+
+  if (itemCode) {
+    const owned = await env.DB.prepare(
+      "SELECT id FROM user_inventory WHERE user_id = ? AND item_code = ? AND quantity > 0 LIMIT 1"
+    ).bind(user.userId, itemCode).first();
+    if (!owned) {
+      throw new HttpError(400, "Bạn chưa sở hữu hiệu ứng này. Hãy mua trong Tiệm Tạp Hóa nhé!");
+    }
+  }
+
+  if (type === "avatar_decoration") {
+    await env.DB.prepare("UPDATE profiles SET avatar_decoration = ? WHERE user_id = ?").bind(itemCode, user.userId).run();
+    user.profile.avatar_decoration = itemCode;
+  } else if (type === "profile_effect") {
+    await env.DB.prepare("UPDATE profiles SET profile_effect = ? WHERE user_id = ?").bind(itemCode, user.userId).run();
+    user.profile.profile_effect = itemCode;
+  } else if (type === "profile_theme") {
+    await env.DB.prepare("UPDATE profiles SET profile_theme = ? WHERE user_id = ?").bind(itemCode, user.userId).run();
+    user.profile.profile_theme = itemCode;
+  }
+
+  return { ok: true, profile: user.profile, message: itemCode ? "Đã trang bị hiệu ứng thành công! ✨" : "Đã tháo hiệu ứng." };
+}
+
 async function serveMedia(path, env) {
   if (!env.AVATARS) return new Response("Not found", { status: 404 });
   let key;
@@ -1199,7 +1230,7 @@ async function loginAccount(request, env) {
   }
 
   const profile = await env.DB.prepare(
-    "SELECT id, user_id, full_name, avatar_url, bio, cover_url, school, major, created_at FROM profiles WHERE user_id = ? LIMIT 1"
+    "SELECT id, user_id, full_name, avatar_url, avatar_decoration, profile_effect, profile_theme, bio, cover_url, school, major, created_at FROM profiles WHERE user_id = ? LIMIT 1"
   ).bind(account.user_id).first();
   const stats = await env.DB.prepare(
     "SELECT * FROM user_stats WHERE user_id = ? LIMIT 1"
@@ -1299,8 +1330,8 @@ async function buyShopItem(request, user, env) {
   const existingInv = await env.DB.prepare(
     "SELECT id, quantity FROM user_inventory WHERE user_id = ? AND item_code = ? LIMIT 1"
   ).bind(user.userId, itemCode).first();
-  if (itemCode.startsWith("mascot_") && existingInv && Number(existingInv.quantity) >= 1) {
-    throw new HttpError(400, "Bạn đã sở hữu gói Mascot này rồi, không thể mua lại!");
+  if ((itemCode.startsWith("mascot_") || itemCode.startsWith("deco_") || itemCode.startsWith("fx_")) && existingInv && Number(existingInv.quantity) >= 1) {
+    throw new HttpError(400, "Bạn đã sở hữu gói vật phẩm này rồi, không thể mua lại!");
   }
   if (existingInv) {
     ops.push(env.DB.prepare("UPDATE user_inventory SET quantity = quantity + 1 WHERE id = ?").bind(existingInv.id));
@@ -1565,7 +1596,7 @@ async function leaderboard(user, env) {
   const today = vietDate();
   const weekStart = mondayDate(today);
   const response = await env.DB.prepare(
-    "SELECT w.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, w.league_name, w.weekly_xp " +
+    "SELECT w.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, w.league_name, w.weekly_xp " +
     "FROM weekly_leaderboards w " +
     "LEFT JOIN profiles p ON p.user_id = w.user_id " +
     "LEFT JOIN accounts a ON a.user_id = w.user_id " +
@@ -1620,7 +1651,7 @@ async function leaderboard(user, env) {
 
 async function getUserPublicProfile(targetUserId, currentUser, env) {
   const profile = await env.DB.prepare(
-    "SELECT p.id, p.user_id, p.full_name, p.avatar_url, p.bio, p.cover_url, p.school, p.major, p.created_at, a.username " +
+    "SELECT p.id, p.user_id, p.full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.profile_theme, p.bio, p.cover_url, p.school, p.major, p.created_at, a.username " +
     "FROM profiles p LEFT JOIN accounts a ON a.user_id = p.user_id WHERE p.user_id = ? LIMIT 1"
   ).bind(targetUserId).first();
   if (!profile) throw new HttpError(404, "Không tìm thấy hồ sơ học viên này.");
@@ -2414,6 +2445,7 @@ async function routeApi(request, env) {
   if (noteMatch && method === "PATCH") return respond(await saveNote(request, user, env, Number(noteMatch[1])));
   if (noteMatch && method === "DELETE") return respond(await deleteNote(Number(noteMatch[1]), user, env));
   if (path === "/api/profile" && method === "PATCH") return respond({ profile: await updateProfile(request, user, env) });
+  if (path === "/api/profile/equip" && method === "POST") return respond(await equipDecoration(request, user, env));
   if (path === "/api/profile/avatar" && method === "POST") return respond({ profile: await uploadAvatar(request, user, env) });
   if (path === "/api/profile/avatar/preset" && method === "POST") return respond({ profile: await setPresetAvatar(request, user, env) });
   if (path === "/api/profile/avatar" && method === "DELETE") return respond(await removeAvatar(user, env));
