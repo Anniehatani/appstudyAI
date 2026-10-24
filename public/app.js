@@ -5366,7 +5366,7 @@ function renderGradesView() {
   }
 
   const { transcript, aiAnalysis, targetGpa = 3.2, lastSyncedAt } = state.academicTranscript;
-  const { student = {}, gpa = {}, semesters = [], weak_subjects = [], raw_subjects = [] } = transcript || {};
+  const { student = {}, gpa = {}, semesters = [], weak_subjects = [], raw_subjects = [], active_courses = [] } = transcript || {};
 
   // Tính toán mô phỏng GPA What-If
   let simWeighted4 = gpa.overall_4 * gpa.total_credits;
@@ -5475,6 +5475,54 @@ function renderGradesView() {
           </div>
           <div class="kpi-sub-note">${weak_subjects.length > 0 ? 'Điểm C, D, F kéo tụt GPA' : 'Phong độ học tập xuất sắc!'}</div>
         </div>
+      </div>
+
+      <!-- KHU VỰC MÔN ĐANG HỌC KỲ NÀY (TỪ THỜI KHÓA BIỂU CỔNG TRƯỜNG IU) -->
+      <div class="grades-section-box grades-active-courses-box" style="margin-bottom: 24px;">
+        <div class="section-box-header">
+          <div class="section-box-title">
+            <span class="section-box-emoji">🎒</span>
+            <div>
+              <h3>Môn Đang Học Kỳ Này (Cào Từ Thời Khóa Biểu Cổng IU)</h3>
+              <p>Các môn bạn đang học trong kỳ được tự động bóc tách từ lịch học IU để Thỏ Bảy Màu AI lập lộ trình học tập, tối ưu điểm chuyên cần, lab và săn A/A+!</p>
+            </div>
+          </div>
+          <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="window.requestAcademicAdvisor(${targetGpa})">
+            ✨ Lập Lộ Trình Môn Đang Học (AI)
+          </button>
+        </div>
+
+        ${active_courses.length === 0 ? `
+          <div class="grades-clean-state" style="padding: 24px; text-align: center;">
+            <span style="font-size:32px;">📅</span>
+            <strong>Chưa có môn học trên thời khóa biểu tuần gần đây.</strong>
+            <span>Nhấn nút "🔄 Cập nhật từ IU" ở góc trên để Thỏ tự động quét lịch học nhé!</span>
+          </div>
+        ` : `
+          <div class="active-courses-grid">
+            ${active_courses.map(c => `
+              <div class="active-course-card">
+                <div>
+                  <div class="active-course-header">
+                    <span class="active-course-code">${esc(c.ma_mon || "MÔN HỌC")}</span>
+                    <span class="active-course-status">${esc(c.trang_thai || c.hinh_thuc || "Đang học")}</span>
+                  </div>
+                  <h4 class="active-course-name">${esc(c.ten_mon || c.ten_hoc_phan || "Học phần")}</h4>
+                  <div class="active-course-meta">
+                    ${c.so_tin_chi ? `<span>📚 <strong>${c.so_tin_chi}</strong> tín chỉ</span>` : ""}
+                    ${c.giang_vien ? `<span>👨‍🏫 GV: <strong>${esc(c.giang_vien)}</strong></span>` : ""}
+                    ${c.phong ? `<span>📍 Phòng: <strong>${esc(c.phong)}</strong></span>` : ""}
+                  </div>
+                </div>
+                <div class="active-course-action">
+                  <button type="button" class="btn-duo btn-duo-outline btn-duo-sm" style="width:100%;" onclick="window.focusCoursePlan('${esc(c.ten_mon || c.ma_mon)}')">
+                    🎯 Đặt Mục Tiêu Điểm A+
+                  </button>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        `}
       </div>
 
       <!-- KHU VỰC BẮT BỆNH MÔN ĐIỂM THẤP & BỘ GIẢ LẬP NÂNG GPA -->
@@ -5916,8 +5964,7 @@ window.confirmBrowserIuDone = async function() {
       return;
     }
 
-    // Nếu chưa có bảng điểm, gợi ý người dùng nhập mã SV/pass hoặc mở bằng npm start
-    showToast("💡 Trên bản Web, hãy nhập Mã SV và Mật khẩu ở form bên dưới để cào điểm, HOẶC mở app bằng lệnh 'npm start' để tự động 100%!", true);
+    showToast("💡 Vui lòng hoàn tất đăng nhập Microsoft trên cổng trường để Thỏ tự động đồng bộ bảng điểm nhé!", true);
     renderAcademicLoginModal();
   } catch (err) {
     showToast("Chưa tải được bảng điểm: " + err.message, true);
@@ -5998,6 +6045,12 @@ window.submitAcademicLogin = async function(e) {
   return window.handleIuPortalLogin();
 };
 
+window.focusCoursePlan = function(courseName) {
+  state.academicAdvisorTarget = 3.6;
+  showToast(`🎯 Đang lên lộ trình săn điểm A/A+ cho môn ${courseName}...`, false);
+  window.requestAcademicAdvisor(3.6);
+};
+
 window.requestAcademicAdvisor = async function(targetGpa) {
   if (state.academicAdvisorBusy) return;
   state.academicAdvisorBusy = true;
@@ -6005,10 +6058,13 @@ window.requestAcademicAdvisor = async function(targetGpa) {
   render();
 
   try {
-    showToast("🐰 Thỏ Bảy Màu đang gọi DeepSeek AI phân tích bảng điểm...", false);
+    showToast("🐰 Thỏ Bảy Màu đang gọi DeepSeek AI phân tích bảng điểm & lịch học...", false);
     const res = await api("/api/academic/advisor", {
       method: "POST",
-      body: { targetGpa: state.academicAdvisorTarget }
+      body: {
+        targetGpa: state.academicAdvisorTarget,
+        transcript: state.academicTranscript?.transcript
+      }
     });
     if (res.ok && res.advice) {
       if (state.academicTranscript) {
@@ -6383,14 +6439,12 @@ function closeMobileMenu() {
 document.getElementById("menu-toggle")?.addEventListener("click", openMobileMenu);
 document.getElementById("mobile-overlay")?.addEventListener("click", closeMobileMenu);
 
-// ========================================================
-// INITIALIZATION
-// ========================================================
+
 async function initialize() {
   try {
     showAppLoader("Đang chuẩn bị kho bài học 3TG… 🌸", "Thỏ Bảy Màu đang kiểm tra phiên học và đồng bộ Cloudflare D1…");
     setAppLoaderProgress(25);
-    // Check if user already has an authenticated session
+
     const sessionRes = await api("/api/session").catch(() => null);
     setAppLoaderProgress(55);
     if (sessionRes && sessionRes.profile) {
@@ -6398,7 +6452,7 @@ async function initialize() {
       state.account = sessionRes.account;
       await loadAuthenticatedData();
     } else {
-      // Unauthenticated: fetch subjects for count, then render Auth Entry Screen
+
       const subRes = await api("/api/subjects").catch(() => ({ subjects: [] }));
       state.subjects = subRes.subjects || [];
       state.profile = null;

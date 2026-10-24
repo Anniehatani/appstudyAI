@@ -2151,7 +2151,43 @@ async function handleAcademicImportData(request, user, env) {
     studentInfo = { ...studentInfo, ...body.student };
   }
 
-  const processed = processAcademicTranscript(rawSubjects, studentInfo);
+  let activeCourses = body.activeCourses || rawInput.activeCourses || [];
+  if (!activeCourses.length && rawInput.IU && rawInput.IU.lich_hoc && Array.isArray(rawInput.IU.lich_hoc.chi_tiet_thoi_khoa_bieu)) {
+    const mapAct = new Map();
+    for (const c of rawInput.IU.lich_hoc.chi_tiet_thoi_khoa_bieu) {
+      const code = (c.ma_mon || c.ten_mon || "").trim();
+      if (!code) continue;
+      if (!mapAct.has(code)) {
+        mapAct.set(code, {
+          ma_mon: c.ma_mon || "",
+          ten_mon: c.ten_mon || c.ma_mon || "Môn học",
+          giang_vien: c.giang_vien || "",
+          phong: c.phong || "",
+          hinh_thuc: c.hinh_thuc || "Lớp học phần"
+        });
+      }
+    }
+    activeCourses = Array.from(mapAct.values());
+  }
+
+  if (rawInput.IU && rawInput.IU.goc_hoc_tap && rawInput.IU.goc_hoc_tap.tra_cuu_diem && Array.isArray(rawInput.IU.goc_hoc_tap.tra_cuu_diem.ket_qua_dang_ky)) {
+    const dkh = rawInput.IU.goc_hoc_tap.tra_cuu_diem.ket_qua_dang_ky;
+    const existing = new Set(activeCourses.map(x => (x.ma_mon || x.ten_mon || "").toUpperCase()));
+    for (const item of dkh) {
+      const k = (item.ma_mon || item.ten_mon || "").toUpperCase();
+      if (k && !existing.has(k)) {
+        existing.add(k);
+        activeCourses.push({
+          ma_mon: item.ma_mon || "",
+          ten_mon: item.ten_mon || "",
+          so_tin_chi: item.so_tin_chi || 3,
+          trang_thai: item.trang_thai || "Đang học"
+        });
+      }
+    }
+  }
+
+  const processed = processAcademicTranscript(rawSubjects, studentInfo, activeCourses);
   const now = new Date().toISOString();
   const rawDataJson = JSON.stringify(processed);
 
@@ -2202,7 +2238,11 @@ async function handleGetAcademicTranscript(user, env) {
       return { hasTranscript: false, transcript: null };
     }
 
-    const transcript = JSON.parse(row.raw_data);
+    let transcript = JSON.parse(row.raw_data);
+    if (transcript && Array.isArray(transcript.raw_subjects) && transcript.raw_subjects.length > 0) {
+      transcript = processAcademicTranscript(transcript.raw_subjects, transcript.student, transcript.active_courses);
+    }
+
     return {
       hasTranscript: true,
       transcript,
@@ -2223,7 +2263,10 @@ async function handleAcademicScrapeIU(request, user, env) {
 
   if (row && row.raw_data) {
     try {
-      const parsed = JSON.parse(row.raw_data);
+      let parsed = JSON.parse(row.raw_data);
+      if (parsed && Array.isArray(parsed.raw_subjects) && parsed.raw_subjects.length > 0) {
+        parsed = processAcademicTranscript(parsed.raw_subjects, parsed.student, parsed.active_courses);
+      }
       return { ok: true, transcript: parsed, lastSyncedAt: row.last_synced_at };
     } catch {}
   }
@@ -2246,10 +2289,36 @@ async function handleAcademicAdvisor(request, user, env) {
 
   if (!transcriptData && body.transcript) {
     transcriptData = body.transcript;
+    try {
+      const now = new Date().toISOString();
+      await env.DB.prepare(`
+        INSERT INTO user_academic_transcripts (
+          user_id, student_code, full_name, major, class_name,
+          gpa_10, gpa_4, total_credits, raw_data, last_synced_at, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET raw_data = excluded.raw_data
+      `).bind(
+        user.userId,
+        transcriptData.student?.ma_sinh_vien || "",
+        transcriptData.student?.ho_ten || "",
+        transcriptData.student?.nganh || "",
+        transcriptData.student?.lop || "",
+        transcriptData.gpa?.overall_10 || 0,
+        transcriptData.gpa?.overall_4 || 0,
+        transcriptData.gpa?.total_credits || 0,
+        JSON.stringify(transcriptData),
+        now,
+        now
+      ).run();
+    } catch {}
   }
 
   if (!transcriptData) {
     throw new HttpError(400, "Chưa có dữ liệu bảng điểm để AI DeepSeek phân tích. Vui lòng kết nối tài khoản IU trước nhé!");
+  }
+
+  if (transcriptData && Array.isArray(transcriptData.raw_subjects) && transcriptData.raw_subjects.length > 0) {
+    transcriptData = processAcademicTranscript(transcriptData.raw_subjects, transcriptData.student, transcriptData.active_courses);
   }
 
   const advice = await generateAcademicAdvisorPlan(transcriptData, targetGpa, env);

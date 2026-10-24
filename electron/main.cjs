@@ -148,20 +148,38 @@ ipcMain.handle("academic:open-iu-login", async () => {
     }
     console.log(`[IU Bridge] Đã xác thực phiên sinh viên: userId=${session.userId}, hoTen=${session.hoTen || "Sinh viên"}`);
 
+    // Tính toán khoảng thời gian 2 tuần vừa rồi đến 4 tuần tới để cào trọn vẹn Lịch Học (thời khóa biểu)
+    const pad = n => String(n).padStart(2, '0');
+    const now = new Date();
+    const past = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const future = new Date(now.getTime() + 28 * 24 * 60 * 60 * 1000);
+    const dateRange = {
+      ngayBatDau: `${pad(past.getDate())}/${pad(past.getMonth() + 1)}/${past.getFullYear()}`,
+      ngayKetThuc: `${pad(future.getDate())}/${pad(future.getMonth() + 1)}/${future.getFullYear()}`
+    };
+
     // Cào dữ liệu học tập từ cổng trường IU
-    console.log("[IU Bridge] Đang cào bảng điểm từ cổng trường IU...");
+    console.log(`[IU Bridge] Đang cào bảng điểm & lịch học từ cổng trường IU (${dateRange.ngayBatDau} -> ${dateRange.ngayKetThuc})...`);
     let academicData = null;
     try {
-      academicData = await iu.layTatCaIU(session, jar.cookie);
+      academicData = await iu.layTatCaIU(session, jar.cookie, dateRange);
     } catch (pullErr) {
-      console.warn("[IU Bridge] layTatCaIU cảnh báo, fallback sang layBangDiem:", pullErr.message);
-      const bangDiem = await iu.layBangDiem(session, jar.cookie);
+      console.warn("[IU Bridge] layTatCaIU cảnh báo, fallback sang cào từng phần:", pullErr.message);
+      const bangDiem = await iu.layBangDiem(session, jar.cookie).catch(() => []);
       const hoSo = await iu.layHoSoSinhVien(session, jar.cookie).catch(() => ({}));
+      const lichHoc = await iu.layLichHoc(session, jar.cookie, dateRange).catch(() => []);
+      const ketQuaDk = await iu.layKetQuaDangKy(session, jar.cookie).catch(() => []);
       academicData = {
         data: {
           IU: {
-            goc_hoc_tap: { tra_cuu_diem: { bang_diem: bangDiem || [] } },
-            ho_so_sinh_vien: { thong_tin_ca_nhan: hoSo || {} }
+            goc_hoc_tap: {
+              tra_cuu_diem: {
+                bang_diem: bangDiem || [],
+                ket_qua_dang_ky: ketQuaDk || []
+              }
+            },
+            ho_so_sinh_vien: { thong_tin_ca_nhan: hoSo || {} },
+            lich_hoc: { chi_tiet_thoi_khoa_bieu: lichHoc || [] }
           }
         }
       };

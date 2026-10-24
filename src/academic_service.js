@@ -414,9 +414,30 @@ export async function layBangDiemVaHoSoIU(session, cookie) {
 
 /**
  * Xử lý dữ liệu bảng điểm, gom nhóm học kỳ và tính toán GPA tổng + môn yếu
+ * Chuẩn CMC University: Loại trừ các môn điều kiện Pass/Fail (Điểm chữ P, NP, Đạt, Miễn, Thể dục, GDQP, Tiếng Anh điều kiện)
+ * để tính đúng 100% GPA tích lũy hệ 4 và hệ 10 như trên cổng trường IU.
  */
-export function processAcademicTranscript(bangDiemRaw, studentInfo = {}) {
+export function processAcademicTranscript(bangDiemRaw, studentInfo = {}, activeCourses = []) {
   const list = Array.isArray(bangDiemRaw) ? bangDiemRaw : [];
+
+  function isGpaSubject(m) {
+    const letter = String(m.diem_chu || "").trim().toUpperCase();
+    if (["P", "NP", "ĐẠT", "DAT", "M", "MIỄN", "MIEN", "KĐ", "KD", "I", "W", "CHƯA CÓ ĐIỂM", ""].includes(letter)) {
+      return false;
+    }
+    const name = String(m.ten_hoc_phan || "").toLowerCase();
+    const code = String(m.ma_mon || "").toUpperCase();
+    if (/thể dục|thể chất|đá cầu|bóng rổ|bóng chuyền|bóng bàn|bơi lội|điền kinh|quốc phòng|an ninh|gdqp/i.test(name)) {
+      return false;
+    }
+    if (/^GENE101[0-9]/.test(code) || /^MIL/.test(code)) {
+      return false;
+    }
+    if (/^ENG-100[1-9]/.test(code) && (Number(m.diem_he_4) === 0 || letter === "P")) {
+      return false;
+    }
+    return true;
+  }
 
   const semesterMap = new Map();
   let totalCredits10 = 0;
@@ -430,7 +451,8 @@ export function processAcademicTranscript(bangDiemRaw, studentInfo = {}) {
     const score10 = Number.isFinite(Number(m.diem_he_10)) ? Number(m.diem_he_10) : 0;
     const score4 = Number.isFinite(Number(m.diem_he_4)) ? Number(m.diem_he_4) : 0;
     const letter = String(m.diem_chu || "B").trim().toUpperCase();
-    const passed = score10 >= 4.0 && letter !== "F";
+    const passed = (score10 >= 4.0 || letter === "P" || letter === "ĐẠT") && letter !== "F" && letter !== "NP";
+    const countsInGpa = isGpaSubject(m);
 
     const semName = (m.hoc_ky ? `${m.hoc_ky}` : "Học kỳ") + (m.nam_hoc ? ` - Năm học ${m.nam_hoc}` : "");
     if (!semesterMap.has(semName)) {
@@ -440,6 +462,7 @@ export function processAcademicTranscript(bangDiemRaw, studentInfo = {}) {
         nam_hoc: m.nam_hoc || "",
         subjects: [],
         total_credits: 0,
+        gpa_credits: 0,
         gpa_10: 0,
         gpa_4: 0,
         weighted_10: 0,
@@ -456,23 +479,31 @@ export function processAcademicTranscript(bangDiemRaw, studentInfo = {}) {
       diem_he_4: score4,
       diem_chu: letter,
       passed,
+      countsInGpa,
       chi_tiet_diem: m.chi_tiet_diem || {}
     });
-    sem.total_credits += credits;
-    sem.weighted_10 += score10 * credits;
-    sem.weighted_4 += score4 * credits;
 
-    totalCredits10 += credits;
-    totalWeighted10 += score10 * credits;
-    totalCredits4 += credits;
-    totalWeighted4 += score4 * credits;
-    if (passed) totalPassedCredits += credits;
+    sem.total_credits += credits;
+    if (countsInGpa) {
+      sem.gpa_credits += credits;
+      sem.weighted_10 += score10 * credits;
+      sem.weighted_4 += score4 * credits;
+
+      totalCredits10 += credits;
+      totalWeighted10 += score10 * credits;
+      totalCredits4 += credits;
+      totalWeighted4 += score4 * credits;
+    }
+
+    if (passed && countsInGpa) {
+      totalPassedCredits += credits;
+    }
   }
 
   const semesters = [];
   for (const [, sem] of semesterMap.entries()) {
-    sem.gpa_10 = sem.total_credits > 0 ? Math.round((sem.weighted_10 / sem.total_credits) * 100) / 100 : 0;
-    sem.gpa_4 = sem.total_credits > 0 ? Math.round((sem.weighted_4 / sem.total_credits) * 100) / 100 : 0;
+    sem.gpa_10 = sem.gpa_credits > 0 ? Math.round((sem.weighted_10 / sem.gpa_credits) * 100) / 100 : 0;
+    sem.gpa_4 = sem.gpa_credits > 0 ? Math.round((sem.weighted_4 / sem.gpa_credits) * 100) / 100 : 0;
     semesters.push(sem);
   }
 
@@ -498,13 +529,13 @@ export function processAcademicTranscript(bangDiemRaw, studentInfo = {}) {
     badgeColor = "#ef4444";
   }
 
-  // Danh sách môn cần cải thiện (điểm D, D+, C, F hoặc điểm < 6.5)
-  // Tính tiềm năng gỡ điểm: nếu nâng môn này lên 4.0 (A) thì GPA 4 tăng bao nhiêu điểm
+  // Danh sách môn cần cải thiện (chỉ xét môn tính vào GPA có điểm C+, C, D+, D, F hoặc điểm hệ 10 < 7.0)
   const weakSubjects = list
     .filter(m => {
+      if (!isGpaSubject(m)) return false;
       const score = Number(m.diem_he_10) || 0;
       const letter = String(m.diem_chu || "").toUpperCase();
-      return score < 6.5 || ["F", "D", "D+", "C"].includes(letter);
+      return score < 7.0 || ["F", "D", "D+", "C", "C+"].includes(letter);
     })
     .map(m => {
       const credits = Number(m.so_tin_chi) || 3;
@@ -531,12 +562,14 @@ export function processAcademicTranscript(bangDiemRaw, studentInfo = {}) {
       ho_ten: studentInfo.ho_ten || "Sinh viên CMC",
       nganh: studentInfo.nganh || "Công nghệ thông tin",
       lop: studentInfo.lop || "",
-      email: studentInfo.email || ""
+      email: studentInfo.email || "",
+      khoa: studentInfo.khoa || "",
+      ngay_sinh: studentInfo.ngay_sinh || ""
     },
     gpa: {
       overall_10: overallGpa10,
       overall_4: overallGpa4,
-      total_credits: totalCredits10,
+      total_credits: totalCredits4,
       passed_credits: totalPassedCredits,
       classification,
       badgeColor,
@@ -545,6 +578,7 @@ export function processAcademicTranscript(bangDiemRaw, studentInfo = {}) {
     },
     semesters,
     weak_subjects: weakSubjects,
+    active_courses: Array.isArray(activeCourses) ? activeCourses : [],
     raw_subjects: list
   };
 }
@@ -561,7 +595,7 @@ export async function generateAcademicAdvisorPlan(transcriptData, targetGpa = 3.
     throw new Error("Chưa cấu hình API Key DeepSeek. Hãy kiểm tra biến DEEPSEEK_API_KEY trong file .dev.vars!");
   }
 
-  const { student, gpa, weak_subjects, semesters } = transcriptData;
+  const { student, gpa, weak_subjects, semesters, active_courses = [] } = transcriptData;
 
   const weakSubjectsSummary = (weak_subjects || []).slice(0, 8).map((s, idx) =>
     `${idx + 1}. ${s.ten_hoc_phan} (${s.ma_mon}) — ${s.so_tin_chi} tín chỉ. Điểm hiện tại: ${s.diem_he_10}/10 (Hệ 4: ${s.diem_he_4}, Điểm chữ: ${s.diem_chu}). Nếu kéo lên điểm A sẽ giúp GPA tăng ngay +${s.gpaGainIfA} điểm.`
@@ -571,40 +605,43 @@ export async function generateAcademicAdvisorPlan(transcriptData, targetGpa = 3.
     `• ${s.semester_name}: ${s.subjects.length} môn, ${s.total_credits} tín chỉ, GPA kỳ: ${s.gpa_4}/4.0 (${s.gpa_10}/10)`
   ).join("\n");
 
+  const activeCoursesSummary = (active_courses || []).map((c, idx) =>
+    `${idx + 1}. ${c.ten_mon || c.ten_hoc_phan} (${c.ma_mon}) ${c.so_tin_chi ? `- ${c.so_tin_chi} tín chỉ` : ""} ${c.giang_vien ? `[GV: ${c.giang_vien}]` : ""} ${c.phong ? `[Phòng: ${c.phong}]` : ""}`
+  ).join("\n");
+
   const prompt = `
 Bạn là "Giáo sư Thỏ Bảy Màu & Cố vấn Học thuật Cấp cao 3TG AI" của trường Đại học CMC (CMC University).
 Tính cách: Thông tuệ, chiến lược, hài hước, hừng hực động lực, xưng hô "Thầy Thỏ" hoặc "Thỏ Giáo Sư" và gọi sinh viên là "đồng chí học trò" hoặc "bạn nhỏ".
 
-Dưới đây là bảng điểm và hồ sơ học tập thực tế cào từ cổng thông tin IU của sinh viên:
+Dưới đây là bảng điểm, hồ sơ học tập và thời khóa biểu thực tế cào từ cổng thông tin IU của sinh viên:
 - Sinh viên: ${student.ho_ten} (MSV: ${student.ma_sinh_vien || "Chưa có"})
 - Ngành học: ${student.nganh} - Lớp: ${student.lop || "Chưa rõ"}
 - GPA Tích lũy Hiện tại: ${gpa.overall_4}/4.0 (Hệ 10: ${gpa.overall_10}/10)
 - Xếp loại học lực hiện tại: ${gpa.classification}
-- Tổng số tín chỉ đã học: ${gpa.total_credits} (Đã tích lũy: ${gpa.passed_credits} tín chỉ)
+- Tổng số tín chỉ đã tích lũy: ${gpa.passed_credits} / ${gpa.total_credits} tín chỉ
 - Mục tiêu GPA mong muốn: ${targetGpa || 3.2}/4.0
 
-LỊCH SỬ KẾT QUẢ CÁC HỌC KỲ:
+🎒 CÁC MÔN HỌC ĐANG HỌC KỲ NÀY (THU THẬP TỪ THỜI KHÓA BIỂU & LỊCH HỌC TRÊN CỔNG TRƯỜNG IU):
+${activeCoursesSummary || "Chưa có thông tin môn học kỳ này trên lịch học cá nhân."}
+
+LỊCH SỬ KẾT QUẢ CÁC HỌC KỲ ĐÃ QUA:
 ${semestersSummary}
 
-CÁC MÔN HỌC ĐIỂM THẤP KÉO TỤT GPA NHIỀU NHẤT (HÒN ĐÁ TẢNG CẦN GỠ):
+CÁC MÔN HỌC ĐIỂM THẤP KÉO TỤT GPA NHIỀU NHẤT CẦN CẢI THIỆN:
 ${weakSubjectsSummary || "Thật tuyệt vời! Không có môn nào dưới 6.5, phong độ học tập rất ổn định!"}
 
 YÊU CẦU:
 Hãy đưa ra một BÁO CÁO CỐ VẤN HỌC THUẬT & LỘ TRÌNH CẢI THIỆN ĐIỂM CHI TIẾT bao gồm:
-1. 🩺 **Bắt bệnh bảng điểm & Đánh giá toàn cảnh**: Nhận xét khách quan về phong độ qua các kỳ, phân tích vì sao GPA bị chững lại hoặc tụt, chỉ rõ rủi ro nếu không cải thiện.
-2. 🎯 **Chiến lược "Gỡ điểm" ROI cao nhất (Học cải thiện môn nào?)**:
-   - Chọn ra chính xác 2-3 môn học lại/cải thiện mang lại bước nhảy GPA lớn nhất với số tín chỉ và công sức tối ưu.
-   - Tính toán cụ thể: Nếu kéo môn X từ điểm hiện tại lên B+ hoặc A thì GPA tổng sẽ nhảy vọt lên bao nhiêu!
-3. 🧠 **Phương pháp học thực chiến cụ thể cho từng nhóm môn**:
-   - Môn lập trình / công nghệ: Cách luyện code, làm lab, tránh mất điểm đồ án.
-   - Môn toán / lý thuyết đại cương: Chiến thuật ôn đề cũ, phương pháp Active Recall và Spaced Repetition.
-   - Mẹo lấy điểm tối đa ở các cột Chuyên cần, Bài tập quá trình, Giữa kỳ và Cuối kỳ.
-4. 📅 **Lộ trình hành động 4 tuần nâng điểm**:
-   - Tuần 1: Ôn lại gốc & tổng hợp sơ đồ tư duy.
-   - Tuần 2: Luyện giải bài tập & đề thi mẫu các năm.
-   - Tuần 3: Giả lập thi thử bấm giờ & vá lỗ hổng kiến thức.
-   - Tuần 4: Nước rút, tối ưu tâm lý và chiến thuật làm bài thi.
-5. 🥕 **Lời dặn dò tâm huyết của Thỏ Bảy Màu**: Động viên tinh thần, truyền lửa vượt khó, không nản lòng!
+1. 🩺 **Bắt bệnh bảng điểm & Đánh giá toàn cảnh**: Nhận xét khách quan về phong độ học tập, chỉ rõ vì sao GPA đang ở mức ${gpa.overall_4}/4.0 và phân tích cơ hội bứt phá lên ${targetGpa}/4.0.
+2. 🎒 **LỘ TRÌNH CHIẾN THẮNG CHO CÁC MÔN ĐANG HỌC KỲ NÀY (RẤT QUAN TRỌNG)**:
+   - Dựa trên danh sách các môn đang học kỳ này ở trên, phân tích mục tiêu điểm số từng môn (đạt A/A+ để kéo vọt GPA tổng).
+   - Chiến lược học thực chiến cho từng môn đang học: cách chuẩn bị bài trước giờ lên lớp, tối ưu điểm Chuyên cần, săn điểm 10 Bài tập/Lab và Giữa kỳ.
+3. 🎯 **Chiến lược "Gỡ điểm" ROI cao nhất (Học cải thiện môn nào trong quá khứ?)**:
+   - Chọn ra 2 môn học lại/cải thiện mang lại bước nhảy GPA lớn nhất với công sức tối ưu.
+   - Tính toán cụ thể số điểm GPA tăng thêm nếu kéo môn đó lên A.
+4. 🧠 **Phương pháp học thực chiến đỉnh cao**: Spaced Repetition, Active Recall, phương pháp làm lab đồ án và ôn thi hiệu quả.
+5. 📅 **Lộ trình hành động 4 tuần nâng điểm**: Phân chia chi tiết theo từng tuần (Tuần 1 -> Tuần 4) để bám sát lịch học và lịch thi.
+6. 🥕 **Lời dặn dò tâm huyết của Thỏ Bảy Màu**: Động viên tinh thần, truyền lửa vượt khó, không nản lòng!
 
 Định dạng Markdown đẹp mắt, có emoji sinh động, bullet points rõ ràng, phân cấp tiêu đề chuẩn.
 `;
