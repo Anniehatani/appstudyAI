@@ -5265,54 +5265,107 @@ window.closeStreakModal = function(e) {
 
 function formatAdvisorMarkdown(text) {
   if (!text) return "";
-  let html = esc(text);
 
-  // Bold **...**
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  // Italic *...*
-  html = html.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+  // Loại bỏ các dòng rườm rà không cần thiết
+  let clean = text
+    .replace(/^Kính gửi:[^\n]*\n?/gim, "")
+    .replace(/^Chủ đề:[^\n]*\n?/gim, "")
+    .replace(/^---\s*$/gm, "")
+    .trim();
 
-  const lines = html.split("\n");
-  const result = [];
+  const rawLines = clean.split("\n");
+  const blocks = [];
+  let tableBuffer = [];
 
-  for (let line of lines) {
-    line = line.trim();
-    if (!line) continue;
+  const flushTable = () => {
+    if (tableBuffer.length >= 2 && tableBuffer[1].includes("---")) {
+      const parseCells = (row) => row.split("|").slice(1, -1).map(c => c.trim());
+      const headerCells = parseCells(tableBuffer[0]);
+      const bodyRows = tableBuffer.slice(2);
 
-    if (line.startsWith("### ")) {
-      result.push('<h4 class="advisor-h3">' + line.slice(4) + '</h4>');
+      let tableHtml = '<div class="advisor-table-wrap"><table class="advisor-markdown-table"><thead><tr>';
+      for (const h of headerCells) {
+        let fH = esc(h).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        tableHtml += `<th>${fH}</th>`;
+      }
+      tableHtml += '</tr></thead><tbody>';
+      for (const b of bodyRows) {
+        const cells = parseCells(b);
+        tableHtml += '<tr>';
+        for (const c of cells) {
+          let fC = esc(c)
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+          tableHtml += `<td>${fC}</td>`;
+        }
+        tableHtml += '</tr>';
+      }
+      tableHtml += '</tbody></table></div>';
+      blocks.push(tableHtml);
+    } else {
+      for (const line of tableBuffer) {
+        blocks.push('<p class="advisor-p">' + esc(line) + '</p>');
+      }
+    }
+    tableBuffer = [];
+  };
+
+  for (let line of rawLines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
+      tableBuffer.push(trimmed);
+      continue;
+    } else if (tableBuffer.length > 0) {
+      flushTable();
+    }
+
+    if (!trimmed) continue;
+
+    let formatted = esc(trimmed)
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+
+    if (trimmed.startsWith("### ")) {
+      blocks.push('<h4 class="advisor-h3">' + formatted.slice(4) + '</h4>');
       continue;
     }
-    if (line.startsWith("## ")) {
-      result.push('<h3 class="advisor-h2">' + line.slice(3) + '</h3>');
+    if (trimmed.startsWith("## ")) {
+      blocks.push('<h3 class="advisor-h2">' + formatted.slice(3) + '</h3>');
       continue;
     }
-    if (line.startsWith("# ")) {
-      result.push('<h2 class="advisor-h1">' + line.slice(2) + '</h2>');
+    if (trimmed.startsWith("# ")) {
+      blocks.push('<h2 class="advisor-h1">' + formatted.slice(2) + '</h2>');
       continue;
     }
 
-    const numMatch = line.match(/^(\d+)[\.\)]\s*(.*)$/);
+    const numMatch = trimmed.match(/^(\d+)[\.\)]\s*(.*)$/);
     if (numMatch) {
-      result.push('<div class="advisor-list-item"><span class="advisor-num">' + numMatch[1] + '.</span><div>' + numMatch[2] + '</div></div>');
+      const content = esc(numMatch[2]).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      blocks.push('<div class="advisor-list-item"><span class="advisor-num">' + numMatch[1] + '.</span><div>' + content + '</div></div>');
       continue;
     }
 
-    const bulletMatch = line.match(/^[-•*]\s+(.*)$/);
+    const bulletMatch = trimmed.match(/^[-•*]\s+(.*)$/);
     if (bulletMatch) {
-      result.push('<div class="advisor-bullet-item"><span class="advisor-bullet">🥕</span><div>' + bulletMatch[1] + '</div></div>');
+      const content = esc(bulletMatch[1]).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      blocks.push('<div class="advisor-bullet-item"><span class="advisor-bullet">💡</span><div>' + content + '</div></div>');
       continue;
     }
 
-    if (line.startsWith("&gt; ") || line.startsWith("> ")) {
-      result.push('<div class="advisor-callout">' + line.replace(/^(&gt;|>)\s*/, '') + '</div>');
+    if (trimmed.startsWith("&gt; ") || trimmed.startsWith("> ")) {
+      const content = formatted.replace(/^(&gt;|>)\s*/, '');
+      blocks.push('<div class="advisor-callout">' + content + '</div>');
       continue;
     }
 
-    result.push('<p class="advisor-p">' + line + '</p>');
+    blocks.push('<p class="advisor-p">' + formatted + '</p>');
   }
 
-  return result.join("");
+  if (tableBuffer.length > 0) {
+    flushTable();
+  }
+
+  return blocks.join("");
 }
 
 function renderGradesView() {
@@ -5515,8 +5568,8 @@ function renderGradesView() {
                   </div>
                 </div>
                 <div class="active-course-action">
-                  <button type="button" class="btn-duo btn-duo-outline btn-duo-sm" style="width:100%;" onclick="window.focusCoursePlan('${esc(c.ten_mon || c.ma_mon)}')">
-                    🎯 Đặt Mục Tiêu Điểm A+
+                  <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" style="width:100%;" onclick="window.focusCoursePlan('${esc(c.ten_mon || c.ma_mon)}')">
+                    💡 Phương Pháp Học Môn Này (AI)
                   </button>
                 </div>
               </div>
@@ -5562,6 +5615,7 @@ function renderGradesView() {
                   <th>Điểm chữ</th>
                   <th>Mô phỏng nâng điểm</th>
                   <th>Tiềm năng GPA</th>
+                  <th>Chiến lược AI</th>
                 </tr>
               </thead>
               <tbody>
@@ -5585,6 +5639,11 @@ function renderGradesView() {
                       </td>
                       <td>
                         <span class="gain-badge">+${s.gpaGainIfA} GPA</span>
+                      </td>
+                      <td>
+                        <button type="button" class="btn-duo btn-duo-outline btn-duo-xs" onclick="window.focusCoursePlan('${esc(s.ten_hoc_phan || s.ma_mon)}')">
+                          💡 Cách gỡ A
+                        </button>
                       </td>
                     </tr>
                   `;
@@ -5615,13 +5674,13 @@ function renderGradesView() {
       </div>
 
       <!-- KHU VỰC CỐ VẤN HỌC THUẬT & LỘ TRÌNH HỌC AI DEEPSEEK -->
-      <div class="grades-section-box grades-ai-advisor-box">
+      <div class="grades-section-box grades-ai-advisor-box" id="advisor-section">
         <div class="advisor-header-row">
           <div class="advisor-title-wrap">
             <span class="advisor-mascot-badge">🐰🎓</span>
             <div>
-              <h3>Cố Vấn Học Vụ AI DeepSeek: Lộ Trình & Phương Pháp Nâng Điểm</h3>
-              <p>Trợ giảng AI phân tích ma trận điểm cá nhân, chỉ ra nguyên nhân kéo điểm và thiết kế lộ trình 4 tuần thực chiến.</p>
+              <h3>Cố Vấn Học Vụ AI DeepSeek: Lộ Trình & Phương Pháp Học Từng Môn</h3>
+              <p>Chọn bất kỳ môn học nào để AI đưa ra phương pháp học thực chiến, cạm bẫy dễ mất điểm và cẩm nang săn A/A+ riêng cho môn đó!</p>
             </div>
           </div>
           <div class="advisor-target-controls">
@@ -5637,10 +5696,44 @@ function renderGradesView() {
                 4.0 (Tuyệt đối)
               </button>
             </div>
-            <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="window.requestAcademicAdvisor(${targetGpa})" ${state.academicAdvisorBusy ? 'disabled' : ''}>
-              ${state.academicAdvisorBusy ? '<span class="spinner-dot"></span> Đang phân tích…' : '🔄 Phân Tích & Lập Lộ Trình Mới'}
+            <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="window.requestAcademicAdvisor(${targetGpa}, document.getElementById('advisor-subject-picker')?.value || state.academicAdvisorSubject)" ${state.academicAdvisorBusy ? 'disabled' : ''}>
+              ${state.academicAdvisorBusy ? '<span class="spinner-dot"></span> Đang phân tích…' : '✨ Lên Phương Pháp Học Ngay'}
             </button>
           </div>
+        </div>
+
+        <!-- THANH CHỌN MÔN HỌC CỤ THỂ HOẶC TOÀN CẢNH -->
+        <div class="advisor-subject-selector-bar">
+          <label class="advisor-sel-label">📚 Chọn môn học cần tư vấn:</label>
+          <select class="advisor-subject-select" id="advisor-subject-picker" onchange="window.selectAdvisorSubject(this.value)">
+            <option value="all" ${(!state.academicAdvisorSubject || state.academicAdvisorSubject === 'all') ? 'selected' : ''}>
+              📊 Toàn cảnh GPA & Bảng điểm tổng thể
+            </option>
+            ${active_courses.length > 0 ? `
+              <optgroup label="🎒 Môn đang học kỳ này (Thời khóa biểu)">
+                ${active_courses.map(c => {
+                  const val = c.ten_mon || c.ma_mon;
+                  return `<option value="${esc(val)}" ${state.academicAdvisorSubject === val ? 'selected' : ''}>🎒 ${esc(val)} (${esc(c.ma_mon || '')}) — Đang học</option>`;
+                }).join("")}
+              </optgroup>
+            ` : ""}
+            ${weak_subjects.length > 0 ? `
+              <optgroup label="🎯 Môn cần cải thiện điểm (C, D, F)">
+                ${weak_subjects.map(s => {
+                  const val = s.ten_hoc_phan || s.ma_mon;
+                  return `<option value="${esc(val)}" ${state.academicAdvisorSubject === val ? 'selected' : ''}>🎯 ${esc(val)} (${s.diem_chu} - ${s.diem_he_10}đ)</option>`;
+                }).join("")}
+              </optgroup>
+            ` : ""}
+            ${raw_subjects.length > 0 ? `
+              <optgroup label="📚 Tất cả các môn đã học">
+                ${raw_subjects.filter(s => !weak_subjects.some(w => w.ma_mon === s.ma_mon)).map(s => {
+                  const val = s.ten_hoc_phan || s.ma_mon;
+                  return `<option value="${esc(val)}" ${state.academicAdvisorSubject === val ? 'selected' : ''}>📘 ${esc(val)} (${s.diem_chu})</option>`;
+                }).join("")}
+              </optgroup>
+            ` : ""}
+          </select>
         </div>
 
         <div class="advisor-content-body">
@@ -5656,10 +5749,19 @@ function renderGradesView() {
               </div>
               <div class="advisor-loading-text">
                 <strong>Đang triệu hồi Trí Tuệ Nhân Tạo DeepSeek…</strong>
-                <p>Hệ thống đang rà soát từng môn học, tính toán trọng số tín chỉ và tối ưu hóa thời khóa biểu học tập 4 tuần nước rút.</p>
+                <p>Hệ thống đang phân tích bản chất kiến thức, rà soát cấu trúc đề thi và thiết kế phương pháp học thực chiến.</p>
               </div>
             </div>
           ` : aiAnalysis ? `
+            ${(state.academicAdvisorSubject && state.academicAdvisorSubject !== 'all') ? `
+              <div class="advisor-active-subject-badge">
+                🎯 Phương pháp học chuyên sâu & Săn điểm A môn: <strong>${esc(state.academicAdvisorSubject)}</strong>
+              </div>
+            ` : `
+              <div class="advisor-active-subject-badge" style="border-color:#0078d4; color:#0078d4; background:#f0f7ff;">
+                📊 Báo cáo chiến lược tổng thể GPA & Lộ trình bứt phá học thuật
+              </div>
+            `}
             <div class="advisor-report-view">
               ${formatAdvisorMarkdown(aiAnalysis)}
             </div>
@@ -5673,12 +5775,12 @@ function renderGradesView() {
               ${renderThoBayMau({
                 state: THO_STATES.SURPRISED_CARROT,
                 size: 130,
-                speech: "Bấm nút 'Phân Tích & Lập Lộ Trình Mới' bên trên để Thỏ Bảy Màu mách nước chiến lược nâng điểm cho bạn nhé! 🐰✨",
+                speech: "Chọn môn học bên trên rồi bấm 'Lên Phương Pháp Học Ngay' để Thỏ Bảy Màu mách nước chiến lược cho bạn nhé! 🐰✨",
                 speechDirection: "top"
               })}
               <div style="margin-top:14px;">
                 <button type="button" class="btn-duo btn-duo-pink" onclick="window.requestAcademicAdvisor(${targetGpa})">
-                  ✨ Khởi Tạo Lộ Trình Cải Thiện Điểm Ngay (AI DeepSeek)
+                  ✨ Khởi Tạo Phương Pháp Học Ngay (AI DeepSeek)
                 </button>
               </div>
             </div>
@@ -5982,8 +6084,6 @@ function renderAcademicLoginModal() {
   const modalRoot = document.getElementById("modal-root");
   if (!modalRoot) return;
 
-  const isDesktop = Boolean(window.electronAPI?.openIuLogin || window.__uniStudyIU?.loginIU);
-
   modalRoot.innerHTML = `
     <div class="modal-backdrop" onclick="window.closeAcademicModal(event)">
       <div class="academic-modal-card">
@@ -5992,11 +6092,9 @@ function renderAcademicLoginModal() {
         <div class="academic-modal-header">
           <div class="academic-modal-mascot">
             ${renderThoBayMau({
-              state: THO_STATES.SURPRISED_CARROT,
-              size: 90,
-              speech: isDesktop
-                ? "Bấm nút đăng nhập IU, cửa sổ sẽ TỰ ĐỘNG ĐÓNG và Thỏ sẽ tự cào điểm về ngay! 🐰✨"
-                : "Đăng nhập cổng IU để Thỏ phân tích điểm và lộ trình nâng GPA nhé! 🐰✨",
+              state: THO_STATES.GENIUS,
+              size: 95,
+              speech: "Đăng nhập một chạm bằng tài khoản Microsoft trường nhé! 🐰✨",
               speechDirection: "top"
             })}
           </div>
@@ -6006,32 +6104,20 @@ function renderAcademicLoginModal() {
           </div>
         </div>
 
-        <div class="academic-modal-body">
-          ${isDesktop ? `
-            <div class="iu-mode-banner iu-mode-desktop">
-              ⚡ <strong>Chế độ App Desktop:</strong> Sau khi đăng nhập Microsoft xong trên cổng trường, cửa sổ sẽ <strong>TỰ ĐỘNG ĐÓNG</strong> và hệ thống tự động đục bảng điểm 100%!
-            </div>
-          ` : `
-            <div class="iu-mode-banner iu-mode-web">
-              💡 <strong>Mẹo chuyên nghiệp:</strong> Chạy ứng dụng bằng lệnh <code>npm start</code> (hoặc <code>npm run electron</code>) để trải nghiệm cơ chế <strong>Tự động đóng cửa sổ & cào điểm 100%</strong> giống Smart Study Hub!
-            </div>
-          `}
-
-          <!-- NÚT DUY NHẤT: ĐĂNG NHẬP CỔNG IU -->
+        <div class="academic-modal-body" style="padding-top: 12px;">
+          <!-- NÚT DUY NHẤT: ĐĂNG NHẬP BẰNG MICROSOFT -->
           <div class="iu-single-action-box">
-            <button type="button" id="btn-iu-popup-login" class="btn-microsoft-sso iu-single-big-btn" onclick="window.handleIuPortalLogin()">
-              <svg width="24" height="24" viewBox="0 0 21 21">
+            <button type="button" id="btn-iu-popup-login" class="btn-microsoft-primary" onclick="window.handleIuPortalLogin()">
+              <svg width="22" height="22" viewBox="0 0 21 21">
                 <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
                 <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
                 <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
                 <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
               </svg>
-              <span>Đăng Nhập Cổng Trường IU (Microsoft)</span>
+              <span>ĐĂNG NHẬP BẰNG MICROSOFT TRƯỜNG</span>
             </button>
-            <p class="iu-single-hint">
-              ${isDesktop
-                ? "Nhấn nút để mở cửa sổ đăng nhập cổng trường. Đăng nhập Microsoft xong, cửa sổ sẽ <strong>TỰ ĐỘNG ĐÓNG</strong> và Thỏ sẽ tự động cào bảng điểm về cho bạn!"
-                : "Nhấn nút để mở cửa sổ cổng IU. Đăng nhập Microsoft xong, bấm xác nhận để đóng cửa sổ và đồng bộ bảng điểm!"}
+            <p class="iu-single-hint" style="margin-top: 14px; text-align: center; color: #64748b; font-size: 13px;">
+              🔒 Xác thực an toàn qua hệ thống Microsoft Office 365 của CMC University
             </p>
           </div>
         </div>
@@ -6045,24 +6131,39 @@ window.submitAcademicLogin = async function(e) {
   return window.handleIuPortalLogin();
 };
 
-window.focusCoursePlan = function(courseName) {
-  state.academicAdvisorTarget = 3.6;
-  showToast(`🎯 Đang lên lộ trình săn điểm A/A+ cho môn ${courseName}...`, false);
-  window.requestAcademicAdvisor(3.6);
+window.selectAdvisorSubject = function(subject) {
+  state.academicAdvisorSubject = subject;
+  window.requestAcademicAdvisor(state.academicAdvisorTarget, subject);
 };
 
-window.requestAcademicAdvisor = async function(targetGpa) {
+window.focusCoursePlan = function(courseName) {
+  state.academicAdvisorSubject = courseName;
+  const el = document.getElementById("advisor-section");
+  if (el) el.scrollIntoView({ behavior: "smooth" });
+  window.requestAcademicAdvisor(state.academicAdvisorTarget || 3.6, courseName);
+};
+
+window.requestAcademicAdvisor = async function(targetGpa, subject) {
   if (state.academicAdvisorBusy) return;
   state.academicAdvisorBusy = true;
   state.academicAdvisorTarget = targetGpa || state.academicAdvisorTarget || 3.2;
+  if (subject !== undefined) {
+    state.academicAdvisorSubject = subject;
+  }
+  const currentSub = state.academicAdvisorSubject || "all";
   render();
 
   try {
-    showToast("🐰 Thỏ Bảy Màu đang gọi DeepSeek AI phân tích bảng điểm & lịch học...", false);
+    const isSpecific = currentSub && currentSub !== "all" && currentSub !== "toan-canh";
+    showToast(isSpecific
+      ? `🐰 Thỏ Bảy Màu đang gọi DeepSeek AI lên phương pháp học môn ${currentSub}...`
+      : `🐰 Thỏ Bảy Màu đang gọi DeepSeek AI phân tích bảng điểm & lộ trình GPA...`, false);
+
     const res = await api("/api/academic/advisor", {
       method: "POST",
       body: {
         targetGpa: state.academicAdvisorTarget,
+        subject: currentSub,
         transcript: state.academicTranscript?.transcript
       }
     });
@@ -6070,8 +6171,11 @@ window.requestAcademicAdvisor = async function(targetGpa) {
       if (state.academicTranscript) {
         state.academicTranscript.aiAnalysis = res.advice;
         state.academicTranscript.targetGpa = res.targetGpa;
+        state.academicTranscript.advisorSubject = res.subject || currentSub;
       }
-      showToast("🎉 Đã có lộ trình cải thiện điểm từ Giáo sư Thỏ Bảy Màu!", false);
+      showToast(isSpecific
+        ? `🎉 Đã có bí kíp săn điểm A cho môn ${currentSub}!`
+        : "🎉 Đã có lộ trình cải thiện điểm từ Giáo sư Thỏ Bảy Màu!", false);
     }
   } catch (err) {
     showToast("Lỗi khi tạo lộ trình AI: " + err.message, true);

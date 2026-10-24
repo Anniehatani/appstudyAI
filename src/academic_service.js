@@ -586,7 +586,7 @@ export function processAcademicTranscript(bangDiemRaw, studentInfo = {}, activeC
 /**
  * Cố vấn AI DeepSeek: Phân tích bảng điểm & lập lộ trình cải thiện điểm số
  */
-export async function generateAcademicAdvisorPlan(transcriptData, targetGpa = 3.2, env = {}) {
+export async function generateAcademicAdvisorPlan(transcriptData, targetGpa = 3.2, env = {}, selectedCourse = "all") {
   const apiKey = env.LOCAL_AI_API_KEY || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || "";
   const endpoint = env.LOCAL_AI_ENDPOINT || "https://api.deepseek.com/chat/completions";
   const model = env.DEEPSEEK_MODEL || "deepseek-chat";
@@ -595,7 +595,7 @@ export async function generateAcademicAdvisorPlan(transcriptData, targetGpa = 3.
     throw new Error("Chưa cấu hình API Key DeepSeek. Hãy kiểm tra biến DEEPSEEK_API_KEY trong file .dev.vars!");
   }
 
-  const { student, gpa, weak_subjects, semesters, active_courses = [] } = transcriptData;
+  const { student = {}, gpa = {}, weak_subjects = [], semesters = [], active_courses = [], raw_subjects = [] } = transcriptData;
 
   const weakSubjectsSummary = (weak_subjects || []).slice(0, 8).map((s, idx) =>
     `${idx + 1}. ${s.ten_hoc_phan} (${s.ma_mon}) — ${s.so_tin_chi} tín chỉ. Điểm hiện tại: ${s.diem_he_10}/10 (Hệ 4: ${s.diem_he_4}, Điểm chữ: ${s.diem_chu}). Nếu kéo lên điểm A sẽ giúp GPA tăng ngay +${s.gpaGainIfA} điểm.`
@@ -609,42 +609,110 @@ export async function generateAcademicAdvisorPlan(transcriptData, targetGpa = 3.
     `${idx + 1}. ${c.ten_mon || c.ten_hoc_phan} (${c.ma_mon}) ${c.so_tin_chi ? `- ${c.so_tin_chi} tín chỉ` : ""} ${c.giang_vien ? `[GV: ${c.giang_vien}]` : ""} ${c.phong ? `[Phòng: ${c.phong}]` : ""}`
   ).join("\n");
 
-  const prompt = `
-Bạn là "Giáo sư Thỏ Bảy Màu & Cố vấn Học thuật Cấp cao 3TG AI" của trường Đại học CMC (CMC University).
-Tính cách: Thông tuệ, chiến lược, hài hước, hừng hực động lực, xưng hô "Thầy Thỏ" hoặc "Thỏ Giáo Sư" và gọi sinh viên là "đồng chí học trò" hoặc "bạn nhỏ".
+  let systemPrompt = "";
+  let userPrompt = "";
 
-Dưới đây là bảng điểm, hồ sơ học tập và thời khóa biểu thực tế cào từ cổng thông tin IU của sinh viên:
-- Sinh viên: ${student.ho_ten} (MSV: ${student.ma_sinh_vien || "Chưa có"})
-- Ngành học: ${student.nganh} - Lớp: ${student.lop || "Chưa rõ"}
-- GPA Tích lũy Hiện tại: ${gpa.overall_4}/4.0 (Hệ 10: ${gpa.overall_10}/10)
-- Xếp loại học lực hiện tại: ${gpa.classification}
-- Tổng số tín chỉ đã tích lũy: ${gpa.passed_credits} / ${gpa.total_credits} tín chỉ
-- Mục tiêu GPA mong muốn: ${targetGpa || 3.2}/4.0
+  const isSpecificCourse = selectedCourse && selectedCourse !== "all" && selectedCourse !== "toan-canh";
 
-🎒 CÁC MÔN HỌC ĐANG HỌC KỲ NÀY (THU THẬP TỪ THỜI KHÓA BIỂU & LỊCH HỌC TRÊN CỔNG TRƯỜNG IU):
-${activeCoursesSummary || "Chưa có thông tin môn học kỳ này trên lịch học cá nhân."}
+  if (isSpecificCourse) {
+    const allKnownSubjects = [
+      ...raw_subjects,
+      ...active_courses.map(c => ({
+        ma_mon: c.ma_mon,
+        ten_hoc_phan: c.ten_mon || c.ten_hoc_phan,
+        so_tin_chi: c.so_tin_chi || 3,
+        isActive: true
+      }))
+    ];
 
-LỊCH SỬ KẾT QUẢ CÁC HỌC KỲ ĐÃ QUA:
+    const matched = allKnownSubjects.find(s =>
+      String(s.ten_hoc_phan || s.ten_mon || "").toLowerCase().includes(selectedCourse.toLowerCase()) ||
+      String(s.ma_mon || "").toLowerCase().includes(selectedCourse.toLowerCase())
+    ) || { ten_hoc_phan: selectedCourse, so_tin_chi: 3 };
+
+    const courseTitle = matched.ten_hoc_phan || matched.ten_mon || selectedCourse;
+    const courseCode = matched.ma_mon || "";
+    const currentGrade = matched.diem_he_10 !== undefined
+      ? `${matched.diem_he_10}/10 (Hệ 4: ${matched.diem_he_4}, Điểm chữ: ${matched.diem_chu})`
+      : "Môn đang học kỳ này trên thời khóa biểu";
+
+    systemPrompt = `Bạn là Giáo sư Thỏ Bảy Màu & Trợ giảng AI Chuyên gia của trường Đại học CMC (CMC University).
+Nhiệm vụ: Cung cấp PHƯƠNG PHÁP HỌC THỰC CHIẾN và BÍ KÍP SĂN ĐIỂM A/A+ CHO DUY NHẤT MÔN HỌC ĐƯỢC CHỈ ĐỊNH.
+QUY TẮC BẮT BUỘC:
+- KHÔNG viết mở đầu "Kính gửi", "Chủ đề", không dài dòng. Đi thẳng vào hành động!
+- TẬP TRUNG 100% VÀO MÔN HỌC ĐƯỢC YÊU CẦU. TUYỆT ĐỐI KHÔNG nói lan man sang các môn khác!
+- Nội dung cụ thể, bám sát kiến thức thực tế và cấu trúc đề thi tại Đại học CMC.
+- Trình bày dạng bảng Markdown, gạch đầu dòng, checklist ngắn gọn, KHÔNG VIẾT VĂN XUÔI DÀI DÒNG!`;
+
+    userPrompt = `
+Hãy lập CẨM NĂNG PHƯƠNG PHÁP HỌC & LỘ TRÌNH SĂN ĐIỂM A/A+ CHO DUY NHẤT MÔN NÀY:
+🎯 **Môn học: ${courseTitle}** ${courseCode ? `(${courseCode})` : ""}
+- Tình trạng điểm: ${currentGrade}
+- Ngành học sinh viên: ${student.nganh || "Công nghệ thông tin"} (CMC University)
+
+Cấu trúc trình bày súc tích, trực quan:
+
+## 💡 1. Bản chất môn học & Các cạm bẫy "mất điểm oan"
+- Bản chất cốt lõi của môn ${courseTitle}.
+- Những chương / dạng bài khó nhất mà sinh viên CMC hay bị điểm kém trong bài thi.
+- 3 lỗi sai kinh điển cần tránh tuyệt đối khi làm bài thi.
+
+## 🎯 2. Phương pháp học thực chiến & Nguồn tài liệu đỉnh nhất
+- Chiến thuật học hiểu sâu bản chất (Active Recall, sơ đồ tư duy, flashcard công thức/code).
+- Nguồn tài liệu, giáo trình, slide hoặc kênh ôn tập chất lượng cao nên học.
+- Mẹo làm lab / bài tập lớn / bài tập tuần để lấy trọn điểm tối đa.
+
+## 📊 3. Chiến thuật "Vét trọn điểm" từng cột điểm tại CMC
+| Cột điểm | Trọng số | Chiến thuật săn điểm tối đa của Thầy Thỏ |
+|---|---|---|
+| **Chuyên cần** | 10% | Đi học 100%, ngồi bàn đầu, tích cực tương tác |
+| **Bài tập / Quá trình / Lab** | 20-30% | Nộp bài trước hạn, đúng rubric barem chấm điểm |
+| **Giữa kỳ & Cuối kỳ** | 60-70% | Cấu trúc đề thi, dạng bài nhiều điểm nhất, mẹo phân bổ thời gian |
+
+## 📅 4. Checklist 4 tuần nước rút săn điểm A (9.0+)
+- **Tuần 1 (Nền tảng):** Nắm chắc lý thuyết cốt lõi & tổng hợp sơ đồ tư duy công thức.
+- **Tuần 2 (Thực chiến):** Quét sạch các dạng bài tập điển hình từ cơ bản đến nâng cao.
+- **Tuần 3 (Luyện đề):** Giải tối thiểu 3 đề thi các kỳ trước của trường CMC, canh thời gian.
+- **Tuần 4 (Về đích):** Thi thử bấm giờ, vá lỗ hổng kiến thức và chuẩn bị tâm lý tự tin.
+`;
+  } else {
+    systemPrompt = `Bạn là Giáo sư Thỏ Bảy Màu & Cố vấn Học thuật 3TG AI của trường Đại học CMC (CMC University).
+Nhiệm vụ: Đưa ra BÁO CÁO CỐ VẤN HỌC THUẬT TOÀN CẢNH TINH GỌN, TRỰC QUAN, ĐI THẲNG VÀO HÀNH ĐỘNG.
+QUY TẮC BẮT BUỘC:
+- KHÔNG viết mở đầu "Kính gửi", "Chủ đề", không viết văn xuôi dài dòng lan man.
+- Sử dụng bảng Markdown và bullet points súc tích, dễ nhìn.`;
+
+    userPrompt = `
+BẢNG TỔNG KẾT HỌC THUẬT:
+- Sinh viên: ${student.ho_ten} (${student.ma_sinh_vien || "Chưa có"}) — Ngành: ${student.nganh}
+- GPA Tích lũy Hiện tại: ${gpa.overall_4}/4.0 (Hệ 10: ${gpa.overall_10}/10) — Xếp loại: ${gpa.classification}
+- Tín chỉ tích lũy: ${gpa.passed_credits} / ${gpa.total_credits} tín chỉ.
+- Mục tiêu GPA: ${targetGpa || 3.2}/4.0
+
+LỊCH SỬ KẾT QUẢ CÁC HỌC KỲ:
 ${semestersSummary}
 
-CÁC MÔN HỌC ĐIỂM THẤP KÉO TỤT GPA NHIỀU NHẤT CẦN CẢI THIỆN:
-${weakSubjectsSummary || "Thật tuyệt vời! Không có môn nào dưới 6.5, phong độ học tập rất ổn định!"}
+CÁC MÔN HỌC CẦN CẢI THIỆN:
+${weakSubjectsSummary || "Không có môn nào dưới 6.5!"}
 
-YÊU CẦU:
-Hãy đưa ra một BÁO CÁO CỐ VẤN HỌC THUẬT & LỘ TRÌNH CẢI THIỆN ĐIỂM CHI TIẾT bao gồm:
-1. 🩺 **Bắt bệnh bảng điểm & Đánh giá toàn cảnh**: Nhận xét khách quan về phong độ học tập, chỉ rõ vì sao GPA đang ở mức ${gpa.overall_4}/4.0 và phân tích cơ hội bứt phá lên ${targetGpa}/4.0.
-2. 🎒 **LỘ TRÌNH CHIẾN THẮNG CHO CÁC MÔN ĐANG HỌC KỲ NÀY (RẤT QUAN TRỌNG)**:
-   - Dựa trên danh sách các môn đang học kỳ này ở trên, phân tích mục tiêu điểm số từng môn (đạt A/A+ để kéo vọt GPA tổng).
-   - Chiến lược học thực chiến cho từng môn đang học: cách chuẩn bị bài trước giờ lên lớp, tối ưu điểm Chuyên cần, săn điểm 10 Bài tập/Lab và Giữa kỳ.
-3. 🎯 **Chiến lược "Gỡ điểm" ROI cao nhất (Học cải thiện môn nào trong quá khứ?)**:
-   - Chọn ra 2 môn học lại/cải thiện mang lại bước nhảy GPA lớn nhất với công sức tối ưu.
-   - Tính toán cụ thể số điểm GPA tăng thêm nếu kéo môn đó lên A.
-4. 🧠 **Phương pháp học thực chiến đỉnh cao**: Spaced Repetition, Active Recall, phương pháp làm lab đồ án và ôn thi hiệu quả.
-5. 📅 **Lộ trình hành động 4 tuần nâng điểm**: Phân chia chi tiết theo từng tuần (Tuần 1 -> Tuần 4) để bám sát lịch học và lịch thi.
-6. 🥕 **Lời dặn dò tâm huyết của Thỏ Bảy Màu**: Động viên tinh thần, truyền lửa vượt khó, không nản lòng!
+MÔN ĐANG HỌC KỲ NÀY:
+${activeCoursesSummary || "Chưa có môn trên lịch học."}
 
-Định dạng Markdown đẹp mắt, có emoji sinh động, bullet points rõ ràng, phân cấp tiêu đề chuẩn.
+Hãy đưa ra BÁO CÁO CỐ VẤN TINH GỌN (Dưới 350 từ, định dạng Markdown đẹp mắt):
+## 🩺 1. Nhận định nhanh phong độ học tập
+- Nhận xét ngắn gọn thực trạng GPA hiện tại và cơ hội bứt phá lên ${targetGpa}/4.0.
+
+## 🎯 2. Top 2 môn gỡ điểm mang lại bước nhảy GPA cao nhất
+| Mã môn | Tên học phần | Điểm hiện tại | Nâng lên A | GPA tổng nhảy vọt |
+|---|---|---|---|---|
+
+## 🎒 3. Chiến lược cho các môn đang học kỳ này
+- Định hướng hành động cụ thể để săn A/A+ chặn đứng đà tụt điểm.
+
+## 📅 4. Kế hoạch hành động 4 tuần
+- Tuần 1 đến Tuần 4 ngắn gọn, súc tích.
 `;
+  }
 
   const res = await fetch(endpoint, {
     method: "POST",
@@ -655,11 +723,11 @@ Hãy đưa ra một BÁO CÁO CỐ VẤN HỌC THUẬT & LỘ TRÌNH CẢI THI�
     body: JSON.stringify({
       model,
       messages: [
-        { role: "system", content: "Bạn là Giáo sư Thỏ Bảy Màu & Cố vấn Học thuật cấp cao 3TG AI. Hãy đưa ra chiến lược nâng điểm và lộ trình học chuẩn xác, truyền cảm hứng và khoa học nhất." },
-        { role: "user", content: prompt }
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
       ],
-      temperature: 0.6,
-      max_tokens: 2500
+      temperature: 0.5,
+      max_tokens: 2200
     }),
     signal: AbortSignal.timeout(90000)
   });

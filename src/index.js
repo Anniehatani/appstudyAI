@@ -2321,7 +2321,8 @@ async function handleAcademicAdvisor(request, user, env) {
     transcriptData = processAcademicTranscript(transcriptData.raw_subjects, transcriptData.student, transcriptData.active_courses);
   }
 
-  const advice = await generateAcademicAdvisorPlan(transcriptData, targetGpa, env);
+  const subject = String(body.subject || "all").trim();
+  const advice = await generateAcademicAdvisorPlan(transcriptData, targetGpa, env, subject);
 
   try {
     await env.DB.prepare(`
@@ -2333,7 +2334,7 @@ async function handleAcademicAdvisor(request, user, env) {
     console.warn("[Save Academic Advisor]", err.message);
   }
 
-  return { ok: true, advice, targetGpa };
+  return { ok: true, advice, targetGpa, subject };
 }
 
 async function createSession(request, env) {
