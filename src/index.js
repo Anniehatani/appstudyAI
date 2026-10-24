@@ -1340,7 +1340,9 @@ const FREE_PROFILE_ITEMS = [
   { item_code: "deco_retro_glitch", name: "Hiệu Ứng Glitch Hacker Ma Trận", description: "Nhiễu sóng điện tử RGB glitch nhấp nháy chuyển động phong cách hacker công nghệ.", price_gems: 0, type: "avatar_decoration" },
   { item_code: "fx_matrix_rain", name: "Hiệu Ứng Hồ Sơ: Ma Trận Số Cyber", description: "Dòng mưa mã nhị phân màu xanh lá rơi mượt mà bao phủ toàn bộ thẻ hồ sơ cá nhân.", price_gems: 0, type: "profile_effect" },
   { item_code: "fx_stardust_magic", name: "Hiệu Ứng Hồ Sơ: Bụi Sao Thần Thoại", description: "Những hạt bụi sao ánh kim lung linh bay bổng và phát sáng huyền ảo trên thẻ cá nhân.", price_gems: 0, type: "profile_effect" },
-  { item_code: "fx_fire_sparks", name: "Hiệu Ứng Hồ Sơ: Tàn Lửa Địa Ngục", description: "Những tàn lửa than hồng bay lơ lửng bốc lên từ đáy hồ sơ, tạo vẻ đẹp rực cháy.", price_gems: 0, type: "profile_effect" }
+  { item_code: "fx_fire_sparks", name: "Hiệu Ứng Hồ Sơ: Tàn Lửa Địa Ngục", description: "Những tàn lửa than hồng bay lơ lửng bốc lên từ đáy hồ sơ, tạo vẻ đẹp rực cháy.", price_gems: 0, type: "profile_effect" },
+  { item_code: "deco_manga_ghoul", name: "Quỷ Hồn Hắc Ám (Manga Ghoul)", description: "Linh hồn quỷ dị và bàn tay xương xẩu manga kinh dị Junji Ito ôm lấy avatar cực kỳ ma mị chuẩn Discord VIP.", price_gems: 0, type: "avatar_decoration" },
+  { item_code: "fx_peeking_cat", name: "Hiệu Ứng Hồ Sơ: Mèo Trắng Nằm Nóc & Ngôi Sao", description: "Bé mèo trắng anime má hồng nằm ngủ gác cằm trên nóc hồ sơ, tai vẫy nhẹ cùng những vì sao lấp lánh ở góc trái y hệt Discord Nitro.", price_gems: 0, type: "profile_effect" }
 ];
 const FREE_PROFILE_ITEMS_BY_CODE = new Map(FREE_PROFILE_ITEMS.map(function (item) { return [item.item_code, item]; }));
 

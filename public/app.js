@@ -3002,11 +3002,108 @@ export const DISCORD_EFFECTS_REGISTRY = {
     color: "#ef4444",
     description: "Những tàn lửa than hồng bay lơ lửng bốc lên từ đáy hồ sơ, tạo vẻ đẹp rực cháy.",
     price: 0
+  },
+  deco_manga_ghoul: {
+    code: "deco_manga_ghoul",
+    name: "Quỷ Hồn Hắc Ám (Manga Ghoul)",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Horror Nitro",
+    color: "#64748b",
+    description: "Linh hồn quỷ dị và bàn tay xương xẩu manga kinh dị Junji Ito ôm lấy avatar cực kỳ ma mị chuẩn Discord VIP.",
+    price: 0
+  },
+  fx_peeking_cat: {
+    code: "fx_peeking_cat",
+    name: "Mèo Trắng Nằm Nóc & Ngôi Sao",
+    type: "profile_effect",
+    category: "effect",
+    badge: "Kitty Nitro",
+    color: "#f472b6",
+    description: "Bé mèo trắng anime má hồng nằm ngủ gác cằm trên nóc hồ sơ, tai vẫy nhẹ cùng những vì sao lấp lánh ở góc trái y hệt Discord Nitro.",
+    price: 0
   }
 };
 window.DISCORD_EFFECTS_REGISTRY = DISCORD_EFFECTS_REGISTRY;
 
 export function generateAvatarDecorationSvg(decoCode) {
+  if (decoCode === "deco_manga_ghoul") {
+    return `
+      <div class="discord-avatar-decoration deco-manga-ghoul-vip">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <radialGradient id="ghoul-shadow" cx="50%" cy="50%" r="50%">
+              <stop offset="60%" stop-color="transparent"/>
+              <stop offset="90%" stop-color="rgba(0,0,0,0.45)"/>
+              <stop offset="100%" stop-color="rgba(0,0,0,0.85)"/>
+            </radialGradient>
+          </defs>
+
+          <!-- Outer Dark Manga Shadow Aura -->
+          <circle cx="50" cy="50" r="46" fill="url(#ghoul-shadow)" stroke="#09090b" stroke-width="2.5" stroke-dasharray="14 4 6 4" class="deco-ghoul-aura-ring"/>
+
+          <!-- Top-Left Screaming Manga Spirits & Ghoul Faces (Junji Ito Style) -->
+          <g class="deco-ghoul-faces">
+            <path d="M12,28 C8,18 16,8 28,6 C38,4 46,10 50,14 C44,18 36,18 30,22 C24,26 18,34 12,28 Z" fill="#18181b" stroke="#ffffff" stroke-width="1.2"/>
+            
+            <!-- Ghoul Face 1 (Top Left) -->
+            <ellipse cx="26" cy="14" rx="6" ry="7" fill="#f4f4f5" stroke="#09090b" stroke-width="1"/>
+            <circle cx="24" cy="13" r="1.8" fill="#09090b"/>
+            <circle cx="28" cy="13" r="1.8" fill="#09090b"/>
+            <circle cx="24" cy="13" r="0.6" fill="#fff" class="ghoul-eye-glow"/>
+            <circle cx="28" cy="13" r="0.6" fill="#fff" class="ghoul-eye-glow"/>
+            <ellipse cx="26" cy="18" rx="2.2" ry="3.2" fill="#09090b"/>
+            <path d="M25,18 L27,18" stroke="#fff" stroke-width="0.8"/>
+
+            <!-- Ghoul Face 2 (Upper Center) -->
+            <ellipse cx="40" cy="10" rx="5" ry="6" fill="#e4e4e7" stroke="#09090b" stroke-width="1"/>
+            <circle cx="38" cy="9" r="1.5" fill="#09090b"/>
+            <circle cx="42" cy="9" r="1.5" fill="#09090b"/>
+            <circle cx="38" cy="9" r="0.5" fill="#fff" class="ghoul-eye-glow"/>
+            <circle cx="42" cy="9" r="0.5" fill="#fff" class="ghoul-eye-glow"/>
+            <ellipse cx="40" cy="13.5" rx="1.8" ry="2.2" fill="#09090b"/>
+
+            <!-- Ghoul Face 3 (Left edge ~ 9 o'clock) -->
+            <ellipse cx="14" cy="36" rx="5" ry="6.5" fill="#f4f4f5" stroke="#09090b" stroke-width="1"/>
+            <circle cx="12" cy="35" r="1.5" fill="#09090b"/>
+            <circle cx="16" cy="35" r="1.5" fill="#09090b"/>
+            <ellipse cx="14" cy="39.5" rx="2" ry="2.5" fill="#09090b"/>
+
+            <!-- Pen Ink Hatching Texture Marks -->
+            <line x1="20" y1="8" x2="22" y2="12" stroke="#ffffff" stroke-width="0.8"/>
+            <line x1="32" y1="6" x2="34" y2="10" stroke="#ffffff" stroke-width="0.8"/>
+            <line x1="44" y1="12" x2="47" y2="15" stroke="#ffffff" stroke-width="0.8"/>
+          </g>
+
+          <!-- Bony Skeletal Hands Reaching & Gripping (Right & Bottom) -->
+          <g class="deco-ghoul-hands">
+            <g class="ghoul-hand-right">
+              <path d="M98,42 L92,45 L92,55 L98,58 Z" fill="#f4f4f5" stroke="#09090b" stroke-width="1"/>
+              <path d="M92,44 C88,42 84,43 83,46 C86,47 89,46 92,47 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M92,48 C86,47 80,49 79,52 C83,53 87,51 92,52 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M92,53 C87,53 82,56 81,59 C85,58 88,56 92,56 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M93,56 C89,57 85,61 85,64 C88,62 91,59 93,58 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+            </g>
+
+            <g class="ghoul-hand-bottom">
+              <path d="M22,86 C21,80 24,76 27,73 C26,78 24,82 25,87 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M28,88 C29,82 33,78 37,76 C35,80 32,84 31,89 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M34,91 C36,86 41,83 45,82 C42,86 39,89 37,92 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+            </g>
+          </g>
+
+          <!-- Shadow Smoke Trails & Floating Ghost Wisps -->
+          <g class="deco-ghoul-wisps">
+            <path d="M82,22 C86,18 90,20 92,24 C88,24 85,26 82,22 Z" fill="#ffffff" opacity="0.8"/>
+            <path d="M68,92 C72,95 78,94 82,90 C78,90 73,93 68,92 Z" fill="#ffffff" opacity="0.8"/>
+            <circle cx="86" cy="24" r="1.5" fill="#fff"/>
+            <circle cx="65" cy="94" r="1.2" fill="#fff"/>
+            <circle cx="8" cy="54" r="1.5" fill="#fff"/>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
   if (decoCode === "deco_flame_dragon") {
     return `
       <div class="discord-avatar-decoration deco-dragon-fire-vip">
@@ -3298,7 +3395,24 @@ export function renderDecoratedAvatar(avatarUrl, decoCode, size = 48, name = "3T
     innerHtml = esc(Array.from(name || "L")[0] || "L");
   }
 
-  const decoHtml = decoCode ? generateAvatarDecorationSvg(decoCode) : "";
+  let decoHtml = "";
+  if (decoCode) {
+    if (decoCode.endsWith(".webm") || decoCode.endsWith(".mp4")) {
+      decoHtml = `
+        <div class="discord-avatar-decoration">
+          <video src="${esc(decoCode)}" autoplay loop muted playsinline style="width:100%; height:100%; object-fit:contain; pointer-events:none;"></video>
+        </div>
+      `;
+    } else if (decoCode.startsWith("http") || decoCode.startsWith("data:") || decoCode.endsWith(".png") || decoCode.endsWith(".gif") || decoCode.endsWith(".webp")) {
+      decoHtml = `
+        <div class="discord-avatar-decoration">
+          <img src="${esc(decoCode)}" alt="" style="width:100%; height:100%; object-fit:contain; pointer-events:none;">
+        </div>
+      `;
+    } else {
+      decoHtml = generateAvatarDecorationSvg(decoCode);
+    }
+  }
 
   return `
     <div class="discord-avatar-container" style="width:${size}px; height:${size}px; font-size:${Math.round(size * 0.42)}px;">
@@ -3312,6 +3426,95 @@ export function renderDecoratedAvatar(avatarUrl, decoCode, size = 48, name = "3T
 window.renderDecoratedAvatar = renderDecoratedAvatar;
 
 export function renderProfileEffectHtml(fxCode) {
+  if (fxCode) {
+    if (fxCode.endsWith(".webm") || fxCode.endsWith(".mp4")) {
+      return `
+        <div class="discord-profile-fx-layer">
+          <video src="${esc(fxCode)}" autoplay loop muted playsinline style="width:100%; height:100%; object-fit:cover; pointer-events:none;"></video>
+        </div>
+      `;
+    }
+    if (fxCode.startsWith("http") || fxCode.startsWith("data:") || fxCode.endsWith(".gif") || fxCode.endsWith(".png") || fxCode.endsWith(".webp")) {
+      return `
+        <div class="discord-profile-fx-layer">
+          <img src="${esc(fxCode)}" alt="" style="width:100%; height:100%; object-fit:cover; pointer-events:none;">
+        </div>
+      `;
+    }
+  }
+
+  if (fxCode === "fx_peeking_cat") {
+    return `
+      <div class="discord-profile-fx-layer discord-fx-peeking-cat">
+        <!-- Glittering sparkle stars at top-left -->
+        <div class="peeking-cat-sparkles">
+          <span class="cat-sparkle s1">✦</span>
+          <span class="cat-sparkle s2">✦</span>
+          <span class="cat-sparkle s3">✦</span>
+          <span class="cat-sparkle s4">✧</span>
+        </div>
+
+        <!-- Cute Anime White Cat Resting on Top Border -->
+        <div class="peeking-cat-container">
+          <svg viewBox="0 0 160 55" class="peeking-cat-svg">
+            <defs>
+              <linearGradient id="cat-body-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#fff0f5"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Left Ear with Soft Pink Inner Ear -->
+            <polygon points="34,22 42,2 54,16" fill="url(#cat-body-grad)" stroke="#fbcfe8" stroke-width="1.8" class="cat-left-ear"/>
+            <polygon points="37,20 42,7 50,16" fill="#f472b6" opacity="0.85" class="cat-left-ear-inner"/>
+
+            <!-- Right Ear with Soft Pink Inner Ear -->
+            <polygon points="126,22 118,2 106,16" fill="url(#cat-body-grad)" stroke="#fbcfe8" stroke-width="1.8" class="cat-right-ear"/>
+            <polygon points="123,20 118,7 110,16" fill="#f472b6" opacity="0.85" class="cat-right-ear-inner"/>
+
+            <!-- Chubby Cat Head Base -->
+            <ellipse cx="80" cy="28" rx="48" ry="24" fill="url(#cat-body-grad)" stroke="#fbcfe8" stroke-width="2"/>
+
+            <!-- Soft Blushing Cheeks -->
+            <ellipse cx="50" cy="33" rx="7" ry="4" fill="#fb7185" opacity="0.45"/>
+            <ellipse cx="110" cy="33" rx="7" ry="4" fill="#fb7185" opacity="0.45"/>
+
+            <!-- Closed Happy/Sleeping Cat Eyes (^ ^) -->
+            <path d="M56,27 Q62,21 68,27" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M92,27 Q98,21 104,27" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+
+            <!-- Little Pink Cat Nose & Curved Mouth (ㅅ) -->
+            <polygon points="78,31 82,31 80,34" fill="#f43f5e"/>
+            <path d="M74,35 Q80,39 80,35 Q80,39 86,35" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Whiskers -->
+            <line x1="32" y1="31" x2="44" y2="32" stroke="#cbd5e1" stroke-width="1.5"/>
+            <line x1="30" y1="36" x2="43" y2="35" stroke="#cbd5e1" stroke-width="1.5"/>
+            <line x1="128" y1="31" x2="116" y2="32" stroke="#cbd5e1" stroke-width="1.5"/>
+            <line x1="130" y1="36" x2="117" y2="35" stroke="#cbd5e1" stroke-width="1.5"/>
+
+            <!-- Left Front Paw Hanging Over Top Edge -->
+            <g class="cat-paw-left">
+              <rect x="42" y="38" width="18" height="14" rx="8" fill="#ffffff" stroke="#fbcfe8" stroke-width="1.6"/>
+              <ellipse cx="51" cy="46" rx="4" ry="3" fill="#f472b6" opacity="0.8"/>
+              <circle cx="46" cy="42" r="1.4" fill="#f472b6" opacity="0.8"/>
+              <circle cx="51" cy="41" r="1.4" fill="#f472b6" opacity="0.8"/>
+              <circle cx="56" cy="42" r="1.4" fill="#f472b6" opacity="0.8"/>
+            </g>
+
+            <!-- Right Front Paw Hanging Over Top Edge -->
+            <g class="cat-paw-right">
+              <rect x="100" y="38" width="18" height="14" rx="8" fill="#ffffff" stroke="#fbcfe8" stroke-width="1.6"/>
+              <ellipse cx="109" cy="46" rx="4" ry="3" fill="#f472b6" opacity="0.8"/>
+              <circle cx="104" cy="42" r="1.4" fill="#f472b6" opacity="0.8"/>
+              <circle cx="109" cy="41" r="1.4" fill="#f472b6" opacity="0.8"/>
+              <circle cx="114" cy="42" r="1.4" fill="#f472b6" opacity="0.8"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    `;
+  }
   if (fxCode === "fx_matrix_rain") {
     return `
       <div class="discord-profile-fx-layer discord-fx-matrix">

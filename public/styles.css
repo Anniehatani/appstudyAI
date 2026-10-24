@@ -6367,6 +6367,60 @@ button:focus-visible, input:focus-visible {
   100% { opacity: 1; box-shadow: 0 0 12px #ff007b, 0 0 20px #00f0ff; }
 }
 
+/* 1.6 MANGA GHOUL SPIRITS (JUNJI ITO STYLE) */
+.deco-manga-ghoul-vip {
+  animation: discordGhoulAuraPulse 3s ease-in-out infinite alternate;
+}
+.deco-ghoul-aura-ring {
+  animation: discordGhoulAuraSpin 16s linear infinite;
+  transform-origin: 50px 50px;
+}
+.deco-ghoul-faces {
+  animation: discordGhoulFacesWiggle 2.5s ease-in-out infinite alternate;
+  transform-origin: 30px 20px;
+}
+.ghoul-eye-glow {
+  animation: discordGhoulEyeBlink 1.4s ease-in-out infinite alternate;
+}
+.deco-ghoul-hands {
+  animation: discordGhoulHandsClaw 3.2s ease-in-out infinite alternate;
+  transform-origin: 50px 50px;
+}
+.deco-ghoul-wisps path {
+  animation: discordGhoulWispFloat 2s ease-in-out infinite alternate;
+}
+
+@keyframes discordGhoulAuraPulse {
+  0% {
+    filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.25));
+    transform: scale(0.985);
+  }
+  100% {
+    filter: drop-shadow(0 0 14px rgba(0, 0, 0, 1)) drop-shadow(0 0 22px rgba(255, 255, 255, 0.55));
+    transform: scale(1.03);
+  }
+}
+@keyframes discordGhoulAuraSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes discordGhoulFacesWiggle {
+  0% { transform: scale(0.97) rotate(-2deg); }
+  100% { transform: scale(1.04) rotate(3deg); }
+}
+@keyframes discordGhoulEyeBlink {
+  0% { opacity: 0.3; transform: scale(0.6); }
+  100% { opacity: 1; transform: scale(1.5); filter: drop-shadow(0 0 3px #fff); }
+}
+@keyframes discordGhoulHandsClaw {
+  0% { transform: scale(0.97) translate(0, 0); }
+  100% { transform: scale(1.05) translate(-2px, -1px); }
+}
+@keyframes discordGhoulWispFloat {
+  0% { transform: translateY(0); opacity: 0.5; }
+  100% { transform: translateY(-3px); opacity: 1; filter: drop-shadow(0 0 4px #fff); }
+}
+
 /* ========================================================
    2. VIP DISCORD PROFILE EFFECTS (BANNER & CARD OVERLAYS)
    ======================================================== */
@@ -6487,6 +6541,78 @@ button:focus-visible, input:focus-visible {
 @keyframes discordFurnaceBreath {
   0% { opacity: 0.6; height: 50px; }
   100% { opacity: 1; height: 75px; filter: drop-shadow(0 0 12px #ff4500); }
+}
+
+/* 2.4 PEEKING CAT PROFILE EFFECT */
+.discord-fx-peeking-cat {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  pointer-events: none;
+  z-index: 5;
+}
+.peeking-cat-sparkles {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.cat-sparkle {
+  color: #fef08a;
+  font-size: 16px;
+  text-shadow: 0 0 8px #fde047, 0 0 16px #f43f5e;
+  animation: catSparkleTwinkle 1.8s ease-in-out infinite alternate;
+}
+.cat-sparkle.s2 { animation-delay: 0.4s; font-size: 22px; color: #fff; }
+.cat-sparkle.s3 { animation-delay: 0.8s; font-size: 14px; }
+.cat-sparkle.s4 { animation-delay: 1.2s; font-size: 18px; color: #fbcfe8; }
+
+.peeking-cat-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 170px;
+  height: 58px;
+  animation: catBreathe 2.5s ease-in-out infinite alternate;
+  filter: drop-shadow(0 6px 14px rgba(244, 114, 182, 0.4));
+}
+.peeking-cat-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+.cat-left-ear {
+  animation: catEarTwitchLeft 4s ease-in-out infinite;
+  transform-origin: 44px 20px;
+}
+.cat-right-ear {
+  animation: catEarTwitchRight 4.5s ease-in-out infinite;
+  transform-origin: 116px 20px;
+}
+
+@keyframes catBreathe {
+  0% { transform: translateX(-50%) translateY(0); }
+  100% { transform: translateX(-50%) translateY(3px); }
+}
+@keyframes catEarTwitchLeft {
+  0%, 85%, 100% { transform: rotate(0deg); }
+  90% { transform: rotate(-8deg); }
+  95% { transform: rotate(4deg); }
+}
+@keyframes catEarTwitchRight {
+  0%, 80%, 100% { transform: rotate(0deg); }
+  85% { transform: rotate(8deg); }
+  92% { transform: rotate(-4deg); }
+}
+@keyframes catSparkleTwinkle {
+  0% { opacity: 0.3; transform: scale(0.6) rotate(0deg); }
+  100% { opacity: 1; transform: scale(1.3) rotate(45deg); filter: drop-shadow(0 0 8px #fff); }
 }
 
 /* ========================================================
