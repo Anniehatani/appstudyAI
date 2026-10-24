@@ -6298,6 +6298,20 @@ function renderSettings() {
         </div>
       </div>
 
+      <!-- QUICK THEME BAR -->
+      <div class="fb-quick-theme-bar">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;">🌓</span>
+          <div>
+            <div style="font-weight:900; font-size:14.5px; color:var(--ink-900);">Chế độ hiển thị & Màu sắc</div>
+            <div style="font-size:12.5px; color:var(--ink-500);">Chuyển đổi giữa Chế độ sáng (Light Mode) và Chế độ tối (Dark Mode) dịu mắt</div>
+          </div>
+        </div>
+        <button type="button" class="btn-duo btn-duo-white theme-toggle-btn" style="width:auto; height:auto; padding:10px 18px; font-size:13.5px; font-weight:900; display:inline-flex; align-items:center; gap:8px;" onclick="toggleAppTheme()">
+          <span>${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Đổi sang Chế độ Sáng' : '🌙 Đổi sang Chế độ Tối'}</span>
+        </button>
+      </div>
+
       <!-- 3. TWO COLUMN FACEBOOK LAYOUT -->
       <div class="fb-columns-grid">
         <!-- LEFT COLUMN: GIỚI THIỆU & HUY HIỆU -->
@@ -7956,6 +7970,12 @@ window.render = render;
 
 // Global click event listeners for data-page, data-subject, data-lesson, data-auth-tab
 document.addEventListener("click", function (e) {
+  const themeToggle = e.target.closest("#theme-toggle-btn, .theme-toggle-btn");
+  if (themeToggle) {
+    toggleAppTheme();
+    return;
+  }
+
   const streakTrigger = e.target.closest("#side-streak-card, #top-streak-btn, .top-streak");
   if (streakTrigger) {
     e.stopPropagation();
@@ -8205,4 +8225,66 @@ async function initialize() {
   }
 }
 
+// ========================================================
+// THEME MANAGEMENT SYSTEM (DARK / LIGHT MODE)
+// ========================================================
+export function initThemeSystem() {
+  const saved = localStorage.getItem("3tg_theme");
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const currentTheme = saved || (prefersDark ? "dark" : "light");
+  setAppTheme(currentTheme, false);
+
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", e => {
+      if (!localStorage.getItem("3tg_theme")) {
+        setAppTheme(e.matches ? "dark" : "light", false);
+      }
+    });
+  }
+
+  // Keyboard shortcut Ctrl+Shift+D or Alt+T
+  document.addEventListener("keydown", e => {
+    if ((e.ctrlKey && e.shiftKey && (e.key === "D" || e.key === "d")) || (e.altKey && (e.key === "t" || e.key === "T"))) {
+      e.preventDefault();
+      toggleAppTheme();
+    }
+  });
+}
+
+export function setAppTheme(theme, shouldPlaySound = true) {
+  const isDark = theme === "dark";
+  document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+  localStorage.setItem("3tg_theme", isDark ? "dark" : "light");
+
+  const btns = document.querySelectorAll("#theme-toggle-btn, .theme-toggle-btn");
+  btns.forEach(btn => {
+    btn.setAttribute("data-active-theme", isDark ? "dark" : "light");
+    btn.setAttribute("title", isDark ? "Chuyển sang Chế độ Sáng (☀️)" : "Chuyển sang Chế độ Tối (🌙)");
+  });
+
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) {
+    metaTheme.setAttribute("content", isDark ? "#0c0f17" : "#fff5f8");
+  }
+
+  if (shouldPlaySound) {
+    try { playSound("click"); } catch {}
+    showToast(isDark ? "Đã bật Chế độ tối (Dark Mode) 🌙✨" : "Đã bật Chế độ sáng (Light Mode) ☀️🌸");
+    if (state.page === "settings") {
+      render();
+    }
+  }
+}
+
+export function toggleAppTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "light";
+  const next = current === "dark" ? "light" : "dark";
+  setAppTheme(next, true);
+}
+
+window.initThemeSystem = initThemeSystem;
+window.setAppTheme = setAppTheme;
+window.toggleAppTheme = toggleAppTheme;
+
+initThemeSystem();
 initialize();

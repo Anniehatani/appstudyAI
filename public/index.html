@@ -7,9 +7,24 @@
     <meta name="description" content="3TG — Web học tập thông minh, vượt ải và tiến bộ mỗi ngày cùng Mascot Thỏ Bảy Màu.">
     <title>3TG — Học vui mỗi ngày</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/styles.css?v=3.2.3">
-    <link rel="stylesheet" href="/tho-bay-mau.css?v=3.2.3">
-    <script type="module" src="/app.js?v=3.2.3"></script>
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem("3tg_theme");
+          var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (saved === "dark" || (!saved && prefersDark)) {
+            document.documentElement.setAttribute("data-theme", "dark");
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute("content", "#0c0f17");
+          } else {
+            document.documentElement.setAttribute("data-theme", "light");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="/styles.css?v=3.2.4">
+    <link rel="stylesheet" href="/tho-bay-mau.css?v=3.2.4">
+    <script type="module" src="/app.js?v=3.2.4"></script>
   </head>
   <body>
     <div class="app-shell">
@@ -56,6 +71,10 @@
             </div>
           </div>
           <div class="topbar-right">
+            <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Chuyển chế độ sáng/tối" title="Chuyển chế độ Sáng / Tối (Ctrl+Shift+D)">
+              <span class="theme-toggle-icon icon-sun">☀️</span>
+              <span class="theme-toggle-icon icon-moon">🌙</span>
+            </button>
             <div class="top-stat top-streak" id="top-streak-btn" title="Chuỗi ngày học liên tục (Bấm để xem khu Streak xịn xò!)">
               <span class="stat-emoji">🔥</span>
               <b id="header-streak">0</b>

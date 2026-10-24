@@ -7483,3 +7483,592 @@ button:focus-visible, input:focus-visible {
   border: none !important;
 }
 
+/* ========================================================
+   THEME TOGGLE BUTTON (TOPBAR & PROFILE)
+   ======================================================== */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 2px solid var(--lumi-pink-border);
+  box-shadow: 0 4px 0 #ffd4e2;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: var(--ink-900);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--lumi-pink-soft);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #ffd4e2;
+}
+
+.theme-toggle-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #ffd4e2;
+}
+
+.theme-toggle-icon {
+  font-size: 19px;
+  line-height: 1;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+  position: absolute;
+}
+
+:root:not([data-theme="dark"]) .theme-toggle-btn .icon-sun {
+  opacity: 0;
+  transform: translateY(-24px) rotate(-90deg) scale(0.6);
+}
+:root:not([data-theme="dark"]) .theme-toggle-btn .icon-moon {
+  opacity: 1;
+  transform: translateY(0) rotate(0) scale(1);
+}
+
+/* Dark mode active -> Show Sun icon to switch to light */
+[data-theme="dark"] .theme-toggle-btn {
+  background: #1c212f;
+  border-color: rgba(255, 92, 141, 0.35);
+  box-shadow: 0 4px 0 #10131d;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .theme-toggle-btn:hover {
+  background: #252b3d;
+  box-shadow: 0 6px 0 #10131d, 0 0 16px rgba(255, 200, 0, 0.25);
+}
+
+[data-theme="dark"] .theme-toggle-btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #10131d;
+}
+
+[data-theme="dark"] .theme-toggle-btn .icon-moon {
+  opacity: 0;
+  transform: translateY(24px) rotate(90deg) scale(0.6);
+}
+[data-theme="dark"] .theme-toggle-btn .icon-sun {
+  opacity: 1;
+  transform: translateY(0) rotate(0) scale(1);
+  filter: drop-shadow(0 0 6px rgba(255, 200, 0, 0.6));
+}
+
+/* ========================================================
+   PREMIUM VELVET OBSIDIAN DARK MODE SYSTEM (:root[data-theme="dark"])
+   ======================================================== */
+:root[data-theme="dark"],
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Neutrals: Deep Obsidian Navy & Slate */
+  --bg-page: #0c0f17;
+  --bg-soft: #141824;
+  --card-bg: #1a1f2c;
+  --ink-900: #f8fafc;
+  --ink-700: #cbd5e1;
+  --ink-500: #94a3b8;
+  --ink-300: #64748b;
+  --border-light: #262c3e;
+  --border-dark: #1b202e;
+
+  /* Lumi Pink: Vibrant Neon Rose */
+  --lumi-pink: #ff5c8d;
+  --lumi-pink-dark: #b8194b;
+  --lumi-pink-hover: #ff759f;
+  --lumi-pink-light: rgba(255, 92, 141, 0.16);
+  --lumi-pink-soft: rgba(255, 92, 141, 0.08);
+  --lumi-pink-wash: rgba(255, 92, 141, 0.04);
+  --lumi-pink-border: rgba(255, 92, 141, 0.32);
+  --lumi-pink-glow: rgba(255, 92, 141, 0.45);
+
+  /* Secondary Accents */
+  --duo-blue-light: rgba(28, 176, 246, 0.16);
+  --duo-gold-light: rgba(255, 200, 0, 0.16);
+  --duo-red-light: rgba(255, 75, 75, 0.16);
+  --duo-purple-light: rgba(206, 130, 255, 0.16);
+  --feedback-green-light: rgba(88, 204, 2, 0.18);
+  --feedback-green-text: #4ade80;
+}
+
+/* Smooth theme transition */
+html, body {
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Sidebar & Navigation */
+[data-theme="dark"] .sidebar {
+  background: #121520;
+  border-right-color: rgba(255, 92, 141, 0.22);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .sidebar-label {
+  color: #64748b;
+}
+
+[data-theme="dark"] .nav-item {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .nav-item:hover {
+  background: rgba(255, 92, 141, 0.12);
+  color: #ff85aa;
+}
+
+[data-theme="dark"] .nav-item.active {
+  background: rgba(255, 92, 141, 0.18);
+  color: #ff85aa;
+  border-color: rgba(255, 92, 141, 0.35);
+  box-shadow: 0 4px 18px rgba(255, 92, 141, 0.15);
+}
+
+[data-theme="dark"] .nav-count {
+  background: rgba(255, 92, 141, 0.15);
+  color: #ff85aa;
+  border-color: rgba(255, 92, 141, 0.3);
+}
+
+[data-theme="dark"] .sidebar-bottom {
+  border-top-color: rgba(255, 92, 141, 0.2);
+}
+
+[data-theme="dark"] .streak-mini {
+  background: linear-gradient(135deg, #24190e 0%, #1c140b 100%);
+  border-color: #4a3416;
+}
+
+[data-theme="dark"] .streak-mini-top {
+  color: #f59e0b;
+}
+
+[data-theme="dark"] .streak-mini-number {
+  color: #fb923c;
+}
+
+[data-theme="dark"] .streak-mini-note {
+  color: #d97706;
+}
+
+[data-theme="dark"] .week-dot {
+  background: #23293a;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .profile-row:hover {
+  background: rgba(255, 92, 141, 0.12);
+}
+
+/* Topbar */
+[data-theme="dark"] .topbar {
+  background: rgba(18, 22, 32, 0.88);
+  backdrop-filter: blur(16px);
+  border-bottom-color: rgba(255, 92, 141, 0.2);
+}
+
+[data-theme="dark"] .subject-quick-select {
+  background: #1a1f2c;
+  border-color: rgba(255, 92, 141, 0.3);
+  box-shadow: 0 4px 0 #10131d;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .subject-quick-select:hover {
+  background: #242a3b;
+}
+
+[data-theme="dark"] .subject-tag-name {
+  color: #f8fafc;
+}
+
+/* 3D Duolingo Buttons in Dark Mode */
+[data-theme="dark"] .btn-duo-white {
+  background: #232838;
+  border-color: #353d52;
+  box-shadow: 0 5px 0 #12151e;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .btn-duo-white:hover:not(:disabled) {
+  background: #2c3347;
+  border-color: var(--lumi-pink);
+}
+
+[data-theme="dark"] .btn-duo-white:active:not(:disabled) {
+  box-shadow: 0 1px 0 #12151e;
+}
+
+/* Form Inputs, Textareas, Selects */
+[data-theme="dark"] .form-input,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background: #141724;
+  border-color: #2b3347;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .form-input:focus,
+[data-theme="dark"] input:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+  background: #171b2a;
+  border-color: var(--lumi-pink);
+  box-shadow: 0 0 0 4px rgba(255, 92, 141, 0.2);
+}
+
+[data-theme="dark"] .form-input::placeholder,
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #64748b;
+}
+
+/* Auth Entry Screen */
+[data-theme="dark"] .auth-entry-screen {
+  background: #1a1f2c;
+  border-color: rgba(255, 92, 141, 0.3);
+  box-shadow: 0 10px 0 #11141e, 0 20px 45px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .auth-switch-tabs {
+  background: #141724;
+  border-color: #283044;
+}
+
+[data-theme="dark"] .auth-switch-tab.active {
+  background: #232838;
+  color: var(--lumi-pink);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .auth-bonus-pill {
+  background: #2a2012;
+  border-color: #5c3e16;
+  color: #fbbf24;
+}
+
+/* Stage & Learning Path */
+[data-theme="dark"] .stage-pill {
+  background: #1a1f2c;
+  border-color: #2b3347;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .stage-pill:hover {
+  background: #23293a;
+  border-color: var(--lumi-pink-border);
+}
+
+[data-theme="dark"] .stage-pill.active {
+  background: rgba(255, 92, 141, 0.2);
+  border-color: var(--lumi-pink);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .stage-guidebook-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Quiz & Practice Player */
+[data-theme="dark"] .quiz-choice-btn {
+  background: #1a1f2c;
+  border-color: #2c3449;
+  box-shadow: 0 5px 0 #11141e;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .quiz-choice-btn:hover {
+  background: #23283a;
+  border-color: var(--lumi-pink-border);
+}
+
+[data-theme="dark"] .quiz-choice-btn:active {
+  box-shadow: 0 2px 0 #11141e;
+}
+
+[data-theme="dark"] .quiz-choice-btn.selected {
+  background: rgba(255, 92, 141, 0.18);
+  border-color: var(--lumi-pink);
+  box-shadow: 0 5px 0 var(--lumi-pink-dark);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .quiz-key-pill {
+  background: #141724;
+  border-color: #353e56;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .quiz-choice-btn.selected .quiz-key-pill {
+  background: var(--lumi-pink);
+  border-color: var(--lumi-pink);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .quiz-footer {
+  background: #131722;
+  border-top-color: #283044;
+}
+
+[data-theme="dark"] .quiz-footer.status-correct {
+  background: #0d2818;
+  border-top-color: #166534;
+}
+
+[data-theme="dark"] .quiz-footer.status-wrong {
+  background: #2b1114;
+  border-top-color: #991b1b;
+}
+
+/* Subject & Courses Cards */
+[data-theme="dark"] .subject-card {
+  background: #1a1f2c;
+  border-color: #2a3144;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .subject-card:hover {
+  border-color: var(--lumi-pink);
+  box-shadow: 0 12px 32px rgba(255, 92, 141, 0.22);
+}
+
+/* Facebook Profile Card */
+[data-theme="dark"] .fb-card {
+  background: #1a1f2c;
+  border-color: #2a3144;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .fb-avatar-large {
+  border-color: #1a1f2c;
+}
+
+[data-theme="dark"] .fb-avatar-camera-btn {
+  background: #232838;
+  border-color: #3a435a;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .fb-user-name {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .fb-user-handle {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .fb-cover-edit-btn {
+  background: rgba(22, 27, 38, 0.88);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .fb-cover-edit-btn:hover {
+  background: #1c212f;
+}
+
+[data-theme="dark"] .fb-btn-secondary {
+  background: #232838;
+  border-color: #384158;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .fb-btn-secondary:hover {
+  background: #2c3348;
+}
+
+[data-theme="dark"] .fb-tab-item {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .fb-tab-item:hover {
+  color: var(--lumi-pink);
+  background: rgba(255, 92, 141, 0.08);
+}
+
+[data-theme="dark"] .fb-tab-item.active {
+  color: var(--lumi-pink);
+}
+
+[data-theme="dark"] .fb-stat-box {
+  background: #141724;
+  border-color: #283044;
+}
+
+/* Quick Theme Bar inside Profile Settings */
+.fb-quick-theme-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+[data-theme="dark"] .fb-quick-theme-bar {
+  background: #141724;
+  border-color: #283044;
+}
+
+/* Modals & Overlays */
+[data-theme="dark"] .modal,
+[data-theme="dark"] .modal-card,
+[data-theme="dark"] .academic-modal-card,
+[data-theme="dark"] .streak-modal-card,
+[data-theme="dark"] .mascot-detail-modal-card,
+[data-theme="dark"] .user-profile-modal-card {
+  background: #1a1f2c;
+  border: 2px solid #2e364c;
+  color: #f8fafc;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .user-profile-close-btn {
+  background: #232838;
+  border-color: #38415a;
+  color: #f8fafc;
+}
+
+/* Preview Modal in Dark Mode */
+[data-theme="dark"] .discord-preview-card {
+  background: linear-gradient(180deg, #1f2433 0%, #171a25 100%);
+  border-color: #38415a;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .discord-preview-body {
+  background: transparent;
+}
+
+/* Shop & Cards */
+[data-theme="dark"] .discord-wallpaper-card {
+  background: linear-gradient(165deg, #1c2130 0%, #151824 100%);
+  border-color: #2b3348;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .discord-wallpaper-card:hover {
+  border-color: #38bdf8;
+  box-shadow: 0 12px 28px rgba(56, 189, 248, 0.2);
+}
+
+[data-theme="dark"] .discord-nitro-compact-card {
+  background: linear-gradient(165deg, #1c2130 0%, #151824 100%);
+  border-color: #2b3348;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .discord-nitro-compact-card:hover {
+  border-color: var(--lumi-pink);
+  box-shadow: 0 12px 28px rgba(255, 92, 141, 0.22);
+}
+
+[data-theme="dark"] .discord-nitro-card-name {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .mascot-pack-compact-card {
+  background: #1c212f;
+  border-color: #2b3348;
+}
+
+/* Academic & IU Grades */
+[data-theme="dark"] .academic-transcript-table {
+  border-color: #2b3348;
+}
+
+[data-theme="dark"] .academic-transcript-table th {
+  background: #141724;
+  color: #94a3b8;
+  border-color: #2b3348;
+}
+
+[data-theme="dark"] .academic-transcript-table td {
+  border-color: #23293a;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .academic-transcript-table tr:hover td {
+  background: #23293a;
+}
+
+/* Notes View */
+[data-theme="dark"] .note-card {
+  background: #1c212f;
+  border-color: #2b3348;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .quick-lesson-drawer {
+  background: #1a1f2c;
+  border-left-color: #2b3348;
+  color: #f8fafc;
+}
+
+/* Chat & Messages */
+[data-theme="dark"] .chat-conversation-sidebar {
+  background: #141724;
+  border-right-color: #283044;
+}
+
+[data-theme="dark"] .chat-bubble-ai {
+  background: #1c212f;
+  border-color: #2b3348;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .chat-bubble-user {
+  background: var(--lumi-pink);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .chat-input-bar {
+  background: #141724;
+  border-color: #283044;
+}
+
+/* Mascot Speech Bubble */
+[data-theme="dark"] .tho-speech-bubble {
+  background: #222738;
+  border-color: #ffccd9;
+  color: #f8fafc;
+  box-shadow: 0 4px 0 #121520, 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .tho-speech-bubble.bubble-top::after,
+[data-theme="dark"] .tho-speech-bubble.bubble-right::after,
+[data-theme="dark"] .tho-speech-bubble.bubble-left::after {
+  background: #222738 !important;
+  border-color: #ffccd9 !important;
+}
+
+/* Empty States & Dividers */
+[data-theme="dark"] .empty-state {
+  background: #1c212f !important;
+  border-color: #2e374e !important;
+}
+
+[data-theme="dark"] .app-footer {
+  border-top-color: #202636;
+  color: #64748b;
+}
+
+[data-theme="dark"] .fb-avatar-container .discord-avatar-container .avatar-base {
+  border-color: #1a1f2c;
+}
+
