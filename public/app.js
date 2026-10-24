@@ -5800,127 +5800,144 @@ window.closeAcademicModal = function(e) {
   if (modalRoot) modalRoot.innerHTML = "";
 };
 
-function getIuBookmarkletCode() {
-  const targetOrigin = window.location.origin;
-  return `(async function() {
-    try {
-      var toast = document.createElement("div");
-      toast.id = "tho-sync-toast";
-      toast.style.cssText = "position:fixed;top:20px;right:20px;z-index:9999999;background:#db2777;color:#fff;padding:16px 22px;border-radius:14px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;font-weight:700;box-shadow:0 12px 36px rgba(0,0,0,0.35);display:flex;align-items:center;gap:12px;border:2px solid #fff;max-width:420px;line-height:1.4;";
-      toast.innerHTML = "<span>🐰</span><span>Thỏ 3TG đang kết nối cổng IU để kéo bảng điểm...</span>";
-      document.body.appendChild(toast);
-
-      var progId = "";
-      try {
-        var pRes = await fetch("/congthongtin/api/KetQuaHocTapCaNhan/LayThongTinChuongTrinhHoc");
-        if (pRes.ok) {
-          var pData = await pRes.json();
-          var pList = Array.isArray(pData) ? pData : (pData.results || pData.data || []);
-          if (pList.length && (pList[0].DAOTAO_TOCHUCCHUONGTRINH_ID || pList[0].ID)) {
-            progId = pList[0].DAOTAO_TOCHUCCHUONGTRINH_ID || pList[0].ID;
-          }
-        }
-      } catch(e){}
-
-      var url = "/congthongtin/api/KetQuaHocTapCaNhan/LayKetQuaHocTapCaNhan?strDaoTao_ChuongTrinh_Id=" + encodeURIComponent(progId) + "&strChucNang_Id=20160101";
-      var res = await fetch(url);
-      if (!res.ok) throw new Error("Cổng IU trả về lỗi HTTP " + res.status + ". Hãy đảm bảo bạn đã đăng nhập cổng IU bằng Microsoft!");
-      var data = await res.json();
-
-      var studentName = "";
-      var nameEl = document.querySelector("#lblTenDangNhap, #lblUser, .user-name, #ctl00_lblTenDangNhap, #lblHoTen");
-      if (nameEl) studentName = nameEl.textContent.replace(/\\(.*?\\)/g, "").trim();
-
-      var postRes = await fetch("${targetOrigin}/api/academic/import-data", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rawData: data,
-          student: { ho_ten: studentName }
-        })
-      });
-      var postJson = await postRes.json();
-      if (postJson.ok) {
-        toast.style.background = "#16a34a";
-        toast.innerHTML = "<span>🎉</span><span>Đã kéo bảng điểm thành công! Hãy quay lại tab 3TG để xem phân tích và GPA nhé!</span>";
-        setTimeout(function(){ toast.remove(); }, 6000);
-      } else {
-        throw new Error(postJson.message || "Không thể lưu dữ liệu bảng điểm");
-      }
-    } catch(err) {
-      alert("❌ Lỗi kéo điểm 3TG: " + (err.message || err));
-      var t = document.getElementById("tho-sync-toast");
-      if (t) t.remove();
-    }
-  })();`;
-}
-
-window.copyIuBookmarkletCode = function() {
-  const code = getIuBookmarkletCode();
-  function fallbackCopy(text) {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    ta.remove();
-    showToast("📋 Đã sao chép mã 1-Click! Hãy sang tab Cổng trường IU, mở Console (F12) và dán (Ctrl+V) rồi Enter nhé!", false);
+window.handleIuPortalLogin = async function() {
+  const btn = document.getElementById("btn-iu-popup-login");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-dot"></span> Đang mở cửa sổ đăng nhập cổng IU…`;
   }
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(code).then(() => {
-      showToast("📋 Đã sao chép mã 1-Click! Hãy sang tab Cổng trường IU, mở Console (F12) và dán (Ctrl+V) rồi Enter nhé!", false);
-    }).catch(() => {
-      fallbackCopy(code);
-    });
-  } else {
-    fallbackCopy(code);
-  }
-};
 
-window.openIuMicrosoftPortal = function() {
-  const msUrl = "https://iu.cmcu.edu.vn/congthongtin/login.aspx";
-  window.open(msUrl, "_blank");
-  window.startAcademicSyncPolling();
-  showToast("🐰 Đã mở tab Cổng IU. Bạn đăng nhập Microsoft trường xong rồi bấm Thỏ Kéo Điểm nhé!", false);
-};
-
-window.startAcademicSyncPolling = function() {
-  if (window.academicSyncInterval) clearInterval(window.academicSyncInterval);
-  window.academicSyncInterval = setInterval(async () => {
+  // 1. NẾU CHẠY TRONG ELECTRON DESKTOP: Tự mở cửa sổ, tự đóng khi đăng nhập xong, tự đục bảng điểm!
+  if (window.electronAPI && typeof window.electronAPI.openIuLogin === "function") {
     try {
-      const res = await api("/api/academic/transcript");
-      if (res && res.hasTranscript && res.transcript) {
-        clearInterval(window.academicSyncInterval);
-        window.academicSyncInterval = null;
-        state.academicTranscript = res;
+      showAppLoader("Đang mở cửa sổ đăng nhập IU… 🎓", "Vui lòng đăng nhập trên cửa sổ cổng trường. Sau khi đăng nhập xong, cửa sổ sẽ tự đóng và điểm sẽ tự động được đục về!");
+      const res = await window.electronAPI.openIuLogin();
+      if (res && res.ok && res.transcript) {
+        state.academicTranscript = {
+          hasTranscript: true,
+          transcript: res.transcript,
+          lastSyncedAt: res.lastSyncedAt || new Date().toISOString()
+        };
         window.closeAcademicModal();
-        showToast(`🎉 Tuyệt vời! Đã đồng bộ thành công bảng điểm của ${res.transcript.student.ho_ten}!`, false);
+        showToast(`🎉 Tuyệt vời! Tool đã đục thành công bảng điểm của ${res.transcript.student.ho_ten}!`, false);
         if (typeof launchConfetti === "function") launchConfetti();
         updateShell();
         render();
+      } else if (res && res.cancelled) {
+        showToast("Đã đóng cửa sổ đăng nhập IU.", true);
+      } else {
+        showToast("Lỗi khi đục dữ liệu IU: " + (res?.error || "Không thể tải bảng điểm"), true);
+      }
+    } catch (err) {
+      showToast("Lỗi kết nối Electron: " + err.message, true);
+    } finally {
+      hideAppLoader();
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg width="22" height="22" viewBox="0 0 21 21">
+            <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+            <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+            <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+            <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+          </svg>
+          <span>Đăng Nhập Cổng Trường IU (Microsoft)</span>
+        `;
+      }
+    }
+    return;
+  }
+
+  // 2. NẾU CHẠY TRÊN TRÌNH DUYỆT WEB (Chrome / Edge / Firefox):
+  const loginUrl = "https://iu.cmcu.edu.vn/congthongtin/login.aspx";
+  const popup = window.open(loginUrl, "iu_login_popup", "width=900,height=750,left=200,top=100");
+
+  showToast("🐰 Đã mở cửa sổ đăng nhập Cổng IU! Bạn đăng nhập xong thì đóng cửa sổ lại để Thỏ đục điểm nhé!", false);
+
+  if (btn) {
+    btn.innerHTML = `<span class="spinner-dot"></span> Đang chờ bạn đăng nhập trên Cổng IU…`;
+  }
+
+  // Bật polling kiểm tra dữ liệu hoặc khi cửa sổ đóng
+  let hasScraped = false;
+  const pollTimer = setInterval(async () => {
+    try {
+      const chk = await api("/api/academic/transcript");
+      if (chk && chk.hasTranscript && chk.transcript) {
+        clearInterval(pollTimer);
+        try { if (popup && !popup.closed) popup.close(); } catch {}
+        state.academicTranscript = chk;
+        window.closeAcademicModal();
+        showToast(`🎉 Tuyệt vời! Tool đã đục thành công bảng điểm của ${chk.transcript.student.ho_ten}!`, false);
+        if (typeof launchConfetti === "function") launchConfetti();
+        updateShell();
+        render();
+        return;
       }
     } catch {}
-  }, 2500);
-};
 
-window.checkAcademicTranscriptStatus = async function() {
-  try {
-    showToast("Đang kiểm tra bảng điểm...", false);
-    const res = await api("/api/academic/transcript");
-    if (res && res.hasTranscript && res.transcript) {
-      if (window.academicSyncInterval) clearInterval(window.academicSyncInterval);
-      state.academicTranscript = res;
-      window.closeAcademicModal();
-      showToast(`🎉 Đã đồng bộ bảng điểm của ${res.transcript.student.ho_ten}!`, false);
-      if (typeof launchConfetti === "function") launchConfetti();
-      updateShell();
-      render();
-    } else {
-      showToast("Chưa nhận được bảng điểm từ cổng IU. Vui lòng thực hiện Bước 1 và Bước 2!", true);
+    if (popup && popup.closed && !hasScraped) {
+      hasScraped = true;
+      clearInterval(pollTimer);
+
+      showAppLoader("Đang kích hoạt tool đục bảng điểm IU… 🎓", "Cửa sổ đã đóng, đang đồng bộ dữ liệu bảng điểm và GPA…");
+      try {
+        const scrapeRes = await api("/api/academic/scrape-iu", { method: "POST" });
+        if (scrapeRes && scrapeRes.ok && scrapeRes.transcript) {
+          state.academicTranscript = {
+            hasTranscript: true,
+            transcript: scrapeRes.transcript,
+            lastSyncedAt: scrapeRes.lastSyncedAt
+          };
+          window.closeAcademicModal();
+          showToast(`🎉 Tool đã đục thành công bảng điểm của ${scrapeRes.transcript.student.ho_ten}!`, false);
+          if (typeof launchConfetti === "function") launchConfetti();
+          updateShell();
+          render();
+        } else {
+          const finalCheck = await api("/api/academic/transcript");
+          if (finalCheck && finalCheck.hasTranscript && finalCheck.transcript) {
+            state.academicTranscript = finalCheck;
+            window.closeAcademicModal();
+            showToast(`🎉 Đã cập nhật bảng điểm của ${finalCheck.transcript.student.ho_ten}!`, false);
+            if (typeof launchConfetti === "function") launchConfetti();
+            updateShell();
+            render();
+          } else {
+            showToast("Chưa nhận được bảng điểm. Vui lòng thử đăng nhập lại hoặc nhập mã sinh viên bên dưới!", true);
+            if (btn) {
+              btn.disabled = false;
+              btn.innerHTML = `
+                <svg width="22" height="22" viewBox="0 0 21 21">
+                  <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                  <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                  <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                  <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                </svg>
+                <span>Đăng Nhập Cổng Trường IU (Microsoft)</span>
+              `;
+            }
+          }
+        }
+      } catch (err) {
+        showToast("Lỗi khi đục dữ liệu: " + err.message, true);
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `
+            <svg width="22" height="22" viewBox="0 0 21 21">
+              <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+              <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+              <rect x="11" y="11" width="9" height="9" fill="#00a4ef"/>
+              <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+            </svg>
+            <span>Đăng Nhập Cổng Trường IU (Microsoft)</span>
+          `;
+        }
+      } finally {
+        hideAppLoader();
+      }
     }
-  } catch (err) {
-    showToast("Chưa có dữ liệu bảng điểm: " + err.message, true);
-  }
+  }, 1000);
 };
 
 window.openAcademicLoginModal = function() {
@@ -5930,8 +5947,6 @@ window.openAcademicLoginModal = function() {
 function renderAcademicLoginModal() {
   const modalRoot = document.getElementById("modal-root");
   if (!modalRoot) return;
-
-  const bookmarkletCode = "javascript:" + encodeURIComponent(getIuBookmarkletCode());
 
   modalRoot.innerHTML = `
     <div class="modal-backdrop" onclick="window.closeAcademicModal(event)">
@@ -5943,80 +5958,31 @@ function renderAcademicLoginModal() {
             ${renderThoBayMau({
               state: THO_STATES.SURPRISED_CARROT,
               size: 90,
-              speech: "Đăng nhập Microsoft trường để Thỏ kéo bảng điểm nhé! 🐰✨",
+              speech: "Nhấn nút để đăng nhập cổng IU, Thỏ sẽ tự động đục bảng điểm về nhé! 🐰✨",
               speechDirection: "top"
             })}
           </div>
           <div>
-            <h3 class="academic-modal-title">Kết Nối Bảng Điểm Cổng Trường IU</h3>
+            <h3 class="academic-modal-title">Đăng Nhập Cổng Trường IU</h3>
             <p class="academic-modal-subtitle">Trường Đại học CMC (CMC University) • <strong>iu.cmcu.edu.vn</strong></p>
           </div>
         </div>
 
         <div class="academic-modal-body">
-          <!-- PHƯƠNG THỨC 1: MICROSOFT SSO TRƯỜNG CẤP -->
-          <div style="margin-bottom: 6px;">
-            <button type="button" class="btn-microsoft-sso" onclick="window.openIuMicrosoftPortal()">
-              <svg width="20" height="20" viewBox="0 0 21 21">
+          <!-- NÚT DUY NHẤT: ĐĂNG NHẬP CỔNG IU -->
+          <div class="iu-single-action-box">
+            <button type="button" id="btn-iu-popup-login" class="btn-microsoft-sso" onclick="window.handleIuPortalLogin()">
+              <svg width="22" height="22" viewBox="0 0 21 21">
                 <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
                 <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
                 <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
                 <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
               </svg>
-              <span>Đăng Nhập Bằng Microsoft Trường (Office 365)</span>
+              <span>Đăng Nhập Cổng Trường IU (Microsoft)</span>
             </button>
-          </div>
-
-          <div class="ms-guide-box">
-            <div class="ms-guide-title">
-              <span>⚡</span>
-              <span>Đồng Bộ Điểm Tự Động 1-Click Cho Sinh Viên CMCU</span>
-            </div>
-            
-            <div class="ms-step-row">
-              <div class="ms-step-num">1</div>
-              <div class="ms-step-content">
-                <strong>Mở Cổng Trường & Đăng Nhập Microsoft:</strong>
-                <p style="margin: 4px 0 8px 0; color: #64748b;">Bấm mở cổng trường, chọn <em>"Đăng nhập bằng Microsoft"</em> và dùng email <code>@st.cmcu.edu.vn</code>.</p>
-                <div class="ms-step-actions">
-                  <button type="button" class="ms-btn-action ms-btn-blue" onclick="window.openIuMicrosoftPortal()">
-                    🚀 Mở Cổng IU Đăng Nhập Microsoft ↗
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="ms-step-row">
-              <div class="ms-step-num">2</div>
-              <div class="ms-step-content">
-                <strong>Kéo Bảng Điểm Về 3TG (Chọn 1 trong 2 cách):</strong>
-                <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
-                  <div>
-                    <span style="font-size: 12px; font-weight: 700; color: #475569;">Cách A: Kéo thả nút này lên thanh Dấu trang (Bookmark):</span><br>
-                    <a class="ms-bookmark-pill" href="${bookmarkletCode}" title="Kéo nút này thả lên thanh Dấu Trang của trình duyệt" onclick="event.preventDefault(); window.copyIuBookmarkletCode();">
-                      🐰 Thỏ Kéo Điểm IU (Kéo lên Bookmark)
-                    </a>
-                    <span style="font-size: 11px; color: #94a3b8; margin-left: 6px;">(Ở tab IU bấm nút Bookmark này là điểm tự bay về!)</span>
-                  </div>
-                  <div>
-                    <span style="font-size: 12px; font-weight: 700; color: #475569;">Cách B: Hoặc sao chép mã 1-Click dán vào tab Cổng trường:</span><br>
-                    <button type="button" class="ms-btn-action ms-btn-pink" onclick="window.copyIuBookmarkletCode()">
-                      📋 Sao Chép Mã Đồng Bộ 1-Click
-                    </button>
-                    <span style="font-size: 11px; color: #94a3b8; margin-left: 6px;">(Tại tab IU: Bấm F12 &rarr; Console &rarr; Dán Ctrl+V &rarr; Enter)</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style="margin-top: 14px; padding-top: 10px; border-top: 1px dashed #cbd5e1; display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 12px; color: #64748b; display: flex; align-items: center; gap: 6px;">
-                <span class="spinner-dot"></span> Đang chờ tín hiệu bảng điểm từ tab IU...
-              </span>
-              <button type="button" class="ms-btn-action ms-btn-outline" onclick="window.checkAcademicTranscriptStatus()">
-                🔄 Kiểm tra ngay
-              </button>
-            </div>
+            <p class="iu-single-hint">
+              Nhấn nút để mở cửa sổ đăng nhập cổng trường. Sau khi đăng nhập xong, đóng cửa sổ lại và Thỏ sẽ tự động dùng tool đục bảng điểm về cho bạn!
+            </p>
           </div>
 
           <!-- ĐƯỜNG PHÂN CÁCH -->

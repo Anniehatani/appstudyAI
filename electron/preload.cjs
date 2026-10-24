@@ -8,5 +8,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   reload: () => ipcRenderer.invoke("app:reload"),
   minimize: () => ipcRenderer.invoke("window:minimize"),
   maximize: () => ipcRenderer.invoke("window:maximize"),
-  close: () => ipcRenderer.invoke("window:close")
+  close: () => ipcRenderer.invoke("window:close"),
+  openIuLogin: () => ipcRenderer.invoke("academic:open-iu-login")
 });

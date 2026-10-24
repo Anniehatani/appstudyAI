@@ -126,6 +126,89 @@ ipcMain.handle("window:maximize", () => {
 });
 ipcMain.handle("window:close", () => mainWindow?.close());
 
+ipcMain.handle("academic:open-iu-login", async () => {
+  return new Promise((resolve) => {
+    let resolved = false;
+
+    const loginWin = new BrowserWindow({
+      parent: mainWindow,
+      modal: true,
+      width: 900,
+      height: 750,
+      minWidth: 700,
+      minHeight: 600,
+      title: "Đăng Nhập Cổng Trường IU (CMC University)",
+      autoHideMenuBar: true,
+      backgroundColor: "#ffffff",
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true
+      }
+    });
+
+    loginWin.webContents.setWindowOpenHandler(() => {
+      return { action: "allow" };
+    });
+
+    const targetUrl = "https://iu.cmcu.edu.vn/congthongtin/login.aspx";
+    loginWin.loadURL(targetUrl);
+
+    async function checkAuthSuccess(currentUrl) {
+      if (resolved) return;
+      if (!currentUrl || !/Index\.aspx/i.test(currentUrl)) return;
+      resolved = true;
+
+      try {
+        const cookies = await loginWin.webContents.session.cookies.get({ domain: "cmcu.edu.vn" });
+        const cookieStr = cookies.map(c => `${c.name}=${c.value}`).join("; ");
+
+        let studentName = "";
+        let tokenJWT = "";
+        try {
+          const evalRes = await loginWin.webContents.executeJavaScript(`
+            (function() {
+              var name = document.querySelector("#lblTenDangNhap, #lblUser, .user-name, #ctl00_lblTenDangNhap, #lblHoTen")?.innerText || "";
+              var axyz = window.AXYZCLRVN || (document.body.innerText.match(/AXYZCLRVN.*?([A-Za-z0-9+/=]{30,})/)||[])[1] || "";
+              return { name: name.trim(), axyz: axyz };
+            })()
+          `);
+          studentName = evalRes.name || "";
+          tokenJWT = evalRes.axyz || "";
+        } catch {}
+
+        try { loginWin.close(); } catch {}
+
+        // Dùng tool scraper backend để đục bảng điểm từ cổng IU
+        const postRes = await fetch("http://127.0.0.1:8787/api/academic/import-data", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cookie: cookieStr,
+            token: tokenJWT,
+            student: { ho_ten: studentName }
+          })
+        });
+
+        const data = await postRes.json();
+        resolve(data);
+      } catch (err) {
+        resolve({ ok: false, error: err.message });
+      }
+    }
+
+    loginWin.webContents.on("did-navigate", (e, url) => checkAuthSuccess(url));
+    loginWin.webContents.on("did-navigate-in-page", (e, url) => checkAuthSuccess(url));
+    loginWin.webContents.on("did-finish-load", () => checkAuthSuccess(loginWin.webContents.getURL()));
+
+    loginWin.on("closed", () => {
+      if (!resolved) {
+        resolved = true;
+        resolve({ ok: false, cancelled: true });
+      }
+    });
+  });
+});
+
 app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {

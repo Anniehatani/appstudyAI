@@ -2210,6 +2210,20 @@ async function handleGetAcademicTranscript(user, env) {
   }
 }
 
+async function handleAcademicScrapeIU(request, user, env) {
+  const row = await env.DB.prepare(`
+    SELECT raw_data, last_synced_at FROM user_academic_transcripts WHERE user_id = ? LIMIT 1
+  `).bind(user.userId).first();
+
+  if (row && row.raw_data) {
+    try {
+      const parsed = JSON.parse(row.raw_data);
+      return { ok: true, transcript: parsed, lastSyncedAt: row.last_synced_at };
+    } catch {}
+  }
+  return { ok: false, error: "Chưa có dữ liệu bảng điểm. Hãy đảm bảo bạn đã đăng nhập cổng IU!" };
+}
+
 async function handleAcademicAdvisor(request, user, env) {
   const body = await readJson(request);
   const targetGpa = Number(body.targetGpa) || 3.2;
@@ -2309,6 +2323,7 @@ async function routeApi(request, env) {
   }
   const user = await requireUser(request, env);
   if (path === "/api/academic/login-iu" && method === "POST") return respond(await handleAcademicLoginIU(request, user, env));
+  if (path === "/api/academic/scrape-iu" && method === "POST") return respond(await handleAcademicScrapeIU(request, user, env));
   if (path === "/api/academic/transcript" && method === "GET") return respond(await handleGetAcademicTranscript(user, env));
   if (path === "/api/academic/advisor" && method === "POST") return respond(await handleAcademicAdvisor(request, user, env));
   if (path === "/api/me" && method === "GET") {
