@@ -79,6 +79,25 @@ async function startEmbeddedServer(rootPath, port = 8787) {
       try {
         const { DatabaseSync } = require("node:sqlite");
         const sqliteDb = new DatabaseSync(sPath);
+        try {
+          sqliteDb.exec(`
+            CREATE TABLE IF NOT EXISTS user_academic_transcripts (
+              user_id TEXT PRIMARY KEY,
+              student_code TEXT,
+              full_name TEXT,
+              major TEXT,
+              class_name TEXT,
+              gpa_10 REAL,
+              gpa_4 REAL,
+              total_credits INTEGER,
+              raw_data TEXT,
+              ai_analysis TEXT,
+              target_gpa REAL,
+              last_synced_at TEXT,
+              created_at TEXT
+            );
+          `);
+        } catch {}
         envVars.DB = {
           prepare(sql) {
             return {

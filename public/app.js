@@ -5995,45 +5995,7 @@ function renderAcademicLoginModal() {
 
 window.submitAcademicLogin = async function(e) {
   if (e) e.preventDefault();
-  const username = document.getElementById("iu-login-user")?.value.trim();
-  const password = document.getElementById("iu-login-pass")?.value.trim();
-  if (!username || !password) {
-    showToast("Vui lòng nhập tài khoản và mật khẩu cổng IU!", true);
-    return;
-  }
-  const btn = document.getElementById("iu-submit-btn");
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-dot"></span> Đang kết nối cổng trường IU…`;
-  }
-  try {
-    showAppLoader("Đang cào dữ liệu từ cổng IU CMCU… 🎓", "Đăng nhập xác thực và tải bảng điểm chi tiết các kỳ…");
-    setAppLoaderProgress(30);
-    const res = await api("/api/academic/login-iu", {
-      method: "POST",
-      body: { username, password }
-    });
-    setAppLoaderProgress(85);
-    if (res.ok && res.transcript) {
-      state.academicTranscript = {
-        hasTranscript: true,
-        transcript: res.transcript,
-        lastSyncedAt: res.lastSyncedAt
-      };
-      window.closeAcademicModal();
-      showToast(`✅ Đã kết nối thành công bảng điểm của sinh viên ${res.transcript.student.ho_ten}!`, false);
-      updateShell();
-      render();
-    }
-  } catch (err) {
-    showToast("Đăng nhập IU thất bại: " + err.message, true);
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = `🚀 Đăng Nhập & Cào Điểm Trực Tiếp`;
-    }
-  } finally {
-    hideAppLoader();
-  }
+  return window.handleIuPortalLogin();
 };
 
 window.requestAcademicAdvisor = async function(targetGpa) {

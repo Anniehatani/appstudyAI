@@ -2090,9 +2090,10 @@ async function handleAcademicImportData(request, user, env) {
     if (rawInput.raw_subjects) {
       rawSubjects = rawInput.raw_subjects;
       studentInfo = rawInput.student || {};
-    } else if (rawInput.IU && rawInput.IU.goc_hoc_tap && rawInput.IU.goc_hoc_tap.tra_cuu_diem && rawInput.IU.goc_hoc_tap.tra_cuu_diem.bang_diem) {
-      rawSubjects = rawInput.IU.goc_hoc_tap.tra_cuu_diem.bang_diem;
-      studentInfo = (rawInput.IU.ho_so_sinh_vien && rawInput.IU.ho_so_sinh_vien.thong_tin_ca_nhan) || {};
+    } else if (rawInput.IU) {
+      const traCuu = rawInput.IU.goc_hoc_tap && rawInput.IU.goc_hoc_tap.tra_cuu_diem;
+      rawSubjects = (traCuu && Array.isArray(traCuu.bang_diem)) ? traCuu.bang_diem : [];
+      studentInfo = (rawInput.IU.ho_so_sinh_vien && rawInput.IU.ho_so_sinh_vien.thong_tin_ca_nhan) || studentInfo || {};
     } else if (rawInput.rsDiemKetThucHocPhan || (rawInput.data && rawInput.data.rsDiemKetThucHocPhan)) {
       const src = rawInput.rsDiemKetThucHocPhan ? rawInput : rawInput.data;
       const r = (src.rsThongTinNguoiHoc && src.rsThongTinNguoiHoc[0]) || {};
@@ -2139,6 +2140,8 @@ async function handleAcademicImportData(request, user, env) {
       });
     } else if (Array.isArray(rawInput)) {
       rawSubjects = rawInput;
+    } else if (body.cookie || body.token || rawInput.cookie || rawInput.token) {
+      rawSubjects = [];
     } else {
       throw new HttpError(400, "Định dạng dữ liệu bảng điểm không hợp lệ.");
     }
