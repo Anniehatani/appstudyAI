@@ -663,8 +663,14 @@ function updateShell() {
     if (avatarBtn) avatarBtn.style.display = "flex";
 
     const avatarHtml = renderDecoratedAvatar(state.profile.avatar_url, state.profile.avatar_decoration, 38, name);
-    if (sideAvatar) sideAvatar.innerHTML = avatarHtml;
-    if (topAvatar) topAvatar.innerHTML = avatarHtml;
+    if (sideAvatar) {
+      sideAvatar.classList.toggle("with-nitro", !!state.profile.avatar_decoration);
+      sideAvatar.innerHTML = avatarHtml;
+    }
+    if (topAvatar) {
+      topAvatar.classList.toggle("with-nitro", !!state.profile.avatar_decoration);
+      topAvatar.innerHTML = avatarHtml;
+    }
   }
 
   // Side week tracker
@@ -943,8 +949,10 @@ async function loadAuthenticatedData() {
     if (academicRes && academicRes.hasTranscript) {
       state.academicTranscript = academicRes;
     }
-    if (overviewRes && overviewRes.stats) {
-      state.stats = overviewRes.stats;
+    if (overviewRes) {
+      if (overviewRes.stats) state.stats = overviewRes.stats;
+      if (overviewRes.profile) state.profile = Object.assign({}, state.profile, overviewRes.profile);
+      if (overviewRes.inventory) state.inventory = overviewRes.inventory;
     }
     if (state.currentSubjectId) {
       state.subjectDetail = await api(`/api/subjects/${state.currentSubjectId}`);
@@ -3255,6 +3263,69 @@ window.previewDiscordItem = function(itemCode) {
 };
 window.previewDiscordItem = previewDiscordItem;
 
+window.openMascotDetailModal = function(key) {
+  try { playSound("click"); } catch {}
+  const meta = THO_METADATA[key] || { name: key, quote: "" };
+  const isUnlocked = isMascotUnlocked(key);
+  const isEquipped = state.profile && (state.profile.avatar_url === `mascot:${key}`);
+
+  let packName = "Mascot Mặc Định Sẵn Có";
+  let packCode = null;
+  if (MASCOT_PACKS.mascot_pack_champions.keys.includes(key)) {
+    packName = "Gói 1: Thỏ Chiến Thần & Đỉnh Cao";
+    packCode = "mascot_pack_champions";
+  } else if (MASCOT_PACKS.mascot_pack_cosplay.keys.includes(key)) {
+    packName = "Gói 2: Thỏ Hóa Trang Anime";
+    packCode = "mascot_pack_cosplay";
+  }
+
+  modalRoot.innerHTML = `
+    <div class="discord-preview-modal-overlay" onclick="closeUserProfileModal(event)">
+      <div class="mascot-detail-modal-card" onclick="event.stopPropagation()">
+        <button type="button" class="user-profile-close-btn" style="position:absolute; top:12px; right:12px; z-index:10;" onclick="closeUserProfileModal()">✕</button>
+        
+        <div class="mascot-detail-img-wrap">
+          ${generateThoBayMauSvg({ state: key, size: 110 })}
+        </div>
+
+        <h3 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0 0 4px;">${esc(meta.name)}</h3>
+        <span style="font-size:11.5px; font-weight:800; color:${isUnlocked ? '#16a34a' : '#d97706'}; background:${isUnlocked ? '#dcfce7' : '#fef3c7'}; padding:3px 10px; border-radius:999px;">
+          ${isUnlocked ? '✓ Đã mở khóa' : '🔒 Đang khóa'} • ${esc(packName)}
+        </span>
+
+        <div class="mascot-detail-quote">
+          "${esc(meta.quote || "Học bài đi đừng để tao nhắc! 🌸")}"
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          ${isEquipped ? `
+            <button type="button" class="btn-duo btn-duo-green" style="width:100%; padding:10px;" disabled>
+              ✓ Đang sử dụng làm Avatar
+            </button>
+          ` : isUnlocked ? `
+            <button type="button" class="btn-duo btn-duo-pink" style="width:100%; padding:10px; font-weight:900;" onclick="equipMascot('${esc(key)}'); closeUserProfileModal();">
+              🌸 Chọn dùng làm Avatar đại diện
+            </button>
+          ` : `
+            <button type="button" class="btn-duo btn-duo-pink" style="width:100%; padding:10px; font-weight:900;" onclick="buyItem('${esc(packCode)}'); closeUserProfileModal();">
+              Mở khóa trọn gói (💎 150)
+            </button>
+          `}
+          <button type="button" class="btn-duo btn-duo-white" style="width:100%; padding:8px;" onclick="closeUserProfileModal()">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+window.switchShopTab = function(tab) {
+  try { playSound("click"); } catch {}
+  state.shopTab = tab;
+  render();
+};
+
 // ========================================================
 // SHOP (CỬA HÀNG ĐÁ QUÝ)
 // ========================================================
@@ -3359,204 +3430,218 @@ function renderShop() {
     `;
   }).join("");
 
+  state.shopTab = state.shopTab || "nitro";
+  const userAvatar = state.profile?.avatar_url || "";
+  const userName = state.profile?.full_name || state.profile?.username || "3TG";
+
   return `
     <div>
-      <div class="banner-with-mascot" style="margin-bottom:24px;">
+      <div class="banner-with-mascot" style="margin-bottom:20px; padding:18px 24px;">
         <div>
-          <h1 class="page-title" style="margin-bottom:6px;">Tiệm Tạp Hóa 3TG 🏪</h1>
-          <p class="page-subtitle" style="margin:0 0 12px 0;">Dùng Đá quý 💎 tích lũy từ các bài học để mở khóa 2 Gói Mascot Thỏ Bảy Màu độc quyền và sắm bùa bảo vệ chuỗi!</p>
-          <div class="top-stat top-gems" style="font-size:18px; display:inline-flex;">
+          <h1 class="page-title" style="margin-bottom:4px; font-size:24px;">Tiệm Tạp Hóa 3TG 🏪</h1>
+          <p class="page-subtitle" style="margin:0 0 10px 0; font-size:13.5px;">Dùng Đá quý 💎 tích lũy từ các bài học để mở khóa Hiệu ứng Discord Nitro 0 💎, Mascot Thỏ và Bùa học tập!</p>
+          <div class="top-stat top-gems" style="font-size:16px; display:inline-flex;">
             <span>💎</span> <b>${state.stats.gems || 0}</b> Đá quý hiện có
           </div>
         </div>
-        <div class="banner-mascot-aside page-inline-mascot">
-          ${renderThoBayMau({ state: THO_STATES.GEM_RICH, size: 126, speech: "Đổi đá quý lấy Mascot xịn thôi!", speechDirection: "top" })}
+        <div class="banner-mascot-aside page-inline-mascot" style="transform:scale(0.85); transform-origin:right center;">
+          ${renderThoBayMau({ state: THO_STATES.GEM_RICH, size: 100 })}
         </div>
       </div>
 
-      <!-- SECTION 0: TIỆM HIỆU ỨNG PROFILE & AVATAR NITRO (DISCORD STYLE) -->
-      <div class="discord-nitro-shop-section">
-        <div class="discord-nitro-shop-header">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <span style="font-size:36px;">✨</span>
-            <div>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <h2 style="font-size:20px; font-weight:900; color:#fff; margin:0;">
-                  Tiệm Hiệu Ứng Profile & Khung Avatar Nitro (Discord Style)
-                </h2>
-                <span class="discord-nitro-badge">⚡ Nitro Shop</span>
-                <span style="background:#22c55e; color:#fff; font-size:11px; font-weight:900; padding:3px 10px; border-radius:999px;">
-                  🎁 0 💎 Miễn Phí Test
-                </span>
-              </div>
-              <p style="font-size:13.5px; color:#cbd5e1; margin:4px 0 0;">
-                Trang bị khung viền chuyển động sống động và hiệu ứng thẻ cá nhân cực ngầu y hệt Discord Nitro! Nhấp <b>Xem trước</b> để xem hiệu ứng xoay ngay trên avatar của bạn.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="discord-nitro-grid">
-          ${Object.values(DISCORD_EFFECTS_REGISTRY).map(item => {
-            const isDeco = item.type === "avatar_decoration";
-            const shopItem = items.find(i => i.item_code === item.code);
-            const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => inv.item_code === item.code && Number(inv.quantity) >= 1);
-            const isEquipped = isDeco
-              ? (state.profile && state.profile.avatar_decoration === item.code)
-              : (state.profile && state.profile.profile_effect === item.code);
-
-            const userAvatar = state.profile?.avatar_url || "";
-            const userName = state.profile?.full_name || state.profile?.username || "3TG";
-
-            let previewHtml = "";
-            if (isDeco) {
-              previewHtml = renderDecoratedAvatar(userAvatar, item.code, 72, userName);
-            } else {
-              previewHtml = `
-                <div style="width:100%; height:82px; border-radius:14px; position:relative; overflow:hidden; border:1px solid rgba(255,255,255,0.15); background:#111216; display:flex; align-items:center; justify-content:center;">
-                  ${renderProfileEffectHtml(item.code)}
-                  <span style="position:relative; z-index:2; font-size:12px; font-weight:800; color:#fff; text-shadow:0 0 8px rgba(0,0,0,0.8);">${esc(item.badge)}</span>
-                </div>
-              `;
-            }
-
-            return `
-              <div class="discord-nitro-card ${isEquipped ? 'equipped' : ''}">
-                <span class="discord-nitro-badge" style="position:absolute; top:10px; right:10px; font-size:9.5px; padding:2px 8px;">${esc(item.badge)}</span>
-                
-                <div class="discord-nitro-preview-box">
-                  ${previewHtml}
-                </div>
-
-                <h4 class="discord-nitro-card-title">${esc(item.name)}</h4>
-                <p class="discord-nitro-card-desc">${esc(item.description)}</p>
-
-                <div class="discord-nitro-card-footer">
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                    <span class="discord-nitro-price-badge">💎 0 Đá quý</span>
-                    <button type="button" class="btn-duo btn-duo-white" style="padding:4px 10px; font-size:11px;" onclick="previewDiscordItem('${esc(item.code)}')">
-                      👁️ Xem trước
-                    </button>
-                  </div>
-
-                  ${isEquipped ? `
-                    <button type="button" class="btn-duo btn-duo-green" style="padding:7px 12px; font-size:12px; width:100%;" onclick="equipDecoration('${esc(item.type)}', null)">
-                      ✓ Đang dùng (Tháo)
-                    </button>
-                  ` : isOwned ? `
-                    <button type="button" class="btn-duo btn-duo-pink" style="padding:7px 12px; font-size:12px; width:100%; font-weight:900;" onclick="equipDecoration('${esc(item.type)}', '${esc(item.code)}')">
-                      Trang bị ngay 🌸
-                    </button>
-                  ` : `
-                    <button type="button" class="btn-duo btn-duo-pink" style="padding:7px 12px; font-size:12px; width:100%; font-weight:900;" onclick="buyItem('${esc(item.code)}')">
-                      Mua Miễn Phí (0 💎)
-                    </button>
-                  `}
-                </div>
-              </div>
-            `;
-          }).join("")}
-        </div>
+      <!-- SHOP CATEGORY TABS (SIÊU GỌN GÀNG, KHÔNG BỊ TO ĐÙNG) -->
+      <div class="shop-category-tabs">
+        <button type="button" class="shop-category-tab ${state.shopTab === 'nitro' ? 'active tab-nitro' : ''}" onclick="switchShopTab('nitro')">
+          ⚡ Hiệu Ứng Nitro (0 💎)
+        </button>
+        <button type="button" class="shop-category-tab ${state.shopTab === 'mascot' ? 'active' : ''}" onclick="switchShopTab('mascot')">
+          🐰 20 Mascot Thỏ Bảy Màu
+        </button>
+        <button type="button" class="shop-category-tab ${state.shopTab === 'items' ? 'active' : ''}" onclick="switchShopTab('items')">
+          🛡️ Bùa Chuỗi & Vật Phẩm
+        </button>
       </div>
 
-      <!-- SECTION 1: 20 MASCOTS COLLECTION (2 GÓI MỞ KHÓA + 6 SẴN CÓ) -->
-      <div style="margin-bottom:36px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
-          <div>
-            <h2 style="font-size:20px; font-weight:900; color:var(--ink-900); margin:0;">Bộ Sưu Tập 20 Mascot Thỏ Bảy Màu 🐰✨</h2>
-            <p style="font-size:13.5px; color:var(--ink-500); margin:4px 0 0;">Gồm 6 biểu cảm mặc định sẵn có + 2 gói mở khóa đặc biệt (mỗi gói 7 biểu cảm hiệu ứng xịn xò).</p>
-          </div>
-        </div>
-
-        <!-- GÓI 1: THỎ CHIẾN THẦN (7 CON XỊN) -->
-        <div class="mascot-pack-card" style="background:linear-gradient(135deg, #fff9f0, #fff2e0); border:3px solid #f59e0b; border-radius:28px; padding:22px; margin-bottom:24px; box-shadow:0 8px 0 #d97706;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px; border-bottom:2px dashed #fcd34d; padding-bottom:14px;">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <span style="font-size:36px;">🔥</span>
-              <div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <h3 style="font-size:19px; font-weight:900; color:#92400e; margin:0;">Gói 1: Thỏ Chiến Thần & Đỉnh Cao</h3>
-                  <span style="background:#ea580c; color:#fff; font-size:11px; font-weight:900; padding:2px 10px; border-radius:999px;">7 Mascot Xịn</span>
-                </div>
-                <p style="font-size:13.5px; color:#b45309; margin:4px 0 0;">Hiệu ứng rực lửa, hào quang vô địch: Vua Vô Địch, Kiếm Sĩ Yasuo, Ăn Mừng VN, Lửa Streak, Cưỡi Mây, Thám Tử Bắt Lỗi, Siêu Sao XP.</p>
-              </div>
-            </div>
-
-            <div>
-              ${isPack1Owned ? `
-                <button type="button" class="btn-duo btn-duo-green" style="padding:10px 22px; font-size:14px; opacity:0.95;" disabled>
-                  ✓ Đã mở khóa trọn gói
-                </button>
-              ` : `
-                <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 24px; font-size:14px; font-weight:900;" onclick="buyItem('mascot_pack_champions')">
-                  Mở khóa trọn gói (💎 150)
-                </button>
-              `}
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(135px, 1fr)); gap:12px;">
-            ${MASCOT_PACKS.mascot_pack_champions.keys.map(k => renderMascotBadge(k, isPack1Owned, "Chiến Thần")).join("")}
-          </div>
-        </div>
-
-        <!-- GÓI 2: THỎ HÓA TRANG ANIME (7 CON XỊN) -->
-        <div class="mascot-pack-card" style="background:linear-gradient(135deg, #fff0f5, #ffe4ef); border:3px solid var(--lumi-pink); border-radius:28px; padding:22px; margin-bottom:24px; box-shadow:0 8px 0 var(--lumi-pink-dark);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px; border-bottom:2px dashed #fbcfe8; padding-bottom:14px;">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <span style="font-size:36px;">🎀</span>
-              <div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <h3 style="font-size:19px; font-weight:900; color:var(--lumi-pink-dark); margin:0;">Gói 2: Thỏ Hóa Trang Anime & Siêu Dễ Thương</h3>
-                  <span style="background:var(--lumi-pink); color:#fff; font-size:11px; font-weight:900; padding:2px 10px; border-radius:999px;">7 Mascot Kawaii</span>
-                </div>
-                <p style="font-size:13.5px; color:#be185d; margin:4px 0 0;">Hiệu ứng hoa anh đào & tim bay: Hầu Gái Kawaii, Giáo Sư AI, Đại Gia Đá Quý, Cổ Vũ Pom-Pom, Hốt Hoảng, Mếu Máo, Giận Dỗi.</p>
-              </div>
-            </div>
-
-            <div>
-              ${isPack2Owned ? `
-                <button type="button" class="btn-duo btn-duo-green" style="padding:10px 22px; font-size:14px; opacity:0.95;" disabled>
-                  ✓ Đã mở khóa trọn gói
-                </button>
-              ` : `
-                <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 24px; font-size:14px; font-weight:900;" onclick="buyItem('mascot_pack_cosplay')">
-                  Mở khóa trọn gói (💎 150)
-                </button>
-              `}
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(135px, 1fr)); gap:12px;">
-            ${MASCOT_PACKS.mascot_pack_cosplay.keys.map(k => renderMascotBadge(k, isPack2Owned, "Hóa Trang")).join("")}
-          </div>
-        </div>
-
-        <!-- 6 CON MẶC ĐỊNH SẴN CÓ -->
-        <div style="background:#fff; border:2.5px solid #e2e8f0; border-radius:28px; padding:22px; box-shadow:0 6px 0 #cbd5e1;">
+      <!-- TAB 1: HIỆU ỨNG NITRO DISCORD (COMPACT GRID) -->
+      ${state.shopTab === 'nitro' ? `
+        <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
             <div>
-              <h3 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0;">6 Mascot Mặc Định (Có Sẵn 100% Miễn Phí) 🌸</h3>
-              <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">Tất cả học viên đều tự động sở hữu 6 biểu cảm đáng yêu này ngay khi tạo tài khoản.</p>
+              <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0;">
+                Kho Hiệu Ứng Profile & Avatar Nitro (Discord Style) ✨
+              </h2>
+              <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">
+                Nhấp trực tiếp vào thẻ hoặc nút <b>👁️ Xem</b> để bung pop-up xem trước trực tiếp trên avatar của bạn.
+              </p>
             </div>
-            <span style="font-size:12px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 12px; border-radius:999px;">
-              ✓ Miễn phí vĩnh viễn
+            <span style="background:#22c55e; color:#fff; font-size:11px; font-weight:900; padding:3px 10px; border-radius:999px;">
+              🎁 0 💎 Miễn Phí Trải Nghiệm
             </span>
           </div>
 
-          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(135px, 1fr)); gap:12px;">
-            ${MASCOT_DEFAULT_KEYS.map(k => renderMascotBadge(k, true, "Mặc định")).join("")}
+          <div class="discord-nitro-compact-grid">
+            ${Object.values(DISCORD_EFFECTS_REGISTRY).map(item => {
+              const isDeco = item.type === "avatar_decoration";
+              const shopItem = items.find(i => i.item_code === item.code);
+              const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => inv.item_code === item.code && Number(inv.quantity) >= 1);
+              const isEquipped = isDeco
+                ? (state.profile && state.profile.avatar_decoration === item.code)
+                : (state.profile && state.profile.profile_effect === item.code);
+
+              let previewHtml = "";
+              if (isDeco) {
+                previewHtml = renderDecoratedAvatar(userAvatar, item.code, 52, userName);
+              } else {
+                previewHtml = `
+                  <div style="width:52px; height:52px; border-radius:50%; position:relative; overflow:hidden; border:2px solid rgba(255,255,255,0.2); background:#111216; display:flex; align-items:center; justify-content:center;">
+                    ${renderProfileEffectHtml(item.code)}
+                    <span style="position:relative; z-index:2; font-size:18px;">✨</span>
+                  </div>
+                `;
+              }
+
+              return `
+                <div class="discord-nitro-compact-card ${isEquipped ? 'equipped' : ''}" onclick="previewDiscordItem('${esc(item.code)}')">
+                  <span class="discord-nitro-badge-pill" style="color:${item.color};">${esc(item.badge)}</span>
+                  
+                  <div class="discord-nitro-thumb-box">
+                    ${previewHtml}
+                  </div>
+
+                  <h4 class="discord-nitro-card-name">${esc(item.name)}</h4>
+                  
+                  <div class="discord-nitro-card-bot" onclick="event.stopPropagation()">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <span class="discord-nitro-price-tag">💎 0 ĐQ</span>
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:3px 8px; font-size:11px;" onclick="previewDiscordItem('${esc(item.code)}')">
+                        👁️ Xem
+                      </button>
+                    </div>
+
+                    ${isEquipped ? `
+                      <button type="button" class="btn-duo btn-duo-green" style="padding:6px 10px; font-size:11.5px; width:100%;" onclick="equipDecoration('${esc(item.type)}', null)">
+                        ✓ Đang dùng
+                      </button>
+                    ` : isOwned ? `
+                      <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 10px; font-size:11.5px; width:100%; font-weight:800;" onclick="equipDecoration('${esc(item.type)}', '${esc(item.code)}')">
+                        Trang bị
+                      </button>
+                    ` : `
+                      <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 10px; font-size:11.5px; width:100%; font-weight:800;" onclick="buyItem('${esc(item.code)}')">
+                        Nhận (0 💎)
+                      </button>
+                    `}
+                  </div>
+                </div>
+              `;
+            }).join("")}
           </div>
         </div>
-      </div>
+      ` : ''}
 
-      <!-- SECTION 2: VẬT PHẨM HỖ TRỢ HỌC TẬP & BÙA CHUỖI -->
-      <div>
-        <h2 style="font-size:20px; font-weight:900; color:var(--ink-900); margin:0 0 16px 0;">Vật Phẩm Hỗ Trợ Học Tập 🛡️✨</h2>
-        <div class="shop-grid">
-          ${consumablesHtml}
+      <!-- TAB 2: 20 MASCOTS COLLECTION (COMPACT WARDROBE) -->
+      ${state.shopTab === 'mascot' ? `
+        <div class="mascot-shop-container">
+          <!-- 2 COMPACT PACK BANNERS -->
+          <div class="mascot-packs-compact-row">
+            <!-- GÓI 1: THỎ CHIẾN THẦN -->
+            <div class="mascot-pack-compact-card fire">
+              <div class="mascot-pack-info">
+                <div class="mascot-pack-title-row">
+                  <span>🔥</span>
+                  <h4 class="mascot-pack-title">Gói 1: Thỏ Chiến Thần</h4>
+                  <span style="font-size:10px; font-weight:900; background:#ea580c; color:#fff; padding:1px 6px; border-radius:999px;">7 Con</span>
+                </div>
+                <div class="mascot-pack-chips-row">
+                  ${MASCOT_PACKS.mascot_pack_champions.keys.map(k => `
+                    <div class="mascot-mini-chip" title="${esc(THO_METADATA[k]?.name || k)}" onclick="openMascotDetailModal('${esc(k)}')">
+                      ${generateThoBayMauSvg({ state: k, size: 24 })}
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+              <div class="mascot-pack-action-col">
+                <span class="mascot-pack-price">💎 150</span>
+                ${isPack1Owned ? `
+                  <span style="font-size:11.5px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 10px; border-radius:10px;">✓ Đã mở</span>
+                ` : `
+                  <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12px; font-weight:900;" onclick="buyItem('mascot_pack_champions')">
+                    Mở khóa
+                  </button>
+                `}
+              </div>
+            </div>
+
+            <!-- GÓI 2: THỎ KAWAII COSPLAY -->
+            <div class="mascot-pack-compact-card sakura">
+              <div class="mascot-pack-info">
+                <div class="mascot-pack-title-row">
+                  <span>🎀</span>
+                  <h4 class="mascot-pack-title">Gói 2: Thỏ Kawaii Cosplay</h4>
+                  <span style="font-size:10px; font-weight:900; background:var(--lumi-pink); color:#fff; padding:1px 6px; border-radius:999px;">7 Con</span>
+                </div>
+                <div class="mascot-pack-chips-row">
+                  ${MASCOT_PACKS.mascot_pack_cosplay.keys.map(k => `
+                    <div class="mascot-mini-chip" title="${esc(THO_METADATA[k]?.name || k)}" onclick="openMascotDetailModal('${esc(k)}')">
+                      ${generateThoBayMauSvg({ state: k, size: 24 })}
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+              <div class="mascot-pack-action-col">
+                <span class="mascot-pack-price" style="color:var(--lumi-pink-dark);">💎 150</span>
+                ${isPack2Owned ? `
+                  <span style="font-size:11.5px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 10px; border-radius:10px;">✓ Đã mở</span>
+                ` : `
+                  <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12px; font-weight:900;" onclick="buyItem('mascot_pack_cosplay')">
+                    Mở khóa
+                  </button>
+                `}
+              </div>
+            </div>
+          </div>
+
+          <!-- TỦ ĐỒ 20 MASCOT: COMPACT GRID ("NHẤN VÀO LÀ XỔ RA") -->
+          <div class="mascot-wardrobe-header">
+            <div>
+              <h3 style="font-size:15px; font-weight:900; margin:0; color:var(--ink-900);">🐰 Tủ Đồ 20 Mascot Thỏ Bảy Màu</h3>
+              <p style="font-size:12px; color:var(--ink-500); margin:2px 0 0;">Nhấn vào bất kỳ biểu cảm nào để phóng to xem chi tiết & chọn làm Avatar đồng hành!</p>
+            </div>
+            <span class="unlocked-counter-badge">
+              Đã mở khóa: <b>${[...MASCOT_DEFAULT_KEYS, ...MASCOT_PACKS.mascot_pack_champions.keys, ...MASCOT_PACKS.mascot_pack_cosplay.keys].filter(k => isMascotUnlocked(k)).length}</b> / 20
+            </span>
+          </div>
+
+          <div class="mascot-tokens-grid">
+            ${[...MASCOT_DEFAULT_KEYS, ...MASCOT_PACKS.mascot_pack_champions.keys, ...MASCOT_PACKS.mascot_pack_cosplay.keys].map(k => {
+              const meta = THO_METADATA[k] || { name: k };
+              const isUnlocked = isMascotUnlocked(k);
+              const isEquipped = state.profile && (state.profile.avatar_url === `mascot:${k}`);
+              return `
+                <div class="mascot-token-tile ${isEquipped ? 'equipped' : isUnlocked ? 'unlocked' : 'locked'}" onclick="openMascotDetailModal('${esc(k)}')">
+                  <div class="mascot-token-avatar">
+                    ${generateThoBayMauSvg({ state: k, size: 46 })}
+                  </div>
+                  <div class="mascot-token-name">${esc(meta.name.split('(')[0].trim())}</div>
+                  <span class="mascot-token-badge ${isEquipped ? 'mascot-badge-equipped' : isUnlocked ? 'mascot-badge-unlocked' : 'mascot-badge-locked'}">
+                    ${isEquipped ? 'Đang dùng' : isUnlocked ? '✓ Có' : '🔒 Khóa'}
+                  </span>
+                </div>
+              `;
+            }).join("")}
+          </div>
         </div>
-      </div>
+      ` : ''}
+
+      <!-- TAB 3: VẬT PHẨM HỖ TRỢ HỌC TẬP & BÙA CHUỖI -->
+      ${state.shopTab === 'items' ? `
+        <div>
+          <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0 0 14px 0;">Vật Phẩm Hỗ Trợ Học Tập 🛡️✨</h2>
+          <div class="shop-grid">
+            ${consumablesHtml}
+          </div>
+        </div>
+      ` : ''}
     </div>
   `;
 }
@@ -3571,9 +3656,18 @@ window.buyItem = async function(itemCode) {
     showToast(res.message);
     state.stats = res.stats;
     shopData = res.shop;
+    if (res.shop && res.shop.items) {
+      state.inventory = res.shop.items.filter(i => i.owned > 0).map(i => ({ item_code: i.item_code, quantity: i.owned }));
+    }
     playSound("correct");
-    updateShell();
-    render();
+    if (itemCode.startsWith("deco_")) {
+      await equipDecoration("avatar_decoration", itemCode);
+    } else if (itemCode.startsWith("fx_")) {
+      await equipDecoration("profile_effect", itemCode);
+    } else {
+      updateShell();
+      render();
+    }
   } catch (err) {
     playSound("wrong");
     showToast(err.message, true);
@@ -5112,7 +5206,8 @@ function renderSettings() {
 
   return `
     <div class="fb-profile-wrap">
-      <div class="fb-card">
+      <div class="fb-card" style="position:relative; overflow:hidden;">
+        ${renderProfileEffectHtml(profile.profile_effect)}
         <!-- 1. FACEBOOK COVER BANNER (ẢNH BÌA) -->
         <div class="fb-cover-banner" style="${isCoverGradient ? `background:${coverBg};` : `background-image:url('${esc(coverBg)}');`}">
           <button type="button" class="fb-cover-edit-btn" onclick="openCoverModal()">
@@ -5121,11 +5216,11 @@ function renderSettings() {
         </div>
 
         <!-- 2. FACEBOOK HEADER WITH OVERLAPPING AVATAR -->
-        <div class="fb-header-body">
+        <div class="fb-header-body" style="position:relative; z-index:2;">
           <div class="fb-avatar-row">
-            <div class="fb-avatar-container">
-              <div class="fb-avatar-large">
-                ${avatarDisplay}
+            <div class="fb-avatar-container" style="overflow:visible;">
+              <div class="fb-avatar-large with-nitro" style="overflow:visible; background:transparent; border:none; box-shadow:none;">
+                ${renderDecoratedAvatar(profile.avatar_url, profile.avatar_decoration, 140, profile.full_name)}
               </div>
               <button type="button" class="fb-avatar-camera-btn" onclick="openAvatarModal()" title="Đổi ảnh đại diện" aria-label="Đổi ảnh đại diện">
                 📷
@@ -5167,6 +5262,9 @@ function renderSettings() {
             </div>
             <div class="fb-tab-item ${state.fbProfileTab === 'inventory' ? 'active' : ''}" onclick="switchFbTab('inventory')">
               🎒 Túi đồ (${state.inventory.length})
+            </div>
+            <div class="fb-tab-item ${state.fbProfileTab === 'nitro' ? 'active' : ''}" onclick="switchFbTab('nitro')">
+              ✨ Hiệu ứng Nitro (Discord)
             </div>
           </div>
         </div>
@@ -5283,7 +5381,7 @@ function renderSettings() {
                 Mở Tủ Huy Hiệu Chi Tiết ➔
               </button>
             </div>
-          ` : `
+          ` : state.fbProfileTab === 'inventory' ? `
             <div class="fb-side-card">
               <h3 class="fb-side-card-title">🎒 Túi đồ học tập</h3>
               ${state.inventory && state.inventory.length ? `
@@ -5309,6 +5407,57 @@ function renderSettings() {
               `}
               <button class="btn-duo btn-duo-pink" style="margin-top:14px; width:100%;" onclick="goToShop()">
                 Ghé Cửa Hàng Mua Sắm 🏪
+              </button>
+            </div>
+          ` : `
+            <div class="fb-side-card">
+              <h3 class="fb-side-card-title">✨ Quản lý Hiệu ứng Discord Nitro</h3>
+              <p style="font-size:13.5px; color:var(--ink-500); margin-bottom:16px;">
+                Tùy chỉnh khung viền avatar chuyển động và hiệu ứng nền hồ sơ phong cách Discord Nitro của bạn.
+              </p>
+              
+              <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#fff7fa; border-radius:14px; border-left:4px solid var(--lumi-pink);">
+                  <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:24px;">🖼️</span>
+                    <div>
+                      <strong style="color:var(--ink-900); font-size:14px;">Khung Viền Avatar</strong>
+                      <div style="font-size:12px; color:var(--ink-500);">${profile.avatar_decoration ? esc(DISCORD_EFFECTS_REGISTRY[profile.avatar_decoration]?.name || profile.avatar_decoration) : "Chưa trang bị khung viền"}</div>
+                    </div>
+                  </div>
+                  ${profile.avatar_decoration ? `
+                    <button type="button" class="btn-duo btn-duo-white" style="padding:6px 12px; font-size:12px;" onclick="equipDecoration('avatar_decoration', null)">
+                      Tháo ra
+                    </button>
+                  ` : `
+                    <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 12px; font-size:12px;" onclick="state.page='shop'; state.shopTab='nitro'; render();">
+                      Chọn khung
+                    </button>
+                  `}
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f5f3ff; border-radius:14px; border-left:4px solid #8b5cf6;">
+                  <div style="display:flex; align-items:center; gap:12px;">
+                    <span style="font-size:24px;">🎆</span>
+                    <div>
+                      <strong style="color:var(--ink-900); font-size:14px;">Hiệu Ứng Thẻ Hồ Sơ</strong>
+                      <div style="font-size:12px; color:var(--ink-500);">${profile.profile_effect ? esc(DISCORD_EFFECTS_REGISTRY[profile.profile_effect]?.name || profile.profile_effect) : "Chưa trang bị hiệu ứng nền"}</div>
+                    </div>
+                  </div>
+                  ${profile.profile_effect ? `
+                    <button type="button" class="btn-duo btn-duo-white" style="padding:6px 12px; font-size:12px;" onclick="equipDecoration('profile_effect', null)">
+                      Tháo ra
+                    </button>
+                  ` : `
+                    <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 12px; font-size:12px;" onclick="state.page='shop'; state.shopTab='nitro'; render();">
+                      Chọn hiệu ứng
+                    </button>
+                  `}
+                </div>
+              </div>
+
+              <button class="btn-duo btn-duo-purple" style="width:100%; background:#5865f2; color:#fff;" onclick="state.page='shop'; state.shopTab='nitro'; render();">
+                Ghé Tiệm Nitro Nhận Thêm Hiệu Ứng 0 💎 ➔
               </button>
             </div>
           `}
@@ -6840,6 +6989,13 @@ async function navigateToPage(targetPage) {
         updateShell();
         render();
       }
+    } else if (targetPage === "settings") {
+      const sess = await api("/api/session").catch(() => null);
+      if (sess && sess.profile) {
+        state.profile = Object.assign({}, state.profile, sess.profile);
+        updateShell();
+        render();
+      }
     }
   } catch (err) {
     console.warn("Live fetch error on tab change:", err);
@@ -6858,8 +7014,10 @@ async function syncLiveData(silent = true) {
     if (ov && ov.stats) {
       state.overview = ov;
       state.stats = ov.stats;
+      if (ov.profile) state.profile = Object.assign({}, state.profile, ov.profile);
+      if (ov.inventory) state.inventory = ov.inventory;
       updateShell();
-      if (state.page === "home") {
+      if (state.page === "home" || state.page === "settings") {
         render();
       }
       if (!silent) {

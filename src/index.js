@@ -916,9 +916,10 @@ async function updateProfile(request, user, env) {
 
 async function setPresetAvatar(request, user, env) {
   const body = await readJson(request);
-  const avatarUrl = String(body.avatarUrl || "").trim();
+  const avatarUrl = String(body.avatarUrl || body.preset || "").trim();
   if (!avatarUrl) throw new HttpError(400, "Chọn một hình đại diện.");
   await env.DB.prepare("UPDATE profiles SET avatar_url = ? WHERE user_id = ?").bind(avatarUrl, user.userId).run();
+  user.profile.avatar_url = avatarUrl;
   return Object.assign({}, user.profile, { avatar_url: avatarUrl });
 }
 
@@ -1000,7 +1001,18 @@ async function equipDecoration(request, user, env) {
       "SELECT id FROM user_inventory WHERE user_id = ? AND item_code = ? AND quantity > 0 LIMIT 1"
     ).bind(user.userId, itemCode).first();
     if (!owned) {
-      throw new HttpError(400, "Bạn chưa sở hữu hiệu ứng này. Hãy mua trong Tiệm Tạp Hóa nhé!");
+      // Check if it's a 0-gem free item in shop_items
+      const shopItem = await env.DB.prepare(
+        "SELECT id, price_gems FROM shop_items WHERE item_code = ? LIMIT 1"
+      ).bind(itemCode).first();
+      if (shopItem && Number(shopItem.price_gems) <= 0) {
+        // Auto-grant free Discord item to user inventory
+        await env.DB.prepare(
+          "INSERT INTO user_inventory (user_id, item_code, quantity) VALUES (?, ?, 1)"
+        ).bind(user.userId, itemCode).run();
+      } else {
+        throw new HttpError(400, "Bạn chưa sở hữu hiệu ứng này. Hãy mở khóa trong Tiệm Tạp Hóa nhé!");
+      }
     }
   }
 

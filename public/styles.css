@@ -6002,6 +6002,7 @@ button:focus-visible, input:focus-visible {
 
 .active-course-action {
   margin-top: auto;
+}
 
 /* ========================================================
    DISCORD-STYLE ANIMATED PROFILE EFFECTS & AVATAR DECORATIONS
@@ -6015,6 +6016,7 @@ button:focus-visible, input:focus-visible {
   flex-shrink: 0;
   vertical-align: middle;
   border-radius: 50%;
+  overflow: visible !important;
 }
 
 .discord-avatar-container .avatar-base {
@@ -6030,31 +6032,45 @@ button:focus-visible, input:focus-visible {
   background: linear-gradient(135deg, #ff71a2, #c084fc);
   color: #fff;
   font-weight: 900;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .discord-avatar-container .avatar-base img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  display: block !important;
 }
 
 .discord-avatar-container .avatar-base svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+
+/* Make sure parent avatars don't clip decorations */
+.top-avatar,
+.avatar,
+.avatar-top,
+.avatar-small,
+.user-profile-avatar-wrap,
+.fb-avatar-container,
+.fb-avatar-large {
+  overflow: visible !important;
 }
 
 /* Avatar Decoration Overlay (Sit over avatar like Discord Nitro) */
 .discord-avatar-decoration {
   position: absolute;
-  top: -16%;
-  left: -16%;
-  width: 132%;
-  height: 132%;
+  top: -18%;
+  left: -18%;
+  width: 136%;
+  height: 136%;
   pointer-events: none;
-  z-index: 4;
+  z-index: 5;
   transform-origin: center center;
 }
 
@@ -6193,7 +6209,7 @@ button:focus-visible, input:focus-visible {
   pointer-events: none;
   overflow: hidden;
   border-radius: inherit;
-  z-index: 0;
+  z-index: 3;
 }
 
 /* FX 1: MATRIX CODE RAIN */
@@ -6264,117 +6280,132 @@ button:focus-visible, input:focus-visible {
 }
 
 /* ========================================================
-   DISCORD NITRO SHOP SECTION STYLING
+   COMPACT & NEAT SHOP REDESIGN (GỌN GÀNG, KHÔNG TO ĐÙNG)
    ======================================================== */
 
-.discord-nitro-shop-section {
-  background: linear-gradient(135deg, #1e1f2b 0%, #2b2d42 50%, #1e1f2b 100%);
-  border: 3px solid #5865f2;
-  border-radius: 28px;
-  padding: 24px;
-  margin-bottom: 28px;
-  box-shadow: 0 10px 30px rgba(88, 101, 242, 0.25), 0 4px 0 #3c45a5;
-  color: #fff;
-  position: relative;
-  overflow: hidden;
-}
-
-.discord-nitro-shop-header {
+.shop-category-tabs {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  border-bottom: 2px dashed rgba(255, 255, 255, 0.15);
-  padding-bottom: 16px;
+  gap: 8px;
   margin-bottom: 20px;
+  background: #ffffff;
+  padding: 6px;
+  border-radius: 18px;
+  border: 2px solid #f1f5f9;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
 }
 
-.discord-nitro-badge {
-  background: linear-gradient(135deg, #5865f2, #eb459e);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 900;
-  padding: 4px 12px;
-  border-radius: 999px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  box-shadow: 0 0 12px rgba(235, 69, 158, 0.5);
-  display: inline-flex;
+.shop-category-tab {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 8px;
 }
 
-.discord-nitro-grid {
+.shop-category-tab:hover {
+  background: #f8fafc;
+  color: var(--ink-900);
+}
+
+.shop-category-tab.active {
+  background: linear-gradient(135deg, #ff71a2, #ff4b82);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 75, 130, 0.3);
+}
+
+.shop-category-tab.active.tab-nitro {
+  background: linear-gradient(135deg, #5865f2, #8b5cf6);
+  box-shadow: 0 4px 14px rgba(88, 101, 242, 0.35);
+}
+
+/* NITRO COMPACT GRID */
+.discord-nitro-compact-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
 }
 
-.discord-nitro-card {
-  background: rgba(43, 45, 66, 0.75);
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
-  padding: 16px;
+.discord-nitro-compact-card {
+  background: #18191c;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 14px 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   position: relative;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.discord-nitro-card:hover {
-  transform: translateY(-4px);
+.discord-nitro-compact-card:hover {
+  transform: translateY(-3px);
   border-color: #5865f2;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35), 0 0 16px rgba(88, 101, 242, 0.4);
+  box-shadow: 0 8px 24px rgba(88, 101, 242, 0.3);
 }
 
-.discord-nitro-card.equipped {
+.discord-nitro-compact-card.equipped {
   border-color: #22c55e;
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
 }
 
-.discord-nitro-preview-box {
-  width: 96px;
-  height: 96px;
-  margin: 10px 0 14px;
+.discord-nitro-thumb-box {
+  width: 64px;
+  height: 64px;
+  margin: 6px auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.discord-nitro-card-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 4px 0;
+  line-height: 1.3;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.discord-nitro-card-title {
-  font-size: 14.5px;
+.discord-nitro-badge-pill {
+  font-size: 9px;
   font-weight: 900;
-  color: #fff;
-  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  margin-bottom: 10px;
 }
 
-.discord-nitro-card-desc {
-  font-size: 12px;
-  color: #cbd5e1;
-  line-height: 1.4;
-  margin: 0 0 14px 0;
-  flex-grow: 1;
-}
-
-.discord-nitro-card-footer {
+.discord-nitro-card-bot {
   width: 100%;
+  margin-top: auto;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.discord-nitro-price-badge {
-  font-size: 13px;
-  font-weight: 900;
+.discord-nitro-price-tag {
+  font-size: 12px;
+  font-weight: 800;
   color: #4ade80;
-  background: rgba(34, 197, 94, 0.15);
-  padding: 4px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
 /* PREVIEW MODAL FOR DISCORD PROFILE */
@@ -6382,7 +6413,7 @@ button:focus-visible, input:focus-visible {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -6393,7 +6424,7 @@ button:focus-visible, input:focus-visible {
 
 .discord-preview-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
   background: #18191c;
   border-radius: 24px;
   overflow: hidden;
@@ -6405,13 +6436,13 @@ button:focus-visible, input:focus-visible {
 }
 
 .discord-preview-banner {
-  height: 120px;
+  height: 110px;
   background: linear-gradient(135deg, #5865f2, #eb459e, #8b5cf6);
   position: relative;
 }
 
 .discord-preview-body {
-  padding: 0 20px 24px;
+  padding: 0 18px 20px;
   position: relative;
 }
 
@@ -6419,12 +6450,279 @@ button:focus-visible, input:focus-visible {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: -50px;
-  margin-bottom: 14px;
+  margin-top: -46px;
+  margin-bottom: 12px;
 }
 
 .discord-preview-btn-row {
   display: flex;
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 16px;
 }
+
+/* ========================================================
+   COMPACT & NEAT MASCOT WARDROBE ("XỔ RA" MODAL SYSTEM)
+   ======================================================== */
+
+.mascot-shop-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.mascot-packs-compact-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.mascot-pack-compact-card {
+  border-radius: 20px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.mascot-pack-compact-card.fire {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 2px solid #f97316;
+  box-shadow: 0 4px 0 #ea580c;
+}
+
+.mascot-pack-compact-card.sakura {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+  border: 2px solid #f43f5e;
+  box-shadow: 0 4px 0 #e11d48;
+}
+
+.mascot-pack-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mascot-pack-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mascot-pack-title {
+  font-size: 14.5px;
+  font-weight: 900;
+  color: var(--ink-900);
+  margin: 0;
+}
+
+.mascot-pack-chips-row {
+  display: flex;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.mascot-mini-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+  margin-left: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.mascot-mini-chip:first-child {
+  margin-left: 0;
+}
+
+.mascot-pack-action-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.mascot-pack-price {
+  font-size: 13px;
+  font-weight: 900;
+  color: #b45309;
+}
+
+/* Wardrobe Tokens Grid */
+.mascot-wardrobe-header {
+  background: #ffffff;
+  border: 2px solid #f1f5f9;
+  border-radius: 16px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.unlocked-counter-badge {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--lumi-pink);
+  background: #fff0f5;
+  border: 1px solid #fbcfe8;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.mascot-tokens-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 10px;
+}
+
+.mascot-token-tile {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 3px 0 #f1f5f9;
+}
+
+.mascot-token-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--lumi-pink);
+  box-shadow: 0 5px 0 #fbcfe8;
+}
+
+.mascot-token-tile.equipped {
+  border-color: #ff4b82;
+  box-shadow: 0 4px 0 #ff4b82;
+  background: #fff5f8;
+}
+
+.mascot-token-tile.locked {
+  background: #f8fafc;
+  opacity: 0.75;
+}
+
+.mascot-token-tile.locked:hover {
+  opacity: 1;
+}
+
+.mascot-token-avatar {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  position: relative;
+}
+
+.mascot-token-tile.locked .mascot-token-avatar {
+  filter: grayscale(85%) opacity(0.7);
+}
+
+.mascot-token-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-800);
+  line-height: 1.2;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+.mascot-token-badge {
+  font-size: 9.5px;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 999px;
+  line-height: 1.3;
+}
+
+.mascot-badge-equipped {
+  background: #ff4b82;
+  color: #fff;
+}
+
+.mascot-badge-unlocked {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.mascot-badge-locked {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+/* POP-UP DETAIL MODAL CHO MASCOT ("NHẤN VÀO LÀ XỔ RA") */
+.mascot-detail-modal-card {
+  width: 100%;
+  max-width: 360px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  border: 3px solid var(--lumi-pink);
+  text-align: center;
+  position: relative;
+  animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mascot-detail-img-wrap {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mascot-detail-quote {
+  background: #fff0f5;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  color: #be185d;
+  font-style: italic;
+  margin: 10px 0 16px;
+  border: 1px dashed #fbcfe8;
+  line-height: 1.4;
+}
+
+/* Fix profile avatar container styling */
+.fb-avatar-large.with-nitro {
+  overflow: visible !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.fb-avatar-container .discord-avatar-container .avatar-base {
+  border: 5px solid #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+.avatar-top.with-nitro,
+.avatar.with-nitro {
+  overflow: visible !important;
+  background: transparent !important;
+  border: none !important;
+}
+
