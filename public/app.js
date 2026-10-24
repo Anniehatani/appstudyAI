@@ -2360,8 +2360,8 @@ window.openUserProfileModal = async function(userId) {
     if (prof.avatar_url) {
       if (prof.avatar_url.startsWith("mascot:")) {
         const key = prof.avatar_url.slice(7);
-        if (window.renderThoBayMau && window.THO_METADATA && window.THO_METADATA[key]) {
-          avatarContent = renderThoBayMau({ state: key, size: 76 });
+        if (window.generateThoBayMauSvg) {
+          avatarContent = generateThoBayMauSvg({ state: key, size: 76 });
         } else {
           avatarContent = esc(key);
         }
@@ -3911,8 +3911,8 @@ export function renderDecoratedAvatar(avatarUrl, decoCode, size = 48, name = "3T
   if (avatarUrl) {
     if (avatarUrl.startsWith("mascot:")) {
       const key = avatarUrl.slice(7);
-      if (window.renderThoBayMau && window.THO_METADATA && window.THO_METADATA[key]) {
-        innerHtml = renderThoBayMau({ state: key, size: Math.round(size * 0.9) });
+      if (window.generateThoBayMauSvg) {
+        innerHtml = generateThoBayMauSvg({ state: key, size: Math.round(size * 0.88) });
       } else {
         innerHtml = esc(key);
       }
