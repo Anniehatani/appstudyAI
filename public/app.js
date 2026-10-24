@@ -3007,63 +3007,196 @@ export const DISCORD_EFFECTS_REGISTRY = {
 window.DISCORD_EFFECTS_REGISTRY = DISCORD_EFFECTS_REGISTRY;
 
 export function generateAvatarDecorationSvg(decoCode) {
+  if (decoCode === "deco_flame_dragon") {
+    return `
+      <div class="discord-avatar-decoration deco-dragon-fire-vip">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="df-fire-body" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stop-color="#dc2626"/>
+              <stop offset="35%" stop-color="#ea580c"/>
+              <stop offset="70%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#fef08a"/>
+            </linearGradient>
+            <linearGradient id="df-fire-core" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stop-color="#f97316"/>
+              <stop offset="50%" stop-color="#fde047"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+            <radialGradient id="df-flame-corona" cx="50%" cy="50%" r="50%">
+              <stop offset="60%" stop-color="transparent"/>
+              <stop offset="85%" stop-color="rgba(255, 107, 0, 0.4)"/>
+              <stop offset="100%" stop-color="rgba(255, 30, 0, 0.8)"/>
+            </radialGradient>
+          </defs>
+
+          <!-- Outer Pulsating Flame Aura Ring -->
+          <circle cx="50" cy="50" r="46" fill="url(#df-flame-corona)" stroke="url(#df-fire-body)" stroke-width="3" stroke-dasharray="24 8 16 6" class="deco-dragon-base-ring"/>
+
+          <!-- Top Dragon Flaming Horns & Crown -->
+          <g class="deco-dragon-horns">
+            <path d="M44,15 C38,8 28,4 18,7 C25,12 30,16 38,20 Z" fill="url(#df-fire-body)"/>
+            <path d="M43,16 C38,10 30,7 22,9 C27,13 32,16 38,20 Z" fill="url(#df-fire-core)"/>
+            <path d="M56,15 C62,8 72,4 82,7 C75,12 70,16 62,20 Z" fill="url(#df-fire-body)"/>
+            <path d="M57,16 C62,10 70,7 78,9 C73,13 68,16 62,20 Z" fill="url(#df-fire-core)"/>
+            <path d="M50,-3 C44,6 45,13 50,17 C55,13 56,6 50,-3 Z" fill="url(#df-fire-body)"/>
+            <path d="M50,1 C47,7 48,12 50,15 C52,12 53,7 50,1 Z" fill="url(#df-fire-core)"/>
+          </g>
+
+          <!-- Sinuous Curving Flame Tongues (Dynamic Flame Ring) -->
+          <g class="deco-dragon-tongues-layer1">
+            <path d="M85,18 C90,26 84,33 79,35 C85,32 92,25 85,18 Z" fill="url(#df-fire-body)"/>
+            <path d="M97,44 C101,51 95,58 89,59 C95,55 101,49 97,44 Z" fill="url(#df-fire-body)"/>
+            <path d="M94,46 C97,51 92,55 88,56 C93,53 96,49 94,46 Z" fill="url(#df-fire-core)"/>
+            <path d="M86,77 C90,85 81,90 75,88 C81,87 88,83 86,77 Z" fill="url(#df-fire-body)"/>
+            <path d="M50,103 C43,94 43,87 50,83 C57,87 57,94 50,103 Z" fill="url(#df-fire-body)"/>
+            <path d="M50,99 C46,93 46,88 50,85 C54,88 54,93 50,99 Z" fill="url(#df-fire-core)"/>
+            <path d="M14,77 C10,85 19,90 25,88 C19,87 12,83 14,77 Z" fill="url(#df-fire-body)"/>
+            <path d="M3,44 C-1,51 5,58 11,59 C5,55 -1,49 3,44 Z" fill="url(#df-fire-body)"/>
+            <path d="M6,46 C3,51 8,55 12,56 C7,53 4,49 6,46 Z" fill="url(#df-fire-core)"/>
+            <path d="M15,18 C10,26 16,33 21,35 C15,32 8,25 15,18 Z" fill="url(#df-fire-body)"/>
+          </g>
+
+          <g class="deco-dragon-tongues-layer2">
+            <path d="M68,5 C75,12 70,18 64,19 C70,17 76,11 68,5 Z" fill="url(#df-fire-core)"/>
+            <path d="M93,33 C98,39 92,45 87,44 C92,43 97,37 93,33 Z" fill="url(#df-fire-body)"/>
+            <path d="M83,67 C88,73 82,79 77,78 C82,76 87,71 83,67 Z" fill="url(#df-fire-core)"/>
+            <path d="M32,5 C25,12 30,18 36,19 C30,17 24,11 32,5 Z" fill="url(#df-fire-core)"/>
+            <path d="M7,33 C2,39 8,45 13,44 C8,43 3,37 7,33 Z" fill="url(#df-fire-body)"/>
+            <path d="M17,67 C12,73 18,79 23,78 C18,76 13,71 17,67 Z" fill="url(#df-fire-core)"/>
+          </g>
+
+          <!-- Floating Fire Embers -->
+          <g class="deco-dragon-sparks">
+            <circle cx="26" cy="0" r="2.2" fill="#fff"/>
+            <circle cx="74" cy="0" r="2.2" fill="#fff"/>
+            <circle cx="98" cy="28" r="1.8" fill="#fde047"/>
+            <circle cx="96" cy="68" r="1.8" fill="#f97316"/>
+            <circle cx="2" cy="28" r="1.8" fill="#fde047"/>
+            <circle cx="4" cy="68" r="1.8" fill="#f97316"/>
+            <circle cx="38" cy="99" r="1.6" fill="#fde047"/>
+            <circle cx="62" cy="99" r="1.6" fill="#fde047"/>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
   if (decoCode === "deco_cyber_neon") {
     return `
-      <div class="discord-avatar-decoration">
-        <svg viewBox="0 0 100 100" class="deco-cyber-glow-wrap">
+      <div class="discord-avatar-decoration deco-cyber-vip">
+        <svg viewBox="0 0 100 100">
           <defs>
-            <linearGradient id="cyber-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="cyber-neon-grad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#00f0ff"/>
-              <stop offset="50%" stop-color="#7000ff"/>
+              <stop offset="35%" stop-color="#3b82f6"/>
+              <stop offset="70%" stop-color="#a855f7"/>
               <stop offset="100%" stop-color="#ff007b"/>
             </linearGradient>
+            <linearGradient id="cyber-laser-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="transparent"/>
+              <stop offset="70%" stop-color="#00f0ff"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
           </defs>
-          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#cyber-grad)" stroke-width="3" stroke-dasharray="14 6 8 4" class="deco-cyber-ring-outer"/>
-          <circle cx="50" cy="50" r="42" fill="none" stroke="#00f0ff" stroke-width="1.5" stroke-dasharray="5 7" class="deco-cyber-ring-inner"/>
-          <polygon points="50,2 53,7 47,7" fill="#00f0ff" />
-          <polygon points="50,98 53,93 47,93" fill="#ff007b" />
-          <polygon points="2,50 7,47 7,53" fill="#7000ff" />
-          <polygon points="98,50 93,47 93,53" fill="#00f0ff" />
+
+          <!-- 4 Corner Tactical Reticles -->
+          <g class="deco-cyber-corners">
+            <path d="M14,4 L4,4 L4,14" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M86,4 L96,4 L96,14" fill="none" stroke="#ff007b" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M14,96 L4,96 L4,86" fill="none" stroke="#ff007b" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M86,96 L96,96 L96,86" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round"/>
+          </g>
+
+          <!-- Outer High-Precision Segmented Tech HUD Ring -->
+          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#cyber-neon-grad)" stroke-width="3" stroke-dasharray="28 8 12 8 4 6" class="deco-cyber-outer-spin"/>
+
+          <!-- High-Speed Traveling Electric Laser Pulse -->
+          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#cyber-laser-grad)" stroke-width="4" stroke-dasharray="35 255" class="deco-cyber-laser-pulse"/>
+
+          <!-- Inner Tactical Reticle Counter-Rotating Ring -->
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#00f0ff" stroke-width="1.5" stroke-dasharray="4 6" class="deco-cyber-inner-spin"/>
+
+          <!-- 4 Holographic Tactical Beacon Nodes -->
+          <g class="deco-cyber-beacons">
+            <polygon points="50,1 54,8 46,8" fill="#00f0ff"/>
+            <circle cx="50" cy="5" r="1.5" fill="#fff"/>
+            <polygon points="50,99 54,92 46,92" fill="#ff007b"/>
+            <circle cx="50" cy="95" r="1.5" fill="#fff"/>
+            <polygon points="1,50 8,46 8,54" fill="#3b82f6"/>
+            <circle cx="5" cy="50" r="1.5" fill="#fff"/>
+            <polygon points="99,50 92,46 92,54" fill="#00f0ff"/>
+            <circle cx="95" cy="50" r="1.5" fill="#fff"/>
+          </g>
         </svg>
       </div>
     `;
   }
   if (decoCode === "deco_sakura_bloom") {
     return `
-      <div class="discord-avatar-decoration">
-        <svg viewBox="0 0 100 100" class="deco-sakura-petals">
-          <circle cx="50" cy="50" r="45" fill="none" stroke="#f472b6" stroke-width="2.5" stroke-dasharray="16 4 8 4" class="deco-sakura-ring"/>
-          <g transform-origin="50 50">
-            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#ff85c0" transform="rotate(15 50 50)"/>
-            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#fbcfe8" transform="rotate(75 50 50)"/>
-            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#ff4b82" transform="rotate(135 50 50)"/>
-            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#ff85c0" transform="rotate(195 50 50)"/>
-            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#fbcfe8" transform="rotate(255 50 50)"/>
-            <path d="M50,3 C46,9 50,14 50,14 C50,14 54,9 50,3 Z" fill="#ff4b82" transform="rotate(315 50 50)"/>
-          </g>
-        </svg>
-      </div>
-    `;
-  }
-  if (decoCode === "deco_flame_dragon") {
-    return `
-      <div class="discord-avatar-decoration">
+      <div class="discord-avatar-decoration deco-sakura-vip">
         <svg viewBox="0 0 100 100">
           <defs>
-            <linearGradient id="dragon-flame-grad" x1="0%" y1="100%" x2="0%" y2="0%">
-              <stop offset="0%" stop-color="#ff1a1a"/>
-              <stop offset="50%" stop-color="#ff7b00"/>
-              <stop offset="100%" stop-color="#ffee55"/>
+            <linearGradient id="sakura-petal-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fff0f5"/>
+              <stop offset="45%" stop-color="#ff7eb3"/>
+              <stop offset="100%" stop-color="#ff3385"/>
+            </linearGradient>
+            <linearGradient id="sakura-vine-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#fbcfe8"/>
+              <stop offset="50%" stop-color="#f472b6"/>
+              <stop offset="100%" stop-color="#ec4899"/>
             </linearGradient>
           </defs>
-          <circle cx="50" cy="50" r="44" fill="none" stroke="url(#dragon-flame-grad)" stroke-width="3" stroke-dasharray="24 6 12 4" class="deco-flame-ring"/>
-          <g class="deco-flame-tongues">
-            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)"/>
-            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)" transform="rotate(60 50 50)"/>
-            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)" transform="rotate(120 50 50)"/>
-            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)" transform="rotate(180 50 50)"/>
-            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)" transform="rotate(240 50 50)"/>
-            <path d="M50,1 C45,10 44,14 50,20 C56,14 55,10 50,1 Z" fill="url(#dragon-flame-grad)" transform="rotate(300 50 50)"/>
+
+          <!-- Arching Floral Vine Ring -->
+          <circle cx="50" cy="50" r="45" fill="none" stroke="url(#sakura-vine-grad)" stroke-width="2.5" stroke-dasharray="20 6 10 5" class="deco-sakura-vine-ring"/>
+
+          <!-- 3 Lush Cherry Blossom Flower Clusters -->
+          <g transform="translate(76, 20) scale(0.85)" class="deco-sakura-flower">
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(0)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(72)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(144)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(216)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(288)"/>
+            <circle cx="0" cy="0" r="2.2" fill="#fbbf24"/>
+            <circle cx="0" cy="0" r="1.2" fill="#fff"/>
+          </g>
+
+          <g transform="translate(24, 80) scale(0.9)" class="deco-sakura-flower">
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(20)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(92)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(164)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(236)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(308)"/>
+            <circle cx="0" cy="0" r="2.4" fill="#fbbf24"/>
+            <circle cx="0" cy="0" r="1.3" fill="#fff"/>
+          </g>
+
+          <g transform="translate(82, 72) scale(0.7)" class="deco-sakura-flower">
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(35)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(107)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(179)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(251)"/>
+            <path d="M0,0 C-4,-8 4,-8 0,0 Z" fill="url(#sakura-petal-grad)" transform="rotate(323)"/>
+            <circle cx="0" cy="0" r="2" fill="#fbbf24"/>
+          </g>
+
+          <!-- 6 Floating Loose Petals in 3D Orbit -->
+          <g class="deco-sakura-orbit-petals">
+            <path d="M50,2 C47,6 50,11 50,11 C50,11 53,6 50,2 Z" fill="url(#sakura-petal-grad)" class="sakura-p1"/>
+            <path d="M96,48 C92,51 94,56 94,56 C94,56 98,52 96,48 Z" fill="url(#sakura-petal-grad)" class="sakura-p2"/>
+            <path d="M48,97 C45,93 47,88 47,88 C47,88 51,92 48,97 Z" fill="url(#sakura-petal-grad)" class="sakura-p3"/>
+            <path d="M3,52 C6,48 5,43 5,43 C5,43 1,47 3,52 Z" fill="url(#sakura-petal-grad)" class="sakura-p4"/>
+            <path d="M22,18 C19,22 22,27 22,27 C22,27 25,22 22,18 Z" fill="url(#sakura-petal-grad)" class="sakura-p5"/>
+            <path d="M78,88 C81,84 79,79 79,79 C79,79 75,83 78,88 Z" fill="url(#sakura-petal-grad)" class="sakura-p6"/>
+          </g>
+
+          <!-- Magical Twinkling Sparkle Stars (✦) -->
+          <g class="deco-sakura-sparkles">
+            <path d="M50,7 Q50,11 46,11 Q50,11 50,15 Q50,11 54,11 Q50,11 50,7 Z" fill="#ffd700" class="sakura-sp1"/>
+            <path d="M92,30 Q92,33 89,33 Q92,33 92,36 Q92,33 95,33 Q92,33 92,30 Z" fill="#fff" class="sakura-sp2"/>
+            <path d="M12,70 Q12,73 9,73 Q12,73 12,76 Q12,73 15,73 Q12,73 12,70 Z" fill="#ffd700" class="sakura-sp3"/>
+            <path d="M35,94 Q35,96 33,96 Q35,96 35,98 Q35,96 37,96 Q35,96 35,94 Z" fill="#fff" class="sakura-sp4"/>
           </g>
         </svg>
       </div>
@@ -3071,22 +3204,42 @@ export function generateAvatarDecorationSvg(decoCode) {
   }
   if (decoCode === "deco_galaxy_portal") {
     return `
-      <div class="discord-avatar-decoration">
+      <div class="discord-avatar-decoration deco-galaxy-vip">
         <svg viewBox="0 0 100 100">
           <defs>
-            <linearGradient id="portal-galaxy-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id="galaxy-vortex-grad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#8b5cf6"/>
-              <stop offset="50%" stop-color="#3b82f6"/>
-              <stop offset="100%" stop-color="#ec4899"/>
+              <stop offset="35%" stop-color="#3b82f6"/>
+              <stop offset="70%" stop-color="#ec4899"/>
+              <stop offset="100%" stop-color="#06b6d4"/>
             </linearGradient>
+            <radialGradient id="galaxy-core-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="70%" stop-color="transparent"/>
+              <stop offset="90%" stop-color="rgba(139, 92, 246, 0.4)"/>
+              <stop offset="100%" stop-color="rgba(236, 72, 153, 0.7)"/>
+            </radialGradient>
           </defs>
-          <circle cx="50" cy="50" r="45" fill="none" stroke="url(#portal-galaxy-grad)" stroke-width="3.5" stroke-dasharray="18 6 12 4" class="deco-galaxy-swirl"/>
+
+          <!-- Outer Accretion Vortex Disk -->
+          <circle cx="50" cy="50" r="46" fill="url(#galaxy-core-glow)" stroke="url(#galaxy-vortex-grad)" stroke-width="3.5" stroke-dasharray="32 10 20 8 10 6" class="deco-galaxy-vortex-spin"/>
+
+          <!-- Secondary Swirling Nebula Waves -->
+          <circle cx="50" cy="50" r="42" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-dasharray="6 8" class="deco-galaxy-inner-waves"/>
+
+          <!-- Orbiting Celestial Satellite / Moon with Light Trail -->
+          <g class="deco-galaxy-satellite-orbit">
+            <circle cx="50" cy="3" r="3.2" fill="#ffffff" filter="drop-shadow(0 0 4px #00f0ff)"/>
+            <path d="M50,3 C45,3 38,5 34,7" fill="none" stroke="#00f0ff" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+          </g>
+
+          <!-- 4-Point Starlight Sparkles (✦) -->
           <g class="deco-galaxy-stars">
-            <circle cx="50" cy="5" r="2.5" fill="#fff"/>
-            <circle cx="89" cy="27" r="2" fill="#a5f3fc"/>
-            <circle cx="85" cy="74" r="3" fill="#fbcfe8"/>
-            <circle cx="22" cy="80" r="2" fill="#e0e7ff"/>
-            <circle cx="11" cy="34" r="2.5" fill="#fff"/>
+            <path d="M22,18 Q22,23 17,23 Q22,23 22,28 Q22,23 27,23 Q22,23 22,18 Z" fill="#fff" class="gstar-1"/>
+            <path d="M82,16 Q82,20 78,20 Q82,20 82,24 Q82,20 86,20 Q82,20 82,16 Z" fill="#fde047" class="gstar-2"/>
+            <path d="M94,52 Q94,56 90,56 Q94,56 94,60 Q94,56 98,56 Q94,56 94,52 Z" fill="#67e8f9" class="gstar-3"/>
+            <path d="M78,82 Q78,87 73,87 Q78,87 78,92 Q78,87 83,87 Q78,87 78,82 Z" fill="#fff" class="gstar-4"/>
+            <path d="M24,84 Q24,88 20,88 Q24,88 24,92 Q24,88 28,88 Q24,88 24,84 Z" fill="#f472b6" class="gstar-5"/>
+            <path d="M6,46 Q6,50 2,50 Q6,50 6,54 Q6,50 10,50 Q6,50 6,46 Z" fill="#c084fc" class="gstar-6"/>
           </g>
         </svg>
       </div>
@@ -3094,11 +3247,33 @@ export function generateAvatarDecorationSvg(decoCode) {
   }
   if (decoCode === "deco_retro_glitch") {
     return `
-      <div class="discord-avatar-decoration">
-        <div class="deco-glitch-wrap">
-          <div class="deco-glitch-border"></div>
-          <span class="deco-glitch-tag">GLITCH</span>
-        </div>
+      <div class="discord-avatar-decoration deco-glitch-vip">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="glitch-cyan-mag" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#00f0ff"/>
+              <stop offset="100%" stop-color="#ff007b"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Cybernetic Visor Antennae -->
+          <g class="deco-glitch-horns">
+            <polygon points="26,12 34,4 40,16" fill="#00f0ff"/>
+            <polygon points="74,12 66,4 60,16" fill="#ff007b"/>
+          </g>
+
+          <!-- Chromatic Aberration RGB Rings -->
+          <circle cx="49" cy="50" r="45" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-dasharray="24 6 12 4" class="deco-glitch-cyan-ring"/>
+          <circle cx="51" cy="50" r="45" fill="none" stroke="#ff007b" stroke-width="2.5" stroke-dasharray="20 8 16 6" class="deco-glitch-magenta-ring"/>
+          <circle cx="50" cy="50" r="45" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="30 10" class="deco-glitch-main-ring"/>
+
+          <!-- 4 Corner Cyber Visor Frame Nodes -->
+          <rect x="2" y="47" width="6" height="6" fill="#00f0ff"/>
+          <rect x="92" y="47" width="6" height="6" fill="#ff007b"/>
+          <rect x="47" y="2" width="6" height="6" fill="#00f0ff"/>
+          <rect x="47" y="92" width="6" height="6" fill="#ff007b"/>
+        </svg>
+        <span class="deco-glitch-vip-tag">CYBER 2077</span>
       </div>
     `;
   }
@@ -3138,36 +3313,57 @@ window.renderDecoratedAvatar = renderDecoratedAvatar;
 
 export function renderProfileEffectHtml(fxCode) {
   if (fxCode === "fx_matrix_rain") {
-    const chars = "10101011001";
     return `
       <div class="discord-profile-fx-layer discord-fx-matrix">
-        <div class="discord-matrix-column" style="left:8%; animation-duration:3.2s; animation-delay:0s;">${chars}</div>
-        <div class="discord-matrix-column" style="left:26%; animation-duration:4.5s; animation-delay:1.1s;">01101001</div>
-        <div class="discord-matrix-column" style="left:48%; animation-duration:3.8s; animation-delay:0.5s;">10011010</div>
-        <div class="discord-matrix-column" style="left:72%; animation-duration:4.1s; animation-delay:1.7s;">01011100</div>
-        <div class="discord-matrix-column" style="left:90%; animation-duration:3.5s; animation-delay:0.8s;">11001010</div>
+        <div class="discord-matrix-column" style="left:4%; animation-duration:2.8s; animation-delay:0s;"><span class="matrix-head">1</span>01011001</div>
+        <div class="discord-matrix-column" style="left:13%; animation-duration:3.6s; animation-delay:0.8s;"><span class="matrix-head">0</span>11010101</div>
+        <div class="discord-matrix-column" style="left:22%; animation-duration:3.0s; animation-delay:1.4s;"><span class="matrix-head">1</span>00110100</div>
+        <div class="discord-matrix-column" style="left:31%; animation-duration:4.1s; animation-delay:0.3s;"><span class="matrix-head">0</span>10111001</div>
+        <div class="discord-matrix-column" style="left:40%; animation-duration:3.3s; animation-delay:1.9s;"><span class="matrix-head">1</span>10010101</div>
+        <div class="discord-matrix-column" style="left:50%; animation-duration:2.9s; animation-delay:0.5s;"><span class="matrix-head">0</span>11011010</div>
+        <div class="discord-matrix-column" style="left:59%; animation-duration:3.8s; animation-delay:1.1s;"><span class="matrix-head">1</span>01001101</div>
+        <div class="discord-matrix-column" style="left:68%; animation-duration:3.2s; animation-delay:0.2s;"><span class="matrix-head">0</span>11100101</div>
+        <div class="discord-matrix-column" style="left:77%; animation-duration:4.0s; animation-delay:1.6s;"><span class="matrix-head">1</span>00101100</div>
+        <div class="discord-matrix-column" style="left:86%; animation-duration:3.4s; animation-delay:0.7s;"><span class="matrix-head">0</span>10110101</div>
+        <div class="discord-matrix-column" style="left:95%; animation-duration:3.7s; animation-delay:1.3s;"><span class="matrix-head">1</span>10011010</div>
       </div>
     `;
   }
   if (fxCode === "fx_stardust_magic") {
     return `
       <div class="discord-profile-fx-layer discord-fx-stardust">
-        <div class="discord-stardust-particle" style="left:12%; animation-delay:0s; animation-duration:3.4s;"></div>
-        <div class="discord-stardust-particle" style="left:34%; animation-delay:1.2s; animation-duration:4.1s; width:8px; height:8px;"></div>
-        <div class="discord-stardust-particle" style="left:58%; animation-delay:0.6s; animation-duration:3.7s;"></div>
-        <div class="discord-stardust-particle" style="left:76%; animation-delay:2.1s; animation-duration:4.6s; width:7px; height:7px;"></div>
-        <div class="discord-stardust-particle" style="left:88%; animation-delay:1.5s; animation-duration:3.1s;"></div>
+        <div class="stardust-ambient-glow"></div>
+        <div class="discord-stardust-star" style="left:8%; animation-delay:0s; animation-duration:3.6s;">✦</div>
+        <div class="discord-stardust-star" style="left:22%; animation-delay:1.4s; animation-duration:4.2s; font-size:18px;">✦</div>
+        <div class="discord-stardust-star" style="left:38%; animation-delay:0.6s; animation-duration:3.8s; font-size:12px;">✦</div>
+        <div class="discord-stardust-star" style="left:54%; animation-delay:2.1s; animation-duration:4.5s; font-size:20px;">✦</div>
+        <div class="discord-stardust-star" style="left:68%; animation-delay:1.1s; animation-duration:3.4s; font-size:14px;">✦</div>
+        <div class="discord-stardust-star" style="left:82%; animation-delay:0.3s; animation-duration:4.0s; font-size:16px;">✦</div>
+        <div class="discord-stardust-star" style="left:93%; animation-delay:1.8s; animation-duration:3.7s; font-size:13px;">✦</div>
+        <div class="discord-stardust-particle" style="left:15%; animation-delay:0.5s; animation-duration:3.2s;"></div>
+        <div class="discord-stardust-particle" style="left:29%; animation-delay:1.8s; animation-duration:4.0s; width:8px; height:8px;"></div>
+        <div class="discord-stardust-particle" style="left:46%; animation-delay:0.9s; animation-duration:3.5s;"></div>
+        <div class="discord-stardust-particle" style="left:62%; animation-delay:2.4s; animation-duration:4.3s; width:7px; height:7px;"></div>
+        <div class="discord-stardust-particle" style="left:75%; animation-delay:1.2s; animation-duration:3.1s;"></div>
+        <div class="discord-stardust-particle" style="left:88%; animation-delay:2.0s; animation-duration:3.9s;"></div>
       </div>
     `;
   }
   if (fxCode === "fx_fire_sparks") {
     return `
       <div class="discord-profile-fx-layer discord-fx-fire">
-        <div class="discord-fire-ember" style="left:18%; animation-delay:0s; animation-duration:2.5s;"></div>
-        <div class="discord-fire-ember" style="left:38%; animation-delay:0.9s; animation-duration:3.1s; width:6px; height:6px;"></div>
-        <div class="discord-fire-ember" style="left:55%; animation-delay:0.4s; animation-duration:2.7s;"></div>
-        <div class="discord-fire-ember" style="left:72%; animation-delay:1.4s; animation-duration:3.3s; width:7px; height:7px;"></div>
-        <div class="discord-fire-ember" style="left:86%; animation-delay:0.7s; animation-duration:2.2s;"></div>
+        <div class="fire-bottom-furnace-glow"></div>
+        <div class="discord-fire-ember" style="left:7%; animation-delay:0s; animation-duration:2.4s; width:6px; height:6px;"></div>
+        <div class="discord-fire-ember" style="left:15%; animation-delay:1.1s; animation-duration:3.0s; width:4px; height:4px;"></div>
+        <div class="discord-fire-ember" style="left:24%; animation-delay:0.5s; animation-duration:2.6s; width:7px; height:7px;"></div>
+        <div class="discord-fire-ember" style="left:33%; animation-delay:1.8s; animation-duration:3.3s; width:5px; height:5px;"></div>
+        <div class="discord-fire-ember" style="left:42%; animation-delay:0.2s; animation-duration:2.8s; width:8px; height:8px;"></div>
+        <div class="discord-fire-ember" style="left:51%; animation-delay:1.4s; animation-duration:3.1s; width:4px; height:4px;"></div>
+        <div class="discord-fire-ember" style="left:60%; animation-delay:0.7s; animation-duration:2.5s; width:7px; height:7px;"></div>
+        <div class="discord-fire-ember" style="left:69%; animation-delay:2.0s; animation-duration:3.4s; width:5px; height:5px;"></div>
+        <div class="discord-fire-ember" style="left:78%; animation-delay:0.9s; animation-duration:2.7s; width:8px; height:8px;"></div>
+        <div class="discord-fire-ember" style="left:87%; animation-delay:1.5s; animation-duration:3.2s; width:4px; height:4px;"></div>
+        <div class="discord-fire-ember" style="left:94%; animation-delay:0.4s; animation-duration:2.3s; width:6px; height:6px;"></div>
       </div>
     `;
   }
@@ -3492,12 +3688,13 @@ function renderShop() {
 
               let previewHtml = "";
               if (isDeco) {
-                previewHtml = renderDecoratedAvatar(userAvatar, item.code, 52, userName);
+                previewHtml = renderDecoratedAvatar(userAvatar, item.code, 62, userName);
               } else {
                 previewHtml = `
-                  <div style="width:52px; height:52px; border-radius:50%; position:relative; overflow:hidden; border:2px solid rgba(255,255,255,0.2); background:#111216; display:flex; align-items:center; justify-content:center;">
+                  <div class="discord-nitro-fx-mini-stage">
                     ${renderProfileEffectHtml(item.code)}
-                    <span style="position:relative; z-index:2; font-size:18px;">✨</span>
+                    <div class="mini-stage-avatar"></div>
+                    <div class="mini-stage-line"></div>
                   </div>
                 `;
               }
