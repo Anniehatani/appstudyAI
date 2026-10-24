@@ -5972,8 +5972,8 @@ function renderAcademicLoginModal() {
 
           <!-- NÚT DUY NHẤT: ĐĂNG NHẬP CỔNG IU -->
           <div class="iu-single-action-box">
-            <button type="button" id="btn-iu-popup-login" class="btn-microsoft-sso" onclick="window.handleIuPortalLogin()">
-              <svg width="22" height="22" viewBox="0 0 21 21">
+            <button type="button" id="btn-iu-popup-login" class="btn-microsoft-sso iu-single-big-btn" onclick="window.handleIuPortalLogin()">
+              <svg width="24" height="24" viewBox="0 0 21 21">
                 <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
                 <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
                 <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
@@ -5983,33 +5983,10 @@ function renderAcademicLoginModal() {
             </button>
             <p class="iu-single-hint">
               ${isDesktop
-                ? "Nhấn nút để mở cửa sổ đăng nhập cổng trường. Đăng nhập xong, cửa sổ sẽ tự động đóng và Thỏ đục bảng điểm về cho bạn!"
-                : "Nhấn nút để mở cửa sổ cổng IU. Đăng nhập xong, bấm xác nhận để đóng cửa sổ và đồng bộ bảng điểm!"}
+                ? "Nhấn nút để mở cửa sổ đăng nhập cổng trường. Đăng nhập Microsoft xong, cửa sổ sẽ <strong>TỰ ĐỘNG ĐÓNG</strong> và Thỏ sẽ tự động cào bảng điểm về cho bạn!"
+                : "Nhấn nút để mở cửa sổ cổng IU. Đăng nhập Microsoft xong, bấm xác nhận để đóng cửa sổ và đồng bộ bảng điểm!"}
             </p>
           </div>
-
-          <!-- ĐƯỜNG PHÂN CÁCH -->
-          <div class="academic-modal-divider"><span>hoặc tài khoản mật khẩu cổng IU</span></div>
-
-          <!-- PHƯƠNG THỨC 2: FORM TRỰC TIẾP -->
-          <form onsubmit="window.submitAcademicLogin(event)">
-            <div class="academic-field-group">
-              <label for="iu-login-user">Mã sinh viên / Tài khoản cổng IU:</label>
-              <input type="text" id="iu-login-user" class="academic-input" placeholder="Ví dụ: bai250001 hoặc bai250001@st.cmcu.edu.vn" required autocomplete="username">
-            </div>
-            <div class="academic-field-group">
-              <label for="iu-login-pass">Mật khẩu cổng trường:</label>
-              <input type="password" id="iu-login-pass" class="academic-input" placeholder="Mật khẩu cổng iu.cmcu.edu.vn" required autocomplete="current-password">
-            </div>
-            <div class="academic-note-box">
-              🔒 <strong>Bảo mật tuyệt đối:</strong> Thông tin đăng nhập chỉ được gửi trực tiếp tới máy chủ cổng IU để xác thực và tải bảng điểm, hoàn toàn không lưu trữ mật khẩu trên máy chủ 3TG.
-            </div>
-            <div class="academic-form-actions">
-              <button type="submit" id="iu-submit-btn" class="btn-duo btn-duo-pink academic-submit-btn">
-                🚀 Đăng Nhập & Cào Điểm Trực Tiếp
-              </button>
-            </div>
-          </form>
         </div>
       </div>
     </div>

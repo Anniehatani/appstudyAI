@@ -542,20 +542,23 @@ async function goiIU(session, cookie, tenEndpoint, patch = {}) {
 
   const url = `${IU_API_BASE}/${ep.module}/${ep.suffix}`;
   const headers = {
-    Accept: "application/json, text/plain, */*",
-    "Content-Type": "application/json;charset=UTF-8",
+    Accept: "*/*",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "X-Requested-With": "XMLHttpRequest",
     Cookie: cookieFrom(cookie),
     Origin: IU_ORIGIN,
     Referer: `${IU_ORIGIN}/congthongtin/Index.aspx`,
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0",
   };
-  if (session.token || session.tokenJWT) {
-    headers.Authorization = `Bearer ${session.token || session.tokenJWT}`;
+  const token = session.tokenJWT || session.token || "";
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const res = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(bodyEncrypted),
+    body: new URLSearchParams({ A: ma_hoa_iu(payload) }),
     signal: AbortSignal.timeout(30000),
   });
 

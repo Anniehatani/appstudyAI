@@ -253,7 +253,7 @@ ipcMain.handle("academic:open-iu-login", async () => {
     // Đã đăng nhập vào IU thành công -> Đọc thông tin phiên từ window.edu.system
     let session = null;
     const waitSessionStart = Date.now();
-    while (Date.now() - waitSessionStart < 12000) {
+    while (Date.now() - waitSessionStart < 15000) {
       if (loginWin.isDestroyed()) break;
       try {
         const raw = await loginWin.webContents.executeJavaScript(`
@@ -279,14 +279,27 @@ ipcMain.handle("academic:open-iu-login", async () => {
           if (parsed.tokenJWT && parsed.userId) break;
         }
       } catch {}
-      await sleep(400);
+      await sleep(500);
     }
 
-    // Lấy cookie cổng IU từ session partition persist:cmc-portal
+    // Lấy cookie cổng IU từ session partition persist:cmc-portal (bao gồm cả ASP.NET_SessionId)
     let cookieStr = "";
     try {
-      const cookies = await loginWin.webContents.session.cookies.get({ domain: "cmcu.edu.vn" });
-      cookieStr = cookies.map(c => `${c.name}=${c.value}`).join("; ");
+      const ses = loginWin.webContents.session;
+      const [listIu, listCmc, listAll] = await Promise.all([
+        ses.cookies.get({ url: "https://iu.cmcu.edu.vn" }).catch(() => []),
+        ses.cookies.get({ url: "https://cmcu.edu.vn" }).catch(() => []),
+        ses.cookies.get({}).catch(() => [])
+      ]);
+      const map = new Map();
+      for (const c of [...listAll, ...listCmc, ...listIu]) {
+        if (!c || !c.name) continue;
+        if ((c.domain && c.domain.includes("cmcu.edu.vn")) || c.name === "ASP.NET_SessionId" || c.name.startsWith(".ASPX")) {
+          map.set(c.name, c.value);
+        }
+      }
+      cookieStr = Array.from(map.entries()).map(([k, v]) => `${k}=${v}`).join("; ");
+      console.log(`[IU Bridge] Đã bắt ${map.size} cookies: ${Array.from(map.keys()).join(", ")}`);
     } catch (e) {
       console.warn("[IU Cookie Error]", e);
     }
@@ -295,6 +308,7 @@ ipcMain.handle("academic:open-iu-login", async () => {
     finished = true;
     try {
       if (!loginWin.isDestroyed()) {
+        loginWin.hide();
         loginWin.close();
       }
     } catch {}

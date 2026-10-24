@@ -2080,6 +2080,9 @@ async function handleAcademicImportData(request, user, env) {
       studentInfo = academicData.studentInfo || {};
     } catch (fetchErr) {
       console.warn("[Academic Fetch From Session Error]", fetchErr.message);
+      if (!rawInput.raw_subjects && !rawInput.IU && !rawInput.rsDiemKetThucHocPhan) {
+        throw new HttpError(400, "Không thể lấy bảng điểm từ cổng trường IU: " + fetchErr.message);
+      }
     }
   }
 

@@ -5560,6 +5560,26 @@ button:focus-visible, input:focus-visible {
   box-shadow: 0 4px 14px rgba(0, 120, 212, 0.15);
 }
 
+.btn-microsoft-sso.iu-single-big-btn {
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 16px;
+  border: 2.5px solid #0078d4;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+  color: #0078d4;
+  box-shadow: 0 4px 16px rgba(0, 120, 212, 0.18);
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.btn-microsoft-sso.iu-single-big-btn:hover {
+  background: #0078d4;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(0, 120, 212, 0.32);
+}
+
 .academic-modal-divider {
   display: flex;
   align-items: center;

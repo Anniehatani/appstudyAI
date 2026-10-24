@@ -93,23 +93,25 @@ export async function goiIU(session, cookie, tenEndpoint, patch = {}) {
     ...patch,
   };
 
-  const bodyEncrypted = { A: ma_hoa_iu(payload) };
   const url = `${IU_API_BASE}/${ep.module}/${ep.suffix}`;
   const headers = {
-    Accept: "application/json, text/plain, */*",
-    "Content-Type": "application/json;charset=UTF-8",
+    Accept: "*/*",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "X-Requested-With": "XMLHttpRequest",
     Cookie: cookieFrom(cookie),
     Origin: IU_ORIGIN,
     Referer: `${IU_ORIGIN}/congthongtin/Index.aspx`,
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0",
   };
-  if (session && (session.token || session.tokenJWT)) {
-    headers.Authorization = `Bearer ${session.token || session.tokenJWT}`;
+  const token = session ? (session.tokenJWT || session.token) : "";
+  if (token) {
+    headers.Authorization = "Bearer " + token;
   }
 
   const res = await fetch(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(bodyEncrypted),
+    body: new URLSearchParams({ A: ma_hoa_iu(payload) }),
     signal: AbortSignal.timeout(25000),
   });
 
@@ -123,7 +125,7 @@ export async function goiIU(session, cookie, tenEndpoint, patch = {}) {
 
   if (!res.ok) {
     if (res.status === 401) {
-      throw new Error("Phiên làm việc trên cổng IU không hợp lệ hoặc đã hết hạn (HTTP 401). Vui lòng thử đăng nhập lại bằng Mã sinh viên.");
+      throw new Error("Phiên làm việc trên cổng IU không hợp lệ hoặc đã hết hạn (HTTP 401).");
     }
     const msg = (json && (json.Message || json.error)) || `Portal IU HTTP ${res.status}`;
     throw new Error(msg);
@@ -135,11 +137,20 @@ export async function goiIU(session, cookie, tenEndpoint, patch = {}) {
 
   let duLieuGiaiMa = json.Data;
   if (json.Data && typeof json.Data === "object" && typeof json.Data.B === "string") {
-    const rawPlain = giai_ma_iu(json.Data.B, payload.iM || IM_MAC_DINH);
-    try {
-      duLieuGiaiMa = JSON.parse(rawPlain);
-    } catch {
-      duLieuGiaiMa = rawPlain;
+    const keysThu = [payload.iM || IM_MAC_DINH, "AzzSystem", "AzzKeyApi", "AzzCore"];
+    for (const k of keysThu) {
+      if (!k) continue;
+      try {
+        const rawPlain = giai_ma_iu(json.Data.B, k);
+        if (rawPlain) {
+          try {
+            duLieuGiaiMa = JSON.parse(rawPlain);
+          } catch {
+            duLieuGiaiMa = rawPlain;
+          }
+          break;
+        }
+      } catch {}
     }
   }
 
