@@ -6689,6 +6689,107 @@ button:focus-visible, input:focus-visible {
   box-shadow: 0 4px 14px rgba(88, 101, 242, 0.35);
 }
 
+.shop-category-tab.active.tab-wallpaper {
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+}
+
+/* 14 WALLPAPERS R2 GRID & CARDS */
+.discord-wallpaper-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  width: 100%;
+  gap: 16px;
+  margin-bottom: 28px;
+  align-items: stretch;
+}
+
+.discord-wallpaper-card {
+  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.discord-wallpaper-card:hover {
+  transform: translateY(-4px);
+  border-color: #0ea5e9;
+  box-shadow: 0 14px 28px rgba(14, 165, 233, 0.18);
+}
+
+.discord-wallpaper-card.equipped {
+  border-color: #10b981;
+  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.22);
+}
+
+.discord-wallpaper-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.discord-wallpaper-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.discord-wallpaper-card:hover .discord-wallpaper-thumb img {
+  transform: scale(1.05);
+}
+
+.discord-wallpaper-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 10.5px;
+  font-weight: 900;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(4px);
+}
+
+.discord-wallpaper-info {
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.discord-wallpaper-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink-900);
+  margin: 0 0 4px;
+  line-height: 1.3;
+}
+
+.discord-wallpaper-desc {
+  font-size: 11.5px;
+  color: var(--ink-500);
+  line-height: 1.4;
+  margin: 0 0 12px;
+  flex: 1;
+}
+
+.discord-wallpaper-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 /* NITRO COMPACT GRID */
 .discord-nitro-compact-grid {
   display: grid;

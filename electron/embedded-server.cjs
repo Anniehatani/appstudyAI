@@ -62,11 +62,101 @@ function loadEnvVars(rootPath) {
   return env;
 }
 
+const https = require("https");
+const crypto = require("crypto");
 const { pathToFileURL } = require("url");
+
+function createR2BucketAdapter(config) {
+  const accountId = config.R2_ACCOUNT_ID;
+  const accessKey = config.R2_ACCESS_KEY_ID;
+  const secretKey = config.R2_SECRET_ACCESS_KEY;
+  const bucket = config.R2_BUCKET_NAME || "my-project-bucket";
+  if (!accountId || !accessKey || !secretKey) return null;
+
+  const host = `${accountId}.r2.cloudflarestorage.com`;
+
+  function hmac(key, str) {
+    return crypto.createHmac("sha256", key).update(str, "utf8").digest();
+  }
+  function hash(str) {
+    return crypto.createHash("sha256").update(str, "utf8").digest("hex");
+  }
+
+  return {
+    async get(key) {
+      return new Promise((resolve) => {
+        try {
+          const now = new Date();
+          const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+          const dateStamp = amzDate.slice(0, 8);
+          const region = "auto";
+          const service = "s3";
+          const canonicalUri = `/${bucket}/${encodeURI(key)}`;
+          const payloadHash = hash("");
+          const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
+          const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+          const canonicalRequest = `GET\n${canonicalUri}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+          const algorithm = "AWS4-HMAC-SHA256";
+          const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+          const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${hash(canonicalRequest)}`;
+
+          const kDate = hmac("AWS4" + secretKey, dateStamp);
+          const kRegion = hmac(kDate, region);
+          const kService = hmac(kRegion, service);
+          const kSigning = hmac(kService, "aws4_request");
+          const signature = crypto.createHmac("sha256", kSigning).update(stringToSign, "utf8").digest("hex");
+
+          const authHeader = `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+          const req = https.request({
+            hostname: host,
+            path: canonicalUri,
+            method: "GET",
+            headers: {
+              "host": host,
+              "x-amz-date": amzDate,
+              "x-amz-content-sha256": payloadHash,
+              "Authorization": authHeader
+            }
+          }, (res) => {
+            if (res.statusCode !== 200) {
+              resolve(null);
+              return;
+            }
+            const chunks = [];
+            res.on("data", (c) => chunks.push(c));
+            res.on("end", () => {
+              const buf = Buffer.concat(chunks);
+              const contentType = res.headers["content-type"] || "application/octet-stream";
+              resolve({
+                body: buf,
+                httpEtag: res.headers["etag"] || "",
+                writeHttpMetadata(headers) {
+                  headers.set("content-type", contentType);
+                }
+              });
+            });
+          });
+          req.on("error", (e) => {
+            console.warn("[R2 Adapter Get Error]:", e.message);
+            resolve(null);
+          });
+          req.end();
+        } catch (err) {
+          console.warn("[R2 Adapter Exception]:", err.message);
+          resolve(null);
+        }
+      });
+    }
+  };
+}
 
 async function startEmbeddedServer(rootPath, port = 8787) {
   const envVars = loadEnvVars(rootPath);
   const publicDir = path.resolve(rootPath, "public");
+
+  // Khởi tạo R2 Adapter để đọc ảnh avatar và hình nền từ Cloudflare R2
+  envVars.AVATARS = createR2BucketAdapter(envVars);
 
   // Tự động nạp Local SQLite Replica làm fallback DB khi Cloudflare D1 hết hạn ngạch hoặc mất mạng
   const sqliteCandidatePaths = [

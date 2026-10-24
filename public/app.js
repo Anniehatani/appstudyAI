@@ -3026,6 +3026,164 @@ export const DISCORD_EFFECTS_REGISTRY = {
 };
 window.DISCORD_EFFECTS_REGISTRY = DISCORD_EFFECTS_REGISTRY;
 
+export const DISCORD_WALLPAPERS_REGISTRY = {
+  bg_2b_monochrome: {
+    code: "bg_2b_monochrome",
+    name: "2B Nier Tối Giản",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "HD WEBP",
+    color: "#64748b",
+    url: "/media/hinhnen/2b-monochrome.webp",
+    description: "Hình nền nghệ thuật 2B NieR:Automata phong cách đen trắng đơn sắc huyền bí, sang trọng.",
+    price: 0
+  },
+  bg_cartoon_white_bird: {
+    code: "bg_cartoon_white_bird",
+    name: "Chim Trắng Cute (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#38bdf8",
+    url: "/media/hinhnen/cartoon-white-bird-dark-background.gif",
+    description: "Hoạt ảnh chú chim trắng chibi nhấp nháy dễ thương trên nền tối tối giản phong cách hoạt hình.",
+    price: 0
+  },
+  bg_goth_smoker: {
+    code: "bg_goth_smoker",
+    name: "Goth Girl Khói Thuốc (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#a855f7",
+    url: "/media/hinhnen/goth-smoker.gif",
+    description: "Ảnh động cô gái phong cách gothic khói thuốc mờ ảo, nét vẽ anime vintage hoài niệm cực chất.",
+    price: 0
+  },
+  bg_meow_doodle: {
+    code: "bg_meow_doodle",
+    name: "Mèo Doodle Hài Hước",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "ẢNH HD",
+    color: "#f59e0b",
+    url: "/media/hinhnen/meow-doodle.jpeg",
+    description: "Bản vẽ vẽ tay phác họa chú mèo ngộ nghĩnh hài hước, tạo cảm giác thư giãn gần gũi.",
+    price: 0
+  },
+  bg_sakura_pastel: {
+    code: "bg_sakura_pastel",
+    name: "Hoa Anh Đào Pastel",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "HD WEBP",
+    color: "#ec4899",
+    url: "/media/hinhnen/pink-cherry-blossoms-sakura-pastel.webp",
+    description: "Cảnh sắc hoa anh đào rực rỡ tông màu hồng pastel ngọt ngào, đậm chất anime lãng mạn.",
+    price: 0
+  },
+  bg_storm_cloudscape: {
+    code: "bg_storm_cloudscape",
+    name: "Mây Bão Hoàng Hôn",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "HD WEBP",
+    color: "#f97316",
+    url: "/media/hinhnen/pink-orange-storm-cloudscape-text.webp",
+    description: "Bầu trời bão mây cuồn cuộn pha trộn giữa ánh cam hoàng hôn và sắc hồng rực rỡ tráng lệ.",
+    price: 0
+  },
+  bg_purple_gaze: {
+    code: "bg_purple_gaze",
+    name: "Ánh Nhìn Tím Huyền Bí",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "HD WEBP",
+    color: "#8b5cf6",
+    url: "/media/hinhnen/purple-gaze.webp",
+    description: "Ánh mắt anime tím biếc sâu thẳm đầy cuốn hút trong màn đêm huyền ảo.",
+    price: 0
+  },
+  bg_purple_moon: {
+    code: "bg_purple_moon",
+    name: "Trăng Tím Mộng Mơ",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "HD WEBP",
+    color: "#c084fc",
+    url: "/media/hinhnen/purple-moon.webp",
+    description: "Vầng trăng tím phát sáng giữa dải ngân hà tĩnh mịch, tông màu chill êm dịu.",
+    price: 0
+  },
+  bg_rainy_rooftop: {
+    code: "bg_rainy_rooftop",
+    name: "Mưa Trên Mái Nhà (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#06b6d4",
+    url: "/media/hinhnen/rainy-rooftop.gif",
+    description: "Ảnh động mưa rơi tí tách trên sân thượng thành phố về đêm phong cách Lo-Fi chill thư giãn.",
+    price: 0
+  },
+  bg_sakura_bridge: {
+    code: "bg_sakura_bridge",
+    name: "Cầu Hoa Anh Đào (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#f43f5e",
+    url: "/media/hinhnen/sakura-bridge.gif",
+    description: "Ảnh động cầu gỗ cổ kính soi bóng dòng sông dưới tán hoa anh đào bay lượn tuyệt đẹp.",
+    price: 0
+  },
+  bg_sakura_canopy: {
+    code: "bg_sakura_canopy",
+    name: "Vòm Tán Hoa Anh Đào",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "HD WEBP",
+    color: "#fb7185",
+    url: "/media/hinhnen/sakura-canopy.webp",
+    description: "Tán hoa anh đào bung nở rợp bóng trời xuân Nhật Bản, tươi sáng và tràn ngập sinh khí.",
+    price: 0
+  },
+  bg_anime_girl_windblown: {
+    code: "bg_anime_girl_windblown",
+    name: "Thiếu Nữ Gió Lộng (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#64748b",
+    url: "/media/hinhnen/windblown-anime-girl-fence-monochrome.gif",
+    description: "Ảnh động cô gái anime đứng bên hàng rào với mái tóc tung bay trong gió đầy cảm xúc.",
+    price: 0
+  },
+  bg_wing_shadow: {
+    code: "bg_wing_shadow",
+    name: "Đôi Cánh Bóng Đêm",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "HD WEBP",
+    color: "#6366f1",
+    url: "/media/hinhnen/wing-shadow.webp",
+    description: "Hình tượng đôi cánh sải rộng giữa ánh sáng mờ ảo, tạo chiều sâu nghệ thuật độc đáo.",
+    price: 0
+  },
+  bg_winged_maiden: {
+    code: "bg_winged_maiden",
+    name: "Nàng Tiên Cánh Trắng (GIF)",
+    type: "wallpaper",
+    category: "wallpaper",
+    badge: "GIF ĐỘNG",
+    color: "#10b981",
+    url: "/media/hinhnen/winged-maiden.gif",
+    description: "Ảnh động thiếu nữ với đôi cánh lấp lánh cử động mềm mại bay bổng tựa thiên thần.",
+    price: 0
+  }
+};
+window.DISCORD_WALLPAPERS_REGISTRY = DISCORD_WALLPAPERS_REGISTRY;
+
 export function generateAvatarDecorationSvg(decoCode) {
   if (decoCode === "deco_manga_ghoul") {
     return `
@@ -3608,7 +3766,7 @@ window.equipDecoration = async function(type, itemCode) {
 };
 
 window.previewDiscordItem = function(itemCode) {
-  const item = DISCORD_EFFECTS_REGISTRY[itemCode];
+  const item = DISCORD_EFFECTS_REGISTRY[itemCode] || DISCORD_WALLPAPERS_REGISTRY[itemCode];
   if (!item) return;
 
   const userAvatar = state.profile?.avatar_url || "";
@@ -3616,33 +3774,46 @@ window.previewDiscordItem = function(itemCode) {
   const userHandle = state.profile?.username || "hocvien";
 
   const isDeco = item.type === "avatar_decoration";
+  const isFx = item.type === "profile_effect";
+  const isWp = item.type === "wallpaper";
+
   const previewDeco = isDeco ? item.code : (state.profile?.avatar_decoration || null);
-  const previewFx = !isDeco ? item.code : (state.profile?.profile_effect || null);
+  const previewFx = isFx ? item.code : (state.profile?.profile_effect || null);
+
+  const currentCover = state.profile?.cover_url;
+  const isCurCoverGradient = currentCover && currentCover.startsWith("linear-gradient");
+  const previewBannerStyle = isWp
+    ? `background-image: url('${esc(item.url)}'); background-size: cover; background-position: center;`
+    : (currentCover
+        ? (isCurCoverGradient ? `background:${currentCover};` : `background-image:url('${esc(currentCover)}'); background-size:cover; background-position:center;`)
+        : `background: linear-gradient(135deg, #6366f1, #a855f7);`);
 
   const owned = (state.inventory || []).some(i => i.item_code === itemCode && Number(i.quantity) > 0) ||
                 (shopData?.items || []).some(i => i.item_code === itemCode && Number(i.owned) > 0);
 
   const isEquipped = isDeco
     ? (state.profile?.avatar_decoration === itemCode)
-    : (state.profile?.profile_effect === itemCode);
+    : isFx
+    ? (state.profile?.profile_effect === itemCode)
+    : (state.profile?.cover_url === item.url || state.profile?.cover_url === itemCode);
 
   modalRoot.innerHTML = `
     <div class="discord-preview-modal-overlay" onclick="closeUserProfileModal(event)">
       <div class="discord-preview-card" onclick="event.stopPropagation()">
         ${renderProfileEffectHtml(previewFx)}
-        <div class="discord-preview-banner">
+        <div class="discord-preview-banner" style="${previewBannerStyle}">
           <button type="button" class="user-profile-close-btn" style="z-index:10;" onclick="closeUserProfileModal()">✕</button>
         </div>
         <div class="discord-preview-body">
           <div class="discord-preview-avatar-row">
             ${renderDecoratedAvatar(userAvatar, previewDeco, 92, userName)}
-            <span class="discord-nitro-badge">✨ Live Preview</span>
+            <span class="discord-nitro-badge" style="background:${item.color || '#ec4899'}; color:#fff;">✨ ${esc(item.badge || 'VIP R2')}</span>
           </div>
           <h2 style="font-size:20px; font-weight:900; margin:0 0 2px 0;">${esc(userName)}</h2>
           <div style="font-size:13px; color:#94a3b8; margin-bottom:12px;">@${esc(userHandle)}</div>
           
           <div style="background:rgba(255,255,255,0.06); border-radius:14px; padding:12px; margin-bottom:16px;">
-            <div style="font-size:13px; font-weight:900; color:${item.color}; margin-bottom:4px;">
+            <div style="font-size:13px; font-weight:900; color:${item.color || '#38bdf8'}; margin-bottom:4px;">
               ${esc(item.name)}
             </div>
             <div style="font-size:12px; color:#cbd5e1; line-height:1.4;">
@@ -3653,7 +3824,7 @@ window.previewDiscordItem = function(itemCode) {
           <div class="discord-preview-btn-row">
             ${isEquipped ? `
               <button type="button" class="btn-duo btn-duo-white" style="flex:1; padding:10px;" onclick="equipDecoration('${item.type}', null); closeUserProfileModal();">
-                Tháo hiệu ứng
+                Tháo ${isWp ? 'hình nền' : 'hiệu ứng'}
               </button>
             ` : owned ? `
               <button type="button" class="btn-duo btn-duo-green" style="flex:1; padding:10px; font-weight:900;" onclick="equipDecoration('${item.type}', '${esc(item.code)}'); closeUserProfileModal();">
@@ -3661,7 +3832,7 @@ window.previewDiscordItem = function(itemCode) {
               </button>
             ` : `
               <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:10px; font-weight:900;" onclick="buyItem('${esc(item.code)}'); closeUserProfileModal();">
-                Mua miễn phí (0 💎)
+                Nhận miễn phí (0 💎)
               </button>
             `}
             <button type="button" class="btn-duo btn-duo-white" style="padding:10px 18px;" onclick="closeUserProfileModal()">
@@ -3679,7 +3850,7 @@ window.previewCustomNitroMedia = function() {
   const url = (document.getElementById("custom-nitro-url-input")?.value || "").trim();
   const type = document.getElementById("custom-nitro-type-select")?.value || "avatar_decoration";
   if (!url) {
-    showToast("Vui lòng dán link URL hoặc chọn tải file video trước nhé!", true);
+    showToast("Vui lòng dán link URL trước nhé!", true);
     return;
   }
   const userAvatar = state.profile?.avatar_url || "";
@@ -3706,7 +3877,7 @@ window.previewCustomNitroMedia = function() {
           
           <div style="background:rgba(255,255,255,0.06); border-radius:14px; padding:12px; margin-bottom:16px;">
             <div style="font-size:13px; font-weight:900; color:#38bdf8; margin-bottom:4px;">
-              🎬 Video / File Tùy Chỉnh (${type === 'avatar_decoration' ? 'Khung Avatar' : 'Hiệu ứng hồ sơ'})
+              🎬 Video / CDN Tùy Chỉnh (${type === 'avatar_decoration' ? 'Khung Avatar' : 'Hiệu ứng hồ sơ'})
             </div>
             <div style="font-size:11.5px; color:#cbd5e1; word-break:break-all;">
               ${esc(url.slice(0, 100))}${url.length > 100 ? '...' : ''}
@@ -3731,27 +3902,10 @@ window.equipCustomNitroMedia = async function() {
   const url = (document.getElementById("custom-nitro-url-input")?.value || "").trim();
   const type = document.getElementById("custom-nitro-type-select")?.value || "avatar_decoration";
   if (!url) {
-    showToast("Vui lòng dán link URL hoặc chọn file video trước nhé!", true);
+    showToast("Vui lòng dán link URL trước nhé!", true);
     return;
   }
   await equipDecoration(type, url);
-};
-
-window.handleCustomNitroFile = function(input) {
-  const file = input.files && input.files[0];
-  if (!file) return;
-  if (file.size > 8 * 1024 * 1024) {
-    showToast("File video quá lớn (> 8MB). Hãy chọn file nhẹ hơn hoặc dùng link URL nhé!", true);
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const dataUrl = e.target.result;
-    const urlInput = document.getElementById("custom-nitro-url-input");
-    if (urlInput) urlInput.value = dataUrl;
-    showToast("Đã tải video vào bộ đệm! Bạn có thể nhấn 'Xem thử' hoặc 'Trang bị ngay'.");
-  };
-  reader.readAsDataURL(file);
 };
 
 window.removeCustomNitroMedia = async function() {
@@ -3926,7 +4080,7 @@ function renderShop() {
     `;
   }).join("");
 
-  state.shopTab = state.shopTab || "nitro";
+  state.shopTab = state.shopTab || "wallpaper";
   const userAvatar = state.profile?.avatar_url || "";
   const userName = state.profile?.full_name || state.profile?.username || "3TG";
 
@@ -3935,7 +4089,7 @@ function renderShop() {
       <div class="banner-with-mascot" style="margin-bottom:20px; padding:18px 24px;">
         <div>
           <h1 class="page-title" style="margin-bottom:4px; font-size:24px;">Tiệm Tạp Hóa 3TG 🏪</h1>
-          <p class="page-subtitle" style="margin:0 0 10px 0; font-size:13.5px;">Dùng Đá quý 💎 tích lũy từ các bài học để mở khóa Hiệu ứng Discord Nitro 0 💎, Mascot Thỏ và Bùa học tập!</p>
+          <p class="page-subtitle" style="margin:0 0 10px 0; font-size:13.5px;">Dùng Đá quý 💎 tích lũy từ các bài học để mở khóa Bộ Hình nền R2 VIP 0 💎, Hiệu ứng Discord Nitro và Mascot!</p>
           <div class="top-stat top-gems" style="font-size:16px; display:inline-flex;">
             <span>💎</span> <b>${state.stats.gems || 0}</b> Đá quý hiện có
           </div>
@@ -3947,6 +4101,9 @@ function renderShop() {
 
       <!-- SHOP CATEGORY TABS (SIÊU GỌN GÀNG, KHÔNG BỊ TO ĐÙNG) -->
       <div class="shop-category-tabs">
+        <button type="button" class="shop-category-tab ${state.shopTab === 'wallpaper' ? 'active tab-wallpaper' : ''}" onclick="switchShopTab('wallpaper')">
+          🌄 14 Hình Nền R2 VIP
+        </button>
         <button type="button" class="shop-category-tab ${state.shopTab === 'nitro' ? 'active tab-nitro' : ''}" onclick="switchShopTab('nitro')">
           ⚡ Hiệu Ứng Nitro (0 💎)
         </button>
@@ -3957,6 +4114,72 @@ function renderShop() {
           🛡️ Bùa Chuỗi & Vật Phẩm
         </button>
       </div>
+
+      <!-- TAB 0: 14 HÌNH NỀN R2 VIP -->
+      ${state.shopTab === 'wallpaper' ? `
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0;">
+                Kho 14 Hình Nền VIP & Ảnh Bìa Động R2 (Cloudflare Storage) 🌄✨
+              </h2>
+              <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">
+                Tất cả hình nền lưu trữ an toàn trên Cloudflare R2 và lưu riêng theo từng tài khoản học viên. Nhấp vào ảnh để xem trước & trang bị!
+              </p>
+            </div>
+            <span style="background:linear-gradient(135deg, #0ea5e9, #6366f1); color:#fff; font-size:11px; font-weight:900; padding:4px 12px; border-radius:999px; box-shadow:0 2px 8px rgba(14,165,233,0.3);">
+              🎁 0 💎 Miễn Phí Trải Nghiệm
+            </span>
+          </div>
+
+          <div class="discord-wallpaper-grid">
+            ${Object.values(DISCORD_WALLPAPERS_REGISTRY).map(item => {
+              const shopItem = items.find(i => i.item_code === item.code);
+              const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => inv.item_code === item.code && Number(inv.quantity) >= 1);
+              const isEquipped = state.profile && (state.profile.cover_url === item.url || state.profile.cover_url === item.code);
+
+              return `
+                <div class="discord-wallpaper-card ${isEquipped ? 'equipped' : ''}" onclick="previewDiscordItem('${esc(item.code)}')">
+                  <div class="discord-wallpaper-thumb">
+                    <img src="${esc(item.url)}" alt="${esc(item.name)}" loading="lazy">
+                    <span class="discord-wallpaper-badge" style="background:${item.color || '#6366f1'};">${esc(item.badge)}</span>
+                    ${isEquipped ? `
+                      <span style="position:absolute; top:10px; right:10px; background:#10b981; color:#fff; font-size:10.5px; font-weight:900; padding:3px 8px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+                        ✓ Đang dùng
+                      </span>
+                    ` : ''}
+                  </div>
+
+                  <div class="discord-wallpaper-info">
+                    <h4 class="discord-wallpaper-title">${esc(item.name)}</h4>
+                    <p class="discord-wallpaper-desc">${esc(item.description)}</p>
+
+                    <div class="discord-wallpaper-actions" onclick="event.stopPropagation()">
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:6px 10px; font-size:11px;" onclick="previewDiscordItem('${esc(item.code)}')">
+                        👁️ Xem
+                      </button>
+
+                      ${isEquipped ? `
+                        <button type="button" class="btn-duo btn-duo-green" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', null)">
+                          ✓ Đang dùng
+                        </button>
+                      ` : isOwned ? `
+                        <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', '${esc(item.code)}')">
+                          Trang bị
+                        </button>
+                      ` : `
+                        <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="buyItem('${esc(item.code)}')">
+                          Nhận (0 💎)
+                        </button>
+                      `}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      ` : ''}
 
       <!-- TAB 1: HIỆU ỨNG NITRO DISCORD (COMPACT GRID) -->
       ${state.shopTab === 'nitro' ? `
@@ -4034,7 +4257,7 @@ function renderShop() {
             }).join("")}
           </div>
 
-          <!-- CUSTOM VIDEO / DISCORD CDN SECTION -->
+          <!-- CUSTOM VIDEO / DISCORD CDN SECTION (BỎ CHỌN FILE THEO YÊU CẦU) -->
           <div style="margin-top:20px; background:linear-gradient(135deg, #ffffff, #f8fafc); border:2px dashed #cbd5e1; border-radius:20px; padding:18px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
             <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
               <div style="font-size:28px;">🎬</div>
@@ -4043,7 +4266,7 @@ function renderShop() {
                   Tự Dán Link Video & Ảnh Động Nitro Tùy Chỉnh (Discord APNG, WebM, MP4, GIF)
                 </h4>
                 <p style="font-size:12px; color:#64748b; margin:2px 0 0;">
-                  Dán trực tiếp bất kỳ link CDN Discord Nitro hoặc tải file video từ thiết bị lên để trang bị ngay.
+                  Dán trực tiếp bất kỳ link CDN Discord Nitro để trang bị ngay.
                 </p>
               </div>
             </div>
@@ -4067,10 +4290,6 @@ function renderShop() {
               <button type="button" class="btn-duo btn-duo-pink" style="padding:7px 16px; font-size:12px; font-weight:900;" onclick="equipCustomNitroMedia()">
                 ⚡ Trang bị ngay ➔
               </button>
-              <label class="btn-duo btn-duo-white" style="padding:7px 14px; font-size:12px; cursor:pointer; margin:0;">
-                📁 Chọn file video/gif từ máy
-                <input type="file" accept="video/webm,video/mp4,image/gif,image/png,image/webp" style="display:none;" onchange="handleCustomNitroFile(this)">
-              </label>
               ${(state.profile?.avatar_decoration?.startsWith('http') || state.profile?.avatar_decoration?.startsWith('data:') || state.profile?.profile_effect?.startsWith('http') || state.profile?.profile_effect?.startsWith('data:')) ? `
                 <button type="button" class="btn-duo btn-duo-white" style="padding:7px 12px; font-size:11.5px; color:#ef4444;" onclick="removeCustomNitroMedia()">
                   ✕ Tháo hiệu ứng tùy chỉnh
@@ -4206,6 +4425,8 @@ window.buyItem = async function(itemCode) {
       await equipDecoration("avatar_decoration", itemCode);
     } else if (itemCode.startsWith("fx_")) {
       await equipDecoration("profile_effect", itemCode);
+    } else if (itemCode.startsWith("bg_")) {
+      await equipDecoration("wallpaper", itemCode);
     } else {
       updateShell();
       render();
@@ -6160,15 +6381,39 @@ window.handleSelectMascotAvatar = async function(icon) {
 window.openCoverModal = function() {
   playSound("click");
   showModal(`
-    <div class="modal-dialog" style="max-width:540px;">
+    <div class="modal-dialog" style="max-width:640px; max-height:85vh; overflow-y:auto;">
       <span class="modal-close" onclick="closeModal()">✕</span>
-      <h2 style="font-size:22px; font-weight:900; color:var(--ink-900); margin-bottom:8px;">
-        📷 Chọn Ảnh bìa Trang cá nhân
+      <h2 style="font-size:20px; font-weight:900; color:var(--ink-900); margin-bottom:4px;">
+        📷 Chọn Ảnh bìa / Hình nền Profile
       </h2>
-      <p style="font-size:14px; color:var(--ink-500); margin-bottom:16px;">
-        Chọn một chủ đề màu sắc phong cách Facebook để làm nổi bật trang cá nhân:
+      <p style="font-size:13px; color:var(--ink-500); margin-bottom:16px;">
+        Chọn bộ hình nền Cloudflare R2 VIP sắc nét hoặc các chủ đề màu sắc gradient:
       </p>
 
+      <h4 style="font-size:13.5px; font-weight:900; color:#475569; margin:14px 0 8px; display:flex; align-items:center; gap:6px;">
+        <span>🌄</span> 14 Hình Nền R2 VIP (Cloudflare R2 Storage)
+      </h4>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; margin-bottom:18px;">
+        ${Object.values(DISCORD_WALLPAPERS_REGISTRY).map(w => {
+          const isSelected = state.profile?.cover_url === w.url || state.profile?.cover_url === w.code;
+          return `
+            <div style="cursor:pointer; border-radius:12px; overflow:hidden; border:2.5px solid ${isSelected ? '#ec4899' : '#e2e8f0'}; background:#0f172a; position:relative; aspect-ratio:16/9; transition:all .2s; box-shadow:0 2px 8px rgba(0,0,0,0.06);" 
+                 onclick="handleSelectCover('${w.url}')">
+              <img src="${esc(w.url)}" alt="${esc(w.name)}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy">
+              <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.85)); padding:3px 6px; font-size:10px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                ${esc(w.name)}
+              </div>
+              ${isSelected ? `
+                <div style="position:absolute; top:4px; right:4px; background:#ec4899; color:#fff; font-size:9.5px; border-radius:999px; padding:1px 6px; font-weight:900;">✓ Đang dùng</div>
+              ` : ''}
+            </div>
+          `;
+        }).join("")}
+      </div>
+
+      <h4 style="font-size:13.5px; font-weight:900; color:#475569; margin:14px 0 8px; display:flex; align-items:center; gap:6px;">
+        <span>🎨</span> Chủ Đề Màu Gradient Facebook
+      </h4>
       <div class="cover-preset-grid">
         ${COVER_PRESETS.map(c => `
           <div class="cover-preset-item" style="background:${c.bg};" onclick="handleSelectCover('${c.bg}')">
