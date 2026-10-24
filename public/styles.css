@@ -2531,10 +2531,23 @@ button:focus-visible, input:focus-visible {
 
 .fb-cover-banner {
   position: relative;
-  height: 260px;
+  width: 100%;
+  aspect-ratio: 16 / 7.2;
+  min-height: 320px;
+  max-height: 480px;
   background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 50%, #7f7fd5 100%);
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .fb-cover-banner {
+    aspect-ratio: 16 / 8.5;
+    min-height: 200px;
+    max-height: 300px;
+  }
 }
 
 .fb-cover-edit-btn {
@@ -4103,13 +4116,14 @@ button:focus-visible, input:focus-visible {
 }
 
 .user-profile-cover {
-  height: 135px;
-  min-height: 135px;
+  height: 185px;
+  min-height: 185px;
   flex-shrink: 0;
   background: linear-gradient(135deg, #ff71a2, #ff4b82, #a855f7);
   position: relative;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
 }
 
 .user-profile-close-btn {
@@ -7139,12 +7153,13 @@ button:focus-visible, input:focus-visible {
   color: #059669;
 }
 
-/* PREVIEW MODAL FOR DISCORD PROFILE */
+/* PREVIEW MODAL FOR DISCORD PROFILE & WALLPAPER */
 .discord-preview-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -7155,43 +7170,51 @@ button:focus-visible, input:focus-visible {
 
 .discord-preview-card {
   width: 100%;
-  max-width: 400px;
-  background: #18191c;
-  border-radius: 24px;
+  max-width: 480px;
+  background: linear-gradient(180deg, #ffffff 0%, #fafcff 70%, #fff1f2 100%);
+  border-radius: 28px;
   overflow: hidden;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(88, 101, 242, 0.3);
-  border: 2px solid #5865f2;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.95);
+  border: 2.5px solid #fed7aa;
   position: relative;
   isolation: isolate;
-  color: #fff;
+  color: var(--ink-900, #0f172a);
   animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .discord-preview-banner {
-  height: 110px;
-  background: linear-gradient(135deg, #5865f2, #eb459e, #8b5cf6);
+  width: 100%;
+  height: 210px;
+  background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 50%, #7f7fd5 100%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   position: relative;
   z-index: 2;
+  box-shadow: inset 0 -20px 30px -10px rgba(0, 0, 0, 0.2);
 }
 
 .discord-preview-body {
-  padding: 0 18px 20px;
+  padding: 0 24px 24px;
   position: relative;
   z-index: 2;
+  background: transparent;
 }
 
 .discord-preview-avatar-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: -46px;
-  margin-bottom: 12px;
+  margin-top: -50px;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 5;
 }
 
 .discord-preview-btn-row {
   display: flex;
-  gap: 8px;
-  margin-top: 16px;
+  gap: 10px;
+  margin-top: 18px;
 }
 
 /* ========================================================

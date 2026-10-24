@@ -2963,46 +2963,6 @@ export const DISCORD_EFFECTS_REGISTRY = {
     description: "Vòng xoáy không gian vũ trụ huyền ảo với bụi sao lấp lánh và tinh vân xoay tròn kỳ ảo.",
     price: 0
   },
-  deco_retro_glitch: {
-    code: "deco_retro_glitch",
-    name: "Hiệu Ứng Glitch Hacker Ma Trận",
-    type: "avatar_decoration",
-    category: "decoration",
-    badge: "Glitch Nitro",
-    color: "#06b6d4",
-    description: "Nhiễu sóng điện tử RGB glitch nhấp nháy chuyển động phong cách hacker công nghệ.",
-    price: 0
-  },
-  fx_matrix_rain: {
-    code: "fx_matrix_rain",
-    name: "Hiệu Ứng Hồ Sơ: Ma Trận Số Cyber",
-    type: "profile_effect",
-    category: "effect",
-    badge: "Matrix FX",
-    color: "#22c55e",
-    description: "Dòng mưa mã nhị phân màu xanh lá rơi mượt mà bao phủ toàn bộ thẻ hồ sơ cá nhân.",
-    price: 0
-  },
-  fx_stardust_magic: {
-    code: "fx_stardust_magic",
-    name: "Hiệu Ứng Hồ Sơ: Bụi Sao Thần Thoại",
-    type: "profile_effect",
-    category: "effect",
-    badge: "Stardust FX",
-    color: "#f59e0b",
-    description: "Những hạt bụi sao ánh kim lung linh bay bổng và phát sáng huyền ảo trên thẻ cá nhân.",
-    price: 0
-  },
-  fx_fire_sparks: {
-    code: "fx_fire_sparks",
-    name: "Hiệu Ứng Hồ Sơ: Tàn Lửa Địa Ngục",
-    type: "profile_effect",
-    category: "effect",
-    badge: "Inferno FX",
-    color: "#ef4444",
-    description: "Những tàn lửa than hồng bay lơ lửng bốc lên từ đáy hồ sơ, tạo vẻ đẹp rực cháy.",
-    price: 0
-  },
   deco_manga_ghoul: {
     code: "deco_manga_ghoul",
     name: "Quỷ Hồn Hắc Ám (Manga Ghoul)",
@@ -3011,16 +2971,6 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Horror Nitro",
     color: "#64748b",
     description: "Linh hồn quỷ dị và bàn tay xương xẩu manga kinh dị Junji Ito ôm lấy avatar cực kỳ ma mị chuẩn Discord VIP.",
-    price: 0
-  },
-  fx_peeking_cat: {
-    code: "fx_peeking_cat",
-    name: "Mèo Trắng Nằm Nóc & Ngôi Sao",
-    type: "profile_effect",
-    category: "effect",
-    badge: "Kitty Nitro",
-    color: "#f472b6",
-    description: "Bé mèo trắng anime má hồng nằm ngủ gác cằm trên nóc hồ sơ, tai vẫy nhẹ cùng những vì sao lấp lánh ở góc trái y hệt Discord Nitro.",
     price: 0
   },
   deco_hello_kitty: {
@@ -4224,40 +4174,41 @@ window.previewDiscordItem = function(itemCode) {
       <div class="discord-preview-card" onclick="event.stopPropagation()">
         ${renderProfileEffectHtml(previewFx)}
         <div class="discord-preview-banner" style="${previewBannerStyle}">
-          <button type="button" class="user-profile-close-btn" style="z-index:10;" onclick="closeUserProfileModal()">✕</button>
+          <button type="button" class="user-profile-close-btn" style="position:absolute; top:14px; right:14px; z-index:10; background:#ffffff; border:2px solid #e2e8f0; box-shadow:0 4px 12px rgba(0,0,0,0.18); width:36px; height:36px; border-radius:50%; cursor:pointer; font-size:16px; font-weight:900; color:#0f172a;" onclick="closeUserProfileModal()">✕</button>
         </div>
         <div class="discord-preview-body">
           <div class="discord-preview-avatar-row">
-            ${renderDecoratedAvatar(userAvatar, previewDeco, 92, userName)}
-            <span class="discord-nitro-badge" style="background:${item.color || '#ec4899'}; color:#fff;">✨ ${esc(item.badge || 'VIP R2')}</span>
+            ${renderDecoratedAvatar(userAvatar, previewDeco, 96, userName)}
+            <span class="discord-nitro-badge" style="background:${item.color || '#ec4899'}; color:#fff; font-size:11px; font-weight:900; padding:5px 12px; border-radius:999px; box-shadow:0 4px 12px rgba(0,0,0,0.15); letter-spacing:0.5px;">✨ ${esc(item.badge || 'VIP R2')}</span>
           </div>
-          <h2 style="font-size:20px; font-weight:900; margin:0 0 2px 0;">${esc(userName)}</h2>
-          <div style="font-size:13px; color:#94a3b8; margin-bottom:12px;">@${esc(userHandle)}</div>
+          <h2 style="font-size:22px; font-weight:900; margin:0 0 2px 0; color:var(--ink-900, #0f172a); letter-spacing:-0.3px;">${esc(userName)}</h2>
+          <div style="font-size:13.5px; font-weight:700; color:#64748b; margin-bottom:14px;">@${esc(userHandle)}</div>
           
-          <div style="background:rgba(255,255,255,0.06); border-radius:14px; padding:12px; margin-bottom:16px;">
-            <div style="font-size:13px; font-weight:900; color:${item.color || '#38bdf8'}; margin-bottom:4px;">
-              ${esc(item.name)}
+          <div style="background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:18px; padding:14px 16px; margin-bottom:18px; box-shadow:0 2px 8px rgba(0,0,0,0.03);">
+            <div style="font-size:14px; font-weight:900; color:${item.color || '#ec4899'}; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+              <span>${isWp ? '🌄' : '🖼️'}</span>
+              <span>${esc(item.name)}</span>
             </div>
-            <div style="font-size:12px; color:#cbd5e1; line-height:1.4;">
+            <div style="font-size:13px; color:#475569; line-height:1.45; font-weight:500;">
               ${esc(item.description)}
             </div>
           </div>
 
           <div class="discord-preview-btn-row">
             ${isEquipped ? `
-              <button type="button" class="btn-duo btn-duo-white" style="flex:1; padding:10px;" onclick="equipDecoration('${item.type}', null); closeUserProfileModal();">
-                Tháo ${isWp ? 'hình nền' : 'hiệu ứng'}
+              <button type="button" class="btn-duo btn-duo-white" style="flex:1; padding:11px; font-weight:800;" onclick="equipDecoration('${item.type}', null); closeUserProfileModal();">
+                Tháo ${isWp ? 'hình nền' : 'khung avatar'}
               </button>
             ` : owned ? `
-              <button type="button" class="btn-duo btn-duo-green" style="flex:1; padding:10px; font-weight:900;" onclick="equipDecoration('${item.type}', '${esc(item.code)}'); closeUserProfileModal();">
+              <button type="button" class="btn-duo btn-duo-green" style="flex:1; padding:11px; font-weight:900;" onclick="equipDecoration('${item.type}', '${esc(item.code)}'); closeUserProfileModal();">
                 ✓ Trang bị ngay 🌸
               </button>
             ` : `
-              <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:10px; font-weight:900;" onclick="buyItem('${esc(item.code)}'); closeUserProfileModal();">
+              <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:11px; font-weight:900;" onclick="buyItem('${esc(item.code)}'); closeUserProfileModal();">
                 Nhận miễn phí (0 💎)
               </button>
             `}
-            <button type="button" class="btn-duo btn-duo-white" style="padding:10px 18px;" onclick="closeUserProfileModal()">
+            <button type="button" class="btn-duo btn-duo-white" style="padding:11px 20px; font-weight:800;" onclick="closeUserProfileModal()">
               Đóng
             </button>
           </div>
