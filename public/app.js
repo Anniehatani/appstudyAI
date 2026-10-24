@@ -3022,6 +3022,66 @@ export const DISCORD_EFFECTS_REGISTRY = {
     color: "#f472b6",
     description: "Bé mèo trắng anime má hồng nằm ngủ gác cằm trên nóc hồ sơ, tai vẫy nhẹ cùng những vì sao lấp lánh ở góc trái y hệt Discord Nitro.",
     price: 0
+  },
+  deco_hello_kitty: {
+    code: "deco_hello_kitty",
+    name: "Khung Hello Kitty Kawaii Nơ Đỏ",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Kitty Kawaii",
+    color: "#ff2a7a",
+    description: "Khung nơ đỏ Hello Kitty siêu cấp đáng yêu với tai mèo trắng, ria mèo xinh xắn và ánh sao hồng lấp lánh.",
+    price: 0
+  },
+  deco_kuromi_punk: {
+    code: "deco_kuromi_punk",
+    name: "Khung Kuromi Gothic Punk",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Kuromi Punk",
+    color: "#a855f7",
+    description: "Phong cách tiểu quỷ Kuromi tím đen cá tính với tai thỏ ác quỷ, đầu lâu mini và gai hoa hồng neon.",
+    price: 0
+  },
+  deco_cyber_mecha: {
+    code: "deco_cyber_mecha",
+    name: "Khung Chiến Giáp Mecha Sci-Fi",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Mecha HUD",
+    color: "#06b6d4",
+    description: "Vòng radar ngắm bắn công nghệ cao Gundam với giáp lục giác kim loại và lưỡi dao năng lượng plasma cực ngầu.",
+    price: 0
+  },
+  deco_susanoo_demon: {
+    code: "deco_susanoo_demon",
+    name: "Khung Ma Thần Susanoo Hắc Hỏa",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Susanoo Dark",
+    color: "#818cf8",
+    description: "Hào quang Ma Thần Susanoo tím thẫm rực cháy với sừng quỷ giác đấu và ngọn lửa chakra hắc ám cuộn trào.",
+    price: 0
+  },
+  deco_frost_phoenix: {
+    code: "deco_frost_phoenix",
+    name: "Khung Băng Phong Tuyết Vũ",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Frost Ice",
+    color: "#38bdf8",
+    description: "Vòng pha lê băng giá vĩnh cửu phát quang ánh tuyết xanh ngọc cùng những bông tuyết kim cương xoay tròn.",
+    price: 0
+  },
+  deco_blood_moon: {
+    code: "deco_blood_moon",
+    name: "Khung Dạ Nguyệt Huyết Ma",
+    type: "avatar_decoration",
+    category: "decoration",
+    badge: "Blood Moon",
+    color: "#ef4444",
+    description: "Trăng máu đỏ thẫm huyền bí cùng đôi cánh dơi ma cà rồng gothic và ngọc huyết quang rực cháy.",
+    price: 0
   }
 };
 window.DISCORD_EFFECTS_REGISTRY = DISCORD_EFFECTS_REGISTRY;
@@ -3533,6 +3593,368 @@ export function generateAvatarDecorationSvg(decoCode) {
       </div>
     `;
   }
+  if (decoCode === "deco_hello_kitty") {
+    return `
+      <div class="discord-avatar-decoration deco-hello-kitty-vip">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="hk-pearl-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff758c"/>
+              <stop offset="50%" stop-color="#ff7eb3"/>
+              <stop offset="100%" stop-color="#fbcfe8"/>
+            </linearGradient>
+            <linearGradient id="hk-bow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff0055"/>
+              <stop offset="60%" stop-color="#ff2a7a"/>
+              <stop offset="100%" stop-color="#ff6b9d"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Outer Cute Pearl Glowing Ring - Center is 100% TRANSPARENT -->
+          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#hk-pearl-grad)" stroke-width="3.5" class="hk-aura-ring"/>
+          <circle cx="50" cy="50" r="43.5" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="3 4" opacity="0.9"/>
+
+          <!-- Cute Kitty Cat Ears at Top (Left & Right) -->
+          <g class="hk-cat-ears">
+            <!-- Left Ear -->
+            <polygon points="18,24 25,5 38,16" fill="#ffffff" stroke="#ff758c" stroke-width="1.6"/>
+            <polygon points="21,21 26,9 35,17" fill="#ffb6c1" opacity="0.85"/>
+            <!-- Right Ear -->
+            <polygon points="82,24 75,5 62,16" fill="#ffffff" stroke="#ff758c" stroke-width="1.6"/>
+            <polygon points="79,21 74,9 65,17" fill="#ffb6c1" opacity="0.85"/>
+          </g>
+
+          <!-- Signature Iconic Hello Kitty Red/Pink Bow (Top-Left Ear) -->
+          <g class="hk-signature-bow">
+            <!-- Left Loop -->
+            <ellipse cx="23" cy="14" rx="7.5" ry="5.5" transform="rotate(-25 23 14)" fill="url(#hk-bow-grad)" stroke="#ffffff" stroke-width="1.2"/>
+            <ellipse cx="23" cy="14" rx="3.5" ry="2" transform="rotate(-25 23 14)" fill="#ff0055"/>
+            <!-- Right Loop -->
+            <ellipse cx="37" cy="14" rx="7.5" ry="5.5" transform="rotate(25 37 14)" fill="url(#hk-bow-grad)" stroke="#ffffff" stroke-width="1.2"/>
+            <ellipse cx="37" cy="14" rx="3.5" ry="2" transform="rotate(25 37 14)" fill="#ff0055"/>
+            <!-- Center Bow Knot -->
+            <circle cx="30" cy="14" r="4.2" fill="url(#hk-bow-grad)" stroke="#ffffff" stroke-width="1.2"/>
+            <circle cx="29" cy="13" r="1.2" fill="#ffffff"/>
+          </g>
+
+          <!-- Cute Cat Whiskers on Left & Right Sides (Strictly on border) -->
+          <g class="hk-whiskers" stroke="#ff2a7a" stroke-width="1.5" stroke-linecap="round">
+            <!-- Left Whiskers -->
+            <line x1="2" y1="46" x2="11" y2="48"/>
+            <line x1="1" y1="52" x2="11" y2="52"/>
+            <line x1="2" y1="58" x2="11" y2="56"/>
+            <!-- Right Whiskers -->
+            <line x1="98" y1="46" x2="89" y2="48"/>
+            <line x1="99" y1="52" x2="89" y2="52"/>
+            <line x1="98" y1="58" x2="89" y2="56"/>
+          </g>
+
+          <!-- Floating Sweet Hearts & Sparkling Stars Around Ring -->
+          <g class="hk-sparkles">
+            <text x="88" y="32" font-size="8" fill="#ff2a7a" class="hk-sparkle-star">✦</text>
+            <text x="7" y="32" font-size="7" fill="#ff758c" class="hk-sparkle-star">✧</text>
+            <text x="84" y="78" font-size="8" fill="#ff2a7a" class="hk-sparkle-heart">♥</text>
+            <text x="12" y="78" font-size="8" fill="#ff758c" class="hk-sparkle-heart">♥</text>
+            <!-- Bottom Sweet Pearl Charm -->
+            <circle cx="50" cy="96" r="3.2" fill="#ff0055" stroke="#ffffff" stroke-width="1"/>
+            <circle cx="49" cy="95" r="1" fill="#ffffff"/>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
+  if (decoCode === "deco_kuromi_punk") {
+    return `
+      <div class="discord-avatar-decoration deco-kuromi-punk-vip">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="kuromi-dark-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#18181b"/>
+              <stop offset="50%" stop-color="#581c87"/>
+              <stop offset="100%" stop-color="#a855f7"/>
+            </linearGradient>
+            <linearGradient id="kuromi-pink-neon" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#ec4899"/>
+              <stop offset="100%" stop-color="#f43f5e"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Gothic Spiked Violet Energy Ring -->
+          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#kuromi-dark-grad)" stroke-width="3.2" class="kuromi-ring"/>
+          <circle cx="50" cy="50" r="48" fill="none" stroke="#ec4899" stroke-width="1.2" stroke-dasharray="6 8" opacity="0.85"/>
+
+          <!-- Kuromi Devil Jester Horns / Pointy Ears at Top -->
+          <g class="kuromi-horns">
+            <!-- Left Horn -->
+            <path d="M26,22 C14,14 10,2 14,-2 C22,1 28,12 36,18 Z" fill="#18181b" stroke="#a855f7" stroke-width="1.4"/>
+            <circle cx="14" cy="-2" r="2.4" fill="#ec4899" stroke="#fff" stroke-width="0.8"/>
+            <!-- Right Horn -->
+            <path d="M74,22 C86,14 90,2 86,-2 C78,1 72,12 64,18 Z" fill="#18181b" stroke="#a855f7" stroke-width="1.4"/>
+            <circle cx="86" cy="-2" r="2.4" fill="#ec4899" stroke="#fff" stroke-width="0.8"/>
+          </g>
+
+          <!-- Center-Top Iconic Kuromi White Skull with Pink Heart Bow -->
+          <g class="kuromi-skull-center">
+            <!-- Skull Head -->
+            <circle cx="50" cy="11" r="5.5" fill="#f4f4f5" stroke="#18181b" stroke-width="1"/>
+            <circle cx="48" cy="10.5" r="1.3" fill="#ec4899"/>
+            <circle cx="52" cy="10.5" r="1.3" fill="#ec4899"/>
+            <!-- Skull Teeth -->
+            <rect x="48" y="14" width="4" height="2" fill="#f4f4f5" stroke="#18181b" stroke-width="0.6"/>
+            <!-- Pink Bow under Skull -->
+            <path d="M44,14 C42,12 40,15 44,17 Z" fill="#ec4899"/>
+            <path d="M56,14 C58,12 60,15 56,17 Z" fill="#ec4899"/>
+          </g>
+
+          <!-- Spiked Gothic Bat Wings on Left & Right Sides -->
+          <g class="kuromi-wings">
+            <!-- Left Wing -->
+            <path d="M12,42 C4,38 -2,42 2,49 C-2,53 4,58 12,56 C9,50 9,46 12,42 Z" fill="#18181b" stroke="#ec4899" stroke-width="1.2"/>
+            <!-- Right Wing -->
+            <path d="M88,42 C96,38 102,42 98,49 C102,53 96,58 88,56 C91,50 91,46 88,42 Z" fill="#18181b" stroke="#ec4899" stroke-width="1.2"/>
+          </g>
+
+          <!-- Gothic Thorns & Neon Skulls at Bottom -->
+          <g class="kuromi-bottom-accents">
+            <path d="M42,94 L50,102 L58,94 Z" fill="#18181b" stroke="#ec4899" stroke-width="1.2"/>
+            <circle cx="50" cy="97" r="1.6" fill="#ec4899"/>
+            <text x="82" y="82" font-size="7" fill="#a855f7">✦</text>
+            <text x="14" y="82" font-size="7" fill="#a855f7">✦</text>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
+  if (decoCode === "deco_cyber_mecha") {
+    return `
+      <div class="discord-avatar-decoration deco-cyber-mecha-vip">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="mecha-cyan-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#06b6d4"/>
+              <stop offset="50%" stop-color="#3b82f6"/>
+              <stop offset="100%" stop-color="#00f0ff"/>
+            </linearGradient>
+            <linearGradient id="mecha-armor-plate" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#1e293b"/>
+              <stop offset="100%" stop-color="#475569"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Sci-Fi High-Tech Segmented Ring -->
+          <circle cx="50" cy="50" r="46.5" fill="none" stroke="url(#mecha-cyan-grad)" stroke-width="3.2" stroke-dasharray="24 6 12 6" class="mecha-radar-ring"/>
+          <circle cx="50" cy="50" r="43" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 6" opacity="0.8"/>
+
+          <!-- 4 Corner Gundam Mech Armor Brackets -->
+          <g class="mecha-armor-brackets">
+            <!-- Top-Left Bracket -->
+            <path d="M14,14 L24,8 L32,14 L22,20 Z" fill="url(#mecha-armor-plate)" stroke="#06b6d4" stroke-width="1.2"/>
+            <circle cx="23" cy="14" r="1.4" fill="#00f0ff"/>
+            <!-- Top-Right Bracket -->
+            <path d="M86,14 L76,8 L68,14 L78,20 Z" fill="url(#mecha-armor-plate)" stroke="#06b6d4" stroke-width="1.2"/>
+            <circle cx="77" cy="14" r="1.4" fill="#00f0ff"/>
+            <!-- Bottom-Left Bracket -->
+            <path d="M14,86 L24,92 L32,86 L22,80 Z" fill="url(#mecha-armor-plate)" stroke="#06b6d4" stroke-width="1.2"/>
+            <circle cx="23" cy="86" r="1.4" fill="#00f0ff"/>
+            <!-- Bottom-Right Bracket -->
+            <path d="M86,86 L76,92 L68,86 L78,80 Z" fill="url(#mecha-armor-plate)" stroke="#06b6d4" stroke-width="1.2"/>
+            <circle cx="77" cy="86" r="1.4" fill="#00f0ff"/>
+          </g>
+
+          <!-- Targeting Crosshair Notches (0°, 90°, 180°, 270°) -->
+          <g class="mecha-targeting" stroke="#eab308" stroke-width="2" stroke-linecap="round">
+            <line x1="50" y1="1" x2="50" y2="7"/>
+            <line x1="50" y1="93" x2="50" y2="99"/>
+            <line x1="1" y1="50" x2="7" y2="50"/>
+            <line x1="93" y1="50" x2="99" y2="50"/>
+          </g>
+
+          <!-- Twin Plasma Edge Blades (Left & Right) -->
+          <g class="mecha-plasma-blades">
+            <path d="M1,42 L8,47 L1,52 L4,47 Z" fill="#00f0ff" stroke="#fff" stroke-width="0.8"/>
+            <path d="M99,42 L92,47 L99,52 L96,47 Z" fill="#00f0ff" stroke="#fff" stroke-width="0.8"/>
+          </g>
+
+          <!-- Top HUD Holographic Coordinate Box -->
+          <g class="mecha-hud-box">
+            <rect x="36" y="2" width="28" height="7.5" rx="2" fill="#09090b" stroke="#eab308" stroke-width="1"/>
+            <text x="50" y="7.5" font-size="4.4" font-family="monospace" font-weight="900" fill="#eab308" text-anchor="middle">MECHA-01</text>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
+  if (decoCode === "deco_susanoo_demon") {
+    return `
+      <div class="discord-avatar-decoration deco-susanoo-demon-vip">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="susanoo-chakra-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stop-color="#312e81"/>
+              <stop offset="45%" stop-color="#4f46e5"/>
+              <stop offset="80%" stop-color="#818cf8"/>
+              <stop offset="100%" stop-color="#c7d2fe"/>
+            </linearGradient>
+            <linearGradient id="susanoo-flame-core" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="70%" stop-color="#a5b4fc"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Swirling Demonic Chakra Aura Ring -->
+          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#susanoo-chakra-grad)" stroke-width="3.5" class="susanoo-base-ring"/>
+          <circle cx="50" cy="50" r="48" fill="none" stroke="#818cf8" stroke-width="1.2" stroke-dasharray="16 6" opacity="0.85"/>
+
+          <!-- Colossal Demonic Susanoo Horns at Top -->
+          <g class="susanoo-horns">
+            <!-- Left Horn -->
+            <path d="M42,16 C34,6 20,-2 6,2 C15,9 24,15 35,21 Z" fill="url(#susanoo-chakra-grad)" stroke="#c7d2fe" stroke-width="1"/>
+            <path d="M41,17 C34,8 23,3 12,6 C19,11 26,16 34,20 Z" fill="url(#susanoo-flame-core)"/>
+            <!-- Right Horn -->
+            <path d="M58,16 C66,6 80,-2 94,2 C85,9 76,15 65,21 Z" fill="url(#susanoo-chakra-grad)" stroke="#c7d2fe" stroke-width="1"/>
+            <path d="M59,17 C66,8 77,3 88,6 C81,11 74,16 66,20 Z" fill="url(#susanoo-flame-core)"/>
+            <!-- Center Demon Crown Spike -->
+            <path d="M50,-4 C46,6 46,12 50,16 C54,12 54,6 50,-4 Z" fill="url(#susanoo-chakra-grad)"/>
+            <!-- Glowing Forehead Third Eye (Eye of the Demon) -->
+            <polygon points="50,11 53,14 50,17 47,14" fill="#fbbf24" stroke="#ffffff" stroke-width="0.8" class="susanoo-eye-glow"/>
+          </g>
+
+          <!-- Skeletal Samurai Rib Armor at Bottom Rim -->
+          <g class="susanoo-ribs">
+            <path d="M22,86 C28,94 38,98 50,98 C62,98 72,94 78,86 C72,91 62,94 50,94 C38,94 28,91 22,86 Z" fill="url(#susanoo-chakra-grad)" stroke="#c7d2fe" stroke-width="1"/>
+            <path d="M12,68 C16,76 24,82 32,86 C26,81 19,76 15,69 Z" fill="url(#susanoo-chakra-grad)"/>
+            <path d="M88,68 C84,76 76,82 68,86 C74,81 81,76 85,69 Z" fill="url(#susanoo-chakra-grad)"/>
+          </g>
+
+          <!-- Floating Spiritual Chakra Wisps -->
+          <g class="susanoo-wisps">
+            <circle cx="28" cy="2" r="2" fill="#c7d2fe"/>
+            <circle cx="72" cy="2" r="2" fill="#c7d2fe"/>
+            <circle cx="97" cy="38" r="1.8" fill="#818cf8"/>
+            <circle cx="3" cy="38" r="1.8" fill="#818cf8"/>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
+  if (decoCode === "deco_frost_phoenix") {
+    return `
+      <div class="discord-avatar-decoration deco-frost-phoenix-vip">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="frost-ice-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0284c7"/>
+              <stop offset="40%" stop-color="#38bdf8"/>
+              <stop offset="80%" stop-color="#7dd3fc"/>
+              <stop offset="100%" stop-color="#ffffff"/>
+            </linearGradient>
+            <linearGradient id="frost-diamond-glint" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="50%" stop-color="#bae6fd"/>
+              <stop offset="100%" stop-color="#0284c7"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Crystalline Glacial Ice Ring -->
+          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#frost-ice-grad)" stroke-width="3.4" class="frost-base-ring"/>
+          <circle cx="50" cy="50" r="48.5" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="4 8" opacity="0.9"/>
+
+          <!-- Crown of Faceted Ice Shards at Top -->
+          <g class="frost-crown">
+            <!-- Center Towering Ice Spire -->
+            <polygon points="50,-4 54,8 50,15 46,8" fill="url(#frost-diamond-glint)" stroke="#ffffff" stroke-width="1"/>
+            <line x1="50" y1="-2" x2="50" y2="14" stroke="#ffffff" stroke-width="0.8"/>
+            <!-- Left Spire -->
+            <polygon points="36,4 42,14 38,19 32,12" fill="url(#frost-ice-grad)" stroke="#ffffff" stroke-width="1"/>
+            <polygon points="24,14 30,22 26,26 20,20" fill="url(#frost-ice-grad)" stroke="#ffffff" stroke-width="0.9"/>
+            <!-- Right Spire -->
+            <polygon points="64,4 58,14 62,19 68,12" fill="url(#frost-ice-grad)" stroke="#ffffff" stroke-width="1"/>
+            <polygon points="76,14 70,22 74,26 80,20" fill="url(#frost-ice-grad)" stroke="#ffffff" stroke-width="0.9"/>
+          </g>
+
+          <!-- Radiating Ice Shards around Perimeter -->
+          <g class="frost-perimeter-shards">
+            <!-- Left Ice Crystals -->
+            <polygon points="3,44 11,47 6,53" fill="url(#frost-diamond-glint)" stroke="#ffffff" stroke-width="0.8"/>
+            <polygon points="6,66 13,67 9,73" fill="url(#frost-diamond-glint)" stroke="#ffffff" stroke-width="0.8"/>
+            <!-- Right Ice Crystals -->
+            <polygon points="97,44 89,47 94,53" fill="url(#frost-diamond-glint)" stroke="#ffffff" stroke-width="0.8"/>
+            <polygon points="94,66 87,67 91,73" fill="url(#frost-diamond-glint)" stroke="#ffffff" stroke-width="0.8"/>
+            <!-- Bottom Ice Cluster -->
+            <polygon points="50,104 46,92 50,86 54,92" fill="url(#frost-diamond-glint)" stroke="#ffffff" stroke-width="1"/>
+          </g>
+
+          <!-- Floating Diamond Snowflakes ✦ -->
+          <g class="frost-snowflakes">
+            <text x="14" y="32" font-size="9" fill="#ffffff" class="frost-flake">✦</text>
+            <text x="82" y="32" font-size="9" fill="#ffffff" class="frost-flake">✦</text>
+            <text x="18" y="86" font-size="8" fill="#7dd3fc" class="frost-flake">✦</text>
+            <text x="78" y="86" font-size="8" fill="#7dd3fc" class="frost-flake">✦</text>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
+  if (decoCode === "deco_blood_moon") {
+    return `
+      <div class="discord-avatar-decoration deco-blood-moon-vip">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="blood-moon-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#991b1b"/>
+              <stop offset="50%" stop-color="#dc2626"/>
+              <stop offset="85%" stop-color="#f87171"/>
+              <stop offset="100%" stop-color="#fef2f2"/>
+            </linearGradient>
+            <linearGradient id="blood-bat-wing" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#0f172a"/>
+              <stop offset="70%" stop-color="#450a0a"/>
+              <stop offset="100%" stop-color="#dc2626"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Blood Moon Crimson Aura Ring -->
+          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#blood-moon-grad)" stroke-width="3.5" class="blood-moon-ring"/>
+          <circle cx="50" cy="50" r="43.5" fill="none" stroke="#f87171" stroke-width="1.2" stroke-dasharray="14 6" opacity="0.85"/>
+
+          <!-- Giant Glowing Blood Moon Crescent at Right Edge -->
+          <g class="blood-moon-crescent">
+            <path d="M78,16 C92,26 98,42 96,60 C94,74 84,86 72,92 C86,84 92,68 90,52 C88,38 82,24 78,16 Z" fill="url(#blood-moon-grad)" stroke="#fef2f2" stroke-width="1"/>
+            <circle cx="92" cy="46" r="1.5" fill="#ffffff" opacity="0.9"/>
+            <circle cx="88" cy="62" r="1.2" fill="#ffffff" opacity="0.8"/>
+          </g>
+
+          <!-- Gothic Vampire Bat Wings (Left & Right) -->
+          <g class="blood-bat-wings">
+            <!-- Left Bat Wing -->
+            <path d="M14,36 C5,28 -3,34 0,42 C-4,46 2,54 11,52 C7,46 8,42 14,36 Z" fill="url(#blood-bat-wing)" stroke="#dc2626" stroke-width="1.2"/>
+            <path d="M12,40 C6,36 1,40 3,45 Z" fill="#dc2626" opacity="0.6"/>
+            <!-- Right Bat Wing Extension -->
+            <path d="M86,66 C95,72 101,66 99,58 C103,54 97,46 88,48 C92,54 91,58 86,66 Z" fill="url(#blood-bat-wing)" stroke="#dc2626" stroke-width="1.2"/>
+          </g>
+
+          <!-- Bottom Gothic Ruby Blood Gem Pendant -->
+          <g class="blood-ruby-pendant">
+            <!-- Ornate Silver/Crimson Mount -->
+            <path d="M42,94 L50,102 L58,94 L50,91 Z" fill="#0f172a" stroke="#dc2626" stroke-width="1.2"/>
+            <!-- Glowing Ruby Crystal -->
+            <polygon points="50,93 54,97 50,101 46,97" fill="#ef4444" stroke="#ffffff" stroke-width="0.8"/>
+            <circle cx="49" cy="95" r="0.8" fill="#ffffff"/>
+          </g>
+
+          <!-- Floating Blood Mist Embers -->
+          <g class="blood-embers">
+            <circle cx="8" cy="22" r="1.8" fill="#ef4444"/>
+            <circle cx="28" cy="6" r="1.5" fill="#f87171"/>
+            <circle cx="86" cy="12" r="1.8" fill="#ef4444"/>
+            <circle cx="20" cy="88" r="1.5" fill="#dc2626"/>
+            <text x="82" y="32" font-size="8" fill="#f87171" class="blood-rune">✦</text>
+          </g>
+        </svg>
+      </div>
+    `;
+  }
   return "";
 }
 window.generateAvatarDecorationSvg = generateAvatarDecorationSvg;
@@ -3846,73 +4268,6 @@ window.previewDiscordItem = function(itemCode) {
 };
 window.previewDiscordItem = previewDiscordItem;
 
-window.previewCustomNitroMedia = function() {
-  const url = (document.getElementById("custom-nitro-url-input")?.value || "").trim();
-  const type = document.getElementById("custom-nitro-type-select")?.value || "avatar_decoration";
-  if (!url) {
-    showToast("Vui lòng dán link URL trước nhé!", true);
-    return;
-  }
-  const userAvatar = state.profile?.avatar_url || "";
-  const userName = state.profile?.full_name || state.profile?.username || "Bạn học 3TG";
-  const userHandle = state.profile?.username || "hocvien";
-
-  const previewDeco = type === "avatar_decoration" ? url : (state.profile?.avatar_decoration || null);
-  const previewFx = type === "profile_effect" ? url : (state.profile?.profile_effect || null);
-
-  modalRoot.innerHTML = `
-    <div class="discord-preview-modal-overlay" onclick="closeUserProfileModal(event)">
-      <div class="discord-preview-card" onclick="event.stopPropagation()">
-        ${renderProfileEffectHtml(previewFx)}
-        <div class="discord-preview-banner">
-          <button type="button" class="user-profile-close-btn" style="z-index:10;" onclick="closeUserProfileModal()">✕</button>
-        </div>
-        <div class="discord-preview-body">
-          <div class="discord-preview-avatar-row">
-            ${renderDecoratedAvatar(userAvatar, previewDeco, 92, userName)}
-            <span class="discord-nitro-badge">✨ Custom Video Preview</span>
-          </div>
-          <h2 style="font-size:20px; font-weight:900; margin:0 0 2px 0;">${esc(userName)}</h2>
-          <div style="font-size:13px; color:#94a3b8; margin-bottom:12px;">@${esc(userHandle)}</div>
-          
-          <div style="background:rgba(255,255,255,0.06); border-radius:14px; padding:12px; margin-bottom:16px;">
-            <div style="font-size:13px; font-weight:900; color:#38bdf8; margin-bottom:4px;">
-              🎬 Video / CDN Tùy Chỉnh (${type === 'avatar_decoration' ? 'Khung Avatar' : 'Hiệu ứng hồ sơ'})
-            </div>
-            <div style="font-size:11.5px; color:#cbd5e1; word-break:break-all;">
-              ${esc(url.slice(0, 100))}${url.length > 100 ? '...' : ''}
-            </div>
-          </div>
-
-          <div class="discord-preview-btn-row">
-            <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:10px; font-weight:900;" onclick="equipCustomNitroMedia(); closeUserProfileModal();">
-              Trang bị ngay 🚀
-            </button>
-            <button type="button" class="btn-duo btn-duo-white" style="padding:10px 18px;" onclick="closeUserProfileModal()">
-              Đóng
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-};
-
-window.equipCustomNitroMedia = async function() {
-  const url = (document.getElementById("custom-nitro-url-input")?.value || "").trim();
-  const type = document.getElementById("custom-nitro-type-select")?.value || "avatar_decoration";
-  if (!url) {
-    showToast("Vui lòng dán link URL trước nhé!", true);
-    return;
-  }
-  await equipDecoration(type, url);
-};
-
-window.removeCustomNitroMedia = async function() {
-  await equipDecoration("avatar_decoration", null);
-  await equipDecoration("profile_effect", null);
-};
-
 window.openMascotDetailModal = function(key) {
   try { playSound("click"); } catch {}
   const meta = THO_METADATA[key] || { name: key, quote: "" };
@@ -4080,7 +4435,7 @@ function renderShop() {
     `;
   }).join("");
 
-  state.shopTab = state.shopTab || "wallpaper";
+  state.shopTab = state.shopTab || "items";
   const userAvatar = state.profile?.avatar_url || "";
   const userName = state.profile?.full_name || state.profile?.username || "3TG";
 
@@ -4089,7 +4444,7 @@ function renderShop() {
       <div class="banner-with-mascot" style="margin-bottom:20px; padding:18px 24px;">
         <div>
           <h1 class="page-title" style="margin-bottom:4px; font-size:24px;">Tiệm Tạp Hóa 3TG 🏪</h1>
-          <p class="page-subtitle" style="margin:0 0 10px 0; font-size:13.5px;">Dùng Đá quý 💎 tích lũy từ các bài học để mở khóa Bộ Hình nền R2 VIP 0 💎, Hiệu ứng Discord Nitro và Mascot!</p>
+          <p class="page-subtitle" style="margin:0 0 10px 0; font-size:13.5px;">Dùng Đá quý 💎 tích lũy từ các bài học để mở khóa Bùa học tập, Mascot Thỏ 7 Màu, Khung Avatar và Hình nền VIP!</p>
           <div class="top-stat top-gems" style="font-size:16px; display:inline-flex;">
             <span>💎</span> <b>${state.stats.gems || 0}</b> Đá quý hiện có
           </div>
@@ -4099,81 +4454,119 @@ function renderShop() {
         </div>
       </div>
 
-      <!-- SHOP CATEGORY TABS (SIÊU GỌN GÀNG, KHÔNG BỊ TO ĐÙNG) -->
+      <!-- SHOP CATEGORY TABS (THỨ TỰ MỚI: VẬT PHẨM -> MASCOT THỎ 7 MÀU -> KHUNG AVT -> HÌNH NỀN) -->
       <div class="shop-category-tabs">
-        <button type="button" class="shop-category-tab ${state.shopTab === 'wallpaper' ? 'active tab-wallpaper' : ''}" onclick="switchShopTab('wallpaper')">
-          🌄 14 Hình Nền R2 VIP
-        </button>
-        <button type="button" class="shop-category-tab ${state.shopTab === 'nitro' ? 'active tab-nitro' : ''}" onclick="switchShopTab('nitro')">
-          ⚡ Hiệu Ứng Nitro (0 💎)
+        <button type="button" class="shop-category-tab ${state.shopTab === 'items' ? 'active' : ''}" onclick="switchShopTab('items')">
+          🛡️ Vật Phẩm
         </button>
         <button type="button" class="shop-category-tab ${state.shopTab === 'mascot' ? 'active' : ''}" onclick="switchShopTab('mascot')">
-          🐰 20 Mascot Thỏ Bảy Màu
+          🐰 Mascot Thỏ 7 Màu
         </button>
-        <button type="button" class="shop-category-tab ${state.shopTab === 'items' ? 'active' : ''}" onclick="switchShopTab('items')">
-          🛡️ Bùa Chuỗi & Vật Phẩm
+        <button type="button" class="shop-category-tab ${state.shopTab === 'nitro' ? 'active tab-nitro' : ''}" onclick="switchShopTab('nitro')">
+          🖼️ Khung Avatar
+        </button>
+        <button type="button" class="shop-category-tab ${state.shopTab === 'wallpaper' ? 'active tab-wallpaper' : ''}" onclick="switchShopTab('wallpaper')">
+          🌄 Hình Nền
         </button>
       </div>
 
-      <!-- TAB 0: 14 HÌNH NỀN R2 VIP -->
-      ${state.shopTab === 'wallpaper' ? `
+      <!-- TAB 1: VẬT PHẨM HỖ TRỢ HỌC TẬP & BÙA CHUỖI -->
+      ${state.shopTab === 'items' ? `
         <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
-            <div>
-              <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0;">
-                Kho 14 Hình Nền VIP & Ảnh Bìa Động R2 (Cloudflare Storage) 🌄✨
-              </h2>
-              <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">
-                Tất cả hình nền lưu trữ an toàn trên Cloudflare R2 và lưu riêng theo từng tài khoản học viên. Nhấp vào ảnh để xem trước & trang bị!
-              </p>
+          <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0 0 14px 0;">Vật Phẩm Hỗ Trợ Học Tập 🛡️✨</h2>
+          <div class="shop-grid">
+            ${consumablesHtml}
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- TAB 2: 20 MASCOTS THỎ BẢY MÀU (COMPACT WARDROBE) -->
+      ${state.shopTab === 'mascot' ? `
+        <div class="mascot-shop-container">
+          <!-- 2 COMPACT PACK BANNERS -->
+          <div class="mascot-packs-compact-row">
+            <!-- GÓI 1: THỎ CHIẾN THẦN -->
+            <div class="mascot-pack-compact-card fire">
+              <div class="mascot-pack-info">
+                <div class="mascot-pack-title-row">
+                  <span>🔥</span>
+                  <h4 class="mascot-pack-title">Gói 1: Thỏ Chiến Thần</h4>
+                  <span style="font-size:10px; font-weight:900; background:#ea580c; color:#fff; padding:1px 6px; border-radius:999px;">7 Con</span>
+                </div>
+                <div class="mascot-pack-chips-row">
+                  ${MASCOT_PACKS.mascot_pack_champions.keys.map(k => `
+                    <div class="mascot-mini-chip" title="${esc(THO_METADATA[k]?.name || k)}" onclick="openMascotDetailModal('${esc(k)}')">
+                      ${generateThoBayMauSvg({ state: k, size: 24 })}
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+              <div class="mascot-pack-action-col">
+                <span class="mascot-pack-price">💎 150</span>
+                ${isPack1Owned ? `
+                  <span style="font-size:11.5px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 10px; border-radius:10px;">✓ Đã mở</span>
+                ` : `
+                  <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12px; font-weight:900;" onclick="buyItem('mascot_pack_champions')">
+                    Mở khóa
+                  </button>
+                `}
+              </div>
             </div>
-            <span style="background:linear-gradient(135deg, #0ea5e9, #6366f1); color:#fff; font-size:11px; font-weight:900; padding:4px 12px; border-radius:999px; box-shadow:0 2px 8px rgba(14,165,233,0.3);">
-              🎁 0 💎 Miễn Phí Trải Nghiệm
+
+            <!-- GÓI 2: THỎ KAWAII COSPLAY -->
+            <div class="mascot-pack-compact-card sakura">
+              <div class="mascot-pack-info">
+                <div class="mascot-pack-title-row">
+                  <span>🎀</span>
+                  <h4 class="mascot-pack-title">Gói 2: Thỏ Kawaii Cosplay</h4>
+                  <span style="font-size:10px; font-weight:900; background:var(--lumi-pink); color:#fff; padding:1px 6px; border-radius:999px;">7 Con</span>
+                </div>
+                <div class="mascot-pack-chips-row">
+                  ${MASCOT_PACKS.mascot_pack_cosplay.keys.map(k => `
+                    <div class="mascot-mini-chip" title="${esc(THO_METADATA[k]?.name || k)}" onclick="openMascotDetailModal('${esc(k)}')">
+                      ${generateThoBayMauSvg({ state: k, size: 24 })}
+                    </div>
+                  `).join("")}
+                </div>
+              </div>
+              <div class="mascot-pack-action-col">
+                <span class="mascot-pack-price" style="color:var(--lumi-pink-dark);">💎 150</span>
+                ${isPack2Owned ? `
+                  <span style="font-size:11.5px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 10px; border-radius:10px;">✓ Đã mở</span>
+                ` : `
+                  <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12px; font-weight:900;" onclick="buyItem('mascot_pack_cosplay')">
+                    Mở khóa
+                  </button>
+                `}
+              </div>
+            </div>
+          </div>
+
+          <!-- TỦ ĐỒ 20 MASCOT: COMPACT GRID -->
+          <div class="mascot-wardrobe-header">
+            <div>
+              <h3 style="font-size:15px; font-weight:900; margin:0; color:var(--ink-900);">🐰 Tủ Đồ 20 Mascot Thỏ Bảy Màu</h3>
+              <p style="font-size:12px; color:var(--ink-500); margin:2px 0 0;">Nhấn vào bất kỳ biểu cảm nào để phóng to xem chi tiết & chọn làm Avatar đồng hành!</p>
+            </div>
+            <span class="unlocked-counter-badge">
+              Đã mở khóa: <b>${[...MASCOT_DEFAULT_KEYS, ...MASCOT_PACKS.mascot_pack_champions.keys, ...MASCOT_PACKS.mascot_pack_cosplay.keys].filter(k => isMascotUnlocked(k)).length}</b> / 20
             </span>
           </div>
 
-          <div class="discord-wallpaper-grid">
-            ${Object.values(DISCORD_WALLPAPERS_REGISTRY).map(item => {
-              const shopItem = items.find(i => i.item_code === item.code);
-              const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => inv.item_code === item.code && Number(inv.quantity) >= 1);
-              const isEquipped = state.profile && (state.profile.cover_url === item.url || state.profile.cover_url === item.code);
-
+          <div class="mascot-tokens-grid">
+            ${[...MASCOT_DEFAULT_KEYS, ...MASCOT_PACKS.mascot_pack_champions.keys, ...MASCOT_PACKS.mascot_pack_cosplay.keys].map(k => {
+              const meta = THO_METADATA[k] || { name: k };
+              const isUnlocked = isMascotUnlocked(k);
+              const isEquipped = state.profile && (state.profile.avatar_url === `mascot:${k}`);
               return `
-                <div class="discord-wallpaper-card ${isEquipped ? 'equipped' : ''}" onclick="previewDiscordItem('${esc(item.code)}')">
-                  <div class="discord-wallpaper-thumb">
-                    <img src="${esc(item.url)}" alt="${esc(item.name)}" loading="lazy">
-                    <span class="discord-wallpaper-badge" style="background:${item.color || '#6366f1'};">${esc(item.badge)}</span>
-                    ${isEquipped ? `
-                      <span style="position:absolute; top:10px; right:10px; background:#10b981; color:#fff; font-size:10.5px; font-weight:900; padding:3px 8px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
-                        ✓ Đang dùng
-                      </span>
-                    ` : ''}
+                <div class="mascot-token-tile ${isEquipped ? 'equipped' : isUnlocked ? 'unlocked' : 'locked'}" onclick="openMascotDetailModal('${esc(k)}')">
+                  <div class="mascot-token-avatar">
+                    ${generateThoBayMauSvg({ state: k, size: 46 })}
                   </div>
-
-                  <div class="discord-wallpaper-info">
-                    <h4 class="discord-wallpaper-title">${esc(item.name)}</h4>
-                    <p class="discord-wallpaper-desc">${esc(item.description)}</p>
-
-                    <div class="discord-wallpaper-actions" onclick="event.stopPropagation()">
-                      <button type="button" class="btn-duo btn-duo-white" style="padding:6px 10px; font-size:11px;" onclick="previewDiscordItem('${esc(item.code)}')">
-                        👁️ Xem
-                      </button>
-
-                      ${isEquipped ? `
-                        <button type="button" class="btn-duo btn-duo-green" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', null)">
-                          ✓ Đang dùng
-                        </button>
-                      ` : isOwned ? `
-                        <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', '${esc(item.code)}')">
-                          Trang bị
-                        </button>
-                      ` : `
-                        <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="buyItem('${esc(item.code)}')">
-                          Nhận (0 💎)
-                        </button>
-                      `}
-                    </div>
-                  </div>
+                  <div class="mascot-token-name">${esc(meta.name.split('(')[0].trim())}</div>
+                  <span class="mascot-token-badge ${isEquipped ? 'mascot-badge-equipped' : isUnlocked ? 'mascot-badge-unlocked' : 'mascot-badge-locked'}">
+                    ${isEquipped ? 'Đang dùng' : isUnlocked ? '✓ Có' : '🔒 Khóa'}
+                  </span>
                 </div>
               `;
             }).join("")}
@@ -4181,16 +4574,16 @@ function renderShop() {
         </div>
       ` : ''}
 
-      <!-- TAB 1: HIỆU ỨNG NITRO DISCORD (COMPACT GRID) -->
+      <!-- TAB 3: KHUNG AVATAR & HIỆU ỨNG PROFILE (DISCORD NITRO STYLE, 0 💎) -->
       ${state.shopTab === 'nitro' ? `
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
             <div>
               <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0;">
-                Kho Hiệu Ứng Profile & Avatar Nitro (Discord Style) ✨
+                Kho Khung Avatar & Hiệu Ứng Profile Độc Quyền (Hello Kitty, Mecha, Anime...) ✨
               </h2>
               <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">
-                Nhấp trực tiếp vào thẻ hoặc nút <b>👁️ Xem</b> để bung pop-up xem trước trực tiếp trên avatar của bạn.
+                Nhấp trực tiếp vào khung hoặc nút <b>👁️ Xem</b> để bung pop-up xem trước trực tiếp trên avatar của bạn.
               </p>
             </div>
             <span style="background:#22c55e; color:#fff; font-size:11px; font-weight:900; padding:3px 10px; border-radius:999px;">
@@ -4256,150 +4649,71 @@ function renderShop() {
               `;
             }).join("")}
           </div>
-
-          <!-- CUSTOM VIDEO / DISCORD CDN SECTION (BỎ CHỌN FILE THEO YÊU CẦU) -->
-          <div style="margin-top:20px; background:linear-gradient(135deg, #ffffff, #f8fafc); border:2px dashed #cbd5e1; border-radius:20px; padding:18px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
-            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
-              <div style="font-size:28px;">🎬</div>
-              <div>
-                <h4 style="font-size:15px; font-weight:900; color:#0f172a; margin:0;">
-                  Tự Dán Link Video & Ảnh Động Nitro Tùy Chỉnh (Discord APNG, WebM, MP4, GIF)
-                </h4>
-                <p style="font-size:12px; color:#64748b; margin:2px 0 0;">
-                  Dán trực tiếp bất kỳ link CDN Discord Nitro để trang bị ngay.
-                </p>
-              </div>
-            </div>
-
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
-              <div style="flex:1; min-width:240px;">
-                <input type="text" id="custom-nitro-url-input" class="form-control" style="font-size:13px; padding:9px 12px; border-radius:12px; width:100%; border:1.5px solid #cbd5e1;" placeholder="Dán link Video .webm, .mp4 hoặc .gif, .png từ Discord tại đây...">
-              </div>
-              <div style="width:160px;">
-                <select id="custom-nitro-type-select" class="form-control" style="font-size:12.5px; padding:9px 10px; border-radius:12px; width:100%; border:1.5px solid #cbd5e1; font-weight:700;">
-                  <option value="avatar_decoration">🖼️ Khung Avatar</option>
-                  <option value="profile_effect">🪄 Hiệu Ứng Hồ Sơ</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-              <button type="button" class="btn-duo btn-duo-white" style="padding:7px 14px; font-size:12px;" onclick="previewCustomNitroMedia()">
-                👁️ Xem thử trực tiếp
-              </button>
-              <button type="button" class="btn-duo btn-duo-pink" style="padding:7px 16px; font-size:12px; font-weight:900;" onclick="equipCustomNitroMedia()">
-                ⚡ Trang bị ngay ➔
-              </button>
-              ${(state.profile?.avatar_decoration?.startsWith('http') || state.profile?.avatar_decoration?.startsWith('data:') || state.profile?.profile_effect?.startsWith('http') || state.profile?.profile_effect?.startsWith('data:')) ? `
-                <button type="button" class="btn-duo btn-duo-white" style="padding:7px 12px; font-size:11.5px; color:#ef4444;" onclick="removeCustomNitroMedia()">
-                  ✕ Tháo hiệu ứng tùy chỉnh
-                </button>
-              ` : ''}
-            </div>
-          </div>
         </div>
       ` : ''}
 
-      <!-- TAB 2: 20 MASCOTS COLLECTION (COMPACT WARDROBE) -->
-      ${state.shopTab === 'mascot' ? `
-        <div class="mascot-shop-container">
-          <!-- 2 COMPACT PACK BANNERS -->
-          <div class="mascot-packs-compact-row">
-            <!-- GÓI 1: THỎ CHIẾN THẦN -->
-            <div class="mascot-pack-compact-card fire">
-              <div class="mascot-pack-info">
-                <div class="mascot-pack-title-row">
-                  <span>🔥</span>
-                  <h4 class="mascot-pack-title">Gói 1: Thỏ Chiến Thần</h4>
-                  <span style="font-size:10px; font-weight:900; background:#ea580c; color:#fff; padding:1px 6px; border-radius:999px;">7 Con</span>
-                </div>
-                <div class="mascot-pack-chips-row">
-                  ${MASCOT_PACKS.mascot_pack_champions.keys.map(k => `
-                    <div class="mascot-mini-chip" title="${esc(THO_METADATA[k]?.name || k)}" onclick="openMascotDetailModal('${esc(k)}')">
-                      ${generateThoBayMauSvg({ state: k, size: 24 })}
-                    </div>
-                  `).join("")}
-                </div>
-              </div>
-              <div class="mascot-pack-action-col">
-                <span class="mascot-pack-price">💎 150</span>
-                ${isPack1Owned ? `
-                  <span style="font-size:11.5px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 10px; border-radius:10px;">✓ Đã mở</span>
-                ` : `
-                  <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12px; font-weight:900;" onclick="buyItem('mascot_pack_champions')">
-                    Mở khóa
-                  </button>
-                `}
-              </div>
-            </div>
-
-            <!-- GÓI 2: THỎ KAWAII COSPLAY -->
-            <div class="mascot-pack-compact-card sakura">
-              <div class="mascot-pack-info">
-                <div class="mascot-pack-title-row">
-                  <span>🎀</span>
-                  <h4 class="mascot-pack-title">Gói 2: Thỏ Kawaii Cosplay</h4>
-                  <span style="font-size:10px; font-weight:900; background:var(--lumi-pink); color:#fff; padding:1px 6px; border-radius:999px;">7 Con</span>
-                </div>
-                <div class="mascot-pack-chips-row">
-                  ${MASCOT_PACKS.mascot_pack_cosplay.keys.map(k => `
-                    <div class="mascot-mini-chip" title="${esc(THO_METADATA[k]?.name || k)}" onclick="openMascotDetailModal('${esc(k)}')">
-                      ${generateThoBayMauSvg({ state: k, size: 24 })}
-                    </div>
-                  `).join("")}
-                </div>
-              </div>
-              <div class="mascot-pack-action-col">
-                <span class="mascot-pack-price" style="color:var(--lumi-pink-dark);">💎 150</span>
-                ${isPack2Owned ? `
-                  <span style="font-size:11.5px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 10px; border-radius:10px;">✓ Đã mở</span>
-                ` : `
-                  <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12px; font-weight:900;" onclick="buyItem('mascot_pack_cosplay')">
-                    Mở khóa
-                  </button>
-                `}
-              </div>
-            </div>
-          </div>
-
-          <!-- TỦ ĐỒ 20 MASCOT: COMPACT GRID ("NHẤN VÀO LÀ XỔ RA") -->
-          <div class="mascot-wardrobe-header">
+      <!-- TAB 4: 14 HÌNH NỀN R2 VIP -->
+      ${state.shopTab === 'wallpaper' ? `
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
             <div>
-              <h3 style="font-size:15px; font-weight:900; margin:0; color:var(--ink-900);">🐰 Tủ Đồ 20 Mascot Thỏ Bảy Màu</h3>
-              <p style="font-size:12px; color:var(--ink-500); margin:2px 0 0;">Nhấn vào bất kỳ biểu cảm nào để phóng to xem chi tiết & chọn làm Avatar đồng hành!</p>
+              <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0;">
+                Kho 14 Hình Nền VIP & Ảnh Bìa Động R2 (Cloudflare Storage) 🌄✨
+              </h2>
+              <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">
+                Tất cả hình nền lưu trữ an toàn trên Cloudflare R2 và lưu riêng theo từng tài khoản học viên. Nhấp vào ảnh để xem trước & trang bị!
+              </p>
             </div>
-            <span class="unlocked-counter-badge">
-              Đã mở khóa: <b>${[...MASCOT_DEFAULT_KEYS, ...MASCOT_PACKS.mascot_pack_champions.keys, ...MASCOT_PACKS.mascot_pack_cosplay.keys].filter(k => isMascotUnlocked(k)).length}</b> / 20
+            <span style="background:linear-gradient(135deg, #0ea5e9, #6366f1); color:#fff; font-size:11px; font-weight:900; padding:4px 12px; border-radius:999px; box-shadow:0 2px 8px rgba(14,165,233,0.3);">
+              🎁 0 💎 Miễn Phí Trải Nghiệm
             </span>
           </div>
 
-          <div class="mascot-tokens-grid">
-            ${[...MASCOT_DEFAULT_KEYS, ...MASCOT_PACKS.mascot_pack_champions.keys, ...MASCOT_PACKS.mascot_pack_cosplay.keys].map(k => {
-              const meta = THO_METADATA[k] || { name: k };
-              const isUnlocked = isMascotUnlocked(k);
-              const isEquipped = state.profile && (state.profile.avatar_url === `mascot:${k}`);
+          <div class="discord-wallpaper-grid">
+            ${Object.values(DISCORD_WALLPAPERS_REGISTRY).map(item => {
+              const shopItem = items.find(i => i.item_code === item.code);
+              const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => inv.item_code === item.code && Number(inv.quantity) >= 1);
+              const isEquipped = state.profile && (state.profile.cover_url === item.url || state.profile.cover_url === item.code);
+
               return `
-                <div class="mascot-token-tile ${isEquipped ? 'equipped' : isUnlocked ? 'unlocked' : 'locked'}" onclick="openMascotDetailModal('${esc(k)}')">
-                  <div class="mascot-token-avatar">
-                    ${generateThoBayMauSvg({ state: k, size: 46 })}
+                <div class="discord-wallpaper-card ${isEquipped ? 'equipped' : ''}" onclick="previewDiscordItem('${esc(item.code)}')">
+                  <div class="discord-wallpaper-thumb">
+                    <img src="${esc(item.url)}" alt="${esc(item.name)}" loading="lazy">
+                    <span class="discord-wallpaper-badge" style="background:${item.color || '#6366f1'};">${esc(item.badge)}</span>
+                    ${isEquipped ? `
+                      <span style="position:absolute; top:10px; right:10px; background:#10b981; color:#fff; font-size:10.5px; font-weight:900; padding:3px 8px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+                        ✓ Đang dùng
+                      </span>
+                    ` : ''}
                   </div>
-                  <div class="mascot-token-name">${esc(meta.name.split('(')[0].trim())}</div>
-                  <span class="mascot-token-badge ${isEquipped ? 'mascot-badge-equipped' : isUnlocked ? 'mascot-badge-unlocked' : 'mascot-badge-locked'}">
-                    ${isEquipped ? 'Đang dùng' : isUnlocked ? '✓ Có' : '🔒 Khóa'}
-                  </span>
+
+                  <div class="discord-wallpaper-info">
+                    <h4 class="discord-wallpaper-title">${esc(item.name)}</h4>
+                    <p class="discord-wallpaper-desc">${esc(item.description)}</p>
+
+                    <div class="discord-wallpaper-actions" onclick="event.stopPropagation()">
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:6px 10px; font-size:11px;" onclick="previewDiscordItem('${esc(item.code)}')">
+                        👁️ Xem
+                      </button>
+
+                      ${isEquipped ? `
+                        <button type="button" class="btn-duo btn-duo-green" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', null)">
+                          ✓ Đang dùng
+                        </button>
+                      ` : isOwned ? `
+                        <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', '${esc(item.code)}')">
+                          Trang bị
+                        </button>
+                      ` : `
+                        <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="buyItem('${esc(item.code)}')">
+                          Nhận (0 💎)
+                        </button>
+                      `}
+                    </div>
+                  </div>
                 </div>
               `;
             }).join("")}
-          </div>
-        </div>
-      ` : ''}
-
-      <!-- TAB 3: VẬT PHẨM HỖ TRỢ HỌC TẬP & BÙA CHUỖI -->
-      ${state.shopTab === 'items' ? `
-        <div>
-          <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0 0 14px 0;">Vật Phẩm Hỗ Trợ Học Tập 🛡️✨</h2>
-          <div class="shop-grid">
-            ${consumablesHtml}
           </div>
         </div>
       ` : ''}

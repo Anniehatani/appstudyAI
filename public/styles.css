@@ -6422,6 +6422,226 @@ button:focus-visible, input:focus-visible {
   100% { transform: translateY(-3px); opacity: 1; filter: drop-shadow(0 0 4px #fff); }
 }
 
+/* 1.7 HELLO KITTY KAWAII FRAME */
+.deco-hello-kitty-vip {
+  animation: discordHkAuraPulse 2.4s ease-in-out infinite alternate;
+}
+.hk-aura-ring {
+  animation: discordHkRingPulse 3s ease-in-out infinite alternate;
+}
+.hk-signature-bow {
+  animation: discordHkBowFloat 2s ease-in-out infinite alternate;
+  transform-origin: 30px 14px;
+}
+.hk-sparkle-star {
+  animation: discordHkSparkle 1.6s ease-in-out infinite alternate;
+}
+.hk-sparkle-heart {
+  animation: discordHkHeartBeat 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes discordHkAuraPulse {
+  0% {
+    filter: drop-shadow(0 0 6px rgba(255, 117, 140, 0.6)) drop-shadow(0 0 12px rgba(255, 42, 122, 0.3));
+    transform: scale(0.99);
+  }
+  100% {
+    filter: drop-shadow(0 0 12px rgba(255, 42, 122, 0.9)) drop-shadow(0 0 20px rgba(255, 182, 193, 0.7));
+    transform: scale(1.02);
+  }
+}
+@keyframes discordHkBowFloat {
+  0% { transform: rotate(0deg) scale(0.98); }
+  100% { transform: rotate(4deg) scale(1.04); }
+}
+@keyframes discordHkSparkle {
+  0% { opacity: 0.4; transform: scale(0.8) rotate(0deg); }
+  100% { opacity: 1; transform: scale(1.3) rotate(35deg); filter: drop-shadow(0 0 4px #ff2a7a); }
+}
+@keyframes discordHkHeartBeat {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.25); opacity: 1; filter: drop-shadow(0 0 4px #ff0055); }
+}
+
+/* 1.8 KUROMI GOTHIC PUNK FRAME */
+.deco-kuromi-punk-vip {
+  animation: discordKuromiAuraPulse 2.8s ease-in-out infinite alternate;
+}
+.kuromi-ring {
+  animation: discordKuromiSpin 20s linear infinite;
+  transform-origin: 50px 50px;
+}
+.kuromi-horns {
+  animation: discordKuromiHornsTwitch 3s ease-in-out infinite alternate;
+  transform-origin: 50px 20px;
+}
+.kuromi-wings {
+  animation: discordKuromiWingsFlap 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes discordKuromiAuraPulse {
+  0% {
+    filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.7)) drop-shadow(0 0 10px rgba(236, 72, 153, 0.4));
+    transform: scale(0.985);
+  }
+  100% {
+    filter: drop-shadow(0 0 14px rgba(236, 72, 153, 0.9)) drop-shadow(0 0 22px rgba(88, 28, 135, 0.8));
+    transform: scale(1.025);
+  }
+}
+@keyframes discordKuromiSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes discordKuromiHornsTwitch {
+  0% { transform: scale(0.98) rotate(-1deg); }
+  100% { transform: scale(1.03) rotate(1.5deg); }
+}
+@keyframes discordKuromiWingsFlap {
+  0% { transform: scale(0.95); opacity: 0.85; }
+  100% { transform: scale(1.06); opacity: 1; filter: drop-shadow(0 0 6px #ec4899); }
+}
+
+/* 1.9 CYBER MECHA SCI-FI FRAME */
+.deco-cyber-mecha-vip {
+  animation: discordMechaPulse 2s ease-in-out infinite alternate;
+}
+.mecha-radar-ring {
+  animation: discordMechaRadarSpin 12s linear infinite;
+  transform-origin: 50px 50px;
+}
+.mecha-targeting line {
+  animation: discordMechaTargetFlicker 1.5s ease-in-out infinite alternate;
+}
+.mecha-plasma-blades path {
+  animation: discordMechaPlasmaGlow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes discordMechaPulse {
+  0% {
+    filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.6)) drop-shadow(0 0 10px rgba(0, 240, 255, 0.3));
+    transform: scale(0.99);
+  }
+  100% {
+    filter: drop-shadow(0 0 14px rgba(0, 240, 255, 0.9)) drop-shadow(0 0 22px rgba(59, 130, 246, 0.7));
+    transform: scale(1.02);
+  }
+}
+@keyframes discordMechaRadarSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes discordMechaTargetFlicker {
+  0% { opacity: 0.6; stroke: #eab308; }
+  100% { opacity: 1; stroke: #fde047; filter: drop-shadow(0 0 4px #eab308); }
+}
+@keyframes discordMechaPlasmaGlow {
+  0% { filter: drop-shadow(0 0 2px #00f0ff); opacity: 0.7; }
+  100% { filter: drop-shadow(0 0 8px #00f0ff); opacity: 1; }
+}
+
+/* 1.10 SUSANOO DEMON CHAKRA FRAME */
+.deco-susanoo-demon-vip {
+  animation: discordSusanooFlamePulse 2.5s ease-in-out infinite alternate;
+}
+.susanoo-base-ring {
+  animation: discordSusanooRingPulse 3.5s ease-in-out infinite alternate;
+}
+.susanoo-horns {
+  animation: discordSusanooHornsBreathe 2.8s ease-in-out infinite alternate;
+  transform-origin: 50px 18px;
+}
+.susanoo-eye-glow {
+  animation: discordSusanooEyeFlash 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes discordSusanooFlamePulse {
+  0% {
+    filter: drop-shadow(0 0 8px rgba(79, 70, 229, 0.7)) drop-shadow(0 0 14px rgba(49, 46, 129, 0.5));
+    transform: scale(0.985);
+  }
+  100% {
+    filter: drop-shadow(0 0 16px rgba(129, 140, 248, 1)) drop-shadow(0 0 28px rgba(99, 102, 241, 0.8));
+    transform: scale(1.03);
+  }
+}
+@keyframes discordSusanooHornsBreathe {
+  0% { transform: scale(0.97); }
+  100% { transform: scale(1.04); }
+}
+@keyframes discordSusanooEyeFlash {
+  0% { opacity: 0.5; filter: drop-shadow(0 0 2px #fbbf24); }
+  100% { opacity: 1; filter: drop-shadow(0 0 8px #fbbf24) drop-shadow(0 0 12px #fff); }
+}
+
+/* 1.11 FROST PHOENIX ICE CRYSTALS FRAME */
+.deco-frost-phoenix-vip {
+  animation: discordFrostIcePulse 3s ease-in-out infinite alternate;
+}
+.frost-crown polygon {
+  animation: discordFrostShimmer 2s ease-in-out infinite alternate;
+}
+.frost-flake {
+  animation: discordFrostFlakeSpin 4s ease-in-out infinite alternate;
+}
+
+@keyframes discordFrostIcePulse {
+  0% {
+    filter: drop-shadow(0 0 6px rgba(2, 132, 199, 0.6)) drop-shadow(0 0 12px rgba(56, 189, 248, 0.3));
+    transform: scale(0.99);
+  }
+  100% {
+    filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.95)) drop-shadow(0 0 24px rgba(255, 255, 255, 0.8));
+    transform: scale(1.025);
+  }
+}
+@keyframes discordFrostShimmer {
+  0% { opacity: 0.85; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1.03); filter: drop-shadow(0 0 6px #ffffff); }
+}
+@keyframes discordFrostFlakeSpin {
+  0% { transform: rotate(0deg) scale(0.9); opacity: 0.6; }
+  100% { transform: rotate(45deg) scale(1.2); opacity: 1; filter: drop-shadow(0 0 5px #7dd3fc); }
+}
+
+/* 1.12 BLOOD MOON VAMPIRE GOTHIC FRAME */
+.deco-blood-moon-vip {
+  animation: discordBloodMoonPulse 2.6s ease-in-out infinite alternate;
+}
+.blood-moon-crescent path {
+  animation: discordBloodCrescentGlow 3s ease-in-out infinite alternate;
+}
+.blood-bat-wings path {
+  animation: discordBloodWingBeat 2.2s ease-in-out infinite alternate;
+  transform-origin: 50px 50px;
+}
+.blood-ruby-pendant polygon {
+  animation: discordBloodRubyGleam 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes discordBloodMoonPulse {
+  0% {
+    filter: drop-shadow(0 0 6px rgba(153, 27, 27, 0.7)) drop-shadow(0 0 12px rgba(220, 38, 38, 0.4));
+    transform: scale(0.985);
+  }
+  100% {
+    filter: drop-shadow(0 0 16px rgba(220, 38, 38, 1)) drop-shadow(0 0 26px rgba(248, 113, 113, 0.7));
+    transform: scale(1.025);
+  }
+}
+@keyframes discordBloodCrescentGlow {
+  0% { filter: drop-shadow(0 0 4px #dc2626); }
+  100% { filter: drop-shadow(0 0 12px #f87171) drop-shadow(0 0 18px #fff); }
+}
+@keyframes discordBloodWingBeat {
+  0% { transform: scale(0.96) rotate(-1deg); }
+  100% { transform: scale(1.03) rotate(1deg); }
+}
+@keyframes discordBloodRubyGleam {
+  0% { filter: drop-shadow(0 0 2px #ef4444); opacity: 0.8; }
+  100% { filter: drop-shadow(0 0 8px #ef4444) drop-shadow(0 0 12px #fff); opacity: 1; }
+}
+
 /* ========================================================
    2. VIP DISCORD PROFILE EFFECTS (BANNER & CARD OVERLAYS)
    ======================================================== */
