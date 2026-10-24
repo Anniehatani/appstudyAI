@@ -147,6 +147,101 @@ function createR2BucketAdapter(config) {
           resolve(null);
         }
       });
+    },
+    async put(key, body, options = {}) {
+      return new Promise((resolve) => {
+        try {
+          const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body);
+          const now = new Date();
+          const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+          const dateStamp = amzDate.slice(0, 8);
+          const region = "auto";
+          const service = "s3";
+          const canonicalUri = `/${bucket}/${encodeURI(key)}`;
+          const payloadHash = hash(buffer);
+          const contentType = (options && options.httpMetadata && options.httpMetadata.contentType) || "application/octet-stream";
+          const canonicalHeaders = `content-type:${contentType}\nhost:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
+          const signedHeaders = "content-type;host;x-amz-content-sha256;x-amz-date";
+          const canonicalRequest = `PUT\n${canonicalUri}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+          const algorithm = "AWS4-HMAC-SHA256";
+          const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+          const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${hash(canonicalRequest)}`;
+
+          const kDate = hmac("AWS4" + secretKey, dateStamp);
+          const kRegion = hmac(kDate, region);
+          const kService = hmac(kRegion, service);
+          const kSigning = hmac(kService, "aws4_request");
+          const signature = crypto.createHmac("sha256", kSigning).update(stringToSign, "utf8").digest("hex");
+          const authHeader = `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+          const req = https.request({
+            hostname: host,
+            path: canonicalUri,
+            method: "PUT",
+            headers: {
+              "host": host,
+              "content-type": contentType,
+              "content-length": buffer.length,
+              "x-amz-date": amzDate,
+              "x-amz-content-sha256": payloadHash,
+              "Authorization": authHeader
+            }
+          }, (res) => {
+            resolve({ key, size: buffer.length });
+          });
+          req.on("error", (e) => {
+            console.warn("[R2 Adapter Put Error]:", e.message);
+            resolve({ key });
+          });
+          req.write(buffer);
+          req.end();
+        } catch (err) {
+          console.warn("[R2 Adapter Put Exception]:", err.message);
+          resolve({ key });
+        }
+      });
+    },
+    async delete(key) {
+      return new Promise((resolve) => {
+        try {
+          const now = new Date();
+          const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+          const dateStamp = amzDate.slice(0, 8);
+          const region = "auto";
+          const service = "s3";
+          const canonicalUri = `/${bucket}/${encodeURI(key)}`;
+          const payloadHash = hash("");
+          const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
+          const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+          const canonicalRequest = `DELETE\n${canonicalUri}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+          const algorithm = "AWS4-HMAC-SHA256";
+          const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+          const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${hash(canonicalRequest)}`;
+
+          const kDate = hmac("AWS4" + secretKey, dateStamp);
+          const kRegion = hmac(kDate, region);
+          const kService = hmac(kRegion, service);
+          const kSigning = hmac(kService, "aws4_request");
+          const signature = crypto.createHmac("sha256", kSigning).update(stringToSign, "utf8").digest("hex");
+          const authHeader = `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+          const req = https.request({
+            hostname: host,
+            path: canonicalUri,
+            method: "DELETE",
+            headers: {
+              "host": host,
+              "x-amz-date": amzDate,
+              "x-amz-content-sha256": payloadHash,
+              "Authorization": authHeader
+            }
+          }, () => resolve(true));
+          req.on("error", () => resolve(false));
+          req.end();
+        } catch {
+          resolve(false);
+        }
+      });
     }
   };
 }
@@ -219,6 +314,20 @@ async function startEmbeddedServer(rootPath, port = 8787) {
                 };
               }
             };
+          },
+          async batch(statements) {
+            const results = [];
+            for (const stmt of statements) {
+              if (typeof stmt.run === "function") {
+                results.push(await stmt.run());
+              } else {
+                results.push(await stmt.all());
+              }
+            }
+            return results;
+          },
+          async exec(sql) {
+            return sqliteDb.exec(sql);
           }
         };
         console.log("[EmbeddedServer] Đã nạp thành công Local D1 Replica từ:", sPath);

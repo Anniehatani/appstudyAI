@@ -509,7 +509,7 @@ const MASCOT_PACKS = {
     id: "mascot_pack_champions",
     name: "Gói Thỏ Chiến Thần & Đỉnh Cao",
     description: "Bộ 7 mascot phong cách chiến thần rực lửa: Vua Vô Địch, Kiếm Sĩ Yasuo, Ăn Mừng VN, Bùng Cháy Lửa Streak, Cưỡi Mây, Thám Tử Bắt Lỗi, Siêu Sao XP.",
-    price: 150,
+    price: 100,
     keys: ["vietnam-celebrate", "cloud-float", "sword-master", "streak-fire", "king-champion", "xp-boost", "detective-fix"],
     aura: "glow-fire",
     tag: "7 Mascot Siêu Phẩm"
@@ -518,7 +518,7 @@ const MASCOT_PACKS = {
     id: "mascot_pack_cosplay",
     name: "Gói Thỏ Hóa Trang Anime & Siêu Dễ Thương",
     description: "Bộ 7 mascot hóa trang siêu cute: Hầu Gái Kawaii, Giáo Sư AI, Đại Gia Đá Quý, Cổ Vũ Pom-Pom, Hốt Hoảng, Mếu Máo, Giận Dỗi.",
-    price: 150,
+    price: 100,
     keys: ["maid-service", "ai-professor", "gem-rich", "cheering-pom", "shocked-walking", "heart-broken", "angry-remind"],
     aura: "glow-sakura",
     tag: "7 Mascot Kawaii"
@@ -2372,8 +2372,13 @@ window.openUserProfileModal = async function(userId) {
       avatarContent = esc(Array.from(prof.full_name || "L")[0] || "L");
     }
 
-    const coverStyle = prof.cover_url
-      ? `background-image: url('${esc(prof.cover_url)}');`
+    let resolvedCover = prof.cover_url;
+    if (resolvedCover && DISCORD_WALLPAPERS_REGISTRY && DISCORD_WALLPAPERS_REGISTRY[resolvedCover]) {
+      resolvedCover = DISCORD_WALLPAPERS_REGISTRY[resolvedCover].url;
+    }
+    const isCoverGradient = resolvedCover && resolvedCover.startsWith("linear-gradient");
+    const coverStyle = resolvedCover
+      ? (isCoverGradient ? `background: ${resolvedCover};` : `background-image: url('${esc(resolvedCover)}'); background-size: cover; background-position: center;`)
       : `background: linear-gradient(135deg, #ff71a2, #ff4b82, #c084fc);`;
 
     modalRoot.innerHTML = `
@@ -2531,9 +2536,7 @@ window.openDirectChat = async function(targetUserId) {
       const targetUser = data.targetUser || {};
       const messages = data.messages || [];
 
-      let avatarHtml = targetUser.avatar_url
-        ? `<img src="${esc(targetUser.avatar_url)}" alt="">`
-        : esc(Array.from(targetUser.full_name || "L")[0] || "L");
+      let avatarHtml = renderDecoratedAvatar(targetUser.avatar_url, targetUser.avatar_decoration, 40, targetUser.full_name);
 
       const msgsHtml = messages.length ? messages.map(m => `
         <div class="chat-bubble-wrap ${m.isMine ? 'mine' : 'other'}">
@@ -2553,7 +2556,7 @@ window.openDirectChat = async function(targetUserId) {
           <div class="direct-chat-modal" onclick="event.stopPropagation()">
             <div class="chat-header">
               <div class="chat-header-user" onclick="openUserProfileModal('${esc(targetUserId)}')">
-                <span class="chat-header-avatar">${avatarHtml}</span>
+                <span class="chat-header-avatar" style="background:transparent; border:none; padding:0; overflow:visible;">${avatarHtml}</span>
                 <div>
                   <h4 class="chat-header-title">${esc(targetUser.full_name || "Học viên")}</h4>
                   <span class="chat-header-subtitle">● Đang hoạt động • Nhấp xem hồ sơ</span>
@@ -2781,13 +2784,11 @@ function renderFriends() {
       ${currentFriendsTab === 'friends' ? `
         <div class="friends-list-container">
           ${friends.length ? friends.map(f => {
-            const avatarHtml = f.avatar_url
-              ? `<img src="${esc(f.avatar_url)}" alt="">`
-              : Array.from(f.full_name || "L")[0] || "L";
+            const avatarHtml = renderDecoratedAvatar(f.avatar_url, f.avatar_decoration, 44, f.full_name);
             return `
               <div class="friend-card">
                 <div class="friend-info-left" onclick="openUserProfileModal('${esc(f.friend_user_id)}')">
-                  <span class="friend-avatar-badge">${avatarHtml}</span>
+                  <span class="friend-avatar-badge" style="background:transparent; border:none; padding:0; overflow:visible;">${avatarHtml}</span>
                   <div>
                     <h3 style="font-size:16.5px; font-weight:900; margin:0 0 2px 0; color:var(--ink-900);">
                       ${esc(f.full_name)}
@@ -2831,13 +2832,11 @@ function renderFriends() {
 
           <div class="friends-search-results">
             ${searchFriendsResults ? (searchFriendsResults.length ? searchFriendsResults.map(u => {
-              const avatarHtml = u.avatar_url
-                ? `<img src="${esc(u.avatar_url)}" alt="">`
-                : Array.from(u.full_name || "L")[0] || "L";
+              const avatarHtml = renderDecoratedAvatar(u.avatar_url, u.avatar_decoration, 44, u.full_name);
               return `
                 <div class="friend-card">
                   <div class="friend-info-left" onclick="openUserProfileModal('${esc(u.user_id)}')">
-                    <span class="friend-avatar-badge">${avatarHtml}</span>
+                    <span class="friend-avatar-badge" style="background:transparent; border:none; padding:0; overflow:visible;">${avatarHtml}</span>
                     <div>
                       <h3 style="font-size:16px; font-weight:900; margin:0 0 2px 0; color:var(--ink-900);">
                         ${esc(u.full_name)}
@@ -2873,13 +2872,11 @@ function renderFriends() {
         <div class="friends-messages-container">
           ${convos.length ? convos.map(c => {
             const u = c.user;
-            const avatarHtml = u.avatar_url
-              ? `<img src="${esc(u.avatar_url)}" alt="">`
-              : Array.from(u.full_name || "L")[0] || "L";
+            const avatarHtml = renderDecoratedAvatar(u.avatar_url, u.avatar_decoration, 44, u.full_name);
             return `
               <div class="friend-card" style="cursor:pointer;" onclick="openDirectChat('${esc(u.user_id)}')">
                 <div class="friend-info-left">
-                  <span class="friend-avatar-badge">${avatarHtml}</span>
+                  <span class="friend-avatar-badge" style="background:transparent; border:none; padding:0; overflow:visible;">${avatarHtml}</span>
                   <div>
                     <h3 style="font-size:16px; font-weight:900; margin:0 0 3px 0; color:var(--ink-900);">
                       ${esc(u.full_name)}
@@ -2931,7 +2928,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Sakura Nitro",
     color: "#ff71a2",
     description: "Cánh hoa anh đào lượn sóng xoay vòng và rơi lấp lánh nhẹ nhàng quanh ảnh đại diện.",
-    price: 60
+    price: 100
   },
   deco_hello_kitty: {
     code: "deco_hello_kitty",
@@ -2941,7 +2938,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Kitty Kawaii",
     color: "#ff2a7a",
     description: "Khung nơ đỏ Hello Kitty siêu cấp đáng yêu với tai mèo trắng, ria mèo xinh xắn và ánh sao hồng lấp lánh.",
-    price: 80
+    price: 100
   },
   deco_flame_dragon: {
     code: "deco_flame_dragon",
@@ -2951,7 +2948,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Flame Nitro",
     color: "#ff7b00",
     description: "Ngọn lửa rực cháy đỏ cam bập bùng dữ dội bao quanh avatar cực kỳ chiến và nổi bật.",
-    price: 90
+    price: 100
   },
   deco_cyber_neon: {
     code: "deco_cyber_neon",
@@ -2971,7 +2968,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Kuromi Punk",
     color: "#a855f7",
     description: "Phong cách tiểu quỷ Kuromi tím đen cá tính với tai thỏ ác quỷ, đầu lâu mini và gai hoa hồng neon.",
-    price: 110
+    price: 100
   },
   deco_cyber_mecha: {
     code: "deco_cyber_mecha",
@@ -2981,7 +2978,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Mecha HUD",
     color: "#06b6d4",
     description: "Vòng radar ngắm bắn công nghệ cao Gundam với giáp lục giác kim loại và lưỡi dao năng lượng plasma cực ngầu.",
-    price: 120
+    price: 100
   },
   deco_galaxy_portal: {
     code: "deco_galaxy_portal",
@@ -2991,7 +2988,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Cosmic Nitro",
     color: "#a855f7",
     description: "Vòng xoáy không gian vũ trụ huyền ảo với bụi sao lấp lánh và tinh vân xoay tròn kỳ ảo.",
-    price: 130
+    price: 100
   },
   deco_frost_phoenix: {
     code: "deco_frost_phoenix",
@@ -3001,7 +2998,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Frost Ice",
     color: "#38bdf8",
     description: "Vòng pha lê băng giá vĩnh cửu phát quang ánh tuyết xanh ngọc cùng những bông tuyết kim cương xoay tròn.",
-    price: 140
+    price: 100
   },
   deco_blood_moon: {
     code: "deco_blood_moon",
@@ -3011,7 +3008,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Blood Moon",
     color: "#ef4444",
     description: "Trăng máu đỏ thẫm huyền bí cùng đôi cánh dơi ma cà rồng gothic và ngọc huyết quang rực cháy.",
-    price: 150
+    price: 100
   },
   deco_manga_ghoul: {
     code: "deco_manga_ghoul",
@@ -3021,7 +3018,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Horror Nitro",
     color: "#64748b",
     description: "Linh hồn quỷ dị và bàn tay xương xẩu manga kinh dị Junji Ito ôm lấy avatar cực kỳ ma mị chuẩn Discord VIP.",
-    price: 160
+    price: 100
   },
   deco_susanoo_demon: {
     code: "deco_susanoo_demon",
@@ -3031,7 +3028,7 @@ export const DISCORD_EFFECTS_REGISTRY = {
     badge: "Susanoo Dark",
     color: "#818cf8",
     description: "Hào quang Ma Thần Susanoo tím thẫm rực cháy với sừng quỷ giác đấu và ngọn lửa chakra hắc ám cuộn trào.",
-    price: 180
+    price: 100
   }
 };
 window.DISCORD_EFFECTS_REGISTRY = DISCORD_EFFECTS_REGISTRY;
@@ -3046,7 +3043,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#f59e0b",
     url: "/media/hinhnen/meow-doodle.jpeg",
     description: "Bản vẽ vẽ tay phác họa chú mèo ngộ nghĩnh hài hước, tạo cảm giác thư giãn gần gũi.",
-    price: 60
+    price: 100
   },
   bg_2b_monochrome: {
     code: "bg_2b_monochrome",
@@ -3057,7 +3054,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#64748b",
     url: "/media/hinhnen/2b-monochrome.webp",
     description: "Hình nền nghệ thuật 2B NieR:Automata phong cách đen trắng đơn sắc huyền bí, sang trọng.",
-    price: 70
+    price: 100
   },
   bg_sakura_pastel: {
     code: "bg_sakura_pastel",
@@ -3068,7 +3065,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#ec4899",
     url: "/media/hinhnen/pink-cherry-blossoms-sakura-pastel.webp",
     description: "Cảnh sắc hoa anh đào rực rỡ tông màu hồng pastel ngọt ngào, đậm chất anime lãng mạn.",
-    price: 70
+    price: 100
   },
   bg_sakura_canopy: {
     code: "bg_sakura_canopy",
@@ -3079,7 +3076,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#fb7185",
     url: "/media/hinhnen/sakura-canopy.webp",
     description: "Tán hoa anh đào bung nở rợp bóng trời xuân Nhật Bản, tươi sáng và tràn ngập sinh khí.",
-    price: 70
+    price: 100
   },
   bg_purple_moon: {
     code: "bg_purple_moon",
@@ -3090,7 +3087,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#c084fc",
     url: "/media/hinhnen/purple-moon.webp",
     description: "Vầng trăng tím phát sáng giữa dải ngân hà tĩnh mịch, tông màu chill êm dịu.",
-    price: 75
+    price: 100
   },
   bg_storm_cloudscape: {
     code: "bg_storm_cloudscape",
@@ -3101,7 +3098,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#f97316",
     url: "/media/hinhnen/pink-orange-storm-cloudscape-text.webp",
     description: "Bầu trời bão mây cuồn cuộn pha trộn giữa ánh cam hoàng hôn và sắc hồng rực rỡ tráng lệ.",
-    price: 80
+    price: 100
   },
   bg_purple_gaze: {
     code: "bg_purple_gaze",
@@ -3112,7 +3109,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#8b5cf6",
     url: "/media/hinhnen/purple-gaze.webp",
     description: "Ánh mắt anime tím biếc sâu thẳm đầy cuốn hút trong màn đêm huyền ảo.",
-    price: 80
+    price: 100
   },
   bg_wing_shadow: {
     code: "bg_wing_shadow",
@@ -3123,7 +3120,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#6366f1",
     url: "/media/hinhnen/wing-shadow.webp",
     description: "Hình tượng đôi cánh sải rộng giữa ánh sáng mờ ảo, tạo chiều sâu nghệ thuật độc đáo.",
-    price: 85
+    price: 100
   },
   bg_cartoon_white_bird: {
     code: "bg_cartoon_white_bird",
@@ -3134,7 +3131,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#38bdf8",
     url: "/media/hinhnen/cartoon-white-bird-dark-background.gif",
     description: "Hoạt ảnh chú chim trắng chibi nhấp nháy dễ thương trên nền tối tối giản phong cách hoạt hình.",
-    price: 120
+    price: 100
   },
   bg_rainy_rooftop: {
     code: "bg_rainy_rooftop",
@@ -3145,7 +3142,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#06b6d4",
     url: "/media/hinhnen/rainy-rooftop.gif",
     description: "Ảnh động mưa rơi tí tách trên sân thượng thành phố về đêm phong cách Lo-Fi chill thư giãn.",
-    price: 130
+    price: 100
   },
   bg_sakura_bridge: {
     code: "bg_sakura_bridge",
@@ -3156,7 +3153,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#f43f5e",
     url: "/media/hinhnen/sakura-bridge.gif",
     description: "Ảnh động cầu gỗ cổ kính soi bóng dòng sông dưới tán hoa anh đào bay lượn tuyệt đẹp.",
-    price: 140
+    price: 100
   },
   bg_goth_smoker: {
     code: "bg_goth_smoker",
@@ -3167,7 +3164,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#a855f7",
     url: "/media/hinhnen/goth-smoker.gif",
     description: "Ảnh động cô gái phong cách gothic khói thuốc mờ ảo, nét vẽ anime vintage hoài niệm cực chất.",
-    price: 150
+    price: 100
   },
   bg_anime_girl_windblown: {
     code: "bg_anime_girl_windblown",
@@ -3178,7 +3175,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#64748b",
     url: "/media/hinhnen/windblown-anime-girl-fence-monochrome.gif",
     description: "Ảnh động cô gái anime đứng bên hàng rào với mái tóc tung bay trong gió đầy cảm xúc.",
-    price: 150
+    price: 100
   },
   bg_winged_maiden: {
     code: "bg_winged_maiden",
@@ -3189,7 +3186,7 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
     color: "#10b981",
     url: "/media/hinhnen/winged-maiden.gif",
     description: "Ảnh động thiếu nữ với đôi cánh lấp lánh cử động mềm mại bay bổng tựa thiên thần.",
-    price: 160
+    price: 100
   }
 };
 window.DISCORD_WALLPAPERS_REGISTRY = DISCORD_WALLPAPERS_REGISTRY;
@@ -3920,7 +3917,7 @@ export function renderDecoratedAvatar(avatarUrl, decoCode, size = 48, name = "3T
         innerHtml = esc(key);
       }
     } else {
-      innerHtml = `<img src="${esc(avatarUrl)}" alt="">`;
+      innerHtml = `<img src="${esc(avatarUrl)}" alt="" onerror="this.style.display='none'; if(this.parentElement) this.parentElement.innerText='${esc(Array.from(name || 'L')[0] || 'L')}';">`;
     }
   } else {
     innerHtml = esc(Array.from(name || "L")[0] || "L");
@@ -4267,7 +4264,7 @@ window.openMascotDetailModal = function(key) {
             </button>
           ` : `
             <button type="button" class="btn-duo btn-duo-pink" style="width:100%; padding:10px; font-weight:900;" onclick="buyItem('${esc(packCode)}'); closeUserProfileModal();">
-              Mở khóa trọn gói (💎 150)
+              Mở khóa trọn gói (💎 100)
             </button>
           `}
           <button type="button" class="btn-duo btn-duo-white" style="width:100%; padding:8px;" onclick="closeUserProfileModal()">
@@ -4456,7 +4453,7 @@ function renderShop() {
                 </div>
               </div>
               <div class="mascot-pack-action-col">
-                <span class="mascot-pack-price">💎 150</span>
+                <span class="mascot-pack-price">💎 100</span>
                 ${isPack1Owned ? `
                   <span style="font-size:11.5px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 10px; border-radius:10px;">✓ Đã mở</span>
                 ` : `
@@ -4484,7 +4481,7 @@ function renderShop() {
                 </div>
               </div>
               <div class="mascot-pack-action-col">
-                <span class="mascot-pack-price" style="color:var(--lumi-pink-dark);">💎 150</span>
+                <span class="mascot-pack-price" style="color:var(--lumi-pink-dark);">💎 100</span>
                 ${isPack2Owned ? `
                   <span style="font-size:11.5px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 10px; border-radius:10px;">✓ Đã mở</span>
                 ` : `
@@ -4528,7 +4525,7 @@ function renderShop() {
         </div>
       ` : ''}
 
-      <!-- TAB 3: KHUNG AVATAR & HIỆU ỨNG PROFILE (DISCORD NITRO STYLE, 0 💎) -->
+      <!-- TAB 3: KHUNG AVATAR & HIỆU ỨNG PROFILE (DISCORD NITRO STYLE, 100 💎) -->
       ${state.shopTab === 'nitro' ? `
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
@@ -4540,8 +4537,8 @@ function renderShop() {
                 Nhấp trực tiếp vào khung hoặc nút <b>👁️ Xem</b> để bung pop-up xem trước trực tiếp trên avatar của bạn.
               </p>
             </div>
-            <span style="background:#22c55e; color:#fff; font-size:11px; font-weight:900; padding:3px 10px; border-radius:999px;">
-              🎁 0 💎 Miễn Phí Trải Nghiệm
+            <span style="background:linear-gradient(135deg, #ec4899, #a855f7); color:#fff; font-size:11px; font-weight:900; padding:3px 12px; border-radius:999px; box-shadow:0 2px 8px rgba(236,72,153,0.3);">
+              💎 Đồng Giá 100 ĐQ
             </span>
           </div>
 
@@ -4619,7 +4616,7 @@ function renderShop() {
               </p>
             </div>
             <span style="background:linear-gradient(135deg, #0ea5e9, #6366f1); color:#fff; font-size:11px; font-weight:900; padding:4px 12px; border-radius:999px; box-shadow:0 2px 8px rgba(14,165,233,0.3);">
-              💎 Mua Bằng Đá Quý
+              💎 Đồng Giá 100 ĐQ
             </span>
           </div>
 
@@ -4691,13 +4688,13 @@ window.buyItem = async function(itemCode) {
     if (res.shop && res.shop.items) {
       state.inventory = res.shop.items.filter(i => i.owned > 0).map(i => ({ item_code: i.item_code, quantity: i.owned }));
     }
+    if (res.profile) {
+      state.profile = Object.assign({}, state.profile, res.profile);
+    }
     playSound("correct");
-    if (itemCode.startsWith("deco_")) {
-      await equipDecoration("avatar_decoration", itemCode);
-    } else if (itemCode.startsWith("fx_")) {
-      await equipDecoration("profile_effect", itemCode);
-    } else if (itemCode.startsWith("bg_")) {
-      await equipDecoration("wallpaper", itemCode);
+    if (!res.profile && (itemCode.startsWith("deco_") || itemCode.startsWith("fx_") || itemCode.startsWith("bg_"))) {
+      const type = itemCode.startsWith("deco_") ? "avatar_decoration" : itemCode.startsWith("fx_") ? "profile_effect" : "wallpaper";
+      await equipDecoration(type, itemCode);
     } else {
       updateShell();
       render();
@@ -6229,7 +6226,11 @@ const COVER_PRESETS = [
 function renderSettings() {
   const profile = state.profile || {};
   const stats = state.stats || {};
-  const coverBg = profile.cover_url || "linear-gradient(135deg, #ff758c 0%, #ff7eb3 50%, #7f7fd5 100%)";
+  let coverBg = profile.cover_url;
+  if (coverBg && DISCORD_WALLPAPERS_REGISTRY && DISCORD_WALLPAPERS_REGISTRY[coverBg]) {
+    coverBg = DISCORD_WALLPAPERS_REGISTRY[coverBg].url;
+  }
+  coverBg = coverBg || "linear-gradient(135deg, #ff758c 0%, #ff7eb3 50%, #7f7fd5 100%)";
   const isCoverGradient = coverBg.startsWith("linear-gradient");
 
   const avatarDisplay = profile.avatar_url

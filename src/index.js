@@ -924,31 +924,31 @@ async function setPresetAvatar(request, user, env) {
 }
 
 const SHOP_PROFILE_ITEMS = [
-  { item_code: "deco_sakura_bloom", name: "Vòng Hoa Anh Đào Sakura", description: "Cánh hoa anh đào lượn sóng xoay vòng và rơi lấp lánh nhẹ nhàng quanh ảnh đại diện.", price_gems: 60, type: "avatar_decoration" },
-  { item_code: "deco_hello_kitty", name: "Khung Hello Kitty Kawaii Nơ Đỏ", description: "Khung nơ đỏ Hello Kitty siêu cấp đáng yêu với tai mèo trắng, ria mèo xinh xắn và ánh sao hồng lấp lánh.", price_gems: 80, type: "avatar_decoration" },
-  { item_code: "deco_flame_dragon", name: "Hào Quang Hỏa Long Siêu Cấp", description: "Ngọn lửa rực cháy đỏ cam bập bùng dữ dội bao quanh avatar cực kỳ chiến và nổi bật.", price_gems: 90, type: "avatar_decoration" },
+  { item_code: "deco_sakura_bloom", name: "Vòng Hoa Anh Đào Sakura", description: "Cánh hoa anh đào lượn sóng xoay vòng và rơi lấp lánh nhẹ nhàng quanh ảnh đại diện.", price_gems: 100, type: "avatar_decoration" },
+  { item_code: "deco_hello_kitty", name: "Khung Hello Kitty Kawaii Nơ Đỏ", description: "Khung nơ đỏ Hello Kitty siêu cấp đáng yêu với tai mèo trắng, ria mèo xinh xắn và ánh sao hồng lấp lánh.", price_gems: 100, type: "avatar_decoration" },
+  { item_code: "deco_flame_dragon", name: "Hào Quang Hỏa Long Siêu Cấp", description: "Ngọn lửa rực cháy đỏ cam bập bùng dữ dội bao quanh avatar cực kỳ chiến và nổi bật.", price_gems: 100, type: "avatar_decoration" },
   { item_code: "deco_cyber_neon", name: "Khung Neon Cyberpunk 2077", description: "Vòng xoay năng lượng công nghệ cao phát quang tia sét neon xanh lam & tím rực rỡ chuẩn Discord Nitro.", price_gems: 100, type: "avatar_decoration" },
-  { item_code: "deco_kuromi_punk", name: "Khung Kuromi Gothic Punk", description: "Phong cách tiểu quỷ Kuromi tím đen cá tính với tai thỏ ác quỷ, đầu lâu mini và gai hoa hồng neon.", price_gems: 110, type: "avatar_decoration" },
-  { item_code: "deco_cyber_mecha", name: "Khung Chiến Giáp Mecha Sci-Fi", description: "Vòng radar ngắm bắn công nghệ cao Gundam với giáp lục giác kim loại và lưỡi dao năng lượng plasma cực ngầu.", price_gems: 120, type: "avatar_decoration" },
-  { item_code: "deco_galaxy_portal", name: "Cổng Vũ Trụ Tinh Vân Galaxy", description: "Vòng xoáy không gian vũ trụ huyền ảo với bụi sao lấp lánh và tinh vân xoay tròn kỳ ảo.", price_gems: 130, type: "avatar_decoration" },
-  { item_code: "deco_frost_phoenix", name: "Khung Băng Phong Tuyết Vũ", description: "Vòng pha lê băng giá vĩnh cửu phát quang ánh tuyết xanh ngọc cùng những bông tuyết kim cương xoay tròn.", price_gems: 140, type: "avatar_decoration" },
-  { item_code: "deco_blood_moon", name: "Khung Dạ Nguyệt Huyết Ma", description: "Trăng máu đỏ thẫm huyền bí cùng đôi cánh dơi ma cà rồng gothic và ngọc huyết quang rực cháy.", price_gems: 150, type: "avatar_decoration" },
-  { item_code: "deco_manga_ghoul", name: "Quỷ Hồn Hắc Ám (Manga Ghoul)", description: "Linh hồn quỷ dị và bàn tay xương xẩu manga kinh dị Junji Ito ôm lấy avatar cực kỳ ma mị chuẩn Discord VIP.", price_gems: 160, type: "avatar_decoration" },
-  { item_code: "deco_susanoo_demon", name: "Khung Ma Thần Susanoo Hắc Hỏa", description: "Hào quang Ma Thần Susanoo tím thẫm rực cháy với sừng quỷ giác đấu và ngọn lửa chakra hắc ám cuộn trào.", price_gems: 180, type: "avatar_decoration" },
-  { item_code: "bg_meow_doodle", name: "Hình Nền: Mèo Doodle Hài Hước", description: "Bản vẽ vẽ tay phác họa chú mèo ngộ nghĩnh hài hước, tạo cảm giác thư giãn gần gũi.", price_gems: 60, type: "wallpaper", cover_url: "/media/hinhnen/meow-doodle.jpeg" },
-  { item_code: "bg_2b_monochrome", name: "Hình Nền: 2B Nier Tối Giản", description: "Hình nền nghệ thuật 2B NieR:Automata phong cách đen trắng đơn sắc huyền bí, sang trọng.", price_gems: 70, type: "wallpaper", cover_url: "/media/hinhnen/2b-monochrome.webp" },
-  { item_code: "bg_sakura_pastel", name: "Hình Nền: Hoa Anh Đào Pastel", description: "Cảnh sắc hoa anh đào rực rỡ tông màu hồng pastel ngọt ngào, đậm chất anime lãng mạn.", price_gems: 70, type: "wallpaper", cover_url: "/media/hinhnen/pink-cherry-blossoms-sakura-pastel.webp" },
-  { item_code: "bg_sakura_canopy", name: "Hình Nền: Vòm Tán Hoa Anh Đào", description: "Tán hoa anh đào bung nở rợp bóng trời xuân Nhật Bản, tươi sáng và tràn ngập sinh khí.", price_gems: 70, type: "wallpaper", cover_url: "/media/hinhnen/sakura-canopy.webp" },
-  { item_code: "bg_purple_moon", name: "Hình Nền: Trăng Tím Mộng Mơ", description: "Vầng trăng tím phát sáng giữa dải ngân hà tĩnh mịch, tông màu chill êm dịu.", price_gems: 75, type: "wallpaper", cover_url: "/media/hinhnen/purple-moon.webp" },
-  { item_code: "bg_storm_cloudscape", name: "Hình Nền: Mây Bão Hoàng Hôn", description: "Bầu trời bão mây cuồn cuộn pha trộn giữa ánh cam hoàng hôn và sắc hồng rực rỡ tráng lệ.", price_gems: 80, type: "wallpaper", cover_url: "/media/hinhnen/pink-orange-storm-cloudscape-text.webp" },
-  { item_code: "bg_purple_gaze", name: "Hình Nền: Ánh Nhìn Tím Huyền Bí", description: "Ánh mắt anime tím biếc sâu thẳm đầy cuốn hút trong màn đêm huyền ảo.", price_gems: 80, type: "wallpaper", cover_url: "/media/hinhnen/purple-gaze.webp" },
-  { item_code: "bg_wing_shadow", name: "Hình Nền: Đôi Cánh Bóng Đêm", description: "Hình tượng đôi cánh sải rộng giữa ánh sáng mờ ảo, tạo chiều sâu nghệ thuật độc đáo.", price_gems: 85, type: "wallpaper", cover_url: "/media/hinhnen/wing-shadow.webp" },
-  { item_code: "bg_cartoon_white_bird", name: "Hình Nền Động: Chim Trắng Cute (GIF)", description: "Hoạt ảnh chú chim trắng chibi nhấp nháy dễ thương trên nền tối tối giản phong cách hoạt hình.", price_gems: 120, type: "wallpaper", cover_url: "/media/hinhnen/cartoon-white-bird-dark-background.gif" },
-  { item_code: "bg_rainy_rooftop", name: "Hình Nền Động: Mưa Trên Mái Nhà (GIF)", description: "Ảnh động mưa rơi tí tách trên sân thượng thành phố về đêm phong cách Lo-Fi chill thư giãn.", price_gems: 130, type: "wallpaper", cover_url: "/media/hinhnen/rainy-rooftop.gif" },
-  { item_code: "bg_sakura_bridge", name: "Hình Nền Động: Cầu Hoa Anh Đào (GIF)", description: "Ảnh động cầu gỗ cổ kính soi bóng dòng sông dưới tán hoa anh đào bay lượn tuyệt đẹp.", price_gems: 140, type: "wallpaper", cover_url: "/media/hinhnen/sakura-bridge.gif" },
-  { item_code: "bg_goth_smoker", name: "Hình Nền Động: Goth Girl Khói Thuốc (GIF)", description: "Ảnh động cô gái phong cách gothic khói thuốc mờ ảo, nét vẽ anime vintage hoài niệm cực chất.", price_gems: 150, type: "wallpaper", cover_url: "/media/hinhnen/goth-smoker.gif" },
-  { item_code: "bg_anime_girl_windblown", name: "Hình Nền Động: Thiếu Nữ Gió Lộng (GIF)", description: "Ảnh động cô gái anime đứng bên hàng rào với mái tóc tung bay trong gió đầy cảm xúc.", price_gems: 150, type: "wallpaper", cover_url: "/media/hinhnen/windblown-anime-girl-fence-monochrome.gif" },
-  { item_code: "bg_winged_maiden", name: "Hình Nền Động: Nàng Tiên Cánh Trắng (GIF)", description: "Ảnh động thiếu nữ với đôi cánh lấp lánh cử động mềm mại bay bổng tựa thiên thần.", price_gems: 160, type: "wallpaper", cover_url: "/media/hinhnen/winged-maiden.gif" }
+  { item_code: "deco_kuromi_punk", name: "Khung Kuromi Gothic Punk", description: "Phong cách tiểu quỷ Kuromi tím đen cá tính với tai thỏ ác quỷ, đầu lâu mini và gai hoa hồng neon.", price_gems: 100, type: "avatar_decoration" },
+  { item_code: "deco_cyber_mecha", name: "Khung Chiến Giáp Mecha Sci-Fi", description: "Vòng radar ngắm bắn công nghệ cao Gundam với giáp lục giác kim loại và lưỡi dao năng lượng plasma cực ngầu.", price_gems: 100, type: "avatar_decoration" },
+  { item_code: "deco_galaxy_portal", name: "Cổng Vũ Trụ Tinh Vân Galaxy", description: "Vòng xoáy không gian vũ trụ huyền ảo với bụi sao lấp lánh và tinh vân xoay tròn kỳ ảo.", price_gems: 100, type: "avatar_decoration" },
+  { item_code: "deco_frost_phoenix", name: "Khung Băng Phong Tuyết Vũ", description: "Vòng pha lê băng giá vĩnh cửu phát quang ánh tuyết xanh ngọc cùng những bông tuyết kim cương xoay tròn.", price_gems: 100, type: "avatar_decoration" },
+  { item_code: "deco_blood_moon", name: "Khung Dạ Nguyệt Huyết Ma", description: "Trăng máu đỏ thẫm huyền bí cùng đôi cánh dơi ma cà rồng gothic và ngọc huyết quang rực cháy.", price_gems: 100, type: "avatar_decoration" },
+  { item_code: "deco_manga_ghoul", name: "Quỷ Hồn Hắc Ám (Manga Ghoul)", description: "Linh hồn quỷ dị và bàn tay xương xẩu manga kinh dị Junji Ito ôm lấy avatar cực kỳ ma mị chuẩn Discord VIP.", price_gems: 100, type: "avatar_decoration" },
+  { item_code: "deco_susanoo_demon", name: "Khung Ma Thần Susanoo Hắc Hỏa", description: "Hào quang Ma Thần Susanoo tím thẫm rực cháy với sừng quỷ giác đấu và ngọn lửa chakra hắc ám cuộn trào.", price_gems: 100, type: "avatar_decoration" },
+  { item_code: "bg_meow_doodle", name: "Hình Nền: Mèo Doodle Hài Hước", description: "Bản vẽ vẽ tay phác họa chú mèo ngộ nghĩnh hài hước, tạo cảm giác thư giãn gần gũi.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/meow-doodle.jpeg" },
+  { item_code: "bg_2b_monochrome", name: "Hình Nền: 2B Nier Tối Giản", description: "Hình nền nghệ thuật 2B NieR:Automata phong cách đen trắng đơn sắc huyền bí, sang trọng.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/2b-monochrome.webp" },
+  { item_code: "bg_sakura_pastel", name: "Hình Nền: Hoa Anh Đào Pastel", description: "Cảnh sắc hoa anh đào rực rỡ tông màu hồng pastel ngọt ngào, đậm chất anime lãng mạn.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/pink-cherry-blossoms-sakura-pastel.webp" },
+  { item_code: "bg_sakura_canopy", name: "Hình Nền: Vòm Tán Hoa Anh Đào", description: "Tán hoa anh đào bung nở rợp bóng trời xuân Nhật Bản, tươi sáng và tràn ngập sinh khí.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/sakura-canopy.webp" },
+  { item_code: "bg_purple_moon", name: "Hình Nền: Trăng Tím Mộng Mơ", description: "Vầng trăng tím phát sáng giữa dải ngân hà tĩnh mịch, tông màu chill êm dịu.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/purple-moon.webp" },
+  { item_code: "bg_storm_cloudscape", name: "Hình Nền: Mây Bão Hoàng Hôn", description: "Bầu trời bão mây cuồn cuộn pha trộn giữa ánh cam hoàng hôn và sắc hồng rực rỡ tráng lệ.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/pink-orange-storm-cloudscape-text.webp" },
+  { item_code: "bg_purple_gaze", name: "Hình Nền: Ánh Nhìn Tím Huyền Bí", description: "Ánh mắt anime tím biếc sâu thẳm đầy cuốn hút trong màn đêm huyền ảo.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/purple-gaze.webp" },
+  { item_code: "bg_wing_shadow", name: "Hình Nền: Đôi Cánh Bóng Đêm", description: "Hình tượng đôi cánh sải rộng giữa ánh sáng mờ ảo, tạo chiều sâu nghệ thuật độc đáo.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/wing-shadow.webp" },
+  { item_code: "bg_cartoon_white_bird", name: "Hình Nền Động: Chim Trắng Cute (GIF)", description: "Hoạt ảnh chú chim trắng chibi nhấp nháy dễ thương trên nền tối tối giản phong cách hoạt hình.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/cartoon-white-bird-dark-background.gif" },
+  { item_code: "bg_rainy_rooftop", name: "Hình Nền Động: Mưa Trên Mái Nhà (GIF)", description: "Ảnh động mưa rơi tí tách trên sân thượng thành phố về đêm phong cách Lo-Fi chill thư giãn.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/rainy-rooftop.gif" },
+  { item_code: "bg_sakura_bridge", name: "Hình Nền Động: Cầu Hoa Anh Đào (GIF)", description: "Ảnh động cầu gỗ cổ kính soi bóng dòng sông dưới tán hoa anh đào bay lượn tuyệt đẹp.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/sakura-bridge.gif" },
+  { item_code: "bg_goth_smoker", name: "Hình Nền Động: Goth Girl Khói Thuốc (GIF)", description: "Ảnh động cô gái phong cách gothic khói thuốc mờ ảo, nét vẽ anime vintage hoài niệm cực chất.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/goth-smoker.gif" },
+  { item_code: "bg_anime_girl_windblown", name: "Hình Nền Động: Thiếu Nữ Gió Lộng (GIF)", description: "Ảnh động cô gái anime đứng bên hàng rào với mái tóc tung bay trong gió đầy cảm xúc.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/windblown-anime-girl-fence-monochrome.gif" },
+  { item_code: "bg_winged_maiden", name: "Hình Nền Động: Nàng Tiên Cánh Trắng (GIF)", description: "Ảnh động thiếu nữ với đôi cánh lấp lánh cử động mềm mại bay bổng tựa thiên thần.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/winged-maiden.gif" }
 ];
 const SHOP_PROFILE_ITEMS_BY_CODE = new Map(SHOP_PROFILE_ITEMS.map(function (item) { return [item.item_code, item]; }));
 
@@ -964,8 +964,8 @@ async function updateCover(request, user, env) {
     });
     if (wpItem) {
       const owned = await env.DB.prepare(
-        "SELECT id FROM user_inventory WHERE user_id = ? AND item_code = ? AND quantity > 0 LIMIT 1"
-      ).bind(user.userId, wpItem.item_code).first();
+        "SELECT id FROM user_inventory WHERE user_id = ? AND (item_code = ? OR item_code = ?) AND quantity > 0 LIMIT 1"
+      ).bind(user.userId, wpItem.item_code, coverUrl).first();
       if (!owned) {
         throw new HttpError(400, "Bạn chưa sở hữu hình nền này! Hãy vào Cửa hàng mua bằng Đá quý trước nhé. 🌄💎");
       }
@@ -974,6 +974,9 @@ async function updateCover(request, user, env) {
 
   await env.DB.prepare("UPDATE profiles SET cover_url = ? WHERE user_id = ?").bind(coverUrl, user.userId).run();
   user.profile.cover_url = coverUrl;
+  if (typeof invalidateD1QueryCache === "function") {
+    invalidateD1QueryCache();
+  }
   return Object.assign({}, user.profile, { cover_url: coverUrl });
 }
 
@@ -1057,8 +1060,8 @@ async function equipDecoration(request, user, env) {
 
     // Strictly check if the user actually owns this item in user_inventory!
     const owned = await env.DB.prepare(
-      "SELECT id FROM user_inventory WHERE user_id = ? AND item_code = ? AND quantity > 0 LIMIT 1"
-    ).bind(user.userId, lookupCode).first();
+      "SELECT id FROM user_inventory WHERE user_id = ? AND (item_code = ? OR item_code = ?) AND quantity > 0 LIMIT 1"
+    ).bind(user.userId, lookupCode, itemCode).first();
     if (!owned) {
       throw new HttpError(400, "Bạn chưa sở hữu vật phẩm này! Hãy vào Cửa hàng mua bằng Đá quý trước nhé. 💎");
     }
@@ -1074,10 +1077,14 @@ async function equipDecoration(request, user, env) {
     await env.DB.prepare("UPDATE profiles SET profile_theme = ? WHERE user_id = ?").bind(itemCode, user.userId).run();
     user.profile.profile_theme = itemCode;
   } else if (isWpType) {
-    const wp = FREE_PROFILE_ITEMS_BY_CODE.get(itemCode);
-    const coverUrl = wp && wp.cover_url ? wp.cover_url : itemCode;
+    const wp = itemCode ? (SHOP_PROFILE_ITEMS_BY_CODE.get(itemCode) || Array.from(SHOP_PROFILE_ITEMS_BY_CODE.values()).find(function (it) { return it.cover_url === itemCode; })) : null;
+    const coverUrl = itemCode ? (wp && wp.cover_url ? wp.cover_url : itemCode) : null;
     await env.DB.prepare("UPDATE profiles SET cover_url = ? WHERE user_id = ?").bind(coverUrl, user.userId).run();
     user.profile.cover_url = coverUrl;
+  }
+
+  if (typeof invalidateD1QueryCache === "function") {
+    invalidateD1QueryCache();
   }
 
   return { ok: true, profile: user.profile, message: itemCode ? "Đã trang bị thành công! ✨" : "Đã tháo trang bị." };
@@ -1445,11 +1452,44 @@ async function buyShopItem(request, user, env) {
   } else {
     ops.push(env.DB.prepare("INSERT INTO user_inventory (user_id, item_code, quantity) VALUES (?, ?, 1)").bind(user.userId, itemCode));
   }
-  await env.DB.batch(ops);
+
+  // Auto-equip purchased decoration or wallpaper directly in database
+  if (itemCode.startsWith("deco_")) {
+    ops.push(env.DB.prepare("UPDATE profiles SET avatar_decoration = ? WHERE user_id = ?").bind(itemCode, user.userId));
+    user.profile.avatar_decoration = itemCode;
+  } else if (itemCode.startsWith("fx_")) {
+    ops.push(env.DB.prepare("UPDATE profiles SET profile_effect = ? WHERE user_id = ?").bind(itemCode, user.userId));
+    user.profile.profile_effect = itemCode;
+  } else if (itemCode.startsWith("bg_")) {
+    const wpItem = profItem || Array.from(SHOP_PROFILE_ITEMS_BY_CODE.values()).find(function (it) { return it.cover_url === itemCode; });
+    const coverUrl = wpItem ? wpItem.cover_url : itemCode;
+    ops.push(env.DB.prepare("UPDATE profiles SET cover_url = ? WHERE user_id = ?").bind(coverUrl, user.userId));
+    user.profile.cover_url = coverUrl;
+  }
+
+  if (typeof env.DB.batch === "function") {
+    try {
+      await env.DB.batch(ops);
+    } catch (bErr) {
+      for (const op of ops) {
+        if (typeof op.run === "function") await op.run();
+        else if (typeof op.all === "function") await op.all();
+      }
+    }
+  } else {
+    for (const op of ops) {
+      if (typeof op.run === "function") await op.run();
+      else if (typeof op.all === "function") await op.all();
+    }
+  }
+
+  if (typeof invalidateD1QueryCache === "function") {
+    invalidateD1QueryCache();
+  }
 
   const updatedStats = await env.DB.prepare("SELECT * FROM user_stats WHERE user_id = ? LIMIT 1").bind(user.userId).first();
   const shopData = await shopList(user, env);
-  return { ok: true, message: "Đã mua thành công " + item.name + "!", stats: updatedStats, shop: shopData };
+  return { ok: true, message: "Đã mua thành công " + item.name + "!", stats: updatedStats, profile: user.profile, shop: shopData };
 }
 
 async function achievementsList(user, env) {
@@ -1703,7 +1743,7 @@ async function leaderboard(user, env) {
   const today = vietDate();
   const weekStart = mondayDate(today);
   const response = await env.DB.prepare(
-    "SELECT w.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, w.league_name, w.weekly_xp " +
+    "SELECT w.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.cover_url, w.league_name, w.weekly_xp " +
     "FROM weekly_leaderboards w " +
     "LEFT JOIN profiles p ON p.user_id = w.user_id " +
     "LEFT JOIN accounts a ON a.user_id = w.user_id " +
@@ -1830,7 +1870,7 @@ async function getFriendsList(currentUser, env) {
       "CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END AS friend_user_id, " +
       "f.created_at AS friendship_date, " +
       "COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
-      "p.avatar_url, p.school, p.major, a.username, " +
+      "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, a.username, " +
       "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak, " +
       "COALESCE(w.league_name, 'Bronze') AS league_name " +
     "FROM friendships f " +
@@ -1854,7 +1894,7 @@ async function searchUsers(request, currentUser, env) {
 
   const res = await env.DB.prepare(
     "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
-    "p.avatar_url, p.school, p.major, a.username, " +
+    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, a.username, " +
     "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak, " +
     "EXISTS (SELECT 1 FROM friendships f WHERE (f.user_id = ? AND f.friend_id = p.user_id) OR (f.user_id = p.user_id AND f.friend_id = ?)) AS is_friend " +
     "FROM profiles p " +
@@ -1886,7 +1926,7 @@ async function getConversations(currentUser, env) {
     if (!seen.has(row.other_user_id)) {
       seen.add(row.other_user_id);
       const other = await env.DB.prepare(
-        "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, a.username " +
+        "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.cover_url, a.username " +
         "FROM profiles p LEFT JOIN accounts a ON a.user_id = p.user_id WHERE p.user_id = ? LIMIT 1"
       ).bind(row.other_user_id).first();
 
@@ -1922,7 +1962,7 @@ async function getMessagesWithUser(targetUserId, currentUser, env) {
   ).bind(currentUser.userId, targetUserId, targetUserId, currentUser.userId).all();
 
   const targetUser = await env.DB.prepare(
-    "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, a.username " +
+    "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.cover_url, a.username " +
     "FROM profiles p LEFT JOIN accounts a ON a.user_id = p.user_id WHERE p.user_id = ? LIMIT 1"
   ).bind(targetUserId).first();
 
@@ -2640,9 +2680,11 @@ export default {
       };
       return await routeApi(request, scopedEnv);
     } catch (error) {
-      if (error instanceof HttpError) return respond({ error: error.message }, error.status);
-      console.error("3TG API error", error && error.message ? error.message : "unknown");
-      return respond({ error: "3TG gặp trục trặc khi tải dữ liệu. Bạn thử lại nhé." }, 500);
+      if (error instanceof HttpError || (error && typeof error.status === "number")) {
+        return respond({ error: error.message }, error.status);
+      }
+      console.error("3TG API error", error && (error.stack || error.message) ? (error.stack || error.message) : error);
+      return respond({ error: "3TG gặp trục trặc khi tải dữ liệu: " + (error?.message || "Lỗi hệ thống"), detail: error?.message }, 500);
     }
   }
 };
