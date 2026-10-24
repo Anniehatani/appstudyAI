@@ -217,6 +217,8 @@ async function startEmbeddedServer(rootPath, port = 8787) {
       const ext = path.extname(targetFile).toLowerCase();
       const contentType = MIME_TYPES[ext] || "application/octet-stream";
 
+      try {
+        const fileData = fs.readFileSync(targetFile);
         const isCodeFile = [".html", ".js", ".css"].includes(ext);
         res.writeHead(200, {
           "Content-Type": contentType,
