@@ -1005,20 +1005,32 @@ async function equipDecoration(request, user, env) {
   }
 
   if (itemCode) {
-    const owned = await env.DB.prepare(
-      "SELECT id FROM user_inventory WHERE user_id = ? AND item_code = ? AND quantity > 0 LIMIT 1"
-    ).bind(user.userId, itemCode).first();
-    if (!owned) {
-      const freeItem = FREE_PROFILE_ITEMS_BY_CODE.get(itemCode);
-      const shopItem = freeItem ? null : await env.DB.prepare(
-        "SELECT id, price_gems FROM shop_items WHERE item_code = ? LIMIT 1"
-      ).bind(itemCode).first();
-      if (freeItem || (shopItem && Number(shopItem.price_gems) <= 0)) {
-        await env.DB.prepare(
-          "INSERT INTO user_inventory (user_id, item_code, quantity) VALUES (?, ?, 1)"
-        ).bind(user.userId, itemCode).run();
-      } else {
-        throw new HttpError(400, "Bạn chưa sở hữu hiệu ứng này. Hãy mở khóa trong Tiệm Tạp Hóa nhé!");
+    const isCustomMedia = itemCode.startsWith("http://") || itemCode.startsWith("https://") || itemCode.startsWith("data:") || itemCode.startsWith("/media/");
+    if (!isCustomMedia) {
+      const owned = await env.DB.prepare(
+        "SELECT id FROM user_inventory WHERE user_id = ? AND item_code = ? AND quantity > 0 LIMIT 1"
+      ).bind(user.userId, itemCode).first();
+      if (!owned) {
+        const freeItem = FREE_PROFILE_ITEMS_BY_CODE.get(itemCode);
+        const shopItem = freeItem ? null : await env.DB.prepare(
+          "SELECT id, price_gems FROM shop_items WHERE item_code = ? LIMIT 1"
+        ).bind(itemCode).first();
+        if (freeItem || (shopItem && Number(shopItem.price_gems) <= 0)) {
+          if (freeItem) {
+            try {
+              await env.DB.prepare(
+                "INSERT OR IGNORE INTO shop_items (item_code, name, description, price_gems) VALUES (?, ?, ?, 0)"
+              ).bind(freeItem.item_code, freeItem.name, freeItem.description || "").run();
+            } catch (seedErr) {
+              console.warn("Auto-seed freeItem in equipDecoration error:", seedErr.message);
+            }
+          }
+          await env.DB.prepare(
+            "INSERT INTO user_inventory (user_id, item_code, quantity) VALUES (?, ?, 1)"
+          ).bind(user.userId, itemCode).run();
+        } else {
+          throw new HttpError(400, "Bạn chưa sở hữu hiệu ứng này. Hãy mở khóa trong Tiệm Tạp Hóa nhé!");
+        }
       }
     }
   }
@@ -1315,6 +1327,13 @@ async function shopList(user, env) {
   const itemsByCode = new Map((itemsRes.results || []).map(function (item) { return [item.item_code, item]; }));
   for (const freeItem of FREE_PROFILE_ITEMS) {
     const storedItem = itemsByCode.get(freeItem.item_code);
+    if (!storedItem) {
+      try {
+        await env.DB.prepare(
+          "INSERT OR IGNORE INTO shop_items (item_code, name, description, price_gems) VALUES (?, ?, ?, 0)"
+        ).bind(freeItem.item_code, freeItem.name, freeItem.description || "").run();
+      } catch (seedErr) {}
+    }
     itemsByCode.set(freeItem.item_code, Object.assign({}, storedItem || {}, freeItem, {
       id: storedItem ? storedItem.id : null,
       price_gems: 0
@@ -1382,6 +1401,16 @@ async function buyShopItem(request, user, env) {
   if ((itemCode.startsWith("mascot_") || itemCode.startsWith("deco_") || itemCode.startsWith("fx_")) && existingInv && Number(existingInv.quantity) >= 1) {
     throw new HttpError(400, "Bạn đã sở hữu gói vật phẩm này rồi, không thể mua lại!");
   }
+  if (!storedItem && freeItem) {
+    try {
+      await env.DB.prepare(
+        "INSERT OR IGNORE INTO shop_items (item_code, name, description, price_gems) VALUES (?, ?, ?, 0)"
+      ).bind(freeItem.item_code, freeItem.name, freeItem.description || "").run();
+    } catch (seedErr) {
+      console.warn("Auto-seed freeItem in buyShopItem error:", seedErr.message);
+    }
+  }
+
   if (existingInv) {
     ops.push(env.DB.prepare("UPDATE user_inventory SET quantity = quantity + 1 WHERE id = ?").bind(existingInv.id));
   } else {

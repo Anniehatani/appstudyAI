@@ -3032,73 +3032,72 @@ export function generateAvatarDecorationSvg(decoCode) {
       <div class="discord-avatar-decoration deco-manga-ghoul-vip">
         <svg viewBox="0 0 100 100">
           <defs>
-            <radialGradient id="ghoul-shadow" cx="50%" cy="50%" r="50%">
-              <stop offset="60%" stop-color="transparent"/>
-              <stop offset="90%" stop-color="rgba(0,0,0,0.45)"/>
-              <stop offset="100%" stop-color="rgba(0,0,0,0.85)"/>
-            </radialGradient>
+            <filter id="ghoul-ink-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="#ffffff" flood-opacity="0.6"/>
+            </filter>
           </defs>
 
-          <!-- Outer Dark Manga Shadow Aura -->
-          <circle cx="50" cy="50" r="46" fill="url(#ghoul-shadow)" stroke="#09090b" stroke-width="2.5" stroke-dasharray="14 4 6 4" class="deco-ghoul-aura-ring"/>
+          <!-- Outer Dynamic Manga Pen Hatching Ring - Center is 100% TRANSPARENT -->
+          <circle cx="50" cy="50" r="45" fill="none" stroke="#09090b" stroke-width="3.2" stroke-dasharray="16 4 8 4" class="deco-ghoul-aura-ring"/>
+          <circle cx="50" cy="50" r="47.5" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="6 8" opacity="0.85"/>
 
-          <!-- Top-Left Screaming Manga Spirits & Ghoul Faces (Junji Ito Style) -->
+          <!-- Top-Left Screaming Manga Spirits & Ghoul Faces (Junji Ito Style) - purely on perimeter -->
           <g class="deco-ghoul-faces">
-            <path d="M12,28 C8,18 16,8 28,6 C38,4 46,10 50,14 C44,18 36,18 30,22 C24,26 18,34 12,28 Z" fill="#18181b" stroke="#ffffff" stroke-width="1.2"/>
+            <path d="M10,26 C6,16 14,6 26,4 C36,2 45,8 48,12 C42,16 34,16 28,20 C22,24 16,32 10,26 Z" fill="#18181b" stroke="#ffffff" stroke-width="1.2"/>
             
             <!-- Ghoul Face 1 (Top Left) -->
-            <ellipse cx="26" cy="14" rx="6" ry="7" fill="#f4f4f5" stroke="#09090b" stroke-width="1"/>
-            <circle cx="24" cy="13" r="1.8" fill="#09090b"/>
-            <circle cx="28" cy="13" r="1.8" fill="#09090b"/>
-            <circle cx="24" cy="13" r="0.6" fill="#fff" class="ghoul-eye-glow"/>
-            <circle cx="28" cy="13" r="0.6" fill="#fff" class="ghoul-eye-glow"/>
-            <ellipse cx="26" cy="18" rx="2.2" ry="3.2" fill="#09090b"/>
-            <path d="M25,18 L27,18" stroke="#fff" stroke-width="0.8"/>
+            <ellipse cx="24" cy="12" rx="5.5" ry="6.5" fill="#f4f4f5" stroke="#09090b" stroke-width="1"/>
+            <circle cx="22" cy="11" r="1.6" fill="#09090b"/>
+            <circle cx="26" cy="11" r="1.6" fill="#09090b"/>
+            <circle cx="22" cy="11" r="0.6" fill="#fff" class="ghoul-eye-glow"/>
+            <circle cx="26" cy="11" r="0.6" fill="#fff" class="ghoul-eye-glow"/>
+            <ellipse cx="24" cy="15.5" rx="2" ry="2.8" fill="#09090b"/>
+            <path d="M23,15.5 L25,15.5" stroke="#fff" stroke-width="0.8"/>
 
             <!-- Ghoul Face 2 (Upper Center) -->
-            <ellipse cx="40" cy="10" rx="5" ry="6" fill="#e4e4e7" stroke="#09090b" stroke-width="1"/>
-            <circle cx="38" cy="9" r="1.5" fill="#09090b"/>
-            <circle cx="42" cy="9" r="1.5" fill="#09090b"/>
-            <circle cx="38" cy="9" r="0.5" fill="#fff" class="ghoul-eye-glow"/>
-            <circle cx="42" cy="9" r="0.5" fill="#fff" class="ghoul-eye-glow"/>
-            <ellipse cx="40" cy="13.5" rx="1.8" ry="2.2" fill="#09090b"/>
+            <ellipse cx="38" cy="8" rx="4.5" ry="5.5" fill="#e4e4e7" stroke="#09090b" stroke-width="1"/>
+            <circle cx="36" cy="7" r="1.4" fill="#09090b"/>
+            <circle cx="40" cy="7" r="1.4" fill="#09090b"/>
+            <circle cx="36" cy="7" r="0.5" fill="#fff" class="ghoul-eye-glow"/>
+            <circle cx="40" cy="7" r="0.5" fill="#fff" class="ghoul-eye-glow"/>
+            <ellipse cx="38" cy="11" rx="1.6" ry="2" fill="#09090b"/>
 
-            <!-- Ghoul Face 3 (Left edge ~ 9 o'clock) -->
-            <ellipse cx="14" cy="36" rx="5" ry="6.5" fill="#f4f4f5" stroke="#09090b" stroke-width="1"/>
-            <circle cx="12" cy="35" r="1.5" fill="#09090b"/>
-            <circle cx="16" cy="35" r="1.5" fill="#09090b"/>
-            <ellipse cx="14" cy="39.5" rx="2" ry="2.5" fill="#09090b"/>
+            <!-- Ghoul Face 3 (Left edge) -->
+            <ellipse cx="12" cy="34" rx="4.5" ry="5.8" fill="#f4f4f5" stroke="#09090b" stroke-width="1"/>
+            <circle cx="10" cy="33" r="1.4" fill="#09090b"/>
+            <circle cx="14" cy="33" r="1.4" fill="#09090b"/>
+            <ellipse cx="12" cy="37" rx="1.8" ry="2.2" fill="#09090b"/>
 
             <!-- Pen Ink Hatching Texture Marks -->
-            <line x1="20" y1="8" x2="22" y2="12" stroke="#ffffff" stroke-width="0.8"/>
-            <line x1="32" y1="6" x2="34" y2="10" stroke="#ffffff" stroke-width="0.8"/>
-            <line x1="44" y1="12" x2="47" y2="15" stroke="#ffffff" stroke-width="0.8"/>
+            <line x1="18" y1="6" x2="20" y2="10" stroke="#ffffff" stroke-width="0.8"/>
+            <line x1="30" y1="4" x2="32" y2="8" stroke="#ffffff" stroke-width="0.8"/>
+            <line x1="42" y1="10" x2="45" y2="13" stroke="#ffffff" stroke-width="0.8"/>
           </g>
 
-          <!-- Bony Skeletal Hands Reaching & Gripping (Right & Bottom) -->
+          <!-- Bony Skeletal Hands Clutching Outer Border Rim (NOT reaching into face!) -->
           <g class="deco-ghoul-hands">
             <g class="ghoul-hand-right">
-              <path d="M98,42 L92,45 L92,55 L98,58 Z" fill="#f4f4f5" stroke="#09090b" stroke-width="1"/>
-              <path d="M92,44 C88,42 84,43 83,46 C86,47 89,46 92,47 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
-              <path d="M92,48 C86,47 80,49 79,52 C83,53 87,51 92,52 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
-              <path d="M92,53 C87,53 82,56 81,59 C85,58 88,56 92,56 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
-              <path d="M93,56 C89,57 85,61 85,64 C88,62 91,59 93,58 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M100,42 L94,45 L94,55 L100,58 Z" fill="#f4f4f5" stroke="#09090b" stroke-width="1"/>
+              <path d="M94,44 C91,42 88,43 87,46 C89,47 92,46 94,47 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M94,48 C90,47 86,49 85,52 C88,53 91,51 94,52 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M94,53 C90,53 87,56 86,59 C89,58 91,56 94,56 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M95,56 C92,57 89,61 89,64 C91,62 93,59 95,58 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
             </g>
 
             <g class="ghoul-hand-bottom">
-              <path d="M22,86 C21,80 24,76 27,73 C26,78 24,82 25,87 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
-              <path d="M28,88 C29,82 33,78 37,76 C35,80 32,84 31,89 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
-              <path d="M34,91 C36,86 41,83 45,82 C42,86 39,89 37,92 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M22,90 C21,85 24,82 27,80 C26,84 24,87 25,91 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M28,92 C29,87 33,83 37,82 C35,85 32,88 31,93 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
+              <path d="M34,94 C36,89 40,86 44,85 C42,88 39,91 37,95 Z" fill="#ffffff" stroke="#09090b" stroke-width="0.9"/>
             </g>
           </g>
 
           <!-- Shadow Smoke Trails & Floating Ghost Wisps -->
           <g class="deco-ghoul-wisps">
-            <path d="M82,22 C86,18 90,20 92,24 C88,24 85,26 82,22 Z" fill="#ffffff" opacity="0.8"/>
-            <path d="M68,92 C72,95 78,94 82,90 C78,90 73,93 68,92 Z" fill="#ffffff" opacity="0.8"/>
-            <circle cx="86" cy="24" r="1.5" fill="#fff"/>
-            <circle cx="65" cy="94" r="1.2" fill="#fff"/>
-            <circle cx="8" cy="54" r="1.5" fill="#fff"/>
+            <path d="M84,20 C88,16 92,18 94,22 C90,22 87,24 84,20 Z" fill="#ffffff" opacity="0.8"/>
+            <path d="M70,94 C74,97 80,96 84,92 C80,92 75,95 70,94 Z" fill="#ffffff" opacity="0.8"/>
+            <circle cx="88" cy="22" r="1.5" fill="#fff"/>
+            <circle cx="67" cy="95" r="1.2" fill="#fff"/>
+            <circle cx="6" cy="52" r="1.5" fill="#fff"/>
           </g>
         </svg>
       </div>
@@ -3120,15 +3119,11 @@ export function generateAvatarDecorationSvg(decoCode) {
               <stop offset="50%" stop-color="#fde047"/>
               <stop offset="100%" stop-color="#ffffff"/>
             </linearGradient>
-            <radialGradient id="df-flame-corona" cx="50%" cy="50%" r="50%">
-              <stop offset="60%" stop-color="transparent"/>
-              <stop offset="85%" stop-color="rgba(255, 107, 0, 0.4)"/>
-              <stop offset="100%" stop-color="rgba(255, 30, 0, 0.8)"/>
-            </radialGradient>
           </defs>
 
-          <!-- Outer Pulsating Flame Aura Ring -->
-          <circle cx="50" cy="50" r="46" fill="url(#df-flame-corona)" stroke="url(#df-fire-body)" stroke-width="3" stroke-dasharray="24 8 16 6" class="deco-dragon-base-ring"/>
+          <!-- Outer Pulsating Flame Aura Ring - Center is 100% TRANSPARENT -->
+          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#df-fire-body)" stroke-width="3.2" stroke-dasharray="24 8 16 6" class="deco-dragon-base-ring"/>
+          <circle cx="50" cy="50" r="43.5" fill="none" stroke="url(#df-fire-core)" stroke-width="1.2" stroke-dasharray="8 6" opacity="0.85"/>
 
           <!-- Top Dragon Flaming Horns & Crown -->
           <g class="deco-dragon-horns">
@@ -3204,7 +3199,7 @@ export function generateAvatarDecorationSvg(decoCode) {
             <path d="M86,96 L96,96 L96,86" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round"/>
           </g>
 
-          <!-- Outer High-Precision Segmented Tech HUD Ring -->
+          <!-- Outer High-Precision Segmented Tech HUD Ring - Center is 100% TRANSPARENT -->
           <circle cx="50" cy="50" r="46" fill="none" stroke="url(#cyber-neon-grad)" stroke-width="3" stroke-dasharray="28 8 12 8 4 6" class="deco-cyber-outer-spin"/>
 
           <!-- High-Speed Traveling Electric Laser Pulse -->
@@ -3245,7 +3240,7 @@ export function generateAvatarDecorationSvg(decoCode) {
             </linearGradient>
           </defs>
 
-          <!-- Arching Floral Vine Ring -->
+          <!-- Arching Floral Vine Ring - Center is 100% TRANSPARENT -->
           <circle cx="50" cy="50" r="45" fill="none" stroke="url(#sakura-vine-grad)" stroke-width="2.5" stroke-dasharray="20 6 10 5" class="deco-sakura-vine-ring"/>
 
           <!-- 3 Lush Cherry Blossom Flower Clusters -->
@@ -3310,18 +3305,13 @@ export function generateAvatarDecorationSvg(decoCode) {
               <stop offset="70%" stop-color="#ec4899"/>
               <stop offset="100%" stop-color="#06b6d4"/>
             </linearGradient>
-            <radialGradient id="galaxy-core-glow" cx="50%" cy="50%" r="50%">
-              <stop offset="70%" stop-color="transparent"/>
-              <stop offset="90%" stop-color="rgba(139, 92, 246, 0.4)"/>
-              <stop offset="100%" stop-color="rgba(236, 72, 153, 0.7)"/>
-            </radialGradient>
           </defs>
 
-          <!-- Outer Accretion Vortex Disk -->
-          <circle cx="50" cy="50" r="46" fill="url(#galaxy-core-glow)" stroke="url(#galaxy-vortex-grad)" stroke-width="3.5" stroke-dasharray="32 10 20 8 10 6" class="deco-galaxy-vortex-spin"/>
+          <!-- Outer Accretion Vortex Disk - Center is 100% TRANSPARENT -->
+          <circle cx="50" cy="50" r="46" fill="none" stroke="url(#galaxy-vortex-grad)" stroke-width="3.5" stroke-dasharray="32 10 20 8 10 6" class="deco-galaxy-vortex-spin"/>
 
           <!-- Secondary Swirling Nebula Waves -->
-          <circle cx="50" cy="50" r="42" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-dasharray="6 8" class="deco-galaxy-inner-waves"/>
+          <circle cx="50" cy="50" r="43" fill="none" stroke="#a855f7" stroke-width="1.8" stroke-dasharray="6 8" class="deco-galaxy-inner-waves"/>
 
           <!-- Orbiting Celestial Satellite / Moon with Light Trail -->
           <g class="deco-galaxy-satellite-orbit">
@@ -3353,24 +3343,35 @@ export function generateAvatarDecorationSvg(decoCode) {
             </linearGradient>
           </defs>
 
-          <!-- Cybernetic Visor Antennae -->
+          <!-- Top Cyber Visor Antennas -->
           <g class="deco-glitch-horns">
-            <polygon points="26,12 34,4 40,16" fill="#00f0ff"/>
-            <polygon points="74,12 66,4 60,16" fill="#ff007b"/>
+            <polygon points="28,14 34,5 40,16" fill="#00f0ff" opacity="0.95"/>
+            <polygon points="72,14 66,5 60,16" fill="#ff007b" opacity="0.95"/>
           </g>
 
-          <!-- Chromatic Aberration RGB Rings -->
-          <circle cx="49" cy="50" r="45" fill="none" stroke="#00f0ff" stroke-width="2.5" stroke-dasharray="24 6 12 4" class="deco-glitch-cyan-ring"/>
-          <circle cx="51" cy="50" r="45" fill="none" stroke="#ff007b" stroke-width="2.5" stroke-dasharray="20 8 16 6" class="deco-glitch-magenta-ring"/>
-          <circle cx="50" cy="50" r="45" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="30 10" class="deco-glitch-main-ring"/>
+          <!-- 4 Corner Tactical HUD Brackets -->
+          <path d="M14,6 L6,6 L6,14" fill="none" stroke="#00f0ff" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M86,6 L94,6 L94,14" fill="none" stroke="#ff007b" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M14,94 L6,94 L6,86" fill="none" stroke="#ff007b" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M86,94 L94,94 L94,86" fill="none" stroke="#00f0ff" stroke-width="2.2" stroke-linecap="round"/>
 
-          <!-- 4 Corner Cyber Visor Frame Nodes -->
-          <rect x="2" y="47" width="6" height="6" fill="#00f0ff"/>
-          <rect x="92" y="47" width="6" height="6" fill="#ff007b"/>
-          <rect x="47" y="2" width="6" height="6" fill="#00f0ff"/>
-          <rect x="47" y="92" width="6" height="6" fill="#ff007b"/>
+          <!-- Precision Centered Concentric Glitch HUD Rings (All strictly at 50, 50 - Fill is NONE) -->
+          <circle cx="50" cy="50" r="45.5" fill="none" stroke="#00f0ff" stroke-width="2.2" stroke-dasharray="24 6 12 4" class="deco-glitch-cyan-ring"/>
+          <circle cx="50" cy="50" r="45.5" fill="none" stroke="#ff007b" stroke-width="2.2" stroke-dasharray="18 8 14 6" class="deco-glitch-magenta-ring"/>
+          <circle cx="50" cy="50" r="43" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-dasharray="32 8 8 8" opacity="0.9" class="deco-glitch-main-ring"/>
+
+          <!-- Crosshairs & Binary Tick Marks -->
+          <line x1="50" y1="2" x2="50" y2="7" stroke="#00f0ff" stroke-width="2"/>
+          <line x1="50" y1="93" x2="50" y2="98" stroke="#ff007b" stroke-width="2"/>
+          <line x1="2" y1="50" x2="7" y2="50" stroke="#00f0ff" stroke-width="2"/>
+          <line x1="93" y1="50" x2="98" y2="50" stroke="#ff007b" stroke-width="2"/>
+
+          <!-- Embedded High-Tech Cyber Badge at Top Center (Cleanly in SVG!) -->
+          <g class="glitch-hud-badge">
+            <rect x="31" y="2" width="38" height="9" rx="3" fill="#09090b" stroke="#00f0ff" stroke-width="1.2"/>
+            <text x="50" y="8.5" font-size="5.2" font-family="monospace" font-weight="900" fill="#00f0ff" text-anchor="middle" letter-spacing="0.8">HACKER</text>
+          </g>
         </svg>
-        <span class="deco-glitch-vip-tag">CYBER 2077</span>
       </div>
     `;
   }
@@ -3518,17 +3519,27 @@ export function renderProfileEffectHtml(fxCode) {
   if (fxCode === "fx_matrix_rain") {
     return `
       <div class="discord-profile-fx-layer discord-fx-matrix">
-        <div class="discord-matrix-column" style="left:4%; animation-duration:2.8s; animation-delay:0s;"><span class="matrix-head">1</span>01011001</div>
-        <div class="discord-matrix-column" style="left:13%; animation-duration:3.6s; animation-delay:0.8s;"><span class="matrix-head">0</span>11010101</div>
-        <div class="discord-matrix-column" style="left:22%; animation-duration:3.0s; animation-delay:1.4s;"><span class="matrix-head">1</span>00110100</div>
-        <div class="discord-matrix-column" style="left:31%; animation-duration:4.1s; animation-delay:0.3s;"><span class="matrix-head">0</span>10111001</div>
-        <div class="discord-matrix-column" style="left:40%; animation-duration:3.3s; animation-delay:1.9s;"><span class="matrix-head">1</span>10010101</div>
-        <div class="discord-matrix-column" style="left:50%; animation-duration:2.9s; animation-delay:0.5s;"><span class="matrix-head">0</span>11011010</div>
-        <div class="discord-matrix-column" style="left:59%; animation-duration:3.8s; animation-delay:1.1s;"><span class="matrix-head">1</span>01001101</div>
-        <div class="discord-matrix-column" style="left:68%; animation-duration:3.2s; animation-delay:0.2s;"><span class="matrix-head">0</span>11100101</div>
-        <div class="discord-matrix-column" style="left:77%; animation-duration:4.0s; animation-delay:1.6s;"><span class="matrix-head">1</span>00101100</div>
-        <div class="discord-matrix-column" style="left:86%; animation-duration:3.4s; animation-delay:0.7s;"><span class="matrix-head">0</span>10110101</div>
-        <div class="discord-matrix-column" style="left:95%; animation-duration:3.7s; animation-delay:1.3s;"><span class="matrix-head">1</span>10011010</div>
+        <div class="matrix-scanlines"></div>
+        <div class="discord-matrix-column" style="left:3%; animation-duration:2.5s; animation-delay:0s;"><span class="matrix-head">1</span>01011001</div>
+        <div class="discord-matrix-column" style="left:8%; animation-duration:3.4s; animation-delay:0.7s;"><span class="matrix-head">ﾊ</span>ﾐﾋｰｳｼ01</div>
+        <div class="discord-matrix-column" style="left:13%; animation-duration:2.9s; animation-delay:1.4s;"><span class="matrix-head">0</span>11010101</div>
+        <div class="discord-matrix-column" style="left:18%; animation-duration:3.8s; animation-delay:0.3s;"><span class="matrix-head">ﾅ</span>ﾓﾆｻﾜﾂ01</div>
+        <div class="discord-matrix-column" style="left:23%; animation-duration:2.6s; animation-delay:1.8s;"><span class="matrix-head">1</span>00110100</div>
+        <div class="discord-matrix-column" style="left:28%; animation-duration:3.5s; animation-delay:0.5s;"><span class="matrix-head">ｱ</span>ﾎﾃｷｹﾒ01</div>
+        <div class="discord-matrix-column" style="left:33%; animation-duration:4.1s; animation-delay:1.1s;"><span class="matrix-head">0</span>10111001</div>
+        <div class="discord-matrix-column" style="left:38%; animation-duration:2.7s; animation-delay:0.2s;"><span class="matrix-head">ｶ</span>0174XZ01</div>
+        <div class="discord-matrix-column" style="left:43%; animation-duration:3.6s; animation-delay:1.6s;"><span class="matrix-head">1</span>10010101</div>
+        <div class="discord-matrix-column" style="left:48%; animation-duration:2.8s; animation-delay:0.9s;"><span class="matrix-head">ｼ</span>ﾅﾓﾆｻﾜ01</div>
+        <div class="discord-matrix-column" style="left:53%; animation-duration:3.9s; animation-delay:0.4s;"><span class="matrix-head">0</span>11011010</div>
+        <div class="discord-matrix-column" style="left:58%; animation-duration:3.1s; animation-delay:1.5s;"><span class="matrix-head">ﾊ</span>ﾐﾋｰｳｼ01</div>
+        <div class="discord-matrix-column" style="left:63%; animation-duration:2.6s; animation-delay:0.1s;"><span class="matrix-head">1</span>01001101</div>
+        <div class="discord-matrix-column" style="left:68%; animation-duration:3.7s; animation-delay:1.2s;"><span class="matrix-head">ﾃ</span>ｷｹﾒｴｶ01</div>
+        <div class="discord-matrix-column" style="left:73%; animation-duration:3.2s; animation-delay:0.6s;"><span class="matrix-head">0</span>11100101</div>
+        <div class="discord-matrix-column" style="left:78%; animation-duration:4.0s; animation-delay:1.9s;"><span class="matrix-head">ｱ</span>ﾎﾃｷ0101</div>
+        <div class="discord-matrix-column" style="left:83%; animation-duration:2.9s; animation-delay:0.8s;"><span class="matrix-head">1</span>00101100</div>
+        <div class="discord-matrix-column" style="left:88%; animation-duration:3.5s; animation-delay:1.3s;"><span class="matrix-head">0</span>10110101</div>
+        <div class="discord-matrix-column" style="left:93%; animation-duration:2.8s; animation-delay:0.2s;"><span class="matrix-head">ﾅ</span>ﾓﾆ01101</div>
+        <div class="discord-matrix-column" style="left:97%; animation-duration:3.6s; animation-delay:1.7s;"><span class="matrix-head">1</span>10011010</div>
       </div>
     `;
   }
@@ -3663,6 +3674,90 @@ window.previewDiscordItem = function(itemCode) {
   `;
 };
 window.previewDiscordItem = previewDiscordItem;
+
+window.previewCustomNitroMedia = function() {
+  const url = (document.getElementById("custom-nitro-url-input")?.value || "").trim();
+  const type = document.getElementById("custom-nitro-type-select")?.value || "avatar_decoration";
+  if (!url) {
+    showToast("Vui lòng dán link URL hoặc chọn tải file video trước nhé!", true);
+    return;
+  }
+  const userAvatar = state.profile?.avatar_url || "";
+  const userName = state.profile?.full_name || state.profile?.username || "Bạn học 3TG";
+  const userHandle = state.profile?.username || "hocvien";
+
+  const previewDeco = type === "avatar_decoration" ? url : (state.profile?.avatar_decoration || null);
+  const previewFx = type === "profile_effect" ? url : (state.profile?.profile_effect || null);
+
+  modalRoot.innerHTML = `
+    <div class="discord-preview-modal-overlay" onclick="closeUserProfileModal(event)">
+      <div class="discord-preview-card" onclick="event.stopPropagation()">
+        ${renderProfileEffectHtml(previewFx)}
+        <div class="discord-preview-banner">
+          <button type="button" class="user-profile-close-btn" style="z-index:10;" onclick="closeUserProfileModal()">✕</button>
+        </div>
+        <div class="discord-preview-body">
+          <div class="discord-preview-avatar-row">
+            ${renderDecoratedAvatar(userAvatar, previewDeco, 92, userName)}
+            <span class="discord-nitro-badge">✨ Custom Video Preview</span>
+          </div>
+          <h2 style="font-size:20px; font-weight:900; margin:0 0 2px 0;">${esc(userName)}</h2>
+          <div style="font-size:13px; color:#94a3b8; margin-bottom:12px;">@${esc(userHandle)}</div>
+          
+          <div style="background:rgba(255,255,255,0.06); border-radius:14px; padding:12px; margin-bottom:16px;">
+            <div style="font-size:13px; font-weight:900; color:#38bdf8; margin-bottom:4px;">
+              🎬 Video / File Tùy Chỉnh (${type === 'avatar_decoration' ? 'Khung Avatar' : 'Hiệu ứng hồ sơ'})
+            </div>
+            <div style="font-size:11.5px; color:#cbd5e1; word-break:break-all;">
+              ${esc(url.slice(0, 100))}${url.length > 100 ? '...' : ''}
+            </div>
+          </div>
+
+          <div class="discord-preview-btn-row">
+            <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:10px; font-weight:900;" onclick="equipCustomNitroMedia(); closeUserProfileModal();">
+              Trang bị ngay 🚀
+            </button>
+            <button type="button" class="btn-duo btn-duo-white" style="padding:10px 18px;" onclick="closeUserProfileModal()">
+              Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+};
+
+window.equipCustomNitroMedia = async function() {
+  const url = (document.getElementById("custom-nitro-url-input")?.value || "").trim();
+  const type = document.getElementById("custom-nitro-type-select")?.value || "avatar_decoration";
+  if (!url) {
+    showToast("Vui lòng dán link URL hoặc chọn file video trước nhé!", true);
+    return;
+  }
+  await equipDecoration(type, url);
+};
+
+window.handleCustomNitroFile = function(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) {
+    showToast("File video quá lớn (> 8MB). Hãy chọn file nhẹ hơn hoặc dùng link URL nhé!", true);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    const urlInput = document.getElementById("custom-nitro-url-input");
+    if (urlInput) urlInput.value = dataUrl;
+    showToast("Đã tải video vào bộ đệm! Bạn có thể nhấn 'Xem thử' hoặc 'Trang bị ngay'.");
+  };
+  reader.readAsDataURL(file);
+};
+
+window.removeCustomNitroMedia = async function() {
+  await equipDecoration("avatar_decoration", null);
+  await equipDecoration("profile_effect", null);
+};
 
 window.openMascotDetailModal = function(key) {
   try { playSound("click"); } catch {}
@@ -3937,6 +4032,51 @@ function renderShop() {
                 </div>
               `;
             }).join("")}
+          </div>
+
+          <!-- CUSTOM VIDEO / DISCORD CDN SECTION -->
+          <div style="margin-top:20px; background:linear-gradient(135deg, #ffffff, #f8fafc); border:2px dashed #cbd5e1; border-radius:20px; padding:18px; box-shadow:0 4px 16px rgba(0,0,0,0.03);">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+              <div style="font-size:28px;">🎬</div>
+              <div>
+                <h4 style="font-size:15px; font-weight:900; color:#0f172a; margin:0;">
+                  Tự Dán Link Video & Ảnh Động Nitro Tùy Chỉnh (Discord APNG, WebM, MP4, GIF)
+                </h4>
+                <p style="font-size:12px; color:#64748b; margin:2px 0 0;">
+                  Dán trực tiếp bất kỳ link CDN Discord Nitro hoặc tải file video từ thiết bị lên để trang bị ngay.
+                </p>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+              <div style="flex:1; min-width:240px;">
+                <input type="text" id="custom-nitro-url-input" class="form-control" style="font-size:13px; padding:9px 12px; border-radius:12px; width:100%; border:1.5px solid #cbd5e1;" placeholder="Dán link Video .webm, .mp4 hoặc .gif, .png từ Discord tại đây...">
+              </div>
+              <div style="width:160px;">
+                <select id="custom-nitro-type-select" class="form-control" style="font-size:12.5px; padding:9px 10px; border-radius:12px; width:100%; border:1.5px solid #cbd5e1; font-weight:700;">
+                  <option value="avatar_decoration">🖼️ Khung Avatar</option>
+                  <option value="profile_effect">🪄 Hiệu Ứng Hồ Sơ</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <button type="button" class="btn-duo btn-duo-white" style="padding:7px 14px; font-size:12px;" onclick="previewCustomNitroMedia()">
+                👁️ Xem thử trực tiếp
+              </button>
+              <button type="button" class="btn-duo btn-duo-pink" style="padding:7px 16px; font-size:12px; font-weight:900;" onclick="equipCustomNitroMedia()">
+                ⚡ Trang bị ngay ➔
+              </button>
+              <label class="btn-duo btn-duo-white" style="padding:7px 14px; font-size:12px; cursor:pointer; margin:0;">
+                📁 Chọn file video/gif từ máy
+                <input type="file" accept="video/webm,video/mp4,image/gif,image/png,image/webp" style="display:none;" onchange="handleCustomNitroFile(this)">
+              </label>
+              ${(state.profile?.avatar_decoration?.startsWith('http') || state.profile?.avatar_decoration?.startsWith('data:') || state.profile?.profile_effect?.startsWith('http') || state.profile?.profile_effect?.startsWith('data:')) ? `
+                <button type="button" class="btn-duo btn-duo-white" style="padding:7px 12px; font-size:11.5px; color:#ef4444;" onclick="removeCustomNitroMedia()">
+                  ✕ Tháo hiệu ứng tùy chỉnh
+                </button>
+              ` : ''}
+            </div>
           </div>
         </div>
       ` : ''}

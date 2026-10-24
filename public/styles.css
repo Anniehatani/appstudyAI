@@ -6314,53 +6314,54 @@ button:focus-visible, input:focus-visible {
 /* 1.5 RETRO GLITCH CYBER 2077 */
 .deco-glitch-vip {
   position: relative;
-  animation: discordGlitchJitter 2.2s steps(2, start) infinite;
+  animation: discordGlitchPulse 2.4s ease-in-out infinite alternate;
 }
 .deco-glitch-cyan-ring {
-  animation: discordGlitchSplitCyan 1.6s ease-in-out infinite;
-  transform-origin: 50px 50px;
+  animation: discordGlitchGlowCyan 1.6s ease-in-out infinite alternate;
 }
 .deco-glitch-magenta-ring {
-  animation: discordGlitchSplitMag 1.6s ease-in-out infinite;
+  animation: discordGlitchGlowMag 2s ease-in-out infinite alternate;
+}
+.deco-glitch-main-ring {
+  animation: discordGlitchMainRing 12s linear infinite;
   transform-origin: 50px 50px;
 }
 .deco-glitch-horns {
   animation: discordGlitchHornsFlicker 0.8s ease-in-out infinite alternate;
+  transform-origin: 50px 10px;
 }
-.deco-glitch-vip-tag {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  background: linear-gradient(135deg, #ff007b, #7928ca);
-  color: #fff;
-  font-size: 8px;
-  font-weight: 900;
-  padding: 1.5px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.8px;
-  box-shadow: 0 0 8px #ff007b;
-  animation: discordGlitchTagFlicker 1.4s ease-in-out infinite alternate;
+.glitch-hud-badge {
+  animation: discordGlitchBadgeGlow 1.8s ease-in-out infinite alternate;
 }
 
-@keyframes discordGlitchJitter {
-  0%, 88% { transform: translate(0, 0); }
-  90% { transform: translate(-3px, 1px); filter: hue-rotate(60deg); }
-  92% { transform: translate(3px, -2px); filter: hue-rotate(180deg); }
-  94% { transform: translate(-2px, 2px); filter: hue-rotate(270deg); }
-  96% { transform: translate(2px, -1px); }
-  98% { transform: translate(0, 0); }
+@keyframes discordGlitchPulse {
+  0%, 90% { filter: drop-shadow(0 0 3px rgba(0, 240, 255, 0.5)); }
+  92% { filter: drop-shadow(-2px 0 5px #00f0ff) drop-shadow(2px 0 5px #ff007b); }
+  94% { filter: drop-shadow(2px 0 6px #ff007b) drop-shadow(-2px 0 6px #00f0ff); }
+  96% { filter: drop-shadow(-1px 0 3px #00f0ff); }
+  100% { filter: drop-shadow(0 0 3px rgba(0, 240, 255, 0.5)); }
 }
-@keyframes discordGlitchSplitCyan {
-  0%, 100% { transform: translate(0, 0); opacity: 0.9; }
-  50% { transform: translate(-2px, 1px); opacity: 1; filter: drop-shadow(0 0 6px #00f0ff); }
+@keyframes discordGlitchGlowCyan {
+  0% { opacity: 0.85; stroke-dashoffset: 0; filter: drop-shadow(0 0 3px #00f0ff); }
+  50% { opacity: 1; filter: drop-shadow(0 0 8px #00f0ff); }
+  100% { opacity: 0.9; stroke-dashoffset: 36; filter: drop-shadow(0 0 4px #00f0ff); }
 }
-@keyframes discordGlitchSplitMag {
-  0%, 100% { transform: translate(0, 0); opacity: 0.9; }
-  50% { transform: translate(2px, -1px); opacity: 1; filter: drop-shadow(0 0 6px #ff007b); }
+@keyframes discordGlitchGlowMag {
+  0% { opacity: 0.85; stroke-dashoffset: 0; filter: drop-shadow(0 0 3px #ff007b); }
+  50% { opacity: 1; filter: drop-shadow(0 0 8px #ff007b); }
+  100% { opacity: 0.9; stroke-dashoffset: -32; filter: drop-shadow(0 0 4px #ff007b); }
+}
+@keyframes discordGlitchMainRing {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes discordGlitchBadgeGlow {
+  0% { opacity: 0.85; filter: drop-shadow(0 0 3px #00f0ff); }
+  100% { opacity: 1; filter: drop-shadow(0 0 7px #00f0ff); }
 }
 @keyframes discordGlitchHornsFlicker {
-  0% { opacity: 0.7; transform: scale(0.95); }
-  100% { opacity: 1; transform: scale(1.05); filter: drop-shadow(0 0 6px #00f0ff); }
+  0% { opacity: 0.75; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1.04); filter: drop-shadow(0 0 6px #00f0ff); }
 }
 @keyframes discordGlitchTagFlicker {
   0% { opacity: 0.85; }
@@ -6436,7 +6437,16 @@ button:focus-visible, input:focus-visible {
 
 /* 2.1 MATRIX CODE RAIN */
 .discord-fx-matrix {
-  background: radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.12), transparent 75%);
+  background: radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.16), transparent 75%);
+  position: relative;
+}
+.matrix-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2) 1px, transparent 1px, transparent 3px);
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.7;
 }
 .discord-matrix-column {
   position: absolute;
@@ -6551,7 +6561,8 @@ button:focus-visible, input:focus-visible {
   right: 0;
   height: 90px;
   pointer-events: none;
-  z-index: 5;
+  z-index: 6;
+  overflow: visible !important;
 }
 .peeking-cat-sparkles {
   position: absolute;
@@ -6560,6 +6571,7 @@ button:focus-visible, input:focus-visible {
   display: flex;
   gap: 8px;
   align-items: center;
+  z-index: 7;
 }
 .cat-sparkle {
   color: #fef08a;
@@ -6573,13 +6585,14 @@ button:focus-visible, input:focus-visible {
 
 .peeking-cat-container {
   position: absolute;
-  top: 0;
+  top: -8px;
   left: 50%;
   transform: translateX(-50%);
-  width: 170px;
-  height: 58px;
+  width: 160px;
+  height: 55px;
   animation: catBreathe 2.5s ease-in-out infinite alternate;
-  filter: drop-shadow(0 6px 14px rgba(244, 114, 182, 0.4));
+  filter: drop-shadow(0 6px 14px rgba(244, 114, 182, 0.45));
+  z-index: 7;
 }
 .peeking-cat-svg {
   width: 100%;
@@ -6594,6 +6607,19 @@ button:focus-visible, input:focus-visible {
 .cat-right-ear {
   animation: catEarTwitchRight 4.5s ease-in-out infinite;
   transform-origin: 116px 20px;
+}
+
+/* MINI STAGE IN SHOP CARDS: Scale cat down proportionally so it fits cute & intact! */
+.discord-nitro-fx-mini-stage .peeking-cat-container {
+  width: 52px !important;
+  height: 18px !important;
+  top: 1px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  filter: drop-shadow(0 2px 4px rgba(244, 114, 182, 0.4)) !important;
+}
+.discord-nitro-fx-mini-stage .peeking-cat-sparkles {
+  display: none !important;
 }
 
 @keyframes catBreathe {
