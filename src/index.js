@@ -763,10 +763,9 @@ async function submitLesson(request, lessonId, user, env) {
     "SELECT id, status FROM user_progress WHERE user_id = ? AND lesson_id = ? ORDER BY id DESC LIMIT 1"
   ).bind(user.userId, lessonId).first();
   const firstCompletion = !prior || prior.status !== "completed";
-  const reward = firstCompletion && correct > 0
-    ? Math.max(1, Math.round((Number(lesson.xp_reward) || 10) * correct / total))
-    : 0;
-  const gemReward = firstCompletion ? (score >= 80 ? 5 : 2) : 1;
+  const reward = Math.max(5, Math.round((Number(lesson.xp_reward) || 20) * Math.max(0.4, correct / total)));
+  // Kim cương: Tối đa 30 tương đương 100 điểm và giảm dần khi điểm thấp dần
+  const gemReward = score > 0 ? Math.max(1, Math.round((score / 100) * 30)) : 1;
   const hearts = 999; // Vô hạn tim vĩnh viễn (không bao giờ trừ tim)
 
   let streak = Number(stats.current_streak) || 0;
@@ -823,7 +822,7 @@ async function submitLesson(request, lessonId, user, env) {
   const operations = [];
   if (prior) {
     operations.push(env.DB.prepare(
-      "UPDATE user_progress SET status = 'completed', score = MAX(score, ?), completed_at = COALESCE(completed_at, ?) WHERE id = ?"
+      "UPDATE user_progress SET status = 'completed', score = MAX(score, ?), completed_at = ? WHERE id = ?"
     ).bind(score, now, prior.id));
   } else {
     operations.push(env.DB.prepare(
@@ -1590,8 +1589,8 @@ async function getDailyQuests(user, env) {
   const lessonsCount = Number(progressSummary?.lessons_count || 0);
   const highScoresCount = Number(progressSummary?.high_scores_count || 0);
   const mistakesCount = Number(todayMistakes?.count || 0);
-  // Mỗi bài học hoàn thành đạt 10 XP, mỗi câu sai ôn tập khắc phục đạt 5 XP
-  const xpCount = (lessonsCount * 10) + (mistakesCount * 5);
+  // Mỗi bài học hoàn thành đạt 25 XP, mỗi câu sai ôn tập khắc phục đạt 10 XP
+  const xpCount = (lessonsCount * 25) + (mistakesCount * 10);
 
   const questDefs = [
     {

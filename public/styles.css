@@ -8634,3 +8634,419 @@ html, body {
 }
 
 
+
+/* ========================================================
+   BASE STYLES FOR QUEST CARDS (LIGHT & DARK COMPATIBLE)
+   ======================================================== */
+.quest-card {
+  background: #ffffff;
+  border: 2.5px solid var(--lumi-pink-border);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 6px 0 #ffd4e2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.quest-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 #ffd4e2;
+}
+
+.quest-card.completed {
+  border-color: #ff5c8d;
+}
+
+.quest-card.claimed {
+  opacity: 0.85;
+}
+
+/* ========================================================
+   ALL-PAGE COMPREHENSIVE DARK MODE REFINEMENT
+   ======================================================== */
+
+/* 1. IU & GRADES DASHBOARD ("CẢI THIỆN ĐIỂM") */
+[data-theme="dark"] .grades-dashboard {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .grades-profile-header {
+  background: linear-gradient(135deg, #161a26 0%, #1e2436 100%) !important;
+  border: 2px solid #2b354d !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] .grades-student-name {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .grades-student-meta {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .grades-student-meta strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .grades-last-sync {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .grades-kpi-card {
+  background: #1a1f2c !important;
+  border: 2px solid #2e364c !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .kpi-gpa-4 {
+  border-color: rgba(255, 92, 141, 0.4) !important;
+}
+
+[data-theme="dark"] .kpi-gpa-10 {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+[data-theme="dark"] .kpi-credits {
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-theme="dark"] .kpi-weak {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+[data-theme="dark"] .kpi-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .kpi-big-num {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .kpi-max {
+  color: #64748b !important;
+}
+
+[data-theme="dark"] .kpi-sub-note {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .kpi-progress-bar {
+  background: #141724 !important;
+  border-color: #2b3348 !important;
+}
+
+[data-theme="dark"] .grades-section-box {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .section-box-header {
+  border-bottom: 1.5px solid #2b354d !important;
+}
+
+[data-theme="dark"] .section-box-title h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .section-box-title p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .active-course-card {
+  background: linear-gradient(135deg, #1a1f2c 0%, #151824 100%) !important;
+  border: 2px solid #2e384d !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .active-course-name {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .active-course-meta {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .active-course-meta strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .grades-clean-state {
+  background: #141724 !important;
+  border: 2px dashed #283044 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .grades-clean-state strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .simulator-table,
+[data-theme="dark"] .courses-table {
+  color: #cbd5e1 !important;
+  background: #161a26 !important;
+}
+
+[data-theme="dark"] .simulator-table th,
+[data-theme="dark"] .courses-table th {
+  background: #141724 !important;
+  color: #94a3b8 !important;
+  border-bottom: 2px solid #2b354d !important;
+}
+
+[data-theme="dark"] .simulator-table td,
+[data-theme="dark"] .courses-table td {
+  background: #161a26 !important;
+  border-bottom: 1px solid #23293a !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .simulator-table tr:hover td,
+[data-theme="dark"] .courses-table tr:hover td {
+  background: #1e2434 !important;
+}
+
+[data-theme="dark"] .sim-select {
+  background: #1a1f2c !important;
+  border: 1.5px solid #3b455e !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .simulator-summary-box {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .grades-feature-card {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .grades-feature-card h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .grades-feature-card p {
+  color: #94a3b8 !important;
+}
+
+/* 2. FRIENDS & DIRECT MESSAGES */
+[data-theme="dark"] .friends-tab-bar {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+  box-shadow: 0 4px 0 #10131d !important;
+}
+
+[data-theme="dark"] .friends-tab-btn {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .friends-tab-btn:hover {
+  background: #232838 !important;
+  color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .friends-tab-btn.active {
+  background: var(--lumi-pink) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .friend-card {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  box-shadow: 0 5px 0 #10131d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .friend-card:hover {
+  background: #202636 !important;
+  border-color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .friend-card h3,
+[data-theme="dark"] .friend-card h4 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .friend-card div {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .friend-card strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .friends-hub-wrap .empty-state {
+  background: #161a26 !important;
+  border: 2px dashed #2e384d !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .friends-hub-wrap .empty-state h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .friends-hub-wrap .empty-state p {
+  color: #94a3b8 !important;
+}
+
+/* 3. STAGE NAVIGATOR & LEARNING PATH */
+[data-theme="dark"] .stage-navigator-bar {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] .stage-nav-arrow {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .stage-nav-arrow:hover:not(:disabled) {
+  background: #232838 !important;
+  color: var(--lumi-pink) !important;
+  border-color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .pills-scroll-arrow {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .pills-scroll-arrow:hover {
+  background: #232838 !important;
+}
+
+[data-theme="dark"] .stage-pill-item {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .stage-pill-item:hover {
+  border-color: var(--lumi-pink) !important;
+  color: var(--lumi-pink) !important;
+  background: #232838 !important;
+}
+
+[data-theme="dark"] .stage-pill-item.active {
+  background: var(--lumi-pink) !important;
+  border-color: var(--lumi-pink) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(255, 75, 130, 0.45) !important;
+}
+
+[data-theme="dark"] .stage-pills-wrap::-webkit-scrollbar-track {
+  background: #121520 !important;
+}
+
+[data-theme="dark"] .stage-pills-wrap::-webkit-scrollbar-thumb {
+  background: #2b354d !important;
+}
+
+/* 4. DAILY QUESTS & ACHIEVEMENTS */
+[data-theme="dark"] .quest-card {
+  background: #161a26 !important;
+  border: 2.5px solid #2b354d !important;
+  box-shadow: 0 6px 0 #10131d !important;
+}
+
+[data-theme="dark"] .quest-card:hover {
+  box-shadow: 0 8px 0 #10131d !important;
+  border-color: #3b4664 !important;
+}
+
+[data-theme="dark"] .quest-card h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .quest-card p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .quest-card span[style*="background:#fff0f5"] {
+  background: #1e2434 !important;
+  border-color: #2e384d !important;
+  color: #ff85aa !important;
+}
+
+[data-theme="dark"] .auth-switch-tabs {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+}
+
+[data-theme="dark"] .auth-switch-tab {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .auth-switch-tab.active {
+  background: #232838 !important;
+  color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .achievement-card {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+  box-shadow: 0 5px 0 #10131d !important;
+}
+
+[data-theme="dark"] .achievement-card.unlocked {
+  background: #1c211a !important;
+  border-color: #eab308 !important;
+  box-shadow: 0 5px 0 #854d0e !important;
+}
+
+[data-theme="dark"] .achievement-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .achievement-desc {
+  color: #94a3b8 !important;
+}
+
+/* 5. GENERAL INPUTS, SELECTS, AND MODALS */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: #1a1f2c !important;
+  border: 1.5px solid #2e384d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #64748b !important;
+}
+
+[data-theme="dark"] .modal-dialog,
+[data-theme="dark"] .direct-chat-dialog {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .modal-dialog h2,
+[data-theme="dark"] .modal-dialog h3,
+[data-theme="dark"] .modal-dialog h4 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .modal-dialog p {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .modal-close {
+  background: #232838 !important;
+  color: #cbd5e1 !important;
+}

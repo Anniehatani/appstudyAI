@@ -812,9 +812,7 @@ function renderAuthScreen() {
             Đăng nhập vào 3TG ➔
           </button>
         </form>
-        <div class="auth-quick-hint">
-          Tài khoản mẫu: <span class="auth-quick-fill-btn" onclick="quickFillDemoLogin()">Điền nhanh (duo_learner / password123)</span>
-        </div>
+
       `}
     </div>
   `;
@@ -841,14 +839,7 @@ window.togglePasswordVisibility = function(inputId, btn) {
   }
 };
 
-window.quickFillDemoLogin = function() {
-  const uInput = document.getElementById("login-username");
-  const pInput = document.getElementById("login-password");
-  if (uInput && pInput) {
-    uInput.value = "duo_learner";
-    pInput.value = "password123";
-  }
-};
+window.quickFillDemoLogin = function() {};
 
 window.handleRegisterSubmit = async function(e) {
   e.preventDefault();
@@ -950,9 +941,9 @@ async function loadAuthenticatedData() {
     }
     state.overview = overviewRes;
     state.reviewMistakes = reviewRes.mistakes || [];
-    if (academicRes && academicRes.hasTranscript) {
-      state.academicTranscript = academicRes;
-    }
+    state.academicTranscript = (academicRes && academicRes.hasTranscript) ? academicRes : null;
+    dailyQuestsData = null;
+    achievementsData = null;
     if (overviewRes) {
       if (overviewRes.stats) state.stats = overviewRes.stats;
       if (overviewRes.profile) state.profile = Object.assign({}, state.profile, overviewRes.profile);
@@ -4839,7 +4830,7 @@ function renderAchievements() {
     }
 
     return `
-      <div class="quest-card ${q.isCompleted ? 'completed' : ''} ${q.isClaimed ? 'claimed' : ''}" style="background:#fff; border:2.5px solid var(--lumi-pink-border); border-radius:24px; padding:20px; box-shadow:0 6px 0 #ffd4e2; display:flex; flex-direction:column; justify-content:space-between; gap:14px;">
+      <div class="quest-card ${q.isCompleted ? 'completed' : ''} ${q.isClaimed ? 'claimed' : ''}">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
           <div style="display:flex; align-items:center; gap:12px;">
             <span style="font-size:32px; background:#fff0f5; width:52px; height:52px; border-radius:16px; display:grid; place-items:center; border:2px solid #ffd4e2;">${q.icon}</span>
@@ -4887,10 +4878,10 @@ function renderAchievements() {
 
       <!-- SWITCH TABS: NHIỆM VỤ HÀNG NGÀY vs THÀNH TÍCH TRỌN ĐỜI -->
       <div class="auth-switch-tabs" style="margin-bottom:24px; max-width:540px;">
-        <button type="button" class="auth-switch-tab ${currentTab === 'quests' ? 'active' : ''}" onclick="state.achievementTab='quests'; render();">
+        <button type="button" class="auth-switch-tab ${currentTab === 'quests' ? 'active' : ''}" onclick="state.achievementTab='quests'; dailyQuestsData=null; fetchDailyQuests(); render();">
           ⚡ Nhiệm vụ Hàng Ngày
         </button>
-        <button type="button" class="auth-switch-tab ${currentTab === 'permanent' ? 'active' : ''}" onclick="state.achievementTab='permanent'; render();">
+        <button type="button" class="auth-switch-tab ${currentTab === 'permanent' ? 'active' : ''}" onclick="state.achievementTab='permanent'; achievementsData=null; fetchAchievements(); render();">
           🎖️ Nhiệm Vụ Lâu Dài
         </button>
       </div>
@@ -5544,6 +5535,8 @@ window.nextQuestion = async function() {
       state.finish = finishRes;
       state.submittingLesson = false;
       state.stats = finishRes.stats;
+      dailyQuestsData = null;
+      achievementsData = null;
       updateShell();
       api(`/api/subjects/${state.currentSubjectId}`).then(d => { state.subjectDetail = d; });
       api("/api/overview").then(o => { state.overview = o; });
@@ -6737,6 +6730,18 @@ window.handleLogout = async function() {
   }
   state.profile = null;
   state.account = null;
+  state.academicTranscript = null;
+  state.academicSimulatedScores = new Map();
+  state.academicAdvisorAnalysis = null;
+  state.stats = { total_xp: 0, current_streak: 0, longest_streak: 0, hearts: 999, gems: 0 };
+  state.inventory = [];
+  state.reviewMistakes = [];
+  state.subjectDetail = null;
+  state.overview = null;
+  dailyQuestsData = null;
+  achievementsData = null;
+  conversationsData = null;
+  friendsData = null;
   state.authTab = "login";
   state.page = "home";
   updateShell();
