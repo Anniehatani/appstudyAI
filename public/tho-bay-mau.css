@@ -706,6 +706,12 @@
   margin-bottom: 24px;
 }
 
+[data-theme="dark"] .banner-with-mascot {
+  background: linear-gradient(135deg, #1c2130 0%, #151824 100%);
+  border-color: #2b3348;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 4px 0 #10131d;
+}
+
 .banner-mascot-aside {
   flex-shrink: 0;
   display: flex;

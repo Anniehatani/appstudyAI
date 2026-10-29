@@ -1,6 +1,6 @@
 {
-  "name": "lumi-study",
-  "version": "1.0.0",
+  "name": "3tg-study",
+  "version": "9.9.9",
   "description": "3TG — Web và App học tập thông minh phong cách Duolingo cùng Mascot Thỏ Bảy Màu",
   "private": true,
   "type": "module",
@@ -30,7 +30,13 @@
     "directories": {
       "output": "dist-electron"
     },
-    "asar": false,
+    "asar": true,
+    "asarUnpack": [
+      "build/local_replica.sqlite",
+      "build/icon.ico",
+      "package.json",
+      "src/**/*"
+    ],
     "files": [
       "public/**/*",
       "src/**/*",

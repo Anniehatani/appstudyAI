@@ -255,12 +255,20 @@ async function startEmbeddedServer(rootPath, port = 8787) {
 
   // Tự động nạp Local SQLite Replica làm fallback DB khi Cloudflare D1 hết hạn ngạch hoặc mất mạng
   const sqliteCandidatePaths = [
-    path.join(rootPath, "build/local_replica.sqlite"),
+    path.join(process.resourcesPath || rootPath, "app.asar.unpacked/build/local_replica.sqlite"),
+    rootPath.endsWith(".asar") ? path.join(rootPath, "../app.asar.unpacked/build/local_replica.sqlite") : "",
+    path.join(rootPath, "app.asar.unpacked/build/local_replica.sqlite"),
     path.join(process.resourcesPath || rootPath, "build/local_replica.sqlite"),
+    path.join(rootPath, "build/local_replica.sqlite"),
     path.join(rootPath, ".wrangler/state/v3/d1/miniflare-D1DatabaseObject/f75f832ec585bb85cc81d12168a8e118a5d2af5ffff0f316e6a87a595cb351ec.sqlite")
-  ];
+  ].filter(Boolean);
+
   for (const sPath of sqliteCandidatePaths) {
-    if (fs.existsSync(sPath)) {
+    if (sPath && fs.existsSync(sPath)) {
+      // Bỏ qua đường dẫn nằm trong gói asar vì node:sqlite native C++ không thể đọc trực tiếp từ virtual asar
+      if (sPath.includes(".asar") && !sPath.includes(".asar.unpacked")) {
+        continue;
+      }
       try {
         const { DatabaseSync } = require("node:sqlite");
         const sqliteDb = new DatabaseSync(sPath);
@@ -338,16 +346,42 @@ async function startEmbeddedServer(rootPath, port = 8787) {
     }
   }
 
-  // Dynamic import of ES Module worker
-  const workerPath = path.resolve(rootPath, "src/index.js");
+  // Dynamic import of ES Module worker (hỗ trợ cả unpacked asar, asar nội bộ và dev mode)
+  const candidateWorkerPaths = [
+    path.join(process.resourcesPath || rootPath, "app.asar.unpacked/src/index.js"),
+    rootPath.endsWith(".asar") ? path.join(rootPath, "../app.asar.unpacked/src/index.js") : "",
+    path.resolve(rootPath, "src/index.js"),
+    path.join(process.resourcesPath || rootPath, "app.asar/src/index.js"),
+    path.join(__dirname, "../src/index.js")
+  ].filter(Boolean);
+
   let worker = null;
-  try {
-    const fileUrl = pathToFileURL(workerPath).href;
-    const m = await import(fileUrl);
-    worker = m.default;
-  } catch (err) {
-    console.error("[EmbeddedServer] Không thể import worker:", err);
+  let workerLoadError = null;
+
+  async function resolveWorker() {
+    if (worker && typeof worker.fetch === "function") return worker;
+    for (const wPath of candidateWorkerPaths) {
+      if (!wPath || !fs.existsSync(wPath)) continue;
+      try {
+        const fileUrl = pathToFileURL(wPath).href;
+        const m = await import(fileUrl);
+        const cand = (m && m.default && typeof m.default.fetch === "function") 
+          ? m.default 
+          : ((m && typeof m.fetch === "function") ? m : (m && m.default ? m.default : m));
+        if (cand && typeof cand.fetch === "function") {
+          worker = cand;
+          console.log("[EmbeddedServer] Đã nạp thành công Worker engine từ:", wPath);
+          return worker;
+        }
+      } catch (err) {
+        workerLoadError = err && err.stack ? err.stack : String(err);
+        console.warn("[EmbeddedServer] Thử nạp worker từ " + wPath + " không thành công:", err.message);
+      }
+    }
+    return worker;
   }
+
+  await resolveWorker();
 
   return new Promise((resolve, reject) => {
     const server = http.createServer(async (req, res) => {
@@ -356,9 +390,15 @@ async function startEmbeddedServer(rootPath, port = 8787) {
 
       // 1. API & MEDIA ROUTES (Delegated to Worker)
       if (pathname.startsWith("/api/") || pathname.startsWith("/media/")) {
-        if (!worker) {
+        if (!worker || typeof worker.fetch !== "function") {
+          await resolveWorker();
+        }
+
+        if (!worker || typeof worker.fetch !== "function") {
           res.writeHead(503, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Worker engine chưa sẵn sàng." }));
+          res.end(JSON.stringify({ 
+            error: `Worker engine chưa sẵn sàng: ${workerLoadError || "Không thể nạp module worker"}` 
+          }));
           return;
         }
 

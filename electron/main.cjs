@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, screen } = require("electron");
 const path = require("path");
+const fs = require("fs");
 const { startEmbeddedServer } = require("./embedded-server.cjs");
 
 let mainWindow = null;
@@ -7,15 +8,20 @@ let embeddedServerInstance = null;
 
 // Set Application User Model ID for Windows Taskbar & Notifications
 if (process.platform === "win32") {
-  app.setAppUserModelId("com.lumi.3tgstudy");
+  app.setAppUserModelId("com.tonepink.3tgstudy");
 }
 
 function getIconPath() {
-  const base = app.isPackaged ? app.getAppPath() : path.join(__dirname, "..");
   if (process.platform === "win32") {
-    return path.join(base, "build/icon.ico");
+    if (app.isPackaged) {
+      const unpacked = path.join(process.resourcesPath, "app.asar.unpacked/build/icon.ico");
+      if (fs.existsSync(unpacked)) return unpacked;
+      const direct = path.join(process.resourcesPath, "build/icon.ico");
+      if (fs.existsSync(direct)) return direct;
+    }
+    return path.join(__dirname, "..", "build/icon.ico");
   }
-  return path.join(base, "build/icon.png");
+  return path.join(__dirname, "..", "build/icon.png");
 }
 
 async function createWindow() {
@@ -107,6 +113,13 @@ async function createWindow() {
     mainWindow.show();
   });
 
+  // Fast display fallback: hiển thị cửa sổ ngay lập tức, không chờ đợi
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      mainWindow.show();
+    }
+  }, 800);
+
   mainWindow.loadURL(appUrl);
 
   mainWindow.on("closed", () => {
@@ -126,6 +139,14 @@ ipcMain.handle("window:maximize", () => {
   }
 });
 ipcMain.handle("window:close", () => mainWindow?.close());
+ipcMain.handle("auth:clear-cookies", async () => {
+  try {
+    if (mainWindow) {
+      await mainWindow.webContents.session.clearStorageData({ storages: ["cookies"] });
+    }
+  } catch {}
+  return { ok: true };
+});
 
 let currentAppUrl = "http://127.0.0.1:8787";
 
@@ -215,21 +236,34 @@ ipcMain.handle("academic:open-iu-login", async () => {
   }
 });
 
-app.whenReady().then(createWindow);
+const gotTheLock = app.requestSingleInstanceLock();
 
-app.on("window-all-closed", () => {
-  if (embeddedServerInstance) {
-    try {
-      embeddedServerInstance.close();
-    } catch {}
-  }
-  if (process.platform !== "darwin") {
-    app.quit();
-  }
-});
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
 
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
-});
+  app.whenReady().then(createWindow);
+
+  app.on("window-all-closed", () => {
+    if (embeddedServerInstance) {
+      try {
+        embeddedServerInstance.close();
+      } catch {}
+    }
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
+
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
+  });
+}

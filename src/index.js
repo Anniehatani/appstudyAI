@@ -1,4 +1,4 @@
-import { loginIUPortal, layBangDiemVaHoSoIU, processAcademicTranscript, generateAcademicAdvisorPlan } from "./academic_service.js";
+import { loginIUPortal, layBangDiemVaHoSoIU, processAcademicTranscript, generateAcademicAdvisorPlan, mergeAndDeduplicateActiveCourses } from "./academic_service.js";
 
 const COOKIE_NAME = "lumi_session";
 const COOKIE_AGE = 60 * 60 * 24 * 365;
@@ -1226,10 +1226,10 @@ async function registerAccount(request, env) {
   }
 
   const existingAccount = await env.DB.prepare(
-    "SELECT id FROM accounts WHERE username = ? LIMIT 1"
+    "SELECT id FROM accounts WHERE LOWER(username) = LOWER(?) LIMIT 1"
   ).bind(username).first();
   if (existingAccount) {
-    throw new HttpError(409, "Tên đăng nhập này đã được sử dụng. Hãy chọn tên khác nhé.");
+    throw new HttpError(409, `Tên đăng nhập "${username}" đã được sử dụng. Hãy chọn một tên khác nhé.`);
   }
 
   // Luôn tạo userId hoàn toàn mới cho tài khoản đăng ký mới để thông tin trang cá nhân luôn trống và sạch sẽ
@@ -2069,7 +2069,7 @@ async function askAI(request, user, env) {
       context = await courseSnippets(env, courseTitle, message);
     }
   }
-  const systemText = "Bạn là Lumi AI, trợ giảng học tập thân thiện và thông minh bằng tiếng Việt của Lumi Study. " +
+  const systemText = "Bạn là 3TG AI, trợ giảng học tập thân thiện và thông minh bằng tiếng Việt của 3TG Study. " +
     "Giải thích rõ ràng, gần gũi, theo từng bước khi phù hợp. Không bịa thông tin về tài liệu môn học. " +
     "Nếu câu hỏi cần dữ liệu mà phần ngữ cảnh không có, hãy nói rõ điều đó rồi giải thích phần kiến thức chung với nhãn phân biệt. " +
     "Khuyến khích người học tự suy nghĩ và không tiết lộ đáp án trắc nghiệm nếu họ chưa hỏi.";
@@ -2106,14 +2106,14 @@ async function askAI(request, user, env) {
     });
   } catch (err) {
     console.error("AI fetch error:", err);
-    throw new HttpError(502, "Lumi chưa kết nối được với trợ giảng AI. Thử gửi lại sau một chút nhé.");
+    throw new HttpError(502, "3TG AI chưa kết nối được lúc này. Thử gửi lại sau một chút nhé.");
   }
   if (!response.ok) {
     const errText = await response.text().catch(() => "");
     console.error("AI response error:", response.status, errText);
     throw new HttpError(502, imageParts.length
       ? "AI chưa đọc được ảnh. Hãy kiểm tra model có hỗ trợ vision hoặc gửi ảnh nhỏ hơn."
-      : "Trợ giảng Lumi AI đang bận hoặc gặp sự cố (" + response.status + "). Bạn thử lại sau một chút nhé.");
+      : "Trợ giảng 3TG AI đang bận hoặc gặp sự cố (" + response.status + "). Bạn thử lại sau một chút nhé.");
   }
   let result;
   try {
@@ -2124,7 +2124,7 @@ async function askAI(request, user, env) {
   const reply = result && result.choices && result.choices[0] && result.choices[0].message
     ? String(result.choices[0].message.content || "")
     : "";
-  if (!reply) throw new HttpError(502, "Lumi chưa nhận được câu trả lời. Thử hỏi lại nhé.");
+  if (!reply) throw new HttpError(502, "3TG AI chưa nhận được câu trả lời. Thử hỏi lại nhé.");
   const now = new Date().toISOString();
   const isNewConversation = !body.conversationId;
   const storedMessage = message + (attachmentNames.length ? "\n\n[Tệp đính kèm: " + attachmentNames.join(", ") + "]" : "");
@@ -2270,7 +2270,29 @@ async function handleAcademicImportData(request, user, env) {
       studentInfo = rawInput.student || {};
     } else if (rawInput.IU) {
       const traCuu = rawInput.IU.goc_hoc_tap && rawInput.IU.goc_hoc_tap.tra_cuu_diem;
-      rawSubjects = (traCuu && Array.isArray(traCuu.bang_diem)) ? traCuu.bang_diem : [];
+      const unmapped = (traCuu && Array.isArray(traCuu.bang_diem)) ? traCuu.bang_diem : [];
+      rawSubjects = unmapped.map(s => {
+        const ct = s.chi_tiet_diem || {};
+        const isAllZero = (ct.chuyen_can === 0 || ct.chuyen_can === "0") &&
+                          (ct.bai_tap === 0 || ct.bai_tap === "0") &&
+                          (ct.giua_ky === 0 || ct.giua_ky === "0") &&
+                          (ct.cuoi_ky === 0 || ct.cuoi_ky === "0");
+        // Nếu điểm tổng kết > 0 mà toàn bộ điểm thành phần là 0 => đây là giá trị mặc định của mapper cũ, cần reset về null
+        const sanitize = (val) => {
+          if (val == null || val === "" || (isAllZero && Number(s.diem_he_10) > 0)) return null;
+          const n = Number(val);
+          return Number.isFinite(n) ? n : null;
+        };
+        return {
+          ...s,
+          chi_tiet_diem: {
+            chuyen_can: sanitize(ct.chuyen_can),
+            bai_tap: sanitize(ct.bai_tap),
+            giua_ky: sanitize(ct.giua_ky),
+            cuoi_ky: sanitize(ct.cuoi_ky),
+          }
+        };
+      });
       studentInfo = (rawInput.IU.ho_so_sinh_vien && rawInput.IU.ho_so_sinh_vien.thong_tin_ca_nhan) || studentInfo || {};
     } else if (rawInput.rsDiemKetThucHocPhan || (rawInput.data && rawInput.data.rsDiemKetThucHocPhan)) {
       const src = rawInput.rsDiemKetThucHocPhan ? rawInput : rawInput.data;
@@ -2290,14 +2312,31 @@ async function handleAcademicImportData(request, user, env) {
       const rsDiem = src.rsDiemKetThucHocPhan || [];
       const rsThanhPhan = src.rsDiemThanhPhan || [];
       rawSubjects = rsDiem.map(e => {
-        const matchedParts = rsThanhPhan.filter(x =>
-          String(x.DAOTAO_HOCPHAN_ID) === String(e.DAOTAO_HOCPHAN_ID) &&
-          String(x.LANHOC) === String(e.LANHOC)
-        );
+        const eHocPhanId = e.DAOTAO_HOCPHAN_ID != null ? String(e.DAOTAO_HOCPHAN_ID).trim() : "";
+        const eMaMon = e.DAOTAO_HOCPHAN_MA != null ? String(e.DAOTAO_HOCPHAN_MA).trim().toUpperCase() : "";
+        const eLanHoc = e.LANHOC != null ? String(e.LANHOC).trim() : "";
+
+        const matchedParts = rsThanhPhan.filter(x => {
+          const xHocPhanId = x.DAOTAO_HOCPHAN_ID != null ? String(x.DAOTAO_HOCPHAN_ID).trim() : "";
+          const xMaMon = (x.DAOTAO_HOCPHAN_MA || x.MAHOCPHAN) != null ? String(x.DAOTAO_HOCPHAN_MA || x.MAHOCPHAN).trim().toUpperCase() : "";
+          const matchId = (eHocPhanId && xHocPhanId && eHocPhanId === xHocPhanId) ||
+                          (eMaMon && xMaMon && eMaMon === xMaMon);
+          if (!matchId) return false;
+          const xLanHoc = x.LANHOC != null ? String(x.LANHOC).trim() : "";
+          if (eLanHoc && xLanHoc && eLanHoc !== xLanHoc) return false;
+          return true;
+        });
+
         const getPartScore = kw => {
-          const f = matchedParts.find(x => new RegExp(kw, "i").test(String(x.DIEM_THANHPHANDIEM_TEN || "")));
-          return f && Number.isFinite(Number(f.DIEM)) ? Number(f.DIEM) : null;
+          const f = matchedParts.find(x => {
+            const name = String(x.DIEM_THANHPHANDIEM_TEN || x.TEN_THANHPHANDIEM || x.THANHPHAN_TEN || x.TEN || "");
+            return new RegExp(kw, "i").test(name);
+          });
+          if (!f || f.DIEM == null || f.DIEM === "") return null;
+          const num = Number(f.DIEM);
+          return Number.isFinite(num) ? num : null;
         };
+
         return {
           ma_mon: String(e.DAOTAO_HOCPHAN_MA || ""),
           ten_hoc_phan: String(e.DAOTAO_HOCPHAN_TEN || ""),
@@ -2309,10 +2348,10 @@ async function handleAcademicImportData(request, user, env) {
           nam_hoc: String(e.NAMHOC || e.NAM_HOC || ""),
           xep_loai: String(e.DANHGIA_TEN || ""),
           chi_tiet_diem: {
-            chuyen_can: getPartScore("chuy.n.c.n|chuyencan|cc$"),
-            bai_tap: getPartScore("b.i.t.p|baitap|bt$"),
-            giua_ky: getPartScore("gi.a.k|giuaky|gk$"),
-            cuoi_ky: getPartScore("cu.i.k|cuoiky|cu.i.thi|ck$|thi.k.t.th.c"),
+            chuyen_can: getPartScore("chuy[eêèéẻẽẹ]n.*c[aâàáảãạ]n|cc$|chuyencan|điểm danh|danh"),
+            bai_tap: getPartScore("b[aàáảãạ]i.*t[aâàáảãạ]p|bt$|baitap|qu[aá].*tr[iì]nh|quatrinh|d[aá]nh.*gi[aá]|thường xuyên"),
+            giua_ky: getPartScore("gi[uư][aã].*k[yỳ]|gk$|giuaky"),
+            cuoi_ky: getPartScore("cu[oô][ií].*k[yỳ]|cuoiky|cu[oô][ií].*thi|ck$|thi.*k[eê]t.*th[uú]c|thi"),
           },
         };
       });
@@ -2329,42 +2368,40 @@ async function handleAcademicImportData(request, user, env) {
     studentInfo = { ...studentInfo, ...body.student };
   }
 
-  let activeCourses = body.activeCourses || rawInput.activeCourses || [];
-  if (!activeCourses.length && rawInput.IU && rawInput.IU.lich_hoc && Array.isArray(rawInput.IU.lich_hoc.chi_tiet_thoi_khoa_bieu)) {
-    const mapAct = new Map();
+  const rawActiveCourses = [
+    ...(Array.isArray(body.activeCourses) ? body.activeCourses : []),
+    ...(Array.isArray(rawInput.activeCourses) ? rawInput.activeCourses : [])
+  ];
+
+  if (rawInput.IU?.lich_hoc?.chi_tiet_thoi_khoa_bieu && Array.isArray(rawInput.IU.lich_hoc.chi_tiet_thoi_khoa_bieu)) {
     for (const c of rawInput.IU.lich_hoc.chi_tiet_thoi_khoa_bieu) {
-      const code = (c.ma_mon || c.ten_mon || "").trim();
-      if (!code) continue;
-      if (!mapAct.has(code)) {
-        mapAct.set(code, {
+      if (c && (c.ten_mon || c.ma_mon)) {
+        rawActiveCourses.push({
           ma_mon: c.ma_mon || "",
-          ten_mon: c.ten_mon || c.ma_mon || "Môn học",
+          ten_mon: c.ten_mon || "",
           giang_vien: c.giang_vien || "",
           phong: c.phong || "",
           hinh_thuc: c.hinh_thuc || "Lớp học phần"
         });
       }
     }
-    activeCourses = Array.from(mapAct.values());
   }
 
-  if (rawInput.IU && rawInput.IU.goc_hoc_tap && rawInput.IU.goc_hoc_tap.tra_cuu_diem && Array.isArray(rawInput.IU.goc_hoc_tap.tra_cuu_diem.ket_qua_dang_ky)) {
-    const dkh = rawInput.IU.goc_hoc_tap.tra_cuu_diem.ket_qua_dang_ky;
-    const existing = new Set(activeCourses.map(x => (x.ma_mon || x.ten_mon || "").toUpperCase()));
-    for (const item of dkh) {
-      const k = (item.ma_mon || item.ten_mon || "").toUpperCase();
-      if (k && !existing.has(k)) {
-        existing.add(k);
-        activeCourses.push({
+  if (rawInput.IU?.goc_hoc_tap?.tra_cuu_diem?.ket_qua_dang_ky && Array.isArray(rawInput.IU.goc_hoc_tap.tra_cuu_diem.ket_qua_dang_ky)) {
+    for (const item of rawInput.IU.goc_hoc_tap.tra_cuu_diem.ket_qua_dang_ky) {
+      if (item && (item.ten_mon || item.ma_mon)) {
+        rawActiveCourses.push({
           ma_mon: item.ma_mon || "",
+          ma_lop: item.ma_lop || "",
           ten_mon: item.ten_mon || "",
-          so_tin_chi: item.so_tin_chi || 3,
+          so_tin_chi: Number(item.so_tin_chi) || 0,
           trang_thai: item.trang_thai || "Đang học"
         });
       }
     }
   }
 
+  const activeCourses = mergeAndDeduplicateActiveCourses(rawActiveCourses, rawSubjects);
   const processed = processAcademicTranscript(rawSubjects, studentInfo, activeCourses);
   const now = new Date().toISOString();
   const rawDataJson = JSON.stringify(processed);
@@ -2417,8 +2454,17 @@ async function handleGetAcademicTranscript(user, env) {
     }
 
     let transcript = JSON.parse(row.raw_data);
-    if (transcript && Array.isArray(transcript.raw_subjects) && transcript.raw_subjects.length > 0) {
-      transcript = processAcademicTranscript(transcript.raw_subjects, transcript.student, transcript.active_courses);
+    if (transcript) {
+      const origCount = Array.isArray(transcript.active_courses) ? transcript.active_courses.length : 0;
+      transcript = processAcademicTranscript(transcript.raw_subjects || [], transcript.student, transcript.active_courses);
+      const newCount = Array.isArray(transcript.active_courses) ? transcript.active_courses.length : 0;
+      if (origCount !== newCount) {
+        try {
+          await env.DB.prepare(`
+            UPDATE user_academic_transcripts SET raw_data = ? WHERE user_id = ?
+          `).bind(JSON.stringify(transcript), user.userId).run();
+        } catch {}
+      }
     }
 
     return {
@@ -2442,8 +2488,8 @@ async function handleAcademicScrapeIU(request, user, env) {
   if (row && row.raw_data) {
     try {
       let parsed = JSON.parse(row.raw_data);
-      if (parsed && Array.isArray(parsed.raw_subjects) && parsed.raw_subjects.length > 0) {
-        parsed = processAcademicTranscript(parsed.raw_subjects, parsed.student, parsed.active_courses);
+      if (parsed) {
+        parsed = processAcademicTranscript(parsed.raw_subjects || [], parsed.student, parsed.active_courses);
       }
       return { ok: true, transcript: parsed, lastSyncedAt: row.last_synced_at };
     } catch {}
@@ -2492,7 +2538,7 @@ async function handleAcademicAdvisor(request, user, env) {
   }
 
   if (!transcriptData) {
-    throw new HttpError(400, "Chưa có dữ liệu bảng điểm để AI DeepSeek phân tích. Vui lòng kết nối tài khoản IU trước nhé!");
+    throw new HttpError(400, "Chưa có dữ liệu bảng điểm để 3TG AI phân tích. Vui lòng kết nối tài khoản IU trước nhé!");
   }
 
   if (transcriptData && Array.isArray(transcriptData.raw_subjects) && transcriptData.raw_subjects.length > 0) {
@@ -2568,12 +2614,8 @@ async function routeApi(request, env) {
     return respond(await subjectDetails(Number(publicSubjectMatch[1]), visitor ? visitor.userId : null, env));
   }
   if (path === "/api/academic/import-data" && method === "POST") {
-    let visitor = await sessionUser(request, env);
-    if (!visitor) {
-      const lastUser = await env.DB.prepare("SELECT user_id FROM profiles ORDER BY id DESC LIMIT 1").first();
-      visitor = lastUser ? { userId: lastUser.user_id } : { userId: "default_student" };
-    }
-    return respond(await handleAcademicImportData(request, visitor, env));
+    const user = await requireUser(request, env);
+    return respond(await handleAcademicImportData(request, user, env));
   }
   const user = await requireUser(request, env);
   if (path === "/api/academic/login-iu" && method === "POST") return respond(await handleAcademicLoginIU(request, user, env));

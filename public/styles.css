@@ -2766,6 +2766,71 @@ button:focus-visible, input:focus-visible {
   padding: 22px;
   box-shadow: 0 4px 16px rgba(255, 75, 130, 0.06);
   margin-bottom: 20px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+[data-theme="dark"] .fb-side-card {
+  background: #141724 !important;
+  border-color: #283044 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .fb-side-card-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .fb-intro-item {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .fb-intro-item strong {
+  color: #f8fafc !important;
+}
+
+.fb-activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff7fa;
+  border-radius: 14px;
+  border: 1.5px solid #ffe3ec;
+  border-left: 4px solid var(--lumi-pink);
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .fb-activity-item {
+  background: #141724 !important;
+  border: 1.5px solid #283044 !important;
+  border-left: 4px solid var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .fb-activity-item strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .fb-activity-item .activity-date {
+  color: #94a3b8 !important;
+}
+
+.fb-inventory-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f0f8ff;
+  border-radius: 14px;
+  border: 1.5px solid #e0f2fe;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .fb-inventory-item-row {
+  background: #141724 !important;
+  border: 1.5px solid #283044 !important;
+}
+
+[data-theme="dark"] .fb-inventory-item-row strong {
+  color: #f8fafc !important;
 }
 
 .fb-side-card-title {
@@ -8071,4 +8136,501 @@ html, body {
 [data-theme="dark"] .fb-avatar-container .discord-avatar-container .avatar-base {
   border-color: #1a1f2c;
 }
+
+/* ========================================================
+   COURSES VIEW (MÔN HỌC) IN DARK MODE
+   ======================================================== */
+[data-theme="dark"] .banner-with-mascot {
+  background: linear-gradient(135deg, #1c2130 0%, #151824 100%) !important;
+  border-color: #2b3348 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 4px 0 #10131d !important;
+}
+
+[data-theme="dark"] .banner-with-mascot .page-title,
+[data-theme="dark"] .page-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .banner-with-mascot .page-subtitle,
+[data-theme="dark"] .page-subtitle {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] #course-search-input {
+  background: #141724 !important;
+  border-color: #2b3348 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] #course-search-input::placeholder {
+  color: #64748b !important;
+}
+
+[data-theme="dark"] .course-tile {
+  background: #1a1f2c !important;
+  border-color: #2e364c !important;
+  box-shadow: 0 6px 0 #10131d !important;
+}
+
+[data-theme="dark"] .course-tile:hover {
+  border-color: var(--lumi-pink) !important;
+  box-shadow: 0 10px 0 #10131d, 0 16px 28px rgba(255, 92, 141, 0.2) !important;
+}
+
+[data-theme="dark"] .course-tile-name {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .course-tile-meta {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .course-tile-pill {
+  background: rgba(255, 92, 141, 0.18) !important;
+  color: #ff85aa !important;
+}
+
+[data-theme="dark"] .course-progress-track {
+  background: #242b3d !important;
+}
+
+/* ========================================================
+   LEADERBOARD (BẢNG XẾP HẠNG) IN DARK MODE
+   ======================================================== */
+[data-theme="dark"] .leaderboard-hero {
+  background: linear-gradient(135deg, #2a1b18 0%, #1c1518 100%) !important;
+  border-color: #4a2d24 !important;
+}
+
+[data-theme="dark"] .leader-row {
+  background: #1a1f2c !important;
+  border-color: #2b3348 !important;
+  box-shadow: 0 4px 0 #10131d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .leader-row:hover {
+  background: #22283a !important;
+  border-color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .leader-row.me {
+  background: rgba(255, 92, 141, 0.18) !important;
+  border-color: var(--lumi-pink) !important;
+  box-shadow: 0 4px 0 var(--lumi-pink-dark) !important;
+  color: #ff85aa !important;
+}
+
+[data-theme="dark"] .leader-name {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .leader-rank {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .leader-xp {
+  color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .lb-prize-pill {
+  background: rgba(255, 200, 0, 0.16) !important;
+  border-color: rgba(255, 200, 0, 0.35) !important;
+  color: #fbbf24 !important;
+}
+
+/* ========================================================
+   NOTES VIEW (SỔ TAY GHI CHÚ) IN DARK MODE
+   ======================================================== */
+[data-theme="dark"] .notes-page {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .notes-heading h1 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .notes-heading p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .notes-toolbar {
+  background: #141724 !important;
+  border-color: #283044 !important;
+}
+
+[data-theme="dark"] .notes-toolbar select,
+[data-theme="dark"] .notes-search {
+  background: #1a1f2c !important;
+  border-color: #2e364c !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .notes-search input {
+  background: transparent !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .notes-search input::placeholder {
+  color: #64748b !important;
+}
+
+[data-theme="dark"] .note-card {
+  background: #1a1f2c !important;
+  border-color: #2e364c !important;
+  box-shadow: 0 5px 0 #10131d, 0 10px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .note-card:hover {
+  border-color: var(--lumi-pink) !important;
+  box-shadow: 0 7px 0 #10131d, 0 14px 28px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Deep velvet tinted note cards for dark mode */
+[data-theme="dark"] .note-card-rose {
+  background: #23161f !important;
+  border-color: #4a2133 !important;
+}
+
+[data-theme="dark"] .note-card-butter {
+  background: #241d13 !important;
+  border-color: #4d381c !important;
+}
+
+[data-theme="dark"] .note-card-lilac {
+  background: #1d1829 !important;
+  border-color: #3d2c52 !important;
+}
+
+[data-theme="dark"] .note-card-mint {
+  background: #13241c !important;
+  border-color: #224734 !important;
+}
+
+[data-theme="dark"] .note-preview-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .note-preview-content {
+  background-color: rgba(0, 0, 0, 0.32) !important;
+  border-color: #2e364c !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .note-paper-plain .note-preview-content {
+  background-color: rgba(0, 0, 0, 0.32) !important;
+}
+
+[data-theme="dark"] .note-preview-content strong {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .note-preview-content mark {
+  background: #854d0e !important;
+  color: #fef08a !important;
+}
+
+[data-theme="dark"] .note-card-meta {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .note-save-state {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .note-title-input {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .note-content-input {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .note-content-input::placeholder {
+  color: #64748b !important;
+}
+
+[data-theme="dark"] .note-card-view-footer,
+[data-theme="dark"] .note-card-footer {
+  border-top-color: #2e364c !important;
+}
+
+[data-theme="dark"] .note-edit-btn,
+[data-theme="dark"] .note-save-btn {
+  background: #232838 !important;
+  border-color: #38415a !important;
+  color: #ff85aa !important;
+}
+
+[data-theme="dark"] .note-edit-btn:hover,
+[data-theme="dark"] .note-save-btn:hover:not(:disabled) {
+  background: rgba(255, 92, 141, 0.2) !important;
+  border-color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .note-format-bar button {
+  background: #232838 !important;
+  border-color: #38415a !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .note-format-bar button:hover {
+  background: #2c3348 !important;
+  color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .note-subject-select {
+  background: #141724 !important;
+  border-color: #283044 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .note-linked-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .notes-empty {
+  background: #1a1f2c !important;
+  border-color: #2e364c !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .notes-empty h2,
+[data-theme="dark"] .notes-empty h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .notes-empty p {
+  color: #94a3b8 !important;
+}
+
+/* ========================================================
+   ACADEMIC & GRADES (CẢI THIỆN ĐIỂM) IN DARK MODE
+   ======================================================== */
+[data-theme="dark"] .grades-hero-card {
+  background: linear-gradient(135deg, #1c2130 0%, #151824 100%) !important;
+  border-color: #2b3348 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] .grades-hero-card h1,
+[data-theme="dark"] .grades-hero-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .grades-hero-desc {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .grades-section-box {
+  background: #161a26 !important;
+  border-color: #283044 !important;
+}
+
+[data-theme="dark"] .section-box-header {
+  border-bottom-color: #283044 !important;
+}
+
+[data-theme="dark"] .section-box-title h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .section-box-title p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .sem-pill,
+[data-theme="dark"] .grade-filter-btn {
+  background: #141724 !important;
+  border-color: #283044 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .sem-pill:hover,
+[data-theme="dark"] .grade-filter-btn:hover {
+  background: #242a3b !important;
+  color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .sem-pill.active,
+[data-theme="dark"] .grade-filter-btn.active {
+  background: var(--lumi-pink) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(255, 92, 141, 0.35) !important;
+}
+
+[data-theme="dark"] .semester-card {
+  background: #1a1f2c !important;
+  border-color: #2b3348 !important;
+}
+
+[data-theme="dark"] .semester-card-header {
+  background: #141724 !important;
+  border-bottom-color: #283044 !important;
+}
+
+[data-theme="dark"] .semester-name-wrap h4 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .semester-stats-wrap {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .semester-stats-wrap strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .grades-table {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .grades-table th {
+  background: #141724 !important;
+  color: #94a3b8 !important;
+  border-bottom-color: #283044 !important;
+}
+
+[data-theme="dark"] .grades-table td {
+  border-bottom-color: #23293a !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .grades-table td b,
+[data-theme="dark"] .grades-table td strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .grades-table td code {
+  color: #ff85aa !important;
+  background: rgba(255, 92, 141, 0.1) !important;
+}
+
+[data-theme="dark"] .grades-table tr:hover {
+  background: #202638 !important;
+}
+
+[data-theme="dark"] .detail-row {
+  background: #121520 !important;
+}
+
+[data-theme="dark"] .detail-breakdown-card {
+  background: #121520 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .breakdown-title {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .breakdown-item {
+  background: #1a1f2c !important;
+  border-color: #2e364c !important;
+}
+
+[data-theme="dark"] .breakdown-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .breakdown-val {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .btn-toggle-detail {
+  border-color: #38415a !important;
+  color: #ff85aa !important;
+}
+
+[data-theme="dark"] .btn-toggle-detail:hover {
+  background: rgba(255, 92, 141, 0.15) !important;
+  border-color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .advisor-h2 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .advisor-h3 {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .advisor-callout {
+  background: #1c1522 !important;
+  border-left-color: var(--lumi-pink) !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .academic-modal-card {
+  background: #1a1f2c !important;
+  border-color: #2e364c !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .academic-modal-close {
+  background: #232838 !important;
+  color: #cbd5e1 !important;
+}
+
+/* ========================================================
+   SHOP & PROFILE IN DARK MODE
+   ======================================================== */
+[data-theme="dark"] .shop-section-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .shop-section-subtitle {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .shop-filter-btn {
+  background: #1a1f2c !important;
+  border-color: #2b3348 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .shop-filter-btn.active {
+  background: var(--lumi-pink) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .mascot-wardrobe-card,
+[data-theme="dark"] .profile-shop-card,
+[data-theme="dark"] .profile-theme-card {
+  background: #1a1f2c !important;
+  border-color: #2b3348 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .quick-drawer-header h2 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .quick-drawer-header p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .quick-drawer-close {
+  background: #232838 !important;
+  border-color: #38415a !important;
+  color: #ff85aa !important;
+}
+
+[data-theme="dark"] .quick-drawer-tabs {
+  background: #141724 !important;
+  border-color: #283044 !important;
+}
+
+[data-theme="dark"] .quick-drawer-tabs button {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .quick-drawer-tabs button.active {
+  background: #232838 !important;
+  color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .quick-guide-content {
+  color: #cbd5e1 !important;
+}
+
 

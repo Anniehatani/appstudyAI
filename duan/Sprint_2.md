@@ -1,4 +1,4 @@
-# 🚀 BÁO CÁO TỔNG KẾT SPRINT 2 — DỰ ÁN 3TG (LUMI STUDY AI)
+# 🚀 BÁO CÁO TỔNG KẾT SPRINT 2 — DỰ ÁN 3TG (3TG STUDY AI)
 **Môn học:** Công nghệ phần mềm | **Giảng viên hướng dẫn:** ThS. Vân Anh  
 **Nhóm thực hiện:** TONE PINK | **Repository:** [Anniehatani/appstudyAI](https://github.com/Anniehatani/appstudyAI)
 
@@ -8,7 +8,7 @@
 
 ### 1. Mục tiêu Sprint 2
 * **Tích hợp cổng trường IU CMCU (`iu.cmcu.edu.vn`):** Cơ chế đăng nhập 1-Click qua tài khoản Microsoft Office 365 nhà trường cấp, tự động bóc tách bảng điểm toàn khóa, lịch học 6 tuần và thông tin sinh viên.
-* **Tính toán học thuật & Cố vấn AI:** Xây dựng công cụ tính GPA thang 10, thang 4 theo tín chỉ và tích hợp Trợ lý AI DeepSeek phân tích bảng điểm, định hướng mục tiêu Target GPA cải thiện học tập.
+* **Tính toán học thuật & Cố vấn AI:** Xây dựng công cụ tính GPA thang 10, thang 4 theo tín chỉ và tích hợp Trợ lý 3TG AI phân tích bảng điểm, định hướng mục tiêu Target GPA cải thiện học tập.
 * **Mạng xã hội học tập sinh viên:** Xây dựng tính năng tìm kiếm bạn học, kết bạn, xem trang cá nhân (Public Profile) và khung chat trò chuyện 1-1 realtime giữa sinh viên.
 * **Nâng cấp giao diện VIP phong cách Discord Nitro:** Hoàn thiện 4 tab Shop (Vật phẩm, Mascot, Khung Avatar động, Hình nền Profile R2) và Chế độ tối Midnight Velvet Dark Mode bảo vệ mắt ban đêm.
 
@@ -18,7 +18,7 @@
 
 | STT | Thành viên | Tài khoản GitHub | Vai trò trong nhóm | Nhiệm vụ chính trong Sprint 2 |
 | :---: | :--- | :--- | :--- | :--- |
-| **1** | **Lê Văn An** *(Lead)* | [`@Anniehatani`](https://github.com/Anniehatani) | **Nhóm trưởng, AI & Cổng trường Lead** | - Xây dựng cơ chế đăng nhập 1-Click cổng trường IU qua Microsoft 365.<br>- Phát triển bộ cào và bóc tách bảng điểm, thời khóa biểu sinh viên.<br>- Tích hợp Trợ lý AI DeepSeek phân tích GPA và Target GPA.<br>- Quản lý tiến độ Sprint 2, review code và hỗ trợ các thành viên. |
+| **1** | **Lê Văn An** *(Lead)* | [`@Anniehatani`](https://github.com/Anniehatani) | **Nhóm trưởng, AI & Cổng trường Lead** | - Xây dựng cơ chế đăng nhập 1-Click cổng trường IU qua Microsoft 365.<br>- Phát triển bộ cào và bóc tách bảng điểm, thời khóa biểu sinh viên.<br>- Tích hợp Trợ lý 3TG AI phân tích GPA và Target GPA.<br>- Quản lý tiến độ Sprint 2, review code và hỗ trợ các thành viên. |
 | **2** | **Nguyễn Như Quỳnh** | [`@nguyennhuuquynhh07-07`](https://github.com/nguyennhuuquynhh07-07) | **Frontend & Giao diện, Hiệu ứng** | - Thiết kế hệ thống Khung Avatar động và hiệu ứng Discord Nitro.<br>- Xây dựng giao diện Khung chat bạn bè 1-1 trực quan, sinh động.<br>- Nâng cấp Chế độ tối Midnight Velvet Dark Mode đồng bộ toàn app.<br>- Đảm bảo trải nghiệm UI/UX mượt mà, thân thiện với sinh viên. |
 | **3** | **Nguyễn Tú** | [`@tus-sud`](https://github.com/tus-sud) | **Database, Mạng xã hội & QA** | - Thiết kế CSDL và API Mạng xã hội: Kết bạn, danh sách bạn bè, tin nhắn.<br>- Xây dựng thuật toán tính GPA thang 10/thang 4, lọc môn cải thiện.<br>- Kiểm thử luồng tích hợp dữ liệu cổng trường IU và chat realtime.<br>- Tổng hợp biên bản nghiệm thu kỹ thuật Sprint 2. |
 
@@ -67,12 +67,12 @@
 
 ---
 
-### Issue #16: Sprint 2 – Trợ lý AI DeepSeek phân tích bảng điểm và lập kế hoạch Target GPA
+### Issue #16: Sprint 2 – Trợ lý 3TG AI phân tích bảng điểm và lập kế hoạch Target GPA
 * **Người phụ trách:** `@Anniehatani`
 * **Nhãn (Labels):** `ai`, `backend`, `sprint-2`
-* **Mục tiêu:** Tích hợp trí tuệ nhân tạo DeepSeek làm gia sư ảo phân tích thế mạnh, điểm yếu và gợi ý mục tiêu học tập.
+* **Mục tiêu:** Tích hợp trí tuệ nhân tạo 3TG AI làm gia sư ảo phân tích thế mạnh, điểm yếu và gợi ý mục tiêu học tập.
 * **Các công việc thực hiện:**
-  - [x] Kết nối API mô hình DeepSeek AI xử lý ngôn ngữ tự nhiên.
+  - [x] Kết nối API mô hình 3TG AI xử lý ngôn ngữ tự nhiên.
   - [x] Gửi prompt phân tích bảng điểm: Môn nào điểm cao, môn nào bị kéo điểm.
   - [x] Tính toán công thức Target GPA: Để đạt GPA 3.2 hay 3.6 thì kỳ tới cần học bao nhiêu tín chỉ và đạt điểm bao nhiêu.
   - [x] AI tạo lộ trình ôn tập cụ thể cho từng môn sắp thi.
@@ -141,7 +141,7 @@ Toàn bộ 8 Issue tính năng của Sprint 2 đã được hoàn thành nghiệ
 | **Done** | **#13** | Đăng nhập 1-Click cổng trường IU qua Microsoft 365 | `@Anniehatani` | Đã nghiệm thu |
 | **Done** | **#14** | Cào và bóc tách bảng điểm, thời khóa biểu từ cổng IU | `@Anniehatani` | Đã nghiệm thu |
 | **Done** | **#15** | Tính toán điểm GPA thang 10, thang 4 và lọc môn | `@tus-sud` | Đã nghiệm thu |
-| **Done** | **#16** | Trợ lý AI DeepSeek phân tích GPA & Target GPA | `@Anniehatani` | Đã nghiệm thu |
+| **Done** | **#16** | Trợ lý 3TG AI phân tích GPA & Target GPA | `@Anniehatani` | Đã nghiệm thu |
 | **Done** | **#17** | Hệ thống kết bạn và quản lý danh sách bạn học | `@tus-sud` | Đã nghiệm thu |
 | **Done** | **#18** | Khung chat trò chuyện 1-1 realtime giữa bạn bè | `@tus-sud`, `@nguyennhuuquynhh07-07` | Đã nghiệm thu |
 | **Done** | **#19** | Khung avatar động và hiệu ứng Discord Nitro | `@nguyennhuuquynhh07-07` | Đã nghiệm thu |
@@ -151,6 +151,6 @@ Toàn bộ 8 Issue tính năng của Sprint 2 đã được hoàn thành nghiệ
 
 ## 📌 PHẦN 4: TỔNG KẾT VÀ BÀN GIAO SANG SPRINT 3
 
-Sprint 2 đã hoàn thành xuất sắc toàn bộ các tính năng đột phá: Cổng trường IU CMCU, Trợ lý AI DeepSeek, Mạng xã hội kết bạn & Chat 1-1, Khung Avatar Nitro VIP và Dark Mode. 
+Sprint 2 đã hoàn thành xuất sắc toàn bộ các tính năng đột phá: Cổng trường IU CMCU, Trợ lý 3TG AI, Mạng xã hội kết bạn & Chat 1-1, Khung Avatar Nitro VIP và Dark Mode. 
 
 Toàn bộ công việc về **Tối ưu hóa hiệu năng, Đóng gói Desktop Electron v9.9.9, Kiểm thử hệ thống E2E, Tẩy sạch bảo mật dữ liệu và Chuẩn bị hồ sơ báo cáo đồ án** được tách biệt chuyên môn sang **Sprint 3 (Sprint Tổng kết & Đóng gói phát hành)**.

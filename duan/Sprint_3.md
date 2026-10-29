@@ -1,4 +1,4 @@
-# 💎 BÁO CÁO TỔNG KẾT SPRINT 3 & NGHIỆM THU ĐỒ ÁN — DỰ ÁN 3TG (LUMI STUDY AI)
+# 💎 BÁO CÁO TỔNG KẾT SPRINT 3 & NGHIỆM THU ĐỒ ÁN — DỰ ÁN 3TG (3TG STUDY AI)
 **Môn học:** Công nghệ phần mềm | **Giảng viên hướng dẫn:** ThS. Vân Anh  
 **Nhóm thực hiện:** TONE PINK | **Repository:** [Anniehatani/appstudyAI](https://github.com/Anniehatani/appstudyAI)
 
@@ -10,7 +10,7 @@
 Sprint 3 là Sprint tổng kết, hoàn thiện và đóng gói phát hành sản phẩm cuối cùng của dự án:
 * **Tối ưu hóa hiệu năng & Đóng gói Desktop Electron v9.9.9:** Khắc phục triệt để hiện tượng mở chậm (10-20 giây) bằng cơ chế ASAR (`asar: true`), cấu hình ngoại lệ `asarUnpack` cho Worker engine và CSDL SQLite, tích hợp Single Instance Lock giúp ứng dụng khởi động tức thì chỉ trong **1 - 2 giây**.
 * **Bảo mật & Tẩy sạch dữ liệu thử nghiệm:** Xóa sạch toàn bộ tài khoản cá nhân của nhóm trong database, đảm bảo app mở lên là phiên bản sạch cho người dùng mới; chuẩn hóa thông báo lỗi trùng tài khoản rõ ràng, minh bạch.
-* **Kiểm thử tích hợp toàn diện (E2E Testing):** Kiểm tra xuyên suốt luồng người dùng từ học tập trắc nghiệm, trừ/cộng tim, đồng bộ cổng trường IU qua Microsoft 365, trợ lý AI DeepSeek đến mạng xã hội và khung chat 1-1.
+* **Kiểm thử tích hợp toàn diện (E2E Testing):** Kiểm tra xuyên suốt luồng người dùng từ học tập trắc nghiệm, trừ/cộng tim, đồng bộ cổng trường IU qua Microsoft 365, trợ lý 3TG AI đến mạng xã hội và khung chat 1-1.
 * **Xuất bản bộ cài đặt Desktop chính thức:** Build thành công 2 bản cài đặt: Bộ cài đặt tự động `Setup 9.9.9.exe` (~111 MB) và Bản chạy ngay không cần cài đặt `Portable 9.9.9.exe`.
 * **Hoàn thiện hồ sơ báo cáo đồ án:** Biên soạn tài liệu Báo cáo tổng kết đồ án Word (`.docx`) và Slide thuyết trình PowerPoint (`.pptx`) chuyên nghiệp phục vụ buổi bảo vệ trước GV ThS. Vân Anh.
 
@@ -64,7 +64,7 @@ Sprint 3 là Sprint tổng kết, hoàn thiện và đóng gói phát hành sả
   - [x] Kiểm thử toàn bộ luồng đăng ký mới, đăng nhập, nộp bài tập trắc nghiệm và cộng điểm thưởng XP, Gems.
   - [x] Kiểm thử cơ chế rớt mạng: App tự động đồng bộ sang cơ sở dữ liệu cục bộ Local SQLite Replica không gián đoạn.
   - [x] Kiểm thử chức năng đồng bộ cổng IU CMCU 1-Click qua Microsoft 365, bóc tách bảng điểm và thời khóa biểu.
-  - [x] Kiểm thử trợ lý AI DeepSeek phân tích Target GPA và luồng kết bạn, chat realtime 1-1.
+  - [x] Kiểm thử trợ lý 3TG AI phân tích Target GPA và luồng kết bạn, chat realtime 1-1.
   - [x] Rà soát và vá toàn bộ các lỗi nhỏ về giao diện Dark Mode và độ trễ phản hồi.
 * **Kết quả:** 100% kịch bản kiểm thử cốt lõi đều Pass thành công; không có lỗi crash hay Worker engine chưa sẵn sàng.
 
@@ -90,15 +90,43 @@ Sprint 3 là Sprint tổng kết, hoàn thiện và đóng gói phát hành sả
 * **Các công việc thực hiện:**
   - [x] Biên soạn tài liệu Báo cáo tổng kết đồ án Word (`.docx`) chi tiết về kiến trúc hệ thống, sơ đồ CSDL và kết quả 3 Sprint.
   - [x] Thiết kế Slide thuyết trình PowerPoint (`.pptx`) phong cách TONE PINK hiện đại, sinh động, trực quan.
-  - [x] Chụp ảnh minh chứng thực tế: Cây bài học Duolingo, Bảng điểm IU, Chat 1-1, Avatar Discord Nitro và Trợ lý AI DeepSeek.
+  - [x] Chụp ảnh minh chứng thực tế: Cây bài học Duolingo, Bảng điểm IU, Chat 1-1, Avatar Discord Nitro và Trợ lý 3TG AI.
   - [x] Phân công phân vai thuyết trình và kịch bản demo trực tiếp sản phẩm cho từng thành viên trong nhóm.
 * **Kết quả:** Bộ hồ sơ Word và PowerPoint hoàn chỉnh, sẵn sàng cho buổi bảo vệ đồ án trước GV ThS. Vân Anh.
 
 ---
 
+### Issue #26: Sprint 3 – Tối ưu giao diện Cố vấn 3TG AI, hiệu ứng gõ chữ và Dark Mode Velvet
+* **Người phụ trách:** `@Anniehatani`, `@nguyennhuuquynhh07-07`
+* **Nhãn (Labels):** `sprint-3`, `ui/ux`, `frontend`, `ai`
+* **Mục tiêu:** Tối ưu hóa trải nghiệm tương tác với Cố vấn 3TG AI, bổ sung hiệu ứng đánh máy trực quan mượt mà và chuẩn hóa giao diện Dark Mode Midnight Velvet không bị lỗi màu chữ.
+* **Các công việc thực hiện:**
+  - [x] Khắc phục lỗi chọn 3 option Target GPA (3.2, 3.6, 4.0): chỉ chọn mục tiêu, không tự động gửi khi bấm chọn.
+  - [x] Thêm hiệu ứng gõ chữ mượt mà (Typewriter streaming) khi 3TG AI tư duy và trả kết quả lộ trình học tập, có con trỏ nhấp nháy.
+  - [x] Khắc phục triệt để lỗi double-click khi bấm đổi Chế độ sáng / Chế độ tối (Dark Mode).
+  - [x] Sửa lỗi tương phản màu chữ trong Dark Mode cho thẻ Giới thiệu học viên và Hoạt động gần đây.
+  - [x] Đồng bộ đổi toàn bộ nhận diện AI sang "3TG AI" và tên hệ thống thành "3TG".
+* **Kết quả:** Giao diện Dark Mode đẹp mắt, AI phản hồi dạng gõ chữ mượt mà tự nhiên, không còn lỗi double click.
+
+---
+
+### Issue #27: Sprint 3 – Khung avatar & hình nền mặc định, phân quyền API bảo mật chống vượt quyền
+* **Người phụ trách:** `@Anniehatani`, `@tus-sud`
+* **Nhãn (Labels):** `sprint-3`, `backend`, `database`, `bug`
+* **Mục tiêu:** Bổ sung tùy chọn Khung Avatar / Hình nền mặc định, loại bỏ Nitro tab khỏi trang cá nhân và nâng cấp bảo mật phân quyền API mức cao nhất chống vượt quyền.
+* **Các công việc thực hiện:**
+  - [x] Bổ sung tùy chọn Khung avatar Mặc Định và Hình nền Mặc Định trong Cửa hàng và Modal đổi ảnh bìa.
+  - [x] Loại bỏ tab Hiệu ứng Nitro khỏi trang cá nhân theo đúng nghiệp vụ học tập sinh viên.
+  - [x] Phân quyền API nghiêm ngặt: yêu cầu xác thực `requireUser` cho endpoint `/api/academic/import-data`, triệt tiêu lỗ hổng IDOR.
+  - [x] Kiểm tra 100% truy vấn CSDL D1/SQLite sử dụng parameterized queries, ngăn chặn SQL injection và leo quyền.
+  - [x] Kiểm thử toàn diện và nghiệm thu hệ thống đạt mức bảo mật cao nhất (Highest Security).
+* **Kết quả:** Sinh viên dễ dàng chọn lại khung/nền mặc định; toàn bộ API được kiểm soát phân quyền chặt chẽ.
+
+---
+
 ## 📌 PHẦN 3: KẾT QUẢ KANBAN SPRINT 3
 
-Toàn bộ 5 Issue của Sprint 3 đã được hoàn thành nghiệm thu trên bảng Kanban GitHub Projects:
+Toàn bộ 7 Issue của Sprint 3 đã được hoàn thành nghiệm thu trên bảng Kanban GitHub Projects:
 
 | Cột Kanban | Mã Issue | Tên công việc Sprint 3 | Người phụ trách | Trạng thái |
 | :---: | :---: | :--- | :---: | :---: |
@@ -107,6 +135,8 @@ Toàn bộ 5 Issue của Sprint 3 đã được hoàn thành nghiệm thu trên 
 | **Done** | **#23** | Kiểm thử toàn diện hệ thống (E2E Testing) và rà soát lỗi | `@tus-sud` | Đã nghiệm thu |
 | **Done** | **#24** | Xuất bản bộ cài đặt Setup và Portable v9.9.9 kiểm tra máy sạch | `@Anniehatani` | Đã nghiệm thu |
 | **Done** | **#25** | Hoàn thiện Slide thuyết trình PPTX và Báo cáo đồ án Word | `@nguyennhuuquynhh07-07` | Đã nghiệm thu |
+| **Done** | **#26** | Tối ưu Cố vấn 3TG AI, hiệu ứng gõ chữ và Dark Mode Velvet | `@Anniehatani`, `@nguyennhuuquynhh07-07` | Đã nghiệm thu |
+| **Done** | **#27** | Khung/nền mặc định, phân quyền API bảo mật chống vượt quyền | `@Anniehatani`, `@tus-sud` | Đã nghiệm thu |
 
 ---
 
@@ -117,9 +147,9 @@ Toàn bộ 5 Issue của Sprint 3 đã được hoàn thành nghiệm thu trên 
 | Giai đoạn | Tên Sprint | Số Issues | Trọng tâm công việc | Trạng thái |
 | :---: | :--- | :---: | :--- | :---: |
 | **Sprint 1** | **Nền tảng Gamification & Core Duolingo** | 9 | CSDL 3NF Cloudflare D1, Lộ trình Duolingo, Hearts, XP, Gems, Streak, Mascot Thỏ Bảy Màu, Shop & Leaderboards | **Hoàn thành 100%** |
-| **Sprint 2** | **Cổng trường IU, Trợ lý AI & Mạng xã hội** | 8 | Đăng nhập 1-Click IU SSO qua Office 365, bóc tách bảng điểm & 6 tuần lịch học, GPA thang 10 & 4, Trợ lý AI DeepSeek, Kết bạn & Chat 1-1 realtime, Shop Nitro VIP, Dark Mode | **Hoàn thành 100%** |
-| **Sprint 3** | **Tổng kết, Đóng gói Desktop & Báo cáo đồ án** | 5 | Tối ưu ASAR mở tức thì 1-2s, gỡ bỏ tài khoản thử nghiệm / bảo mật, kiểm thử E2E toàn diện, xuất bản Setup & Portable v9.9.9, Báo cáo Word & Slide PPTX | **Hoàn thành 100%** |
-| **Toàn dự án** | **Tổng hợp 3 Sprint** | **22 công việc + 3 vai trò = 25 Issues** | **Hoàn thiện trọn vẹn sản phẩm từ Core Backend, Frontend, AI đến Bộ cài đặt Desktop** | **ĐẠT XUẤT SẮC** |
+| **Sprint 2** | **Cổng trường IU, Trợ lý AI & Mạng xã hội** | 8 | Đăng nhập 1-Click IU SSO qua Office 365, bóc tách bảng điểm & 6 tuần lịch học, GPA thang 10 & 4, Trợ lý 3TG AI, Kết bạn & Chat 1-1 realtime, Shop Nitro VIP, Dark Mode | **Hoàn thành 100%** |
+| **Sprint 3** | **Tổng kết, Tối ưu hóa, Đóng gói Desktop & Nghiệm thu đồ án** | 7 | Tối ưu ASAR mở 1-2s, gỡ bỏ tài khoản thử nghiệm, E2E testing, Setup/Portable v9.9.9, Báo cáo Word & Slide PPTX, Hiệu ứng gõ chữ 3TG AI, Fix Dark Mode, Khung/Nền mặc định, Phân quyền API bảo mật | **Hoàn thành 100%** |
+| **Toàn dự án** | **Tổng hợp 3 Sprint** | **24 công việc + 3 vai trò = 27 Issues** | **Hoàn thiện trọn vẹn sản phẩm từ Core Backend, Frontend, AI đến Bộ cài đặt Desktop** | **ĐẠT XUẤT SẮC** |
 
 ---
 
@@ -134,3 +164,4 @@ Toàn bộ 5 Issue của Sprint 3 đã được hoàn thành nghiệm thu trên 
    - Báo cáo tổng kết đồ án Word (`.docx`) tại thư mục `tổng kết sprint 2` / dự án.
    - Slide thuyết trình PowerPoint (`.pptx`) phong cách TONE PINK hiện đại.
    - 3 File tài liệu Sprint chi tiết: `Sprint_1.md`, `Sprint_2.md`, `Sprint_3.md`.
+

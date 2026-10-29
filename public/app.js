@@ -656,9 +656,9 @@ function updateShell() {
     if (sideAvatar) sideAvatar.textContent = "✿";
     if (topAvatar) topAvatar.textContent = "✿";
   } else {
-    const name = state.profile.full_name || state.profile.username || "Học viên Lumi";
+    const name = state.profile.full_name || state.profile.username || "Học viên 3TG";
     if (sideName) sideName.textContent = name;
-    if (accountType) accountType.textContent = "Học viên Lumi";
+    if (accountType) accountType.textContent = "Học viên 3TG";
     if (loginBtn) loginBtn.style.display = "none";
     if (avatarBtn) avatarBtn.style.display = "flex";
 
@@ -742,9 +742,9 @@ function renderAuthScreen() {
   return `
     <div class="auth-entry-screen">
       <div style="display:flex; justify-content:center; margin-bottom:12px;">
-        ${renderThoBayMau({ state: THO_STATES.IDLE, size: 130, speech: "Chào mừng bạn đến với Lumi! Đăng ký ngay để nhận 50 Đá quý tân thủ nhé! 🌸", speechDirection: "top" })}
+        ${renderThoBayMau({ state: THO_STATES.IDLE, size: 130, speech: "Chào mừng bạn đến với 3TG! Đăng ký ngay để nhận 50 Đá quý tân thủ nhé! 🌸", speechDirection: "top" })}
       </div>
-      <h1 class="auth-entry-title">Lumi — Học Vui Mỗi Ngày</h1>
+      <h1 class="auth-entry-title">3TG — Học Vui Mỗi Ngày</h1>
       <p class="auth-entry-subtitle">
         Trải nghiệm học tập phong cách Duolingo với hơn 29.000 câu hỏi từ Cloudflare D1. Vui lòng đăng nhập hoặc tạo tài khoản để bắt đầu!
       </p>
@@ -809,7 +809,7 @@ function renderAuthScreen() {
             </div>
           </div>
           <button type="submit" class="btn-duo btn-duo-pink" style="margin-top:8px; padding:15px;">
-            Đăng nhập vào Lumi ➔
+            Đăng nhập vào 3TG ➔
           </button>
         </form>
         <div class="auth-quick-hint">
@@ -861,8 +861,12 @@ window.handleRegisterSubmit = async function(e) {
     showToast("Vui lòng nhập họ và tên của bạn.", true);
     return;
   }
-  if (!username || username.length < 3) {
-    showToast("Tên đăng nhập cần từ 3 ký tự trở lên.", true);
+  if (!username || username.length < 3 || username.length > 30) {
+    showToast("Tên đăng nhập cần từ 3 đến 30 ký tự.", true);
+    return;
+  }
+  if (!/^[a-z0-9_.-]+$/i.test(username)) {
+    showToast("Tên đăng nhập chỉ gồm chữ cái thường, số, dấu gạch dưới (_) hoặc dấu chấm (.).", true);
     return;
   }
   if (!password || password.length < 6) {
@@ -2200,7 +2204,7 @@ function renderCourses() {
       <div class="banner-with-mascot">
         <div>
           <h1 class="page-title" style="margin-bottom:6px;">Khám phá 10 Môn học</h1>
-          <p class="page-subtitle" style="margin:0 0 14px 0;">Dữ liệu thực tế từ Cloudflare D1 với hơn 4.000 bài học và 29.000 câu hỏi</p>
+          <p class="page-subtitle" style="margin:0 0 14px 0;">Dữ liệu thực tế với hơn 4.000 bài học và 29.000 câu hỏi</p>
           <input type="search" id="course-search-input" placeholder="🔍 Tìm kiếm môn học..." value="${esc(state.search)}"
             style="padding:10px 16px; border-radius:14px; border:2px solid var(--lumi-pink-border); font-weight:700; width:280px; max-width:100%;"
             oninput="state.search = this.value; render();" />
@@ -4543,6 +4547,21 @@ function renderShop() {
           </div>
 
           <div class="discord-nitro-compact-grid">
+            <div class="discord-nitro-compact-card ${!state.profile?.avatar_decoration ? 'equipped' : ''}" onclick="equipDecoration('avatar_decoration', null)">
+              <span class="discord-nitro-badge-pill" style="color:#10b981; background:rgba(16,185,129,0.12); border:1px solid #10b981;">MẶC ĐỊNH</span>
+              <div class="discord-nitro-thumb-box" style="display:flex; align-items:center; justify-content:center;">
+                ${renderDecoratedAvatar(userAvatar, null, 62, userName)}
+              </div>
+              <h4 class="discord-nitro-card-name">Khung Mặc Định</h4>
+              <div class="discord-nitro-card-bot" onclick="event.stopPropagation()">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span class="discord-nitro-price-tag" style="color:#10b981;">Miễn phí</span>
+                </div>
+                <button type="button" class="btn-duo ${!state.profile?.avatar_decoration ? 'btn-duo-green' : 'btn-duo-pink'}" style="padding:6px 10px; font-size:11.5px; width:100%; font-weight:800;" onclick="equipDecoration('avatar_decoration', null)">
+                  ${!state.profile?.avatar_decoration ? '✓ Đang dùng' : 'Trang bị mặc định'}
+                </button>
+              </div>
+            </div>
             ${Object.values(DISCORD_EFFECTS_REGISTRY).map(item => {
               const isDeco = item.type === "avatar_decoration";
               const shopItem = items.find(i => i.item_code === item.code);
@@ -4621,6 +4640,26 @@ function renderShop() {
           </div>
 
           <div class="discord-wallpaper-grid">
+            <div class="discord-wallpaper-card ${!state.profile?.cover_url ? 'equipped' : ''}" onclick="equipDecoration('wallpaper', null)">
+              <div class="discord-wallpaper-thumb" style="background:linear-gradient(135deg, #ffd1dc, #ff8da1); display:flex; align-items:center; justify-content:center;">
+                <span style="font-size:36px;">🌸</span>
+                <span class="discord-wallpaper-badge" style="background:#10b981;">MẶC ĐỊNH</span>
+                ${!state.profile?.cover_url ? `
+                  <span style="position:absolute; top:10px; right:10px; background:#10b981; color:#fff; font-size:10.5px; font-weight:900; padding:3px 8px; border-radius:999px; box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+                    ✓ Đang dùng
+                  </span>
+                ` : ''}
+              </div>
+              <div class="discord-wallpaper-info">
+                <h4 class="discord-wallpaper-title">Hình Nền Mặc Định (Tone Pink Gốc)</h4>
+                <p class="discord-wallpaper-desc">Ảnh bìa mặc định phong cách 3TG Study tươi sáng, nhẹ nhàng.</p>
+                <div class="discord-wallpaper-actions" onclick="event.stopPropagation()">
+                  <button type="button" class="btn-duo ${!state.profile?.cover_url ? 'btn-duo-green' : 'btn-duo-pink'}" style="width:100%; padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('wallpaper', null)">
+                    ${!state.profile?.cover_url ? '✓ Đang dùng' : 'Trang bị mặc định'}
+                  </button>
+                </div>
+              </div>
+            </div>
             ${Object.values(DISCORD_WALLPAPERS_REGISTRY).map(item => {
               const shopItem = items.find(i => i.item_code === item.code);
               const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => (inv.item_code === item.code || inv.item_code === item.url) && Number(inv.quantity) >= 1);
@@ -4849,10 +4888,10 @@ function renderAchievements() {
       <!-- SWITCH TABS: NHIỆM VỤ HÀNG NGÀY vs THÀNH TÍCH TRỌN ĐỜI -->
       <div class="auth-switch-tabs" style="margin-bottom:24px; max-width:540px;">
         <button type="button" class="auth-switch-tab ${currentTab === 'quests' ? 'active' : ''}" onclick="state.achievementTab='quests'; render();">
-          ⚡ Nhiệm vụ Hàng Ngày (Mỗi ngày 1 lần)
+          ⚡ Nhiệm vụ Hàng Ngày
         </button>
         <button type="button" class="auth-switch-tab ${currentTab === 'permanent' ? 'active' : ''}" onclick="state.achievementTab='permanent'; render();">
-          🎖️ Cột Mốc Trọn Đời
+          🎖️ Nhiệm Vụ Lâu Dài
         </button>
       </div>
 
@@ -6087,7 +6126,7 @@ window.handleSendChat = async function(e) {
   } catch (err) {
     state.chatMessages[assistantMsgIndex] = {
       role: "assistant",
-      content: "Xin lỗi, Lumi chưa kết nối được với AI lúc này: " + err.message,
+      content: "Xin lỗi, 3TG AI chưa kết nối được với AI lúc này: " + err.message,
       isStreaming: false
     };
     const targetBubble = document.getElementById("chat-bubble-" + assistantMsgIndex);
@@ -6298,9 +6337,7 @@ function renderSettings() {
             <div class="fb-tab-item ${state.fbProfileTab === 'inventory' ? 'active' : ''}" onclick="switchFbTab('inventory')">
               🎒 Túi đồ (${state.inventory.length})
             </div>
-            <div class="fb-tab-item ${state.fbProfileTab === 'nitro' ? 'active' : ''}" onclick="switchFbTab('nitro')">
-              ✨ Hiệu ứng Nitro (Discord)
-            </div>
+            
           </div>
         </div>
       </div>
@@ -6314,7 +6351,7 @@ function renderSettings() {
             <div style="font-size:12.5px; color:var(--ink-500);">Chuyển đổi giữa Chế độ sáng (Light Mode) và Chế độ tối (Dark Mode) dịu mắt</div>
           </div>
         </div>
-        <button type="button" class="btn-duo btn-duo-white theme-toggle-btn" style="width:auto; height:auto; padding:10px 18px; font-size:13.5px; font-weight:900; display:inline-flex; align-items:center; gap:8px;" onclick="toggleAppTheme()">
+        <button type="button" class="btn-duo btn-duo-white theme-toggle-btn" id="theme-toggle-btn" style="width:auto; height:auto; padding:10px 18px; font-size:13.5px; font-weight:900; display:inline-flex; align-items:center; gap:8px;">
           <span>${document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️ Đổi sang Chế độ Sáng' : '🌙 Đổi sang Chế độ Tối'}</span>
         </button>
       </div>
@@ -6406,10 +6443,10 @@ function renderSettings() {
               ${state.overview && state.overview.recent && state.overview.recent.length ? `
                 <div style="display:flex; flex-direction:column; gap:12px;">
                   ${state.overview.recent.map(r => `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#fff7fa; border-radius:14px; border-left:4px solid var(--lumi-pink);">
+                    <div class="fb-activity-item">
                       <div>
-                        <strong style="color:var(--ink-900); font-size:15px;">${esc(r.lesson_title)}</strong>
-                        <div style="font-size:12.5px; color:var(--ink-500); margin-top:2px;">Hoàn thành: ${esc(r.completed_at ? r.completed_at.slice(0, 10) : 'Gần đây')}</div>
+                        <strong style="font-size:15px;">${esc(r.lesson_title)}</strong>
+                        <div class="activity-date" style="font-size:12.5px; margin-top:2px;">Hoàn thành: ${esc(r.completed_at ? r.completed_at.slice(0, 10) : 'Gần đây')}</div>
                       </div>
                       <span style="font-weight:900; color:var(--duo-gold-dark);">+${r.score || 10} XP ⭐</span>
                     </div>
@@ -6425,7 +6462,7 @@ function renderSettings() {
           ` : state.fbProfileTab === 'badges' ? `
             <div class="fb-side-card">
               <h3 class="fb-side-card-title">🎖️ Danh sách thành tích mở khóa (${state.overview ? state.overview.achievementsCount : 0})</h3>
-              <p style="font-size:14px; color:var(--ink-500); margin-bottom:16px;">Tất cả các mốc thành tích bạn đã chinh phục trong suốt quá trình rèn luyện tại Lumi.</p>
+              <p style="font-size:14px; color:var(--ink-500); margin-bottom:16px;">Tất cả các mốc thành tích bạn đã chinh phục trong suốt quá trình rèn luyện tại 3TG.</p>
               <button class="btn-duo btn-duo-pink" style="width:100%;" onclick="state.page='achievements'; render();">
                 Mở Tủ Huy Hiệu Chi Tiết ➔
               </button>
@@ -6436,7 +6473,7 @@ function renderSettings() {
               ${state.inventory && state.inventory.length ? `
                 <div style="display:flex; flex-direction:column; gap:12px;">
                   ${state.inventory.map(item => `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f0f8ff; border-radius:14px;">
+                    <div class="fb-inventory-item-row">
                       <div style="display:flex; align-items:center; gap:10px;">
                         <span style="font-size:24px;">${item.item_code === 'streak_freeze' ? '🧊' : (item.item_code === 'heart_refill' ? '❤️' : '🎁')}</span>
                         <div>
@@ -6458,58 +6495,7 @@ function renderSettings() {
                 Ghé Cửa Hàng Mua Sắm 🏪
               </button>
             </div>
-          ` : `
-            <div class="fb-side-card">
-              <h3 class="fb-side-card-title">✨ Quản lý Hiệu ứng Discord Nitro</h3>
-              <p style="font-size:13.5px; color:var(--ink-500); margin-bottom:16px;">
-                Tùy chỉnh khung viền avatar chuyển động và hiệu ứng nền hồ sơ phong cách Discord Nitro của bạn.
-              </p>
-              
-              <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#fff7fa; border-radius:14px; border-left:4px solid var(--lumi-pink);">
-                  <div style="display:flex; align-items:center; gap:12px;">
-                    <span style="font-size:24px;">🖼️</span>
-                    <div>
-                      <strong style="color:var(--ink-900); font-size:14px;">Khung Viền Avatar</strong>
-                      <div style="font-size:12px; color:var(--ink-500);">${profile.avatar_decoration ? esc(DISCORD_EFFECTS_REGISTRY[profile.avatar_decoration]?.name || profile.avatar_decoration) : "Chưa trang bị khung viền"}</div>
-                    </div>
-                  </div>
-                  ${profile.avatar_decoration ? `
-                    <button type="button" class="btn-duo btn-duo-white" style="padding:6px 12px; font-size:12px;" onclick="equipDecoration('avatar_decoration', null)">
-                      Tháo ra
-                    </button>
-                  ` : `
-                    <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 12px; font-size:12px;" onclick="state.page='shop'; state.shopTab='nitro'; render();">
-                      Chọn khung
-                    </button>
-                  `}
-                </div>
-
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:#f5f3ff; border-radius:14px; border-left:4px solid #8b5cf6;">
-                  <div style="display:flex; align-items:center; gap:12px;">
-                    <span style="font-size:24px;">🎆</span>
-                    <div>
-                      <strong style="color:var(--ink-900); font-size:14px;">Hiệu Ứng Thẻ Hồ Sơ</strong>
-                      <div style="font-size:12px; color:var(--ink-500);">${profile.profile_effect ? esc(DISCORD_EFFECTS_REGISTRY[profile.profile_effect]?.name || profile.profile_effect) : "Chưa trang bị hiệu ứng nền"}</div>
-                    </div>
-                  </div>
-                  ${profile.profile_effect ? `
-                    <button type="button" class="btn-duo btn-duo-white" style="padding:6px 12px; font-size:12px;" onclick="equipDecoration('profile_effect', null)">
-                      Tháo ra
-                    </button>
-                  ` : `
-                    <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 12px; font-size:12px;" onclick="state.page='shop'; state.shopTab='nitro'; render();">
-                      Chọn hiệu ứng
-                    </button>
-                  `}
-                </div>
-              </div>
-
-              <button class="btn-duo btn-duo-purple" style="width:100%; background:#5865f2; color:#fff;" onclick="state.page='shop'; state.shopTab='nitro'; render();">
-                Ghé Tiệm Nitro Nhận Thêm Hiệu Ứng 0 💎 ➔
-              </button>
-            </div>
-          `}
+          ` : ''}
         </div>
       </div>
     </div>
@@ -6591,7 +6577,7 @@ window.openAvatarModal = function() {
         🖼️ Chọn Ảnh đại diện mới
       </h2>
       <p style="font-size:14px; color:var(--ink-500); margin-bottom:16px;">
-        Tải ảnh thật từ máy tính lên hoặc chọn một Linh vật Lumi đáng yêu:
+        Tải ảnh thật từ máy tính lên hoặc chọn một Linh vật 3TG đáng yêu:
       </p>
 
       <!-- TAB 1: UPLOAD REAL PHOTO -->
@@ -6605,7 +6591,7 @@ window.openAvatarModal = function() {
       </div>
 
       <!-- TAB 2: MASCOT AVATARS -->
-      <h4 style="font-weight:900; color:var(--ink-900); margin-bottom:10px;">Hoặc chọn Linh vật Lumi:</h4>
+      <h4 style="font-weight:900; color:var(--ink-900); margin-bottom:10px;">Hoặc chọn Linh vật 3TG:</h4>
       <div class="avatar-preset-grid">
         ${MASCOT_AVATARS.map(m => `
           <div class="avatar-preset-item" onclick="handleSelectMascotAvatar('${m.icon}')">
@@ -6680,6 +6666,11 @@ window.openCoverModal = function() {
         <span>🌄</span> 14 Hình Nền R2 VIP (Cloudflare R2 Storage)
       </h4>
       <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; margin-bottom:18px;">
+        <div style="cursor:pointer; border-radius:12px; overflow:hidden; border:2.5px solid ${!state.profile?.cover_url ? '#ec4899' : '#e2e8f0'}; background:#fff0f5; position:relative; aspect-ratio:16/9; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8px;" onclick="handleSelectCover('')">
+          <span style="font-size:24px;">🌸</span>
+          <span style="font-size:11px; font-weight:900; color:var(--lumi-pink); margin-top:4px;">Nền mặc định</span>
+          ${!state.profile?.cover_url ? '<div style="position:absolute; top:4px; right:4px; background:#ec4899; color:#fff; font-size:9.5px; border-radius:999px; padding:1px 6px; font-weight:900;">✓ Đang dùng</div>' : ''}
+        </div>
         ${Object.values(DISCORD_WALLPAPERS_REGISTRY).map(w => {
           const isSelected = state.profile?.cover_url === w.url || state.profile?.cover_url === w.code;
           const isOwned = (state.inventory || []).some(inv => (inv.item_code === w.code || inv.item_code === w.url) && Number(inv.quantity) >= 1) ||
@@ -6741,6 +6732,9 @@ window.handleLogout = async function() {
   try {
     await api("/api/auth/logout", { method: "POST" });
   } catch {}
+  if (window.electronAPI?.clearSessionCookies) {
+    try { await window.electronAPI.clearSessionCookies(); } catch {}
+  }
   state.profile = null;
   state.account = null;
   state.authTab = "login";
@@ -7020,6 +7014,131 @@ function formatAdvisorMarkdown(text) {
   return blocks.join("");
 }
 
+function deduplicateClientActiveCourses(courses, rawSubjects = []) {
+  if (!Array.isArray(courses)) return [];
+  const map = new Map();
+
+  const cleanName = (name) => {
+    if (!name) return "";
+    let s = String(name).trim();
+    s = s.replace(/[-_]\s*\d+-\d+-\d+.*$/i, "");
+    s = s.replace(/[-_]\s*N\d+.*$/i, "");
+    s = s.replace(/\s*\([A-Z0-9_\-]+\)\s*(\.(LT|TH|LT\+TH|BT))?$/i, "");
+    s = s.replace(/\.(LT|TH|LT\+TH|BT)$/i, "");
+    s = s.replace(/\s*-\s*Lớp.*$/i, "");
+    s = s.replace(/\s+/g, " ").trim();
+    return s || String(name).trim();
+  };
+
+  const cleanCode = (code) => {
+    if (!code) return "";
+    const trimmed = String(code).trim().toUpperCase();
+    const m = trimmed.match(/^([A-Z0-9]{3,10})[-_]/i);
+    if (m) return m[1].toUpperCase();
+    return trimmed.replace(/\s*\([^\)]*\)/g, "").trim();
+  };
+
+  const normKey = (str) => {
+    if (!str) return "";
+    return String(str)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/[^a-z0-9]/g, "")
+      .trim();
+  };
+
+  const rawSubjectMap = new Map();
+  if (Array.isArray(rawSubjects)) {
+    for (const s of rawSubjects) {
+      const cCode = cleanCode(s.ma_mon || "");
+      const cName = cleanName(s.ten_hoc_phan || s.ten_mon || "");
+      const nK = normKey(cName);
+      if (nK && !rawSubjectMap.has(nK)) {
+        rawSubjectMap.set(nK, { ma_mon: cCode, so_tin_chi: Number(s.so_tin_chi) || 0 });
+      }
+      if (cCode && !rawSubjectMap.has(cCode)) {
+        rawSubjectMap.set(cCode, { ma_mon: cCode, so_tin_chi: Number(s.so_tin_chi) || 0 });
+      }
+    }
+  }
+
+  for (const c of courses) {
+    if (!c || typeof c !== "object") continue;
+    const cName = cleanName(c.ten_mon || c.ten_hoc_phan || "");
+    const cCode = cleanCode(c.ma_mon || "");
+    const nKey = normKey(cName);
+    const cdKey = cCode ? cCode.toUpperCase() : "";
+
+    let existing = null;
+    if (nKey && map.has("NAME:" + nKey)) {
+      existing = map.get("NAME:" + nKey);
+    } else if (cdKey && map.has("CODE:" + cdKey)) {
+      existing = map.get("CODE:" + cdKey);
+    } else {
+      for (const item of map.values()) {
+        const itemCode = cleanCode(item.ma_mon);
+        const itemNameKey = normKey(item.ten_mon);
+        if (cdKey && itemCode && cdKey === itemCode) {
+          existing = item;
+          break;
+        }
+        if (nKey && itemNameKey && nKey === itemNameKey) {
+          existing = item;
+          break;
+        }
+      }
+    }
+
+    const fallback = (nKey && rawSubjectMap.get(nKey)) || (cdKey && rawSubjectMap.get(cdKey));
+
+    if (!existing) {
+      existing = {
+        ma_mon: cCode || (fallback ? fallback.ma_mon : "") || c.ma_mon || "",
+        ten_mon: cName || c.ten_mon || "Học phần",
+        so_tin_chi: Number(c.so_tin_chi) || (fallback ? fallback.so_tin_chi : 0) || 0,
+        giang_vien: (c.giang_vien || "").trim(),
+        phong: (c.phong || "").trim(),
+        trang_thai: (c.trang_thai || "").trim(),
+        hinh_thuc: (c.hinh_thuc || "").trim(),
+        ma_lop: c.ma_lop || (c.ma_mon && c.ma_mon !== cCode ? c.ma_mon : "")
+      };
+      if (nKey) map.set("NAME:" + nKey, existing);
+      if (cdKey) map.set("CODE:" + cdKey, existing);
+    } else {
+      if (!existing.ma_mon || (cCode && existing.ma_mon.includes("-"))) {
+        existing.ma_mon = cCode || c.ma_mon || existing.ma_mon;
+      }
+      if (cName && (!existing.ten_mon || existing.ten_mon.length > cName.length)) {
+        existing.ten_mon = cName;
+      }
+      if (!existing.so_tin_chi && Number(c.so_tin_chi) > 0) {
+        existing.so_tin_chi = Number(c.so_tin_chi);
+      }
+      if (!existing.giang_vien && c.giang_vien) existing.giang_vien = c.giang_vien.trim();
+      if (!existing.phong && c.phong) existing.phong = c.phong.trim();
+      if (!existing.trang_thai && c.trang_thai) existing.trang_thai = c.trang_thai.trim();
+      if (!existing.hinh_thuc && c.hinh_thuc) existing.hinh_thuc = c.hinh_thuc.trim();
+      if (!existing.ma_lop && c.ma_lop) existing.ma_lop = c.ma_lop;
+      if (nKey) map.set("NAME:" + nKey, existing);
+      if (cdKey) map.set("CODE:" + cdKey, existing);
+    }
+  }
+
+  const items = Array.from(new Set(map.values()));
+  return items.map(c => ({
+    ma_mon: cleanCode(c.ma_mon) || c.ma_mon || "",
+    ten_mon: cleanName(c.ten_mon || "Học phần"),
+    so_tin_chi: Number(c.so_tin_chi) || 0,
+    giang_vien: c.giang_vien || "",
+    phong: c.phong || "",
+    trang_thai: c.trang_thai || (c.hinh_thuc ? c.hinh_thuc : "Đang học"),
+    hinh_thuc: c.hinh_thuc || "",
+    ma_lop: c.ma_lop || ""
+  }));
+}
+
 function renderGradesView() {
   const hasData = state.academicTranscript && state.academicTranscript.hasTranscript && state.academicTranscript.transcript;
 
@@ -7039,7 +7158,7 @@ function renderGradesView() {
             <span class="grades-pill-badge">CMC UNIVERSITY • CỔNG THÔNG TIN IU</span>
             <h1 class="grades-hero-title">Trung Tâm Cải Thiện Điểm & Cố Vấn Học Vụ 3TG AI</h1>
             <p class="grades-hero-desc">
-              Kết nối trực tiếp tài khoản sinh viên cổng <strong>iu.cmcu.edu.vn</strong> để tra cứu điểm số, tổng kết GPA Hệ 10 & Hệ 4, bóc tách môn học theo từng học kỳ, tự động phát hiện "hòn đá tảng" kéo điểm và nhận lộ trình nâng điểm cá nhân hóa bằng <strong>Trợ giảng AI DeepSeek</strong>!
+              Kết nối trực tiếp tài khoản sinh viên cổng <strong>iu.cmcu.edu.vn</strong> để tra cứu điểm số, tổng kết GPA Hệ 10 & Hệ 4, bóc tách môn học theo từng học kỳ, tự động phát hiện "hòn đá tảng" kéo điểm và nhận lộ trình nâng điểm cá nhân hóa bằng <strong>3TG AI</strong>!
             </p>
             <div class="grades-hero-actions">
               <button type="button" class="btn-duo btn-duo-pink grades-main-btn" onclick="window.openAcademicLoginModal()">
@@ -7062,7 +7181,7 @@ function renderGradesView() {
           </div>
           <div class="grades-feature-card">
             <div class="feature-icon-wrap" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">🤖</div>
-            <h3>Cố Vấn AI DeepSeek Độc Quyền</h3>
+            <h3>Cố Vấn 3TG AI Độc Quyền</h3>
             <p>Giáo sư Thỏ Bảy Màu phân tích chiến lược chọn môn gỡ điểm, hướng dẫn phương pháp học Active Recall và lập lịch ôn thi 4 tuần cụ thể.</p>
           </div>
         </div>
@@ -7072,6 +7191,7 @@ function renderGradesView() {
 
   const { transcript, aiAnalysis, targetGpa = 3.2, lastSyncedAt } = state.academicTranscript;
   const { student = {}, gpa = {}, semesters = [], weak_subjects = [], raw_subjects = [], active_courses = [] } = transcript || {};
+  const active_courses_clean = deduplicateClientActiveCourses(active_courses, raw_subjects);
 
   // Tính toán mô phỏng GPA What-If
   let simWeighted4 = gpa.overall_4 * gpa.total_credits;
@@ -7188,7 +7308,7 @@ function renderGradesView() {
           <div class="section-box-title">
             <span class="section-box-emoji">🎒</span>
             <div>
-              <h3>Môn Đang Học Kỳ Này (Cào Từ Thời Khóa Biểu Cổng IU)</h3>
+              <h3>Môn Đang Học Kỳ Này</h3>
               <p>Các môn bạn đang học trong kỳ được tự động bóc tách từ lịch học IU để Thỏ Bảy Màu AI lập lộ trình học tập, tối ưu điểm chuyên cần, lab và săn A/A+!</p>
             </div>
           </div>
@@ -7197,7 +7317,7 @@ function renderGradesView() {
           </button>
         </div>
 
-        ${active_courses.length === 0 ? `
+        ${active_courses_clean.length === 0 ? `
           <div class="grades-clean-state" style="padding: 24px; text-align: center;">
             <span style="font-size:32px;">📅</span>
             <strong>Chưa có môn học trên thời khóa biểu tuần gần đây.</strong>
@@ -7205,7 +7325,7 @@ function renderGradesView() {
           </div>
         ` : `
           <div class="active-courses-grid">
-            ${active_courses.map(c => `
+            ${active_courses_clean.map(c => `
               <div class="active-course-card">
                 <div>
                   <div class="active-course-header">
@@ -7331,24 +7451,24 @@ function renderGradesView() {
           <div class="advisor-title-wrap">
             <span class="advisor-mascot-badge">🐰🎓</span>
             <div>
-              <h3>Cố Vấn Học Vụ AI DeepSeek: Lộ Trình & Phương Pháp Học Từng Môn</h3>
+              <h3>Cố Vấn Học Vụ AI: Lộ Trình & Phương Pháp Học Từng Môn</h3>
               <p>Chọn bất kỳ môn học nào để AI đưa ra phương pháp học thực chiến, cạm bẫy dễ mất điểm và cẩm nang săn A/A+ riêng cho môn đó!</p>
             </div>
           </div>
           <div class="advisor-target-controls">
             <label>Mục tiêu GPA:</label>
             <div class="target-pills">
-              <button type="button" class="target-pill ${targetGpa === 3.2 ? 'active' : ''}" onclick="window.requestAcademicAdvisor(3.2)">
+              <button type="button" class="target-pill ${targetGpa === 3.2 ? 'active' : ''}" onclick="window.selectAdvisorTargetGpa(3.2)">
                 3.2 (Giỏi)
               </button>
-              <button type="button" class="target-pill ${targetGpa === 3.6 ? 'active' : ''}" onclick="window.requestAcademicAdvisor(3.6)">
+              <button type="button" class="target-pill ${targetGpa === 3.6 ? 'active' : ''}" onclick="window.selectAdvisorTargetGpa(3.6)">
                 3.6 (Xuất sắc)
               </button>
-              <button type="button" class="target-pill ${targetGpa === 4.0 ? 'active' : ''}" onclick="window.requestAcademicAdvisor(4.0)">
+              <button type="button" class="target-pill ${targetGpa === 4.0 ? 'active' : ''}" onclick="window.selectAdvisorTargetGpa(4.0)">
                 4.0 (Tuyệt đối)
               </button>
             </div>
-            <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="window.requestAcademicAdvisor(${targetGpa}, document.getElementById('advisor-subject-picker')?.value || state.academicAdvisorSubject)" ${state.academicAdvisorBusy ? 'disabled' : ''}>
+            <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="window.requestAcademicAdvisor(state.academicAdvisorTarget || ${targetGpa}, document.getElementById('advisor-subject-picker')?.value || state.academicAdvisorSubject)" ${state.academicAdvisorBusy ? 'disabled' : ''}>
               ${state.academicAdvisorBusy ? '<span class="spinner-dot"></span> Đang phân tích…' : '✨ Lên Phương Pháp Học Ngay'}
             </button>
           </div>
@@ -7361,9 +7481,9 @@ function renderGradesView() {
             <option value="all" ${(!state.academicAdvisorSubject || state.academicAdvisorSubject === 'all') ? 'selected' : ''}>
               📊 Toàn cảnh GPA & Bảng điểm tổng thể
             </option>
-            ${active_courses.length > 0 ? `
+            ${active_courses_clean.length > 0 ? `
               <optgroup label="🎒 Môn đang học kỳ này (Thời khóa biểu)">
-                ${active_courses.map(c => {
+                ${active_courses_clean.map(c => {
                   const val = c.ten_mon || c.ma_mon;
                   return `<option value="${esc(val)}" ${state.academicAdvisorSubject === val ? 'selected' : ''}>🎒 ${esc(val)} (${esc(c.ma_mon || '')}) — Đang học</option>`;
                 }).join("")}
@@ -7395,13 +7515,23 @@ function renderGradesView() {
                 ${renderThoBayMau({
                   state: THO_STATES.STUDY_LAPTOP,
                   size: 140,
-                  speech: "Thỏ Bảy Màu đang cùng DeepSeek AI 'vắt óc' lập kế hoạch gỡ điểm cho bạn đây! Đợi Thỏ xíu nha... 🥕💻",
+                  speech: "Thỏ Bảy Màu đang cùng 3TG AI phân tích đề thi và thiết kế chiến lược săn điểm A cho bạn đây! Đợi Thỏ xíu nha... 🥕💻",
                   speechDirection: "top"
                 })}
               </div>
               <div class="advisor-loading-text">
-                <strong>Đang triệu hồi Trí Tuệ Nhân Tạo DeepSeek…</strong>
-                <p>Hệ thống đang phân tích bản chất kiến thức, rà soát cấu trúc đề thi và thiết kế phương pháp học thực chiến.</p>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="spinner-dot"></span>
+                  <strong style="font-size:16px; color:var(--ink-900);">3TG AI đang tư duy chiến lược học tập…</strong>
+                </div>
+                <p style="margin-top:6px; color:var(--ink-600); font-size:13.5px; line-height:1.5;">
+                  Hệ thống đang rà soát cấu trúc điểm số, phát hiện các phần kiến thức trọng tâm và xây dựng cẩm nang vượt bẫy đề thi.
+                </p>
+                <div class="typing-indicator-wrap" style="margin-top:10px;">
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                </div>
               </div>
             </div>
           ` : aiAnalysis ? `
@@ -7414,12 +7544,12 @@ function renderGradesView() {
                 📊 Báo cáo chiến lược tổng thể GPA & Lộ trình bứt phá học thuật
               </div>
             `}
-            <div class="advisor-report-view">
+            <div class="advisor-report-view" id="advisor-report-view-content">
               ${formatAdvisorMarkdown(aiAnalysis)}
             </div>
             <div class="advisor-footer-row">
               <button type="button" class="btn-duo btn-duo-pink btn-duo-sm" onclick="state.page='chat'; render();">
-                💬 Đặt Câu Hỏi Thêm Cho Trợ Giảng AI DeepSeek
+                💬 Đặt Câu Hỏi Thêm Cho Trợ Giảng 3TG AI
               </button>
             </div>
           ` : `
@@ -7432,7 +7562,7 @@ function renderGradesView() {
               })}
               <div style="margin-top:14px;">
                 <button type="button" class="btn-duo btn-duo-pink" onclick="window.requestAcademicAdvisor(${targetGpa})">
-                  ✨ Khởi Tạo Phương Pháp Học Ngay (AI DeepSeek)
+                  ✨ Khởi Tạo Phương Pháp Học Ngay (3TG AI)
                 </button>
               </div>
             </div>
@@ -7445,8 +7575,13 @@ function renderGradesView() {
         <div class="section-box-header">
           <div class="section-box-title">
             <span class="section-box-emoji">📚</span>
-            <div>
-              <h3>Bảng Điểm Chi Tiết Phân Chia Theo Từng Học Kỳ (Đại học CMC)</h3>
+            <div style="flex:1;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                <h3>Bảng Điểm Chi Tiết Phân Chia Theo Từng Học Kỳ (Đại học CMC)</h3>
+                <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12px; border-radius:12px;" onclick="window.handleIuPortalLogin()">
+                  🔄 Đồng bộ lại Cổng IU
+                </button>
+              </div>
               <p>Toàn bộ học phần qua các kỳ, có đầy đủ điểm chữ, điểm hệ 10 & hệ 4 và chi tiết điểm thành phần (chuyên cần, bài tập, giữa kỳ, cuối kỳ).</p>
             </div>
           </div>
@@ -7524,6 +7659,15 @@ function renderGradesView() {
                       ${subjectsToRender.map(s => {
                         const isExpanded = state.academicExpandedSubjects.has(s.ma_mon);
                         const parts = s.chi_tiet_diem || {};
+                        const isUnrecorded = (val) => {
+                          if (val === null || val === undefined) return true;
+                          const num = Number(val);
+                          if (isNaN(num)) return true;
+                          if (num === 0 && Number(s.diem_he_10) > 0) return true;
+                          return false;
+                        };
+                        const fmtVal = (val) => isUnrecorded(val) ? '--' : Number(val);
+                        const hasAnyScore = !isUnrecorded(parts.chuyen_can) || !isUnrecorded(parts.bai_tap) || !isUnrecorded(parts.giua_ky) || !isUnrecorded(parts.cuoi_ky);
                         return `
                           <tr class="subject-row ${isExpanded ? 'expanded' : ''}" onclick="window.toggleAcademicSubjectDetail('${s.ma_mon}')">
                             <td><code>${esc(s.ma_mon)}</code></td>
@@ -7555,21 +7699,26 @@ function renderGradesView() {
                                   <div class="breakdown-grid">
                                     <div class="breakdown-item">
                                       <span class="breakdown-label">Chuyên cần (10%)</span>
-                                      <span class="breakdown-val">${parts.chuyen_can !== null && parts.chuyen_can !== undefined ? parts.chuyen_can : '--'}</span>
+                                      <span class="breakdown-val">${fmtVal(parts.chuyen_can)}</span>
                                     </div>
                                     <div class="breakdown-item">
                                       <span class="breakdown-label">Bài tập / Quá trình (20%)</span>
-                                      <span class="breakdown-val">${parts.bai_tap !== null && parts.bai_tap !== undefined ? parts.bai_tap : '--'}</span>
+                                      <span class="breakdown-val">${fmtVal(parts.bai_tap)}</span>
                                     </div>
                                     <div class="breakdown-item">
                                       <span class="breakdown-label">Giữa kỳ (20%)</span>
-                                      <span class="breakdown-val">${parts.giua_ky !== null && parts.giua_ky !== undefined ? parts.giua_ky : '--'}</span>
+                                      <span class="breakdown-val">${fmtVal(parts.giua_ky)}</span>
                                     </div>
                                     <div class="breakdown-item">
                                       <span class="breakdown-label">Cuối kỳ / Thi kết thúc (50%)</span>
-                                      <span class="breakdown-val" style="color:#e11d48; font-weight:700;">${parts.cuoi_ky !== null && parts.cuoi_ky !== undefined ? parts.cuoi_ky : '--'}</span>
+                                      <span class="breakdown-val" style="color:${isUnrecorded(parts.cuoi_ky) ? 'inherit' : '#e11d48'}; font-weight:700;">${fmtVal(parts.cuoi_ky)}</span>
                                     </div>
                                   </div>
+                                  ${!hasAnyScore ? `
+                                    <div class="breakdown-unrecorded-notice" style="margin-top:10px; font-size:12px; color:var(--ink-500); display:flex; align-items:center; gap:6px;">
+                                      <span>ℹ️ Cổng trường chưa cập nhật điểm thành phần (chuyên cần, bài tập, giữa kỳ, cuối kỳ) cho môn này. Điểm tổng kết: <strong>${s.diem_he_10}</strong> (${s.diem_chu}).</span>
+                                    </div>
+                                  ` : ""}
                                 </div>
                               </td>
                             </tr>
@@ -7795,8 +7944,48 @@ window.focusCoursePlan = function(courseName) {
   window.requestAcademicAdvisor(state.academicAdvisorTarget || 3.6, courseName);
 };
 
+window.selectAdvisorTargetGpa = function(gpa) {
+  try { playSound("click"); } catch {}
+  state.academicAdvisorTarget = Number(gpa) || 3.2;
+  if (state.academicTranscript) {
+    state.academicTranscript.targetGpa = state.academicAdvisorTarget;
+  }
+  render();
+};
+
+function streamAdvisorResponse(fullText) {
+  return new Promise((resolve) => {
+    const words = fullText.split(" ");
+    let currentWordIdx = 0;
+    let accumulatedText = "";
+
+    const timer = setInterval(() => {
+      if (currentWordIdx < words.length) {
+        const chunk = words.slice(currentWordIdx, currentWordIdx + 2).join(" ");
+        accumulatedText += (currentWordIdx === 0 ? "" : " ") + chunk;
+        currentWordIdx += 2;
+
+        const reportEl = document.getElementById("advisor-report-view-content");
+        if (reportEl) {
+          reportEl.innerHTML = formatAdvisorMarkdown(accumulatedText) + '<span class="typing-cursor"></span>';
+        }
+      } else {
+        clearInterval(timer);
+        if (state.academicTranscript) {
+          state.academicTranscript.aiAnalysis = fullText;
+        }
+        const reportEl = document.getElementById("advisor-report-view-content");
+        if (reportEl) {
+          reportEl.innerHTML = formatAdvisorMarkdown(fullText);
+        }
+        resolve();
+      }
+    }, 16);
+  });
+}
+
 window.requestAcademicAdvisor = async function(targetGpa, subject) {
-  if (state.academicAdvisorBusy) return;
+  if (state.academicAdvisorBusy || state.academicAdvisorStreaming) return;
   state.academicAdvisorBusy = true;
   state.academicAdvisorTarget = targetGpa || state.academicAdvisorTarget || 3.2;
   if (subject !== undefined) {
@@ -7808,8 +7997,8 @@ window.requestAcademicAdvisor = async function(targetGpa, subject) {
   try {
     const isSpecific = currentSub && currentSub !== "all" && currentSub !== "toan-canh";
     showToast(isSpecific
-      ? `🐰 Thỏ Bảy Màu đang gọi DeepSeek AI lên phương pháp học môn ${currentSub}...`
-      : `🐰 Thỏ Bảy Màu đang gọi DeepSeek AI phân tích bảng điểm & lộ trình GPA...`, false);
+      ? `🐰 Thỏ Bảy Màu đang gọi 3TG AI lên phương pháp học môn ${currentSub}...`
+      : `🐰 Thỏ Bảy Màu đang gọi 3TG AI phân tích bảng điểm & lộ trình GPA...`, false);
 
     const res = await api("/api/academic/advisor", {
       method: "POST",
@@ -7821,18 +8010,24 @@ window.requestAcademicAdvisor = async function(targetGpa, subject) {
     });
     if (res.ok && res.advice) {
       if (state.academicTranscript) {
-        state.academicTranscript.aiAnalysis = res.advice;
         state.academicTranscript.targetGpa = res.targetGpa;
         state.academicTranscript.advisorSubject = res.subject || currentSub;
       }
       showToast(isSpecific
         ? `🎉 Đã có bí kíp săn điểm A cho môn ${currentSub}!`
         : "🎉 Đã có lộ trình cải thiện điểm từ Giáo sư Thỏ Bảy Màu!", false);
+
+      state.academicAdvisorBusy = false;
+      state.academicAdvisorStreaming = true;
+      render();
+
+      await streamAdvisorResponse(res.advice);
     }
   } catch (err) {
     showToast("Lỗi khi tạo lộ trình AI: " + err.message, true);
   } finally {
     state.academicAdvisorBusy = false;
+    state.academicAdvisorStreaming = false;
     render();
   }
 };
@@ -8291,7 +8486,11 @@ export function setAppTheme(theme, shouldPlaySound = true) {
   }
 }
 
+let lastThemeToggleTime = 0;
 export function toggleAppTheme() {
+  const now = Date.now();
+  if (now - lastThemeToggleTime < 450) return; // Chống double click
+  lastThemeToggleTime = now;
   const current = document.documentElement.getAttribute("data-theme") || "light";
   const next = current === "dark" ? "light" : "dark";
   setAppTheme(next, true);

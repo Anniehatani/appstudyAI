@@ -1,4 +1,4 @@
-# 🌸 BÁO CÁO TỔNG KẾT SPRINT 1 — DỰ ÁN 3TG (LUMI STUDY AI)
+# 🌸 BÁO CÁO TỔNG KẾT SPRINT 1 — DỰ ÁN 3TG (3TG STUDY AI)
 **Môn học:** Công nghệ phần mềm | **Giảng viên hướng dẫn:** ThS. Vân Anh  
 **Nhóm thực hiện:** TONE PINK | **Repository:** [Anniehatani/appstudyAI](https://github.com/Anniehatani/appstudyAI)
 

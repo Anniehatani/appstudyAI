@@ -53,14 +53,33 @@ function mapThongTinCaNhan(rs, tab) {
 function mapBangDiem(rsDiem, rsThanhPhan) {
     const tp = rsThanhPhan || [];
     return (rsDiem || []).map((e) => {
-        const ct = tp.filter((x) =>
-            String(x.DAOTAO_HOCPHAN_ID) === String(e.DAOTAO_HOCPHAN_ID) &&
-            String(x.LANHOC) === String(e.LANHOC) &&
-            String(x.LANTHI) === String(e.LANTHI));
+        const eHocPhanId = e.DAOTAO_HOCPHAN_ID != null ? String(e.DAOTAO_HOCPHAN_ID).trim() : "";
+        const eMaMon = e.DAOTAO_HOCPHAN_MA != null ? String(e.DAOTAO_HOCPHAN_MA).trim().toUpperCase() : "";
+        const eLanHoc = e.LANHOC != null ? String(e.LANHOC).trim() : "";
+
+        const ct = tp.filter((x) => {
+            const xHocPhanId = x.DAOTAO_HOCPHAN_ID != null ? String(x.DAOTAO_HOCPHAN_ID).trim() : "";
+            const xMaMon = (x.DAOTAO_HOCPHAN_MA || x.MAHOCPHAN) != null ? String(x.DAOTAO_HOCPHAN_MA || x.MAHOCPHAN).trim().toUpperCase() : "";
+
+            const matchId = (eHocPhanId && xHocPhanId && eHocPhanId === xHocPhanId) ||
+                            (eMaMon && xMaMon && eMaMon === xMaMon);
+            if (!matchId) return false;
+
+            const xLanHoc = x.LANHOC != null ? String(x.LANHOC).trim() : "";
+            if (eLanHoc && xLanHoc && eLanHoc !== xLanHoc) return false;
+            return true;
+        });
+
         const lay = (kw) => {
-            const f = ct.find((x) => new RegExp(kw, "i").test(s(x.DIEM_THANHPHANDIEM_TEN)));
-            return f ? n(f.DIEM) : 0;
+            const f = ct.find((x) => {
+                const name = s(x.DIEM_THANHPHANDIEM_TEN || x.TEN_THANHPHANDIEM || x.THANHPHAN_TEN || x.TEN || "");
+                return new RegExp(kw, "i").test(name);
+            });
+            if (!f || f.DIEM == null || f.DIEM === "") return null;
+            const val = Number(f.DIEM);
+            return Number.isFinite(val) ? val : null;
         };
+
         return {
             ma_mon: s(e.DAOTAO_HOCPHAN_MA || ""),
             ten_hoc_phan: s(e.DAOTAO_HOCPHAN_TEN || ""),
@@ -72,10 +91,10 @@ function mapBangDiem(rsDiem, rsThanhPhan) {
             nam_hoc: s(e.NAMHOC || e.NAM_HOC || ""),
             xep_loai: s(e.DANHGIA_TEN || ""),
             chi_tiet_diem: {
-                chuyen_can: lay("chuy.n.c.n|chuyencan|cc$"),
-                bai_tap: lay("b.i.t.p|baitap|bt$"),
-                giua_ky: lay("gi.a.k|giuaky|gk$"),
-                cuoi_ky: lay("cu.i.k|cuoiky|cu.i.thi|ck$|thi.k.t.th.c"),
+                chuyen_can: lay("chuy[eêèéẻẽẹ]n.*c[aâàáảãạ]n|cc$|chuyencan|điểm danh|danh"),
+                bai_tap: lay("b[aàáảãạ]i.*t[aâàáảãạ]p|bt$|baitap|qu[aá].*tr[iì]nh|quatrinh|d[aá]nh.*gi[aá]|thường xuyên"),
+                giua_ky: lay("gi[uư][aã].*k[yỳ]|gk$|giuaky"),
+                cuoi_ky: lay("cu[oô][ií].*k[yỳ]|cuoiky|cu[oô][ií].*thi|ck$|thi.*k[eê]t.*th[uú]c|thi"),
             },
         };
     });
@@ -93,8 +112,10 @@ function mapHocPhanNo(rows) {
 
 function mapKetQuaDangKy(rows) {
     return (rows || []).map((e) => ({
-        ma_mon: s(e.DANGKY_LOPHOCPHAN_MA || e.DAOTAO_HOCPHAN_MA || ""),
-        ten_mon: s(e.DANGKY_LOPHOCPHAN_TEN || e.DAOTAO_HOCPHAN_TEN || ""),
+        ma_mon: s(e.DAOTAO_HOCPHAN_MA || e.MAHOCPHAN || e.DANGKY_LOPHOCPHAN_MA || ""),
+        ma_lop: s(e.DANGKY_LOPHOCPHAN_MA || ""),
+        ten_mon: s(e.DAOTAO_HOCPHAN_TEN || e.TENHOCPHAN || e.DANGKY_LOPHOCPHAN_TEN || ""),
+        ten_lop: s(e.DANGKY_LOPHOCPHAN_TEN || ""),
         so_tin_chi: n(e.DAOTAO_HOCPHAN_HOCTRINH),
         trang_thai: s(e.TRANGTHAI_TEN || e.TRANGTHAI || e.KIEUHOC_TEN || "Đã đăng ký"),
     }));
@@ -165,8 +186,8 @@ function mapLichHoc(rows) {
         ngay: s(e.NGAYHOC || ""),
         thoi_gian_bat_dau: hhmm(e.GIOBATDAU, e.PHUTBATDAU),
         thoi_gian_ket_thuc: hhmm(e.GIOKETTHUC, e.PHUTKETTHUC),
-        ma_mon: s(e.DAOTAO_HOCPHAN_MA || ""),
-        ten_mon: s(e.TENHOCPHAN || ""),
+        ma_mon: s(e.DAOTAO_HOCPHAN_MA || e.MAHOCPHAN || e.MA_HOCPHAN || e.MAMON || e.DANGKY_LOPHOCPHAN_MA || ""),
+        ten_mon: s(e.TENHOCPHAN || e.DAOTAO_HOCPHAN_TEN || e.TEN_MON || e.TENMON || ""),
         phong: s(e.PHONGHOC_TEN || e.PHONGHOC_MA || ""),
         giang_vien: s(e.GIANGVIEN || ""),
         hinh_thuc: s(e.THUOCTINH_TEN || e.PHANLOAI || ""),

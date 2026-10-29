@@ -3,7 +3,7 @@
  * ACADEMIC & TRANSCRIPT SERVICE (IU PORTAL & DEEPSEEK AI ADVISOR)
  * ===================================================================================
  * Kết nối cổng thông tin IU CMCU (iu.cmcu.edu.vn), cào bảng điểm, tính toán GPA
- * và tích hợp Trợ giảng AI DeepSeek lên lộ trình cải thiện điểm cá nhân hoá.
+ * và tích hợp Trợ giảng 3TG AI lên lộ trình cải thiện điểm cá nhân hoá.
  * ===================================================================================
  */
 
@@ -382,14 +382,31 @@ export async function layBangDiemVaHoSoIU(session, cookie) {
   const rsThanhPhan = (kq && kq.rsDiemThanhPhan) || [];
 
   const rawSubjects = rsDiem.map(e => {
-    const matchedParts = rsThanhPhan.filter(x =>
-      String(x.DAOTAO_HOCPHAN_ID) === String(e.DAOTAO_HOCPHAN_ID) &&
-      String(x.LANHOC) === String(e.LANHOC)
-    );
+    const eHocPhanId = e.DAOTAO_HOCPHAN_ID != null ? String(e.DAOTAO_HOCPHAN_ID).trim() : "";
+    const eMaMon = e.DAOTAO_HOCPHAN_MA != null ? String(e.DAOTAO_HOCPHAN_MA).trim().toUpperCase() : "";
+    const eLanHoc = e.LANHOC != null ? String(e.LANHOC).trim() : "";
+
+    const matchedParts = rsThanhPhan.filter(x => {
+      const xHocPhanId = x.DAOTAO_HOCPHAN_ID != null ? String(x.DAOTAO_HOCPHAN_ID).trim() : "";
+      const xMaMon = (x.DAOTAO_HOCPHAN_MA || x.MAHOCPHAN) != null ? String(x.DAOTAO_HOCPHAN_MA || x.MAHOCPHAN).trim().toUpperCase() : "";
+      const matchId = (eHocPhanId && xHocPhanId && eHocPhanId === xHocPhanId) ||
+                      (eMaMon && xMaMon && eMaMon === xMaMon);
+      if (!matchId) return false;
+      const xLanHoc = x.LANHOC != null ? String(x.LANHOC).trim() : "";
+      if (eLanHoc && xLanHoc && eLanHoc !== xLanHoc) return false;
+      return true;
+    });
+
     const getPartScore = kw => {
-      const f = matchedParts.find(x => new RegExp(kw, "i").test(String(x.DIEM_THANHPHANDIEM_TEN || "")));
-      return f && Number.isFinite(Number(f.DIEM)) ? Number(f.DIEM) : null;
+      const f = matchedParts.find(x => {
+        const name = String(x.DIEM_THANHPHANDIEM_TEN || x.TEN_THANHPHANDIEM || x.THANHPHAN_TEN || x.TEN || "");
+        return new RegExp(kw, "i").test(name);
+      });
+      if (!f || f.DIEM == null || f.DIEM === "") return null;
+      const num = Number(f.DIEM);
+      return Number.isFinite(num) ? num : null;
     };
+
     return {
       ma_mon: String(e.DAOTAO_HOCPHAN_MA || ""),
       ten_hoc_phan: String(e.DAOTAO_HOCPHAN_TEN || ""),
@@ -401,15 +418,175 @@ export async function layBangDiemVaHoSoIU(session, cookie) {
       nam_hoc: String(e.NAMHOC || e.NAM_HOC || ""),
       xep_loai: String(e.DANHGIA_TEN || ""),
       chi_tiet_diem: {
-        chuyen_can: getPartScore("chuy.n.c.n|chuyencan|cc$"),
-        bai_tap: getPartScore("b.i.t.p|baitap|bt$"),
-        giua_ky: getPartScore("gi.a.k|giuaky|gk$"),
-        cuoi_ky: getPartScore("cu.i.k|cuoiky|cu.i.thi|ck$|thi.k.t.th.c"),
+        chuyen_can: getPartScore("chuy[eêèéẻẽẹ]n.*c[aâàáảãạ]n|cc$|chuyencan|điểm danh|danh"),
+        bai_tap: getPartScore("b[aàáảãạ]i.*t[aâàáảãạ]p|bt$|baitap|qu[aá].*tr[iì]nh|quatrinh|d[aá]nh.*gi[aá]|thường xuyên"),
+        giua_ky: getPartScore("gi[uư][aã].*k[yỳ]|gk$|giuaky"),
+        cuoi_ky: getPartScore("cu[oô][ií].*k[yỳ]|cuoiky|cu[oô][ií].*thi|ck$|thi.*k[eê]t.*th[uú]c|thi"),
       },
     };
   });
 
   return { studentInfo, rawSubjects };
+}
+
+/**
+ * Chuẩn hoá và làm sạch tên môn học (loại bỏ hậu tố lớp học phần, phòng thực hành, mã đuôi portal IU)
+ */
+export function cleanCourseName(name) {
+  if (!name || typeof name !== "string") return "";
+  let clean = name.trim();
+  clean = clean.replace(/[-_]\s*\d+-\d+-\d+.*$/i, "");
+  clean = clean.replace(/[-_]\s*N\d+.*$/i, "");
+  clean = clean.replace(/\s*\([A-Z0-9_\-]+\)\s*(\.(LT|TH|LT\+TH|BT))?$/i, "");
+  clean = clean.replace(/\.(LT|TH|LT\+TH|BT)$/i, "");
+  clean = clean.replace(/\s*-\s*Lớp.*$/i, "");
+  clean = clean.replace(/\s+/g, " ").trim();
+  return clean || name.trim();
+}
+
+/**
+ * Chuẩn hoá và bóc tách mã môn học chuẩn (VD: INFO2011 từ INFO2011-1-1-26(N08))
+ */
+export function cleanCourseCode(code) {
+  if (!code || typeof code !== "string") return "";
+  const trimmed = code.trim().toUpperCase();
+  const match = trimmed.match(/^([A-Z0-9]{3,10})[-_]/i);
+  if (match) return match[1].toUpperCase();
+  return trimmed.replace(/\s*\([^\)]*\)/g, "").trim();
+}
+
+/**
+ * Chuẩn hoá khoá so sánh môn học (bỏ dấu tiếng Việt, bỏ ký tự đặc biệt, chữ thường)
+ */
+export function normalizeCourseKey(str) {
+  if (!str) return "";
+  return String(str)
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+}
+
+/**
+ * Hợp nhất và loại bỏ môn học bị trùng lặp giữa Thời khóa biểu (Lịch học) và Kết quả đăng ký học
+ */
+export function mergeAndDeduplicateActiveCourses(courses = [], rawSubjects = []) {
+  if (!Array.isArray(courses)) return [];
+  const map = new Map();
+
+  const rawSubjectMap = new Map();
+  if (Array.isArray(rawSubjects)) {
+    for (const s of rawSubjects) {
+      const code = cleanCourseCode(s.ma_mon || "");
+      const name = cleanCourseName(s.ten_hoc_phan || s.ten_mon || "");
+      const keyName = normalizeCourseKey(name);
+      if (keyName && !rawSubjectMap.has(keyName)) {
+        rawSubjectMap.set(keyName, { ma_mon: code, so_tin_chi: Number(s.so_tin_chi) || 0 });
+      }
+      if (code && !rawSubjectMap.has(code)) {
+        rawSubjectMap.set(code, { ma_mon: code, so_tin_chi: Number(s.so_tin_chi) || 0 });
+      }
+    }
+  }
+
+  for (const c of courses) {
+    if (!c || typeof c !== "object") continue;
+    const rawName = c.ten_mon || c.ten_hoc_phan || "";
+    const cleanName = cleanCourseName(rawName);
+    const rawCode = c.ma_mon || "";
+    const cleanCode = cleanCourseCode(rawCode);
+
+    const nameKey = normalizeCourseKey(cleanName);
+    const codeKey = cleanCode ? cleanCode.toUpperCase() : "";
+
+    let existingKey = null;
+    if (nameKey && map.has("NAME:" + nameKey)) {
+      existingKey = "NAME:" + nameKey;
+    } else if (codeKey && map.has("CODE:" + codeKey)) {
+      existingKey = "CODE:" + codeKey;
+    } else {
+      for (const [k, item] of map.entries()) {
+        const itemCode = cleanCourseCode(item.ma_mon);
+        const itemNameKey = normalizeCourseKey(item.ten_mon);
+        if (codeKey && itemCode && codeKey === itemCode) {
+          existingKey = k;
+          break;
+        }
+        if (nameKey && itemNameKey && nameKey === itemNameKey) {
+          existingKey = k;
+          break;
+        }
+      }
+    }
+
+    const fallbackRaw = (nameKey && rawSubjectMap.get(nameKey)) || (codeKey && rawSubjectMap.get(codeKey));
+
+    if (!existingKey) {
+      const chosenKey = nameKey ? "NAME:" + nameKey : "CODE:" + codeKey;
+      const initial = {
+        ma_mon: cleanCode || (fallbackRaw ? fallbackRaw.ma_mon : "") || rawCode,
+        ten_mon: cleanName || rawName || "Học phần",
+        so_tin_chi: Number(c.so_tin_chi) || (fallbackRaw ? fallbackRaw.so_tin_chi : 0) || 0,
+        giang_vien: (c.giang_vien || "").trim(),
+        phong: (c.phong || "").trim(),
+        trang_thai: (c.trang_thai || "").trim(),
+        hinh_thuc: (c.hinh_thuc || "").trim(),
+        ma_lop: c.ma_lop || (rawCode !== cleanCode ? rawCode : "")
+      };
+      map.set(chosenKey, initial);
+      if (nameKey) map.set("NAME:" + nameKey, initial);
+      if (codeKey) map.set("CODE:" + codeKey, initial);
+    } else {
+      const existing = map.get(existingKey);
+      if (!existing.ma_mon && (cleanCode || rawCode)) {
+        existing.ma_mon = cleanCode || rawCode;
+      } else if (cleanCode && existing.ma_mon && existing.ma_mon.includes("-")) {
+        existing.ma_mon = cleanCode;
+      }
+
+      if (cleanName && (!existing.ten_mon || existing.ten_mon.length > cleanName.length)) {
+        existing.ten_mon = cleanName;
+      }
+
+      if (!existing.so_tin_chi && Number(c.so_tin_chi) > 0) {
+        existing.so_tin_chi = Number(c.so_tin_chi);
+      }
+
+      if (!existing.giang_vien && c.giang_vien) existing.giang_vien = String(c.giang_vien).trim();
+      if (!existing.phong && c.phong) existing.phong = String(c.phong).trim();
+      if (!existing.trang_thai && c.trang_thai) existing.trang_thai = String(c.trang_thai).trim();
+      if (!existing.hinh_thuc && c.hinh_thuc) existing.hinh_thuc = String(c.hinh_thuc).trim();
+      if (!existing.ma_lop && (c.ma_lop || (rawCode !== cleanCode ? rawCode : ""))) {
+        existing.ma_lop = c.ma_lop || rawCode;
+      }
+
+      if (nameKey) map.set("NAME:" + nameKey, existing);
+      if (codeKey) map.set("CODE:" + codeKey, existing);
+    }
+  }
+
+  const uniqueItems = Array.from(new Set(map.values()));
+  return uniqueItems.map(c => {
+    let code = cleanCourseCode(c.ma_mon);
+    if (!code && c.ten_mon) {
+      const fb = rawSubjectMap.get(normalizeCourseKey(c.ten_mon));
+      if (fb && fb.ma_mon) code = fb.ma_mon;
+    }
+    const credits = Number(c.so_tin_chi) || (c.ten_mon && rawSubjectMap.get(normalizeCourseKey(c.ten_mon))?.so_tin_chi) || 0;
+
+    return {
+      ma_mon: code || c.ma_mon || "",
+      ten_mon: cleanCourseName(c.ten_mon || c.ten_hoc_phan || "Học phần"),
+      so_tin_chi: credits,
+      giang_vien: c.giang_vien || "",
+      phong: c.phong || "",
+      trang_thai: c.trang_thai || (c.hinh_thuc ? c.hinh_thuc : "Đang học"),
+      hinh_thuc: c.hinh_thuc || "",
+      ma_lop: c.ma_lop || ""
+    };
+  });
 }
 
 /**
@@ -419,6 +596,7 @@ export async function layBangDiemVaHoSoIU(session, cookie) {
  */
 export function processAcademicTranscript(bangDiemRaw, studentInfo = {}, activeCourses = []) {
   const list = Array.isArray(bangDiemRaw) ? bangDiemRaw : [];
+  const cleanActiveCourses = mergeAndDeduplicateActiveCourses(activeCourses, list);
 
   function isGpaSubject(m) {
     const letter = String(m.diem_chu || "").trim().toUpperCase();
@@ -578,13 +756,13 @@ export function processAcademicTranscript(bangDiemRaw, studentInfo = {}, activeC
     },
     semesters,
     weak_subjects: weakSubjects,
-    active_courses: Array.isArray(activeCourses) ? activeCourses : [],
+    active_courses: cleanActiveCourses,
     raw_subjects: list
   };
 }
 
 /**
- * Cố vấn AI DeepSeek: Phân tích bảng điểm & lập lộ trình cải thiện điểm số
+ * Cố vấn 3TG AI: Phân tích bảng điểm & lập lộ trình cải thiện điểm số
  */
 export async function generateAcademicAdvisorPlan(transcriptData, targetGpa = 3.2, env = {}, selectedCourse = "all") {
   const apiKey = env.LOCAL_AI_API_KEY || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || "";
@@ -592,7 +770,7 @@ export async function generateAcademicAdvisorPlan(transcriptData, targetGpa = 3.
   const model = env.DEEPSEEK_MODEL || "deepseek-chat";
 
   if (!apiKey && !env.LOCAL_AI_ENDPOINT) {
-    throw new Error("Chưa cấu hình API Key DeepSeek. Hãy kiểm tra biến DEEPSEEK_API_KEY trong file .dev.vars!");
+    throw new Error("Chưa cấu hình API Key cho 3TG AI. Hãy kiểm tra biến DEEPSEEK_API_KEY trong file .dev.vars!");
   }
 
   const { student = {}, gpa = {}, weak_subjects = [], semesters = [], active_courses = [], raw_subjects = [] } = transcriptData;
@@ -734,7 +912,7 @@ Hãy đưa ra BÁO CÁO CỐ VẤN TINH GỌN (Dưới 350 từ, định dạng 
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`DeepSeek API lỗi HTTP ${res.status}: ${errText}`);
+    throw new Error(`3TG AI API lỗi HTTP ${res.status}: ${errText}`);
   }
 
   const json = await res.json();

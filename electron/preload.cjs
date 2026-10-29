@@ -9,7 +9,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   minimize: () => ipcRenderer.invoke("window:minimize"),
   maximize: () => ipcRenderer.invoke("window:maximize"),
   close: () => ipcRenderer.invoke("window:close"),
-  openIuLogin: () => ipcRenderer.invoke("academic:open-iu-login")
+  openIuLogin: () => ipcRenderer.invoke("academic:open-iu-login"),
+  clearSessionCookies: () => ipcRenderer.invoke("auth:clear-cookies")
 });
 
 contextBridge.exposeInMainWorld("__uniStudyIU", {
