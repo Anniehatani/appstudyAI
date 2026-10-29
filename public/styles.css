@@ -9050,3 +9050,491 @@ html, body {
   background: #232838 !important;
   color: #cbd5e1 !important;
 }
+
+/* ==========================================================================
+   DEEP REFINEMENT: BASE CLASSES FOR CONVERTED INLINE ELEMENTS
+   ========================================================================== */
+.review-subject-card {
+  background: #ffffff;
+  border: 3px solid var(--ink-900);
+  border-radius: 28px;
+  box-shadow: 0 8px 0 var(--ink-900);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.review-item-card {
+  background: #fff7fa;
+  border: 2px solid #ffd6e5;
+  border-radius: 18px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.review-finish-card {
+  max-width: 640px;
+  margin: 40px auto;
+  text-align: center;
+  background: #ffffff;
+  border: 3px solid var(--ink-900);
+  border-radius: 32px;
+  padding: 44px 32px;
+  box-shadow: 0 12px 0 var(--ink-900);
+}
+
+.friends-search-box {
+  background: #ffffff;
+  border: 2.5px solid var(--ink-900);
+  border-radius: 22px;
+  padding: 18px 24px;
+  box-shadow: 0 6px 0 var(--ink-900);
+  margin-bottom: 20px;
+}
+
+/* ==========================================================================
+   DEEP REFINEMENT: DARK MODE STYLES FOR ALL 5 PROBLEM AREAS (IMAGES 1 TO 5)
+   ========================================================================== */
+
+/* ----------------------------------------------------
+   AREA 1: SHOP & VẬT PHẨM (IMAGE 1)
+   ---------------------------------------------------- */
+[data-theme="dark"] .shop-category-tabs {
+  background: #161a26 !important;
+  border-color: #2b354d !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .shop-category-tab {
+  color: #94a3b8 !important;
+  background: transparent !important;
+}
+
+[data-theme="dark"] .shop-category-tab:hover {
+  background: #232838 !important;
+  color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .shop-category-tab.active {
+  background: var(--lumi-pink) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(255, 75, 130, 0.45) !important;
+}
+
+[data-theme="dark"] .shop-card {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  box-shadow: 0 6px 0 #10131d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .shop-card:hover {
+  border-color: var(--lumi-pink) !important;
+  transform: translateY(-2px);
+}
+
+[data-theme="dark"] .shop-item-name {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .shop-item-desc {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .shop-owned-count {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .shop-card-foot {
+  border-top: 1px solid #2e384d !important;
+}
+
+[data-theme="dark"] .shop-price-tag {
+  color: #38bdf8 !important;
+}
+
+/* ----------------------------------------------------
+   AREA 2: MASCOT THỎ 7 MÀU (IMAGE 2)
+   ---------------------------------------------------- */
+[data-theme="dark"] .mascot-pack-compact-card {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  box-shadow: 0 6px 0 #10131d !important;
+}
+
+[data-theme="dark"] .mascot-pack-compact-card.fire {
+  background: #231616 !important;
+  border-color: #4d2018 !important;
+}
+
+[data-theme="dark"] .mascot-pack-compact-card.sakura {
+  background: #24141d !important;
+  border-color: #4d1c32 !important;
+}
+
+[data-theme="dark"] .mascot-pack-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .mascot-pack-price {
+  color: #ff85aa !important;
+}
+
+[data-theme="dark"] .mascot-wardrobe-header {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+}
+
+[data-theme="dark"] .mascot-wardrobe-header h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .mascot-wardrobe-header p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .unlocked-counter-badge {
+  background: #232838 !important;
+  border: 1px solid #38415a !important;
+  color: #ff85aa !important;
+}
+
+[data-theme="dark"] .mascot-token-tile {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .mascot-token-tile:hover {
+  background: #232838 !important;
+  border-color: var(--lumi-pink) !important;
+  box-shadow: 0 5px 0 #10131d !important;
+}
+
+[data-theme="dark"] .mascot-token-tile.equipped {
+  background: #261420 !important;
+  border-color: #ff4b82 !important;
+  box-shadow: 0 4px 0 #ff4b82 !important;
+}
+
+[data-theme="dark"] .mascot-token-tile.locked {
+  background: #141722 !important;
+  border-color: #242b3b !important;
+  opacity: 0.65 !important;
+}
+
+[data-theme="dark"] .mascot-token-name {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .mascot-wardrobe-card {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  box-shadow: 0 4px 0 #10131d !important;
+}
+
+[data-theme="dark"] .mascot-wardrobe-card strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .mascot-wardrobe-card small {
+  color: #94a3b8 !important;
+}
+
+/* ----------------------------------------------------
+   AREA 3: ÔN CÂU SAI / REVIEW MISTAKES (IMAGE 3)
+   ---------------------------------------------------- */
+[data-theme="dark"] .review-subject-card {
+  background: #161a26 !important;
+  border: 3px solid #2b354d !important;
+  box-shadow: 0 8px 0 #10131d !important;
+}
+
+[data-theme="dark"] .review-subject-card h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .review-subject-card > div:first-child {
+  border-bottom-color: #283044 !important;
+}
+
+[data-theme="dark"] .review-item-card {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+}
+
+[data-theme="dark"] .review-item-card:hover {
+  background: #202636 !important;
+  border-color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .review-item-card h4 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .review-item-card div {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .review-finish-card {
+  background: #161a26 !important;
+  border: 3px solid #2b354d !important;
+  box-shadow: 0 12px 0 #10131d !important;
+}
+
+[data-theme="dark"] .review-finish-card h2 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .review-finish-card p {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .quiz-card {
+  background: #161a26 !important;
+  border: 3px solid #2b354d !important;
+  box-shadow: 0 8px 0 #10131d !important;
+}
+
+[data-theme="dark"] .quiz-card h2 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .quiz-footer {
+  background: #161a26 !important;
+  border: 2.5px solid #2b354d !important;
+  box-shadow: 0 6px 0 #10131d !important;
+}
+
+/* ----------------------------------------------------
+   AREA 4: HỎI 3TG AI / CHAT (IMAGE 4)
+   ---------------------------------------------------- */
+[data-theme="dark"] .chat-messages-area {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] .chat-messages-area h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .chat-messages-area p {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .lumi-dropdown-btn {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .lumi-dropdown-btn:hover {
+  background: #232838 !important;
+  border-color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .lumi-dropdown-panel {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55) !important;
+}
+
+[data-theme="dark"] .convo-panel-header {
+  background: #121520 !important;
+  border-bottom: 1px solid #283044 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .lumi-dropdown-item {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .lumi-dropdown-item:hover {
+  background: #232838 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .lumi-dropdown-item.selected {
+  background: #241622 !important;
+  color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .chat-attach-btn {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .chat-attach-btn:hover {
+  background: #232838 !important;
+  border-color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] #chat-input {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] #chat-input:focus {
+  border-color: var(--lumi-pink) !important;
+  box-shadow: 0 0 0 3px rgba(255, 92, 141, 0.25) !important;
+}
+
+/* ----------------------------------------------------
+   AREA 5: CỐ VẤN HỌC VỤ & WHAT-IF SIMULATOR (IMAGE 5)
+   ---------------------------------------------------- */
+[data-theme="dark"] .sim-result-bar {
+  background: #1a1f2c !important;
+  border: 2px dashed #2e384d !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .sim-result-bar.active {
+  background: #241520 !important;
+  border-style: solid !important;
+  border-color: var(--lumi-pink) !important;
+  box-shadow: 0 4px 18px rgba(255, 75, 130, 0.25) !important;
+}
+
+[data-theme="dark"] .sim-result-text strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .sim-result-text span {
+  color: #94a3b8 !important;
+}
+
+/* FIX TRIỆT ĐỂ CHỮ ĐEN TRÊN NỀN TỐI Ở CỐ VẤN HỌC VỤ */
+[data-theme="dark"] .advisor-title-wrap h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .advisor-title-wrap p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .advisor-target-controls label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .target-pill {
+  background: #1a1f2c !important;
+  border: 2px solid #2e384d !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .target-pill:hover {
+  background: #232838 !important;
+  border-color: var(--lumi-pink) !important;
+}
+
+[data-theme="dark"] .target-pill.active {
+  background: var(--lumi-pink) !important;
+  border-color: var(--lumi-pink) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(255, 75, 130, 0.4) !important;
+}
+
+[data-theme="dark"] .advisor-subject-selector-bar {
+  background: #1a1f2c !important;
+  border: 1.5px solid #2e384d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .advisor-sel-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .advisor-subject-select {
+  background: #141724 !important;
+  border: 2px solid #2e384d !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .advisor-active-subject-badge {
+  background: #1a1f2c !important;
+  border: 1.5px solid #2e384d !important;
+  color: #ff85aa !important;
+}
+
+/* FIX NỘI DUNG BÁO CÁO AI KHÔNG CÒN BỊ CHỮ ĐEN */
+[data-theme="dark"] .advisor-report-view {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .advisor-h1 {
+  color: #ff7597 !important;
+  border-bottom-color: #3b4664 !important;
+}
+
+[data-theme="dark"] .advisor-h2 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .advisor-h3 {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .advisor-p {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .advisor-list-item,
+[data-theme="dark"] .advisor-bullet-item {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .advisor-list-item strong,
+[data-theme="dark"] .advisor-bullet-item strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .advisor-callout {
+  background: #1c1522 !important;
+  border-left-color: var(--lumi-pink) !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .advisor-markdown-table {
+  background: #161a26 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .advisor-markdown-table th {
+  background: #141724 !important;
+  color: #94a3b8 !important;
+  border: 1px solid #2e384d !important;
+}
+
+[data-theme="dark"] .advisor-markdown-table td {
+  background: #161a26 !important;
+  color: #cbd5e1 !important;
+  border: 1px solid #23293a !important;
+}
+
+[data-theme="dark"] .advisor-loading-card {
+  background: #161a26 !important;
+  border: 2px solid #2b354d !important;
+}
+
+[data-theme="dark"] .advisor-loading-text strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .advisor-loading-text p {
+  color: #94a3b8 !important;
+}
+
+/* ----------------------------------------------------
+   AREA 6: SEARCH BOX IN FRIENDS TAB
+   ---------------------------------------------------- */
+[data-theme="dark"] .friends-search-box {
+  background: #161a26 !important;
+  border: 2.5px solid #2b354d !important;
+  box-shadow: 0 6px 0 #10131d !important;
+}

@@ -2817,7 +2817,7 @@ function renderFriends() {
         </div>
       ` : currentFriendsTab === 'search' ? `
         <div class="friends-search-container">
-          <div style="background:#fff; border:2.5px solid var(--ink-900); border-radius:22px; padding:18px 24px; box-shadow:0 6px 0 var(--ink-900); margin-bottom:20px;">
+          <div class="friends-search-box">
             <div style="display:flex; gap:12px; align-items:center;">
               <span style="font-size:20px;">🔍</span>
               <input type="text" class="chat-input" placeholder="Tìm kiếm theo Tên học viên, Tên đăng nhập (@username) hoặc Trường..." oninput="searchFriendsInput(this.value)" autofocus style="font-size:15px; border-radius:14px;">
@@ -4331,7 +4331,7 @@ function renderShop() {
     const isEquipped = state.profile && (state.profile.avatar_url === `mascot:${key}`);
 
     return `
-      <div class="mascot-wardrobe-card ${isUnlocked ? 'unlocked' : 'locked'} ${isEquipped ? 'equipped' : ''}" style="background:#fff; border:2px solid ${isEquipped ? 'var(--lumi-pink)' : isUnlocked ? '#fbcfe8' : '#e2e8f0'}; border-radius:20px; padding:12px; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; box-shadow:0 4px 0 ${isEquipped ? 'var(--lumi-pink)' : '#f1f5f9'};">
+      <div class="mascot-wardrobe-card ${isUnlocked ? 'unlocked' : 'locked'} ${isEquipped ? 'equipped' : ''}" style="border:2px solid ${isEquipped ? 'var(--lumi-pink)' : isUnlocked ? '#fbcfe8' : '#e2e8f0'}; border-radius:20px; padding:12px; display:flex; flex-direction:column; align-items:center; text-align:center; position:relative; box-shadow:0 4px 0 ${isEquipped ? 'var(--lumi-pink)' : '#f1f5f9'};">
         ${isEquipped ? `<span style="position:absolute; top:8px; right:8px; background:var(--lumi-pink); color:#fff; font-size:10px; font-weight:900; padding:2px 8px; border-radius:999px;">Đang dùng</span>` : ''}
         ${!isUnlocked ? `<span style="position:absolute; top:8px; right:8px; background:#64748b; color:#fff; font-size:10px; font-weight:900; padding:2px 8px; border-radius:999px;">🔒 Khóa</span>` : ''}
         
@@ -4951,7 +4951,7 @@ function renderReview() {
     // Khi đã hoàn thành toàn bộ câu hỏi trong danh sách ôn tập
     if (!cur) {
       return `
-        <div style="max-width:640px; margin:40px auto; text-align:center; background:#fff; border:3px solid var(--ink-900); border-radius:32px; padding:44px 32px; box-shadow:0 12px 0 var(--ink-900);">
+        <div class="review-finish-card">
           ${renderThoBayMau({ state: THO_STATES.KING_CHAMPION, size: 160, speech: "Tuyệt đỉnh! Đã vượt qua toàn bộ câu ôn tập! 👑" })}
           <h2 style="font-size:26px; font-weight:900; color:var(--ink-900); margin:18px 0 8px;">Hoàn thành ôn tập câu sai!</h2>
           <p style="font-size:15px; color:var(--ink-500); max-width:440px; margin:0 auto 24px;">
@@ -5051,7 +5051,7 @@ function renderReview() {
         </div>
 
         <!-- Khung nội dung câu hỏi trắc nghiệm -->
-        <div class="quiz-card" style="padding:28px 24px; border:3px solid var(--ink-900); border-radius:28px; box-shadow:0 8px 0 var(--ink-900); background:#fff;">
+        <div class="quiz-card" style="padding:28px 24px; border:3px solid var(--ink-900); border-radius:28px; box-shadow:0 8px 0 var(--ink-900);">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
             <span style="font-size:13px; font-weight:900; color:var(--lumi-pink); text-transform:uppercase; letter-spacing:0.5px;">
               📚 ${esc(cur.subject_name)} • ${esc(cur.lesson_title)}
@@ -5072,7 +5072,7 @@ function renderReview() {
         </div>
 
         <!-- Khung phản hồi đáp án & nút tiếp tục -->
-        <div class="quiz-footer ${footerStatusClass}" style="border-radius:24px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; gap:16px; border:2.5px solid var(--ink-900); box-shadow:0 6px 0 var(--ink-900); background:#fff;">
+        <div class="quiz-footer ${footerStatusClass}" style="border-radius:24px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; gap:16px; border:2.5px solid var(--ink-900); box-shadow:0 6px 0 var(--ink-900);">
           ${feedbackHtml}
         </div>
       </div>
@@ -5100,7 +5100,7 @@ function renderReview() {
 
   const subjectSectionsHtml = displaySubjects.map(sub => {
     return `
-      <div style="background:#fff; border:3px solid var(--ink-900); border-radius:28px; box-shadow:0 8px 0 var(--ink-900); padding:24px; margin-bottom:24px;">
+      <div class="review-subject-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom:2px dashed #fbcfe8; padding-bottom:14px; flex-wrap:wrap; gap:12px;">
           <div>
             <h3 style="font-size:19px; font-weight:900; color:var(--ink-900); margin:0 0 4px 0;">
@@ -5117,7 +5117,7 @@ function renderReview() {
 
         <div style="display:flex; flex-direction:column; gap:12px;">
           ${sub.items.map((m, idx) => `
-            <div style="background:#fff7fa; border:2px solid #ffd6e5; border-radius:18px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; gap:16px; transition:all 0.2s ease;">
+            <div class="review-item-card">
               <div style="flex:1;">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
                   <span style="font-size:12px; font-weight:900; color:var(--lumi-pink); text-transform:uppercase;">Bài: ${esc(m.lesson_title)}</span>
