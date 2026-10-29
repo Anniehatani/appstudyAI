@@ -24,7 +24,7 @@
     "wrangler": "^4.0.0"
   },
   "build": {
-    "appId": "com.lumi.3tgstudy",
+    "appId": "com.tonepink.3tgstudy",
     "productName": "3TG Học Vui Mỗi Ngày",
     "copyright": "Copyright © 2026 3TG Study",
     "directories": {
