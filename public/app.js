@@ -7986,7 +7986,7 @@ window.openEditProfileModal = function() {
           <textarea id="edit-bio-input" class="form-input" rows="3" style="resize:none;" placeholder="Giới thiệu đôi nét về bản thân...">${esc(p.bio || '')}</textarea>
         </div>
         <button type="submit" class="btn-duo btn-duo-pink" style="padding:14px; font-size:15px; margin-top:8px;">
-          Lưu thay đổi vào Cloudflare D1 💾
+          Lưu thay đổi
         </button>
       </form>
     </div>
