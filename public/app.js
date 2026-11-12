@@ -2718,7 +2718,7 @@ function renderMessengerMessageRow(m, isGroup) {
     } else if (m.mediaType === "video") {
       mediaHtml = `
         <div class="msg-media-wrap">
-          <video src="${esc(m.mediaUrl)}" controls class="msg-media-video" preload="metadata"></video>
+          <video src="${esc(m.mediaUrl)}" controls playsinline webkit-playsinline class="msg-media-video" preload="metadata" onplay="this.setAttribute('data-playing', 'true')" onpause="this.removeAttribute('data-playing')"></video>
         </div>
       `;
     } else if (m.mediaType === "audio") {
@@ -3090,6 +3090,56 @@ async function renderMessengerModal() {
   }
 }
 
+function reconcileMessengerThread(messages, isGroup) {
+  const thread = document.getElementById("messenger-thread");
+  if (!thread || !messages) return;
+
+  // 1. Nếu khung chat đang rỗng, hiển thị toàn bộ
+  if (!thread.children.length) {
+    thread.innerHTML = messages.map(m => renderMessengerMessageRow(m, isGroup)).join("");
+    thread.scrollTop = thread.scrollHeight;
+    return;
+  }
+
+  // 2. Thu thập danh sách ID tin nhắn đã có trên màn hình
+  const existingIds = new Set();
+  const existingEls = thread.querySelectorAll('.msg-row');
+  existingEls.forEach(el => {
+    if (el.id && el.id.startsWith("msg-")) {
+      existingIds.add(el.id.replace("msg-", ""));
+    }
+  });
+
+  // 3. Chỉ lọc những tin nhắn THỰC SỰ MỚI chưa từng xuất hiện trên DOM
+  const newMessages = messages.filter(m => !existingIds.has(String(m.id)));
+  if (!newMessages.length) {
+    // KHÔNG có tin nhắn mới: Tuyệt đối KHÔNG đụng vào DOM!
+    // Giúp video/audio đang xem tiếp tục phát mượt mà, không bị dừng hay giật cuộn!
+    return;
+  }
+
+  // 4. Xóa các tin nhắn optimistic tạm nếu tin nhắn chính thức từ server đã về
+  const tempEls = thread.querySelectorAll('[id^="msg-temp_"]');
+  if (tempEls.length > 0) {
+    tempEls.forEach(el => el.remove());
+  }
+
+  // 5. Kiểm tra vị trí thanh cuộn của người dùng trước khi thêm
+  const wasAtBottom = (thread.scrollHeight - thread.scrollTop - thread.clientHeight) < 160;
+
+  // 6. CHỈ chèn tiếp các tin nhắn mới vào cuối danh sách (không render lại cái cũ)
+  const newHtml = newMessages.map(m => renderMessengerMessageRow(m, isGroup)).join("");
+  thread.insertAdjacentHTML("beforeend", newHtml);
+
+  // 7. Chỉ tự động cuộn xuống nếu người dùng đang ở đáy và KHÔNG đang phát video/audio
+  if (wasAtBottom) {
+    const isPlayingMedia = !!thread.querySelector('video:not([paused]), audio:not([paused]), [data-playing="true"]');
+    if (!isPlayingMedia) {
+      thread.scrollTop = thread.scrollHeight;
+    }
+  }
+}
+
 function startMessengerPolling() {
   if (messengerPollInterval) clearInterval(messengerPollInterval);
   messengerPollInterval = setInterval(async () => {
@@ -3103,18 +3153,11 @@ function startMessengerPolling() {
     try {
       if (activeMessenger.type === "group") {
         const res = await api(`/api/groups/${activeMessenger.id}`);
-        const messages = res.messages || [];
-        const threadHtml = messages.map(m => renderMessengerMessageRow(m, true)).join("");
-        if (thread.innerHTML !== threadHtml) {
-          const wasAtBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 70;
-          thread.innerHTML = threadHtml;
-          if (wasAtBottom) thread.scrollTop = thread.scrollHeight;
-        }
+        reconcileMessengerThread(res.messages || [], true);
       } else {
         const res = await api(`/api/messages/${activeMessenger.id}`);
-        const messages = res.messages || [];
         const targetUser = res.targetUser || {};
-        const mapped = messages.map(m => ({
+        const mapped = (res.messages || []).map(m => ({
           id: m.id,
           senderName: m.isMine ? "Bạn" : (targetUser.full_name || "Học viên"),
           avatarUrl: m.isMine ? (state.user?.avatar_url) : targetUser.avatar_url,
@@ -3130,12 +3173,7 @@ function startMessengerPolling() {
           isMine: m.isMine,
           createdAt: m.createdAt
         }));
-        const threadHtml = mapped.map(m => renderMessengerMessageRow(m, false)).join("");
-        if (thread.innerHTML !== threadHtml) {
-          const wasAtBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 70;
-          thread.innerHTML = threadHtml;
-          if (wasAtBottom) thread.scrollTop = thread.scrollHeight;
-        }
+        reconcileMessengerThread(mapped, false);
       }
     } catch {}
   }, 3500);
@@ -3269,9 +3307,7 @@ async function refreshMessengerThread() {
       }));
     }
 
-    const threadHtml = messages.map(m => renderMessengerMessageRow(m, isGroup)).join("");
-    thread.innerHTML = threadHtml;
-    thread.scrollTop = thread.scrollHeight;
+    reconcileMessengerThread(messages, isGroup);
   } catch {}
 }
 
