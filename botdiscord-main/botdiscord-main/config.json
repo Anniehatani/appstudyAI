@@ -1,0 +1,41 @@
+{
+    "BOTNAME": "Annie VIP PRO",
+    "PREFIX": "!",
+    "ADMIN_NAME": "An Dev",
+    "ADMIN_UID": "100081680783009",
+    "GROQ_API_KEY": "YOUR_GROQ_API_KEY_HERE",
+    "MESSENGER": {
+        "PREFIX": "!",
+        "APPSTATE_PATH": "./appstate.json",
+        "ADMINBOT": [
+            "100081680783009"
+        ],
+        "NDH": [],
+        "PROXY": ""
+    },
+    "ANTI_BAN": {
+        "ENABLED": true,
+        "HUMAN_TYPING": true,
+        "MIN_DELAY_MS": 800,
+        "MAX_DELAY_MS": 3000,
+        "MS_PER_CHAR": 25,
+        "JITTER_MS": 300,
+        "USER_COOLDOWN_MS": 2500,
+        "MAX_SPAM_VIOLATIONS": 3,
+        "BLACKLIST_DURATION_MINUTES": 3,
+        "OUTBOX_INTERVAL_MS": 1200,
+        "AUTO_SAVE_APPSTATE_MINUTES": 20
+    },
+    "DISCORD": {
+        "TOKEN": "YOUR_DISCORD_BOT_TOKEN_HERE",
+        "CLIENT_ID": "YOUR_CLIENT_ID_HERE",
+        "PREFIX": "!",
+        "ADMINBOT": [
+            "100081680783009"
+        ],
+        "NDH": []
+    },
+    "adminOnly": false,
+    "qtvOnly": false,
+    "allowDirectMessage": true
+}

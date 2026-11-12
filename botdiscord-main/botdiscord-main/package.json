@@ -1,0 +1,28 @@
+{
+    "name": "annie-messenger-vip-pro",
+    "version": "3.0.0",
+    "description": "Bot Messenger Annie với hàng đợi tin nhắn và giới hạn tần suất sử dụng appstate.json",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "messenger": "node index.js",
+        "discord": "node discord_bot.js",
+        "test": "node --test"
+    },
+    "dependencies": {
+        "@distube/ytdl-core": "^4.16.12",
+        "axios": "^1.7.9",
+        "chalk": "^4.1.2",
+        "discord.js": "^14.16.3",
+        "dotenv": "^16.4.5",
+        "fs-extra": "^11.2.0",
+        "moment-timezone": "^0.5.45",
+        "node-telegram-bot-api": "^2.3.0",
+        "play-dl": "^1.9.7",
+        "ws3-fca": "^3.5.2",
+        "youtube-search-api": "^2.0.1",
+        "youtubei.js": "^18.1.0"
+    },
+    "author": "Cao.C.Đạt",
+    "license": "GPL-3.0"
+}

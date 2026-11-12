@@ -1,4 +1,5 @@
 import { loginIUPortal, layBangDiemVaHoSoIU, processAcademicTranscript, generateAcademicAdvisorPlan, mergeAndDeduplicateActiveCourses } from "./academic_service.js";
+import { BOT_ID, BOT_NAME, BOT_AVATAR, BOT_DECORATION, handleBot3TgCommand } from "./bot3tg.js";
 
 const COOKIE_NAME = "lumi_session";
 const COOKIE_AGE = 60 * 60 * 24 * 365;
@@ -355,15 +356,27 @@ async function evaluateUserStreak(userId, db, today) {
   return stats;
 }
 
+const userLastActiveMap = new Map();
+
 async function sessionUser(request, env) {
   const userId = getCookie(request, COOKIE_NAME);
   if (!/^[0-9a-f-]{36}$/i.test(userId)) return null;
   const account = await env.DB.prepare(
-    "SELECT a.id AS account_id, a.username, a.created_at AS account_created_at, p.id AS profile_id, p.full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.profile_theme, p.bio, p.cover_url, p.school, p.major, p.created_at AS profile_created_at " +
+    "SELECT a.id AS account_id, a.username, a.created_at AS account_created_at, p.id AS profile_id, p.full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.profile_theme, p.bio, p.cover_url, p.school, p.major, p.created_at AS profile_created_at, p.last_active_at " +
     "FROM accounts a LEFT JOIN profiles p ON p.user_id = a.user_id " +
     "WHERE a.user_id = ? LIMIT 1"
   ).bind(userId).first();
   if (!account) return null;
+
+  // Throttled update of last_active_at (once every 30s)
+  const nowMs = Date.now();
+  const lastActiveTimestamp = userLastActiveMap.get(userId) || 0;
+  if (nowMs - lastActiveTimestamp > 30000) {
+    userLastActiveMap.set(userId, nowMs);
+    const nowIso = new Date().toISOString();
+    env.DB.prepare("UPDATE profiles SET last_active_at = ? WHERE user_id = ?").bind(nowIso, userId).run().catch(() => {});
+  }
+
   const profile = {
     id: account.profile_id || account.account_id,
     user_id: userId,
@@ -377,6 +390,7 @@ async function sessionUser(request, env) {
     school: account.school || "",
     major: account.major || "",
     created_at: account.profile_created_at || account.account_created_at || "",
+    last_active_at: account.last_active_at || account.profile_created_at || new Date().toISOString(),
     username: account.username
   };
   return { userId: userId, account: account, profile: profile };
@@ -1097,7 +1111,7 @@ async function serveMedia(path, env) {
   } catch {
     return new Response("Not found", { status: 404 });
   }
-  if ((!key.startsWith("avatars/") && !key.startsWith("hinhnen/")) || key.includes("..") || key.includes("\\")) {
+  if ((!key.startsWith("avatars/") && !key.startsWith("hinhnen/") && !key.startsWith("chat_files/")) || key.includes("..") || key.includes("\\")) {
     return new Response("Not found", { status: 404 });
   }
   const object = await env.AVATARS.get(key);
@@ -1108,10 +1122,20 @@ async function serveMedia(path, env) {
   headers.set("cache-control", "public, max-age=31536000, immutable");
   headers.set("x-content-type-options", "nosniff");
   if (!headers.get("content-type") || headers.get("content-type") === "application/octet-stream") {
-    if (key.endsWith(".gif")) headers.set("content-type", "image/gif");
-    else if (key.endsWith(".webp")) headers.set("content-type", "image/webp");
-    else if (key.endsWith(".jpg") || key.endsWith(".jpeg")) headers.set("content-type", "image/jpeg");
-    else if (key.endsWith(".png")) headers.set("content-type", "image/png");
+    const lk = key.toLowerCase();
+    if (lk.endsWith(".gif")) headers.set("content-type", "image/gif");
+    else if (lk.endsWith(".webp")) headers.set("content-type", "image/webp");
+    else if (lk.endsWith(".jpg") || lk.endsWith(".jpeg")) headers.set("content-type", "image/jpeg");
+    else if (lk.endsWith(".png")) headers.set("content-type", "image/png");
+    else if (lk.endsWith(".svg")) headers.set("content-type", "image/svg+xml");
+    else if (lk.endsWith(".mp4")) headers.set("content-type", "video/mp4");
+    else if (lk.endsWith(".webm")) headers.set("content-type", "video/webm");
+    else if (lk.endsWith(".mp3")) headers.set("content-type", "audio/mpeg");
+    else if (lk.endsWith(".wav")) headers.set("content-type", "audio/wav");
+    else if (lk.endsWith(".ogg")) headers.set("content-type", "audio/ogg");
+    else if (lk.endsWith(".m4a")) headers.set("content-type", "audio/mp4");
+    else if (lk.endsWith(".pdf")) headers.set("content-type", "application/pdf");
+    else if (lk.endsWith(".zip")) headers.set("content-type", "application/zip");
   }
   return new Response(object.body, { headers: headers });
 }
@@ -1797,7 +1821,7 @@ async function leaderboard(user, env) {
 
 async function getUserPublicProfile(targetUserId, currentUser, env) {
   const profile = await env.DB.prepare(
-    "SELECT p.id, p.user_id, p.full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.profile_theme, p.bio, p.cover_url, p.school, p.major, p.created_at, a.username " +
+    "SELECT p.id, p.user_id, p.full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.profile_theme, p.bio, p.cover_url, p.school, p.major, p.created_at, p.last_active_at, a.username " +
     "FROM profiles p LEFT JOIN accounts a ON a.user_id = p.user_id WHERE p.user_id = ? LIMIT 1"
   ).bind(targetUserId).first();
   if (!profile) throw new HttpError(404, "Không tìm thấy hồ sơ học viên này.");
@@ -1820,8 +1844,17 @@ async function getUserPublicProfile(targetUserId, currentUser, env) {
   ).bind(targetUserId).first();
 
   const friend = await env.DB.prepare(
-    "SELECT id, status FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?) LIMIT 1"
+    "SELECT id, user_id, friend_id, status FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?) LIMIT 1"
   ).bind(currentUser.userId, targetUserId, targetUserId, currentUser.userId).first();
+
+  let friendStatus = "none";
+  if (friend) {
+    if (friend.status === "accepted") {
+      friendStatus = "accepted";
+    } else if (friend.status === "pending") {
+      friendStatus = (friend.user_id === currentUser.userId) ? "pending_sent" : "pending_received";
+    }
+  }
 
   return {
     profile: profile,
@@ -1831,8 +1864,9 @@ async function getUserPublicProfile(targetUserId, currentUser, env) {
     completedLessons: progress?.completed_count || 0,
     achievementsCount: ach?.ach_count || 0,
     isSelf: currentUser.userId === targetUserId,
-    isFriend: !!friend,
-    friendStatus: friend?.status || null
+    isFriend: friendStatus === "accepted",
+    friendStatus: friendStatus,
+    friendshipId: friend?.id || null
   };
 }
 
@@ -1846,21 +1880,87 @@ async function toggleFriend(request, currentUser, env) {
   if (!target) throw new HttpError(404, "Học viên không tồn tại.");
 
   const existing = await env.DB.prepare(
-    "SELECT id FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?) LIMIT 1"
+    "SELECT id, user_id, friend_id, status FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?) LIMIT 1"
   ).bind(currentUser.userId, targetUserId, targetUserId, currentUser.userId).first();
 
-  const now = vietDate();
+  const now = new Date().toISOString();
   if (existing) {
-    await env.DB.prepare(
-      "DELETE FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)"
-    ).bind(currentUser.userId, targetUserId, targetUserId, currentUser.userId).run();
-    return { isFriend: false, message: "Đã hủy kết bạn thành công." };
-  } else {
-    await env.DB.prepare(
-      "INSERT INTO friendships (user_id, friend_id, status, created_at) VALUES (?, ?, 'accepted', ?)"
-    ).bind(currentUser.userId, targetUserId, now).run();
-    return { isFriend: true, message: "Đã kết bạn thành công! 🎉" };
+    if (existing.status === "accepted") {
+      await env.DB.prepare("DELETE FROM friendships WHERE id = ?").bind(existing.id).run();
+      return { isFriend: false, friendStatus: "none", message: "Đã hủy kết bạn thành công." };
+    } else if (existing.status === "pending") {
+      if (existing.user_id === currentUser.userId) {
+        await env.DB.prepare("DELETE FROM friendships WHERE id = ?").bind(existing.id).run();
+        return { isFriend: false, friendStatus: "none", message: "Đã hủy lời mời kết bạn." };
+      } else {
+        await env.DB.prepare("UPDATE friendships SET status = 'accepted', created_at = ? WHERE id = ?").bind(now, existing.id).run();
+        return { isFriend: true, friendStatus: "accepted", message: "Đã chấp nhận kết bạn thành công! Giờ các bạn đã là bạn bè 🎉" };
+      }
+    }
   }
+
+  await env.DB.prepare(
+    "INSERT INTO friendships (user_id, friend_id, status, created_at) VALUES (?, ?, 'pending', ?)"
+  ).bind(currentUser.userId, targetUserId, now).run();
+  return { isFriend: false, friendStatus: "pending_sent", message: "Đã gửi lời mời kết bạn! Đang chờ bạn ấy đồng ý ⏳" };
+}
+
+async function acceptFriendRequest(request, currentUser, env) {
+  const body = await readJson(request);
+  const targetUserId = String(body.targetUserId || "").trim();
+  if (!targetUserId) throw new HttpError(400, "Thiếu mã học viên.");
+
+  const now = new Date().toISOString();
+  const res = await env.DB.prepare(
+    "UPDATE friendships SET status = 'accepted', created_at = ? WHERE user_id = ? AND friend_id = ? AND status = 'pending'"
+  ).bind(now, targetUserId, currentUser.userId).run();
+
+  return { ok: true, isFriend: true, friendStatus: "accepted", message: "Đã chấp nhận kết bạn thành công! 🎉" };
+}
+
+async function rejectFriendRequest(request, currentUser, env) {
+  const body = await readJson(request);
+  const targetUserId = String(body.targetUserId || "").trim();
+  if (!targetUserId) throw new HttpError(400, "Thiếu mã học viên.");
+
+  await env.DB.prepare(
+    "DELETE FROM friendships WHERE (user_id = ? AND friend_id = ? AND status = 'pending') OR (user_id = ? AND friend_id = ? AND status = 'pending')"
+  ).bind(targetUserId, currentUser.userId, currentUser.userId, targetUserId).run();
+
+  return { ok: true, isFriend: false, friendStatus: "none", message: "Đã từ chối lời mời kết bạn." };
+}
+
+async function getFriendRequests(currentUser, env) {
+  const incoming = await env.DB.prepare(
+    "SELECT f.id AS friendship_id, f.user_id, f.created_at, " +
+    "COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
+    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, a.username, " +
+    "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak " +
+    "FROM friendships f " +
+    "JOIN profiles p ON p.user_id = f.user_id " +
+    "LEFT JOIN accounts a ON a.user_id = p.user_id " +
+    "LEFT JOIN user_stats s ON s.user_id = p.user_id " +
+    "WHERE f.friend_id = ? AND f.status = 'pending' " +
+    "ORDER BY f.id DESC"
+  ).bind(currentUser.userId).all();
+
+  const outgoing = await env.DB.prepare(
+    "SELECT f.id AS friendship_id, f.friend_id AS user_id, f.created_at, " +
+    "COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
+    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, a.username, " +
+    "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak " +
+    "FROM friendships f " +
+    "JOIN profiles p ON p.user_id = f.friend_id " +
+    "LEFT JOIN accounts a ON a.user_id = p.user_id " +
+    "LEFT JOIN user_stats s ON s.user_id = p.user_id " +
+    "WHERE f.user_id = ? AND f.status = 'pending' " +
+    "ORDER BY f.id DESC"
+  ).bind(currentUser.userId).all();
+
+  return {
+    incoming: incoming.results || [],
+    outgoing: outgoing.results || []
+  };
 }
 
 async function getFriendsList(currentUser, env) {
@@ -1869,7 +1969,7 @@ async function getFriendsList(currentUser, env) {
       "CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END AS friend_user_id, " +
       "f.created_at AS friendship_date, " +
       "COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
-      "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, a.username, " +
+      "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, p.last_active_at, a.username, " +
       "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak, " +
       "COALESCE(w.league_name, 'Bronze') AS league_name " +
     "FROM friendships f " +
@@ -1877,7 +1977,7 @@ async function getFriendsList(currentUser, env) {
     "LEFT JOIN accounts a ON a.user_id = p.user_id " +
     "LEFT JOIN user_stats s ON s.user_id = p.user_id " +
     "LEFT JOIN weekly_leaderboards w ON w.user_id = p.user_id " +
-    "WHERE f.user_id = ? OR f.friend_id = ? " +
+    "WHERE (f.user_id = ? OR f.friend_id = ?) AND f.status = 'accepted' " +
     "GROUP BY friend_user_id " +
     "ORDER BY s.total_xp DESC";
 
@@ -1893,17 +1993,32 @@ async function searchUsers(request, currentUser, env) {
 
   const res = await env.DB.prepare(
     "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
-    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, a.username, " +
+    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, p.last_active_at, a.username, " +
     "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak, " +
-    "EXISTS (SELECT 1 FROM friendships f WHERE (f.user_id = ? AND f.friend_id = p.user_id) OR (f.user_id = p.user_id AND f.friend_id = ?)) AS is_friend " +
+    "f.status AS friendship_status, f.user_id AS requester_id " +
     "FROM profiles p " +
     "LEFT JOIN accounts a ON a.user_id = p.user_id " +
     "LEFT JOIN user_stats s ON s.user_id = p.user_id " +
+    "LEFT JOIN friendships f ON (f.user_id = ? AND f.friend_id = p.user_id) OR (f.user_id = p.user_id AND f.friend_id = ?) " +
     "WHERE p.user_id != ? AND (p.full_name LIKE ? OR a.username LIKE ? OR p.school LIKE ?) " +
     "ORDER BY s.total_xp DESC LIMIT 20"
   ).bind(currentUser.userId, currentUser.userId, currentUser.userId, pattern, pattern, pattern).all();
 
-  return { users: res.results || [] };
+  const users = (res.results || []).map(u => {
+    let friendStatus = "none";
+    if (u.friendship_status === "accepted") {
+      friendStatus = "accepted";
+    } else if (u.friendship_status === "pending") {
+      friendStatus = (u.requester_id === currentUser.userId) ? "pending_sent" : "pending_received";
+    }
+    return {
+      ...u,
+      is_friend: friendStatus === "accepted",
+      friendStatus: friendStatus
+    };
+  });
+
+  return { users: users };
 }
 
 async function getConversations(currentUser, env) {
@@ -1911,6 +2026,8 @@ async function getConversations(currentUser, env) {
     "SELECT " +
       "CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS other_user_id, " +
       "message AS last_message, " +
+      "media_type AS last_media_type, " +
+      "media_name AS last_media_name, " +
       "created_at, " +
       "sender_id " +
     "FROM direct_messages " +
@@ -1925,7 +2042,7 @@ async function getConversations(currentUser, env) {
     if (!seen.has(row.other_user_id)) {
       seen.add(row.other_user_id);
       const other = await env.DB.prepare(
-        "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.cover_url, a.username " +
+        "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.cover_url, p.last_active_at, a.username " +
         "FROM profiles p LEFT JOIN accounts a ON a.user_id = p.user_id WHERE p.user_id = ? LIMIT 1"
       ).bind(row.other_user_id).first();
 
@@ -1934,9 +2051,15 @@ async function getConversations(currentUser, env) {
       ).bind(row.other_user_id, currentUser.userId).first();
 
       if (other) {
+        let snippet = row.last_message;
+        if (!snippet && row.last_media_type) {
+          snippet = row.last_media_type === "image" ? "📷 [Hình ảnh]" :
+                    row.last_media_type === "video" ? "🎥 [Video]" :
+                    row.last_media_type === "audio" ? "🎵 [Âm thanh]" : `📎 [Tệp] ${row.last_media_name || ""}`;
+        }
         convos.push({
           user: other,
-          lastMessage: row.last_message,
+          lastMessage: snippet || "Bắt đầu cuộc trò chuyện",
           lastTime: row.created_at,
           isMine: row.sender_id === currentUser.userId,
           unreadCount: unread?.c || 0
@@ -1954,14 +2077,14 @@ async function getMessagesWithUser(targetUserId, currentUser, env) {
   ).bind(targetUserId, currentUser.userId).run();
 
   const messages = await env.DB.prepare(
-    "SELECT id, sender_id, receiver_id, message, is_read, created_at " +
+    "SELECT id, sender_id, receiver_id, message, media_url, media_type, media_name, media_size, reply_to_id, reply_to_name, reply_to_text, is_read, created_at " +
     "FROM direct_messages " +
     "WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) " +
     "ORDER BY id ASC LIMIT 100"
   ).bind(currentUser.userId, targetUserId, targetUserId, currentUser.userId).all();
 
   const targetUser = await env.DB.prepare(
-    "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.cover_url, a.username " +
+    "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.cover_url, p.last_active_at, a.username " +
     "FROM profiles p LEFT JOIN accounts a ON a.user_id = p.user_id WHERE p.user_id = ? LIMIT 1"
   ).bind(targetUserId).first();
 
@@ -1969,35 +2092,663 @@ async function getMessagesWithUser(targetUserId, currentUser, env) {
     messages: (messages.results || []).map(m => ({
       id: m.id,
       message: m.message,
+      mediaUrl: m.media_url,
+      mediaType: m.media_type,
+      mediaName: m.media_name,
+      mediaSize: m.media_size,
+      replyToId: m.reply_to_id,
+      replyToName: m.reply_to_name,
+      replyToText: m.reply_to_text,
       isMine: m.sender_id === currentUser.userId,
       createdAt: m.created_at
     })),
-    targetUser: targetUser || { user_id: targetUserId, full_name: "Học viên 3TG" }
+    targetUser: targetUser || { user_id: targetUserId, full_name: "Học viên 3TG", last_active_at: null }
   };
 }
 
 async function sendMessageToUser(request, targetUserId, currentUser, env) {
   const body = await readJson(request);
-  const text = String(body.message || "").trim().slice(0, 1000);
-  if (!text) throw new HttpError(400, "Nội dung tin nhắn không được để trống.");
+  const text = String(body.message || "").trim().slice(0, 2000);
+  const mediaUrl = body.mediaUrl ? String(body.mediaUrl).trim() : null;
+  const mediaType = body.mediaType ? String(body.mediaType).trim() : null;
+  const mediaName = body.mediaName ? String(body.mediaName).trim().slice(0, 200) : null;
+  const mediaSize = Number(body.mediaSize) || 0;
+  const replyToId = body.replyToId ? Number(body.replyToId) : null;
+  const replyToName = body.replyToName ? String(body.replyToName).trim().slice(0, 100) : null;
+  const replyToText = body.replyToText ? String(body.replyToText).trim().slice(0, 250) : null;
+
+  if (!text && !mediaUrl) throw new HttpError(400, "Nội dung hoặc tệp gửi không được để trống.");
 
   const target = await env.DB.prepare("SELECT user_id FROM profiles WHERE user_id = ? LIMIT 1").bind(targetUserId).first();
   if (!target) throw new HttpError(404, "Học viên không tồn tại.");
 
   const now = new Date().toISOString();
   const res = await env.DB.prepare(
-    "INSERT INTO direct_messages (sender_id, receiver_id, message, is_read, created_at) VALUES (?, ?, ?, 0, ?)"
-  ).bind(currentUser.userId, targetUserId, text, now).run();
+    "INSERT INTO direct_messages (sender_id, receiver_id, message, is_read, media_url, media_type, media_name, media_size, reply_to_id, reply_to_name, reply_to_text, created_at) " +
+    "VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(currentUser.userId, targetUserId, text, mediaUrl, mediaType, mediaName, mediaSize, replyToId, replyToName, replyToText, now).run();
 
   return {
     ok: true,
     message: {
       id: res.meta?.last_row_id || Date.now(),
       message: text,
+      mediaUrl,
+      mediaType,
+      mediaName,
+      mediaSize,
+      replyToId,
+      replyToName,
+      replyToText,
       isMine: true,
       createdAt: now
     }
   };
+}
+
+async function createChatGroup(request, currentUser, env) {
+  const body = await readJson(request);
+  const name = String(body.name || "").trim().slice(0, 100);
+  if (!name) throw new HttpError(400, "Tên nhóm học tập không được để trống.");
+  const memberIds = Array.isArray(body.memberIds) ? body.memberIds.filter(id => id && id !== currentUser.userId) : [];
+
+  const groupId = "grp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+  const now = new Date().toISOString();
+
+  await env.DB.prepare(
+    "INSERT INTO chat_groups (id, name, created_by, created_at) VALUES (?, ?, ?, ?)"
+  ).bind(groupId, name, currentUser.userId, now).run();
+
+  await env.DB.prepare(
+    "INSERT INTO chat_group_members (group_id, user_id, role, joined_at) VALUES (?, ?, 'admin', ?)"
+  ).bind(groupId, currentUser.userId, now).run();
+
+  // Tự động thêm Trợ lý Bot 3TG vào nhóm mới tạo
+  try {
+    await env.DB.prepare(
+      "INSERT OR IGNORE INTO chat_group_members (group_id, user_id, role, joined_at) VALUES (?, ?, 'bot', ?)"
+    ).bind(groupId, BOT_ID, now).run();
+  } catch {}
+
+  for (const mId of memberIds) {
+    try {
+      await env.DB.prepare(
+        "INSERT OR IGNORE INTO chat_group_members (group_id, user_id, role, joined_at) VALUES (?, ?, 'member', ?)"
+      ).bind(groupId, mId, now).run();
+    } catch {}
+  }
+
+  const creatorProfile = await env.DB.prepare("SELECT full_name FROM profiles WHERE user_id = ? LIMIT 1").bind(currentUser.userId).first();
+  const creatorName = creatorProfile?.full_name || "Nhóm trưởng";
+
+  await env.DB.prepare(
+    "INSERT INTO chat_group_messages (group_id, sender_id, message, created_at) VALUES (?, ?, ?, ?)"
+  ).bind(groupId, currentUser.userId, `🎉 ${creatorName} đã tạo nhóm học tập "${name}". Trợ lý ảo Bot 3TG đã sẵn sàng hỗ trợ nhóm 24/7! Gõ !help hoặc !ai để bắt đầu nhé! 🌸`, now).run();
+
+  return { ok: true, group: { id: groupId, name, membersCount: memberIds.length + 2 } };
+}
+
+async function listChatGroups(currentUser, env) {
+  const groupsRes = await env.DB.prepare(
+    "SELECT g.id, g.name, g.avatar_url, g.created_by, g.created_at, " +
+    "(SELECT COUNT(*) FROM chat_group_members m WHERE m.group_id = g.id) AS member_count, " +
+    "(SELECT message FROM chat_group_messages msg WHERE msg.group_id = g.id ORDER BY msg.id DESC LIMIT 1) AS last_message, " +
+    "(SELECT media_type FROM chat_group_messages msg WHERE msg.group_id = g.id ORDER BY msg.id DESC LIMIT 1) AS last_media_type, " +
+    "(SELECT media_name FROM chat_group_messages msg WHERE msg.group_id = g.id ORDER BY msg.id DESC LIMIT 1) AS last_media_name, " +
+    "(SELECT created_at FROM chat_group_messages msg WHERE msg.group_id = g.id ORDER BY msg.id DESC LIMIT 1) AS last_time " +
+    "FROM chat_groups g " +
+    "JOIN chat_group_members m ON m.group_id = g.id " +
+    "WHERE m.user_id = ? " +
+    "ORDER BY COALESCE(last_time, g.created_at) DESC"
+  ).bind(currentUser.userId).all();
+
+  const groups = (groupsRes.results || []).map(g => {
+    let snippet = g.last_message;
+    if (!snippet && g.last_media_type) {
+      snippet = g.last_media_type === "image" ? "📷 [Hình ảnh]" :
+                g.last_media_type === "video" ? "🎥 [Video]" :
+                g.last_media_type === "audio" ? "🎵 [Âm thanh]" : `📎 [Tệp] ${g.last_media_name || ""}`;
+    }
+    return {
+      ...g,
+      last_message: snippet || "Chào mừng bạn đến với nhóm!"
+    };
+  });
+
+  return { groups };
+}
+
+async function getGroupDetailsAndMessages(groupId, currentUser, env) {
+  const membership = await env.DB.prepare(
+    "SELECT role FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1"
+  ).bind(groupId, currentUser.userId).first();
+  if (!membership) throw new HttpError(403, "Bạn không phải thành viên của nhóm này.");
+
+  const group = await env.DB.prepare(
+    "SELECT id, name, avatar_url, created_by, created_at FROM chat_groups WHERE id = ? LIMIT 1"
+  ).bind(groupId).first();
+  if (!group) throw new HttpError(404, "Nhóm chat không tồn tại.");
+
+  const membersRes = await env.DB.prepare(
+    "SELECT m.user_id, m.role, m.joined_at, COALESCE(p.full_name, a.username, 'Thành viên') AS full_name, " +
+    "p.avatar_url, p.avatar_decoration, p.last_active_at, a.username " +
+    "FROM chat_group_members m " +
+    "LEFT JOIN profiles p ON p.user_id = m.user_id " +
+    "LEFT JOIN accounts a ON a.user_id = m.user_id " +
+    "WHERE m.group_id = ?"
+  ).bind(groupId).all();
+
+  const members = (membersRes.results || []).map(m => {
+    if (m.user_id === BOT_ID) {
+      return {
+        ...m,
+        full_name: BOT_NAME,
+        username: "bot3tg",
+        avatar_url: BOT_AVATAR,
+        avatar_decoration: BOT_DECORATION,
+        last_active_at: new Date().toISOString(),
+        role: 'bot'
+      };
+    }
+    return m;
+  });
+
+  const hasBot = members.some(m => m.user_id === BOT_ID);
+
+  const messages = await env.DB.prepare(
+    "SELECT msg.id, msg.sender_id, msg.message, msg.media_url, msg.media_type, msg.media_name, msg.media_size, " +
+    "msg.reply_to_id, msg.reply_to_name, msg.reply_to_text, msg.created_at, " +
+    "CASE WHEN msg.sender_id = '3tg-bot' OR msg.sender_id = '3tg-ai-bot' THEN '🤖 Bot 3TG' ELSE COALESCE(p.full_name, a.username, 'Học viên') END AS sender_name, " +
+    "CASE WHEN msg.sender_id = '3tg-bot' OR msg.sender_id = '3tg-ai-bot' THEN 'https://api.dicebear.com/7.x/bottts/svg?seed=bot-3tg&backgroundColor=ffb6c1' ELSE p.avatar_url END AS avatar_url, " +
+    "CASE WHEN msg.sender_id = '3tg-bot' OR msg.sender_id = '3tg-ai-bot' THEN 'deco_pink_cherry' ELSE p.avatar_decoration END AS avatar_decoration " +
+    "FROM chat_group_messages msg " +
+    "LEFT JOIN profiles p ON p.user_id = msg.sender_id " +
+    "LEFT JOIN accounts a ON a.user_id = msg.sender_id " +
+    "WHERE msg.group_id = ? " +
+    "ORDER BY msg.id ASC LIMIT 150"
+  ).bind(groupId).all();
+
+  return {
+    group,
+    myRole: membership.role,
+    hasBot,
+    isOwner: membership.role === 'admin' || group.created_by === currentUser.userId,
+    members: members,
+    messages: (messages.results || []).map(m => ({
+      id: m.id,
+      senderId: m.sender_id,
+      senderName: m.sender_name,
+      avatarUrl: m.avatar_url,
+      avatarDecoration: m.avatar_decoration,
+      message: m.message,
+      mediaUrl: m.media_url,
+      mediaType: m.media_type,
+      mediaName: m.media_name,
+      mediaSize: m.media_size,
+      replyToId: m.reply_to_id,
+      replyToName: m.reply_to_name,
+      replyToText: m.reply_to_text,
+      isAi: m.sender_id === BOT_ID || m.sender_id === '3tg-ai-bot',
+      isMine: m.sender_id === currentUser.userId,
+      createdAt: m.created_at
+    }))
+  };
+}
+
+async function callGroupAiBot(prompt, currentUser, contextText, env) {
+  const apiKey = env.DEEPSEEK_API_KEY || env.LOCAL_AI_API_KEY;
+  const endpoint = env.LOCAL_AI_ENDPOINT || "https://api.deepseek.com/chat/completions";
+  const model = env.DEEPSEEK_MODEL || env.LOCAL_AI_MODEL || "deepseek-chat";
+
+  const systemInstruction = 
+    "Bạn là 3TG AI - một trợ lý AI thông minh, siêu hài hước, thân thiện, tâm lý và đa tài trong nhóm chat 3TG Messenger. " +
+    "Bạn KHÔNG bị giới hạn ở môn học, bạn sẵn sàng trả lời MỌI chủ đề: tình cảm (cách tỏ tình, cách có người yêu, tâm sự crush), " +
+    "đời sống (hôm nay ăn gì, chuyện vui, meme, xem phim, lối sống), học tập (mẹo ôn thi, giải bài, công nghệ, code), giải trí... " +
+    "Quy tắc phản hồi: " +
+    "1. Luôn ngắn gọn, súc tích (khoảng 2 đến 4 câu), dí dỏm, duyên dáng, tràn đầy năng lượng tích cực. " +
+    "2. Thêm các icon đáng yêu (💖, ✨, 🌸, 🚀, 🐰, 😆...). " +
+    "3. Xưng hô tự nhiên thân thiện (mình - bạn, hoặc tớ - cậu). " +
+    "4. Tuyệt đối không dài dòng học thuật trừ khi người dùng yêu cầu phân tích sâu.";
+
+  const messages = [
+    { role: "system", content: systemInstruction }
+  ];
+  if (contextText) {
+    messages.push({ role: "system", content: `Ngữ cảnh tin nhắn trước đó trong nhóm: "${contextText.slice(0, 200)}"` });
+  }
+  messages.push({
+    role: "user",
+    content: `[Thành viên ${currentUser.profile?.full_name || 'Bạn'}]: ${prompt}`
+  });
+
+  if (apiKey) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: messages,
+          max_tokens: 350,
+          temperature: 0.85
+        })
+      });
+      const data = await response.json();
+      const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      if (content && content.trim()) {
+        return content.trim();
+      }
+    } catch (e) {
+      console.warn("Call DeepSeek Group AI failed:", e.message);
+    }
+  }
+
+  // Fallback intelligent witty responses if API is unreachable
+  const pLower = prompt.toLowerCase();
+  if (pLower.includes("người yêu") || pLower.includes("crush") || pLower.includes("tỏ tình")) {
+    return "Bí kíp số 1: Cứ chăm chỉ học giỏi, giữ chuỗi Streak thật đỉnh và tự tin lên là crush đổ ngay! Còn nếu gấp quá thì để 3TG AI làm người yêu ảo tư vấn tâm lý 24/7 cho nè 💖✨!";
+  }
+  if (pLower.includes("ăn gì") || pLower.includes("bữa trưa") || pLower.includes("bữa tối")) {
+    const foods = ["Cơm tấm sườn bì chả thơm phức 🍖", "Bún bò Huế ngập tràn topping cay cay 🍜", "Trà sữa full trân châu đường đen ngọt ngào 🧋", "Phở bò tái lăn chuẩn vị Hà Nội 🍲", "Gà rán giòn rụm chấm tương ớt 🍗"];
+    return `Theo thuật toán đỉnh cao của 3TG AI, hôm nay bạn nên triển ngay món: ${foods[Math.floor(Math.random() * foods.length)]}! Vừa no bụng vừa có sức học tập xịn mịn nhé 😋!`;
+  }
+  if (pLower.includes("học") || pLower.includes("thi") || pLower.includes("qua môn") || pLower.includes("deadline")) {
+    return "Đừng lo, 'nước đến chân thì nhảy, mà nhảy không kịp thì bật 3TG AI gánh'! Hãy chia nhỏ bài học thành từng phiên Pomodoro 25 phút, bạn sẽ bất ngờ với tốc độ hoàn thành đấy 📚🔥!";
+  }
+  return `3TG AI nghe rõ rồi nè! Cứ yên tâm có tớ luôn đồng hành cùng cả nhóm trong mọi thử thách, từ học tập tới tâm tư cuộc sống nhé 🌸✨!`;
+}
+
+async function sendGroupMessage(request, groupId, currentUser, env) {
+  const membership = await env.DB.prepare(
+    "SELECT role FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1"
+  ).bind(groupId, currentUser.userId).first();
+  if (!membership) throw new HttpError(403, "Bạn không phải thành viên của nhóm này.");
+
+  const body = await readJson(request);
+  const text = String(body.message || "").trim().slice(0, 2000);
+  const mediaUrl = body.mediaUrl ? String(body.mediaUrl).trim() : null;
+  const mediaType = body.mediaType ? String(body.mediaType).trim() : null;
+  const mediaName = body.mediaName ? String(body.mediaName).trim().slice(0, 200) : null;
+  const mediaSize = Number(body.mediaSize) || 0;
+  const replyToId = body.replyToId ? Number(body.replyToId) : null;
+  const replyToName = body.replyToName ? String(body.replyToName).trim().slice(0, 100) : null;
+  const replyToText = body.replyToText ? String(body.replyToText).trim().slice(0, 250) : null;
+
+  if (!text && !mediaUrl) throw new HttpError(400, "Nội dung hoặc tệp gửi không được để trống.");
+
+  const now = new Date().toISOString();
+  const res = await env.DB.prepare(
+    "INSERT INTO chat_group_messages (group_id, sender_id, message, media_url, media_type, media_name, media_size, reply_to_id, reply_to_name, reply_to_text, created_at) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(groupId, currentUser.userId, text, mediaUrl, mediaType, mediaName, mediaSize, replyToId, replyToName, replyToText, now).run();
+
+  const userMsgId = res.meta?.last_row_id || Date.now();
+  const senderProfile = await env.DB.prepare(
+    "SELECT full_name, avatar_url, avatar_decoration FROM profiles WHERE user_id = ? LIMIT 1"
+  ).bind(currentUser.userId).first();
+
+  const userMsg = {
+    id: userMsgId,
+    groupId,
+    senderId: currentUser.userId,
+    senderName: senderProfile?.full_name || "Bạn",
+    avatarUrl: senderProfile?.avatar_url,
+    avatarDecoration: senderProfile?.avatar_decoration,
+    message: text,
+    mediaUrl,
+    mediaType,
+    mediaName,
+    mediaSize,
+    replyToId,
+    replyToName,
+    replyToText,
+    isMine: true,
+    createdAt: now
+  };
+
+  // KIỂM TRA BOT 3TG TRONG NHÓM
+  const botMember = await env.DB.prepare(
+    "SELECT 1 FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1"
+  ).bind(groupId, BOT_ID).first();
+
+  let botMsg = null;
+  if (botMember && text) {
+    const isExplicitAi = /^\s*(\/ai|!ai|@ai)\b/i.test(text);
+    const isReplyToBot = (replyToName && (replyToName.includes("Bot 3TG") || replyToName.includes("3TG AI"))) || 
+                         (replyToText && (replyToText.includes("Bot 3TG") || replyToText.includes("3TG AI")));
+    const isCommand = text.startsWith("!") || text.startsWith("/");
+
+    if (isCommand || isExplicitAi || isReplyToBot) {
+      const groupData = await env.DB.prepare("SELECT name FROM chat_groups WHERE id = ? LIMIT 1").bind(groupId).first();
+      const membersData = await env.DB.prepare(
+        "SELECT m.user_id, m.role, COALESCE(p.full_name, a.username, 'Thành viên') as full_name FROM chat_group_members m LEFT JOIN profiles p ON p.user_id = m.user_id LEFT JOIN accounts a ON a.user_id = m.user_id WHERE m.group_id = ?"
+      ).bind(groupId).all();
+
+      const botContext = {
+        group: groupData || {},
+        members: membersData.results || [],
+        sender: { userId: currentUser.userId, name: senderProfile?.full_name || "Bạn" }
+      };
+
+      const botCmdResult = await handleBot3TgCommand(text, botContext);
+
+      if (botCmdResult || isExplicitAi || isReplyToBot) {
+        let replyContent = "";
+        let replyMediaUrl = null;
+        let replyMediaType = null;
+        let replyMediaName = null;
+
+        if (botCmdResult && !botCmdResult.isAi) {
+          replyContent = botCmdResult.message;
+          replyMediaUrl = botCmdResult.mediaUrl || null;
+          replyMediaType = botCmdResult.mediaType || null;
+          replyMediaName = botCmdResult.mediaName || null;
+        } else {
+          // AI prompt
+          let prompt = text.replace(/^\s*(\/ai|!ai|@ai)\s*/i, "").trim();
+          if (!prompt && isReplyToBot) prompt = text;
+          if (!prompt) prompt = "Xin chào Bot 3TG! Hãy giới thiệu bản thân đi!";
+          replyContent = await callGroupAiBot(prompt, currentUser, replyToText, env);
+        }
+
+        if (replyContent || replyMediaUrl) {
+          const botNow = new Date().toISOString();
+          const bRes = await env.DB.prepare(
+            "INSERT INTO chat_group_messages (group_id, sender_id, message, media_url, media_type, media_name, media_size, reply_to_id, reply_to_name, reply_to_text, created_at) " +
+            "VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)"
+          ).bind(groupId, BOT_ID, replyContent, replyMediaUrl, replyMediaType, replyMediaName, userMsgId, senderProfile?.full_name || "Bạn", text.slice(0, 150), botNow).run();
+
+          botMsg = {
+            id: bRes.meta?.last_row_id || (Date.now() + 1),
+            groupId,
+            senderId: BOT_ID,
+            senderName: BOT_NAME,
+            avatarUrl: BOT_AVATAR,
+            avatarDecoration: BOT_DECORATION,
+            message: replyContent,
+            mediaUrl: replyMediaUrl,
+            mediaType: replyMediaType,
+            mediaName: replyMediaName,
+            mediaSize: 0,
+            replyToId: userMsgId,
+            replyToName: senderProfile?.full_name || "Bạn",
+            replyToText: text.slice(0, 150),
+            isMine: false,
+            isAi: true,
+            createdAt: botNow
+          };
+        }
+      }
+    }
+  }
+
+  return {
+    ok: true,
+    message: userMsg,
+    aiMessage: botMsg
+  };
+}
+
+async function kickGroupMember(request, groupId, currentUser, env) {
+  const myMember = await env.DB.prepare(
+    "SELECT role FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1"
+  ).bind(groupId, currentUser.userId).first();
+  if (!myMember || (myMember.role !== 'admin' && myMember.role !== 'deputy')) {
+    throw new HttpError(403, "Chỉ Trưởng nhóm hoặc Phó nhóm mới có quyền xóa thành viên.");
+  }
+  const body = await readJson(request);
+  const targetUserId = String(body.targetUserId || "").trim();
+  if (!targetUserId) throw new HttpError(400, "Vui lòng chọn thành viên cần xóa.");
+  if (targetUserId === currentUser.userId) throw new HttpError(400, "Bạn không thể tự kick chính mình.");
+
+  // Check target member
+  const targetMember = await env.DB.prepare(
+    "SELECT m.role, COALESCE(p.full_name, a.username, 'Thành viên') AS full_name " +
+    "FROM chat_group_members m " +
+    "LEFT JOIN profiles p ON p.user_id = m.user_id " +
+    "LEFT JOIN accounts a ON a.user_id = m.user_id " +
+    "WHERE m.group_id = ? AND m.user_id = ? LIMIT 1"
+  ).bind(groupId, targetUserId).first();
+
+  if (!targetMember) throw new HttpError(404, "Thành viên này không có trong nhóm.");
+  if (targetMember.role === 'admin') throw new HttpError(403, "Không thể mời Trưởng nhóm rời khỏi nhóm.");
+  if (myMember.role === 'deputy' && targetMember.role === 'deputy') {
+    throw new HttpError(403, "Phó nhóm không thể mời một Phó nhóm khác rời nhóm.");
+  }
+
+  const targetName = targetUserId === BOT_ID ? BOT_NAME : targetMember.full_name;
+
+  // Delete member
+  await env.DB.prepare("DELETE FROM chat_group_members WHERE group_id = ? AND user_id = ?").bind(groupId, targetUserId).run();
+
+  // Insert system notification
+  const myProfile = await env.DB.prepare("SELECT full_name FROM profiles WHERE user_id = ? LIMIT 1").bind(currentUser.userId).first();
+  const myName = myProfile?.full_name || (myMember.role === 'admin' ? "Trưởng nhóm" : "Phó nhóm");
+  const kickMsg = `🚫 ${myName} đã mời ${targetName} ra khỏi nhóm.`;
+  const now = new Date().toISOString();
+
+  await env.DB.prepare(
+    "INSERT INTO chat_group_messages (group_id, sender_id, message, created_at) VALUES (?, ?, ?, ?)"
+  ).bind(groupId, currentUser.userId, kickMsg, now).run();
+
+  return { ok: true, message: kickMsg };
+}
+
+async function setGroupMemberRole(request, groupId, currentUser, env) {
+  const myMember = await env.DB.prepare(
+    "SELECT role FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1"
+  ).bind(groupId, currentUser.userId).first();
+  if (!myMember || myMember.role !== 'admin') {
+    throw new HttpError(403, "Chỉ Trưởng nhóm mới có quyền bổ nhiệm hoặc thu hồi chức vụ Phó nhóm.");
+  }
+  const body = await readJson(request);
+  const targetUserId = String(body.targetUserId || "").trim();
+  const newRole = String(body.role || "").trim().toLowerCase(); // 'deputy' or 'member'
+
+  if (!targetUserId || (newRole !== 'deputy' && newRole !== 'member')) {
+    throw new HttpError(400, "Dữ liệu không hợp lệ.");
+  }
+  if (targetUserId === currentUser.userId) throw new HttpError(400, "Không thể đổi chức vụ của chính bạn.");
+  if (targetUserId === BOT_ID) throw new HttpError(400, "Bot 3TG luôn là Trợ lý tự động.");
+
+  const targetMember = await env.DB.prepare(
+    "SELECT m.role, COALESCE(p.full_name, a.username, 'Thành viên') AS full_name " +
+    "FROM chat_group_members m " +
+    "LEFT JOIN profiles p ON p.user_id = m.user_id " +
+    "LEFT JOIN accounts a ON a.user_id = m.user_id " +
+    "WHERE m.group_id = ? AND m.user_id = ? LIMIT 1"
+  ).bind(groupId, targetUserId).first();
+
+  if (!targetMember) throw new HttpError(404, "Thành viên không tồn tại trong nhóm.");
+
+  await env.DB.prepare("UPDATE chat_group_members SET role = ? WHERE group_id = ? AND user_id = ?").bind(newRole, groupId, targetUserId).run();
+
+  const notifyMsg = newRole === 'deputy'
+    ? `🛡️ Trưởng nhóm đã bổ nhiệm ${targetMember.full_name} làm Phó nhóm!`
+    : `🔻 Trưởng nhóm đã điều chỉnh ${targetMember.full_name} về Thành viên tiêu chuẩn.`;
+  const now = new Date().toISOString();
+
+  await env.DB.prepare(
+    "INSERT INTO chat_group_messages (group_id, sender_id, message, created_at) VALUES (?, ?, ?, ?)"
+  ).bind(groupId, currentUser.userId, notifyMsg, now).run();
+
+  return { ok: true, message: notifyMsg, role: newRole };
+}
+
+async function transferGroupOwnership(request, groupId, currentUser, env) {
+  const myMember = await env.DB.prepare(
+    "SELECT role FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1"
+  ).bind(groupId, currentUser.userId).first();
+  if (!myMember || myMember.role !== 'admin') {
+    throw new HttpError(403, "Chỉ Trưởng nhóm hiện tại mới có quyền chuyển giao Trưởng nhóm (Key holder).");
+  }
+  const body = await readJson(request);
+  const targetUserId = String(body.targetUserId || "").trim();
+  if (!targetUserId || targetUserId === currentUser.userId || targetUserId === BOT_ID) {
+    throw new HttpError(400, "Thành viên nhận quyền không hợp lệ.");
+  }
+
+  const targetMember = await env.DB.prepare(
+    "SELECT m.role, COALESCE(p.full_name, a.username, 'Thành viên') AS full_name " +
+    "FROM chat_group_members m " +
+    "LEFT JOIN profiles p ON p.user_id = m.user_id " +
+    "LEFT JOIN accounts a ON a.user_id = m.user_id " +
+    "WHERE m.group_id = ? AND m.user_id = ? LIMIT 1"
+  ).bind(groupId, targetUserId).first();
+
+  if (!targetMember) throw new HttpError(404, "Thành viên nhận quyền không có trong nhóm.");
+
+  const myProfile = await env.DB.prepare("SELECT full_name FROM profiles WHERE user_id = ? LIMIT 1").bind(currentUser.userId).first();
+  const myName = myProfile?.full_name || "Trưởng nhóm";
+
+  // Downgrade current admin to deputy, upgrade target to admin, update chat_groups.created_by
+  await env.DB.prepare("UPDATE chat_group_members SET role = 'deputy' WHERE group_id = ? AND user_id = ?").bind(groupId, currentUser.userId).run();
+  await env.DB.prepare("UPDATE chat_group_members SET role = 'admin' WHERE group_id = ? AND user_id = ?").bind(groupId, targetUserId).run();
+  await env.DB.prepare("UPDATE chat_groups SET created_by = ? WHERE id = ?").bind(targetUserId, groupId).run();
+
+  const now = new Date().toISOString();
+  const transferMsg = `👑 ${myName} đã trao lại quyền Trưởng nhóm (Key holder) cho ${targetMember.full_name}! Chúc mừng tân Trưởng nhóm! 🎉`;
+
+  await env.DB.prepare(
+    "INSERT INTO chat_group_messages (group_id, sender_id, message, created_at) VALUES (?, ?, ?, ?)"
+  ).bind(groupId, currentUser.userId, transferMsg, now).run();
+
+  return { ok: true, message: transferMsg };
+}
+
+async function toggleGroupBot(request, groupId, currentUser, env) {
+  const myMember = await env.DB.prepare(
+    "SELECT role FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1"
+  ).bind(groupId, currentUser.userId).first();
+  if (!myMember || (myMember.role !== 'admin' && myMember.role !== 'deputy')) {
+    throw new HttpError(403, "Chỉ Trưởng nhóm hoặc Phó nhóm mới có quyền thêm/bớt Bot 3TG.");
+  }
+  const body = await readJson(request);
+  const action = String(body.action || "").trim(); // 'add' or 'remove'
+  const now = new Date().toISOString();
+  const myProfile = await env.DB.prepare("SELECT full_name FROM profiles WHERE user_id = ? LIMIT 1").bind(currentUser.userId).first();
+  const myName = myProfile?.full_name || (myMember.role === 'admin' ? "Trưởng nhóm" : "Phó nhóm");
+
+  if (action === 'remove') {
+    await env.DB.prepare("DELETE FROM chat_group_members WHERE group_id = ? AND user_id = ?").bind(groupId, BOT_ID).run();
+    const msg = `🚪 ${myName} đã mời Bot 3TG rời nhóm. Khi cần hỗ trợ, Trưởng/Phó nhóm có thể thêm lại bất kỳ lúc nào!`;
+    await env.DB.prepare("INSERT INTO chat_group_messages (group_id, sender_id, message, created_at) VALUES (?, ?, ?, ?)").bind(groupId, currentUser.userId, msg, now).run();
+    return { ok: true, hasBot: false, message: msg };
+  } else {
+    await env.DB.prepare("INSERT OR REPLACE INTO chat_group_members (group_id, user_id, role, joined_at) VALUES (?, ?, 'bot', ?)").bind(groupId, BOT_ID, now).run();
+    const msg = `🤖 ${myName} đã mời Bot 3TG trở lại nhóm! Gõ !help để khám phá các tiện ích hỗ trợ học tập nhé! 🌸`;
+    await env.DB.prepare("INSERT INTO chat_group_messages (group_id, sender_id, message, created_at) VALUES (?, ?, ?, ?)").bind(groupId, currentUser.userId, msg, now).run();
+    return { ok: true, hasBot: true, message: msg };
+  }
+}
+
+async function handleChatUpload(request, user, env) {
+  let fileName = "attachment";
+  let fileType = "application/octet-stream";
+  let fileBytes = null;
+  let fileSize = 0;
+
+  const contentType = request.headers.get("content-type") || "";
+  if (contentType.includes("multipart/form-data")) {
+    let form;
+    try {
+      form = await request.formData();
+    } catch {
+      throw new HttpError(400, "Không đọc được tệp tải lên.");
+    }
+    const file = form.get("file");
+    if (!file || typeof file.arrayBuffer !== "function") throw new HttpError(400, "Hãy chọn tệp cần gửi.");
+    if (file.size > 25 * 1024 * 1024) throw new HttpError(413, "Dung lượng tệp tối đa là 25 MB.");
+    fileName = file.name || "file";
+    fileType = file.type || "application/octet-stream";
+    fileSize = file.size;
+    fileBytes = new Uint8Array(await file.arrayBuffer());
+  } else {
+    const body = await readJson(request);
+    fileName = String(body.fileName || "attachment").trim();
+    fileType = String(body.fileType || "application/octet-stream").trim();
+    const base64 = String(body.base64Data || "");
+    if (!base64) throw new HttpError(400, "Dữ liệu tệp không hợp lệ.");
+    const binStr = atob(base64);
+    fileSize = binStr.length;
+    if (fileSize > 25 * 1024 * 1024) throw new HttpError(413, "Dung lượng tệp tối đa là 25 MB.");
+    fileBytes = new Uint8Array(fileSize);
+    for (let i = 0; i < fileSize; i++) fileBytes[i] = binStr.charCodeAt(i);
+  }
+
+  // Determine mediaCategory: 'image' | 'video' | 'audio' | 'file'
+  let mediaType = "file";
+  const lowerType = fileType.toLowerCase();
+  const lowerName = fileName.toLowerCase();
+
+  if (lowerType.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(lowerName)) {
+    mediaType = "image";
+  } else if (lowerType.startsWith("video/") || /\.(mp4|webm|ogv|mov|m4v)$/i.test(lowerName)) {
+    mediaType = "video";
+  } else if (lowerType.startsWith("audio/") || /\.(mp3|wav|ogg|m4a|aac|flac|webm)$/i.test(lowerName)) {
+    mediaType = "audio";
+  }
+
+  let finalUrl = "";
+  if (env.AVATARS) {
+    const safeExt = fileName.includes(".") ? fileName.slice(fileName.lastIndexOf(".")) : "";
+    const key = `chat_files/${user.userId}/${crypto.randomUUID()}${safeExt}`;
+    await env.AVATARS.put(key, fileBytes, {
+      httpMetadata: {
+        contentType: fileType,
+        contentDisposition: `inline; filename="${encodeURIComponent(fileName)}"`,
+        cacheControl: "public, max-age=31536000, immutable"
+      }
+    });
+    finalUrl = `/media/${key}`;
+  } else {
+    // In-memory / data URI fallback
+    let binary = "";
+    const len = fileBytes.byteLength;
+    for (let i = 0; i < len; i++) binary += String.fromCharCode(fileBytes[i]);
+    finalUrl = `data:${fileType};base64,${btoa(binary)}`;
+  }
+
+  return {
+    ok: true,
+    url: finalUrl,
+    type: mediaType,
+    name: fileName,
+    size: fileSize
+  };
+}
+
+async function handleHeartbeat(request, user, env) {
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare("UPDATE profiles SET last_active_at = ? WHERE user_id = ?").bind(nowIso, user.userId).run();
+  userLastActiveMap.set(user.userId, Date.now());
+  return { ok: true, active_at: nowIso };
+}
+
+async function addGroupMembers(request, groupId, currentUser, env) {
+  const membership = await env.DB.prepare(
+    "SELECT role FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1"
+  ).bind(groupId, currentUser.userId).first();
+  if (!membership) throw new HttpError(403, "Bạn không có quyền thêm thành viên vào nhóm này.");
+
+  const body = await readJson(request);
+  const memberIds = Array.isArray(body.memberIds) ? body.memberIds : [body.memberId];
+  const now = new Date().toISOString();
+  let addedCount = 0;
+
+  for (const mId of memberIds) {
+    if (!mId) continue;
+    try {
+      const res = await env.DB.prepare(
+        "INSERT OR IGNORE INTO chat_group_members (group_id, user_id, role, joined_at) VALUES (?, ?, 'member', ?)"
+      ).bind(groupId, mId, now).run();
+      if (res.meta?.changes || res.changes) addedCount++;
+    } catch {}
+  }
+  return { ok: true, addedCount, message: `Đã thêm ${addedCount} thành viên vào nhóm!` };
 }
 
 async function askAI(request, user, env) {
@@ -2650,8 +3401,32 @@ async function routeApi(request, env) {
   const userMatch = path.match(/^\/api\/users\/([0-9a-f-]{36})$/i);
   if (userMatch && method === "GET") return respond(await getUserPublicProfile(userMatch[1], user, env));
   if (path === "/api/friends" && method === "GET") return respond(await getFriendsList(user, env));
+  if (path === "/api/friends/requests" && method === "GET") return respond(await getFriendRequests(user, env));
   if (path === "/api/friends/toggle" && method === "POST") return respond(await toggleFriend(request, user, env));
+  if (path === "/api/friends/accept" && method === "POST") return respond(await acceptFriendRequest(request, user, env));
+  if (path === "/api/friends/reject" && method === "POST") return respond(await rejectFriendRequest(request, user, env));
   if (path === "/api/friends/search" && method === "GET") return respond(await searchUsers(request, user, env));
+
+  if (path === "/api/groups" && method === "GET") return respond(await listChatGroups(user, env));
+  if (path === "/api/groups" && method === "POST") return respond(await createChatGroup(request, user, env));
+  const groupMatch = path.match(/^\/api\/groups\/([a-zA-Z0-9_-]+)$/);
+  if (groupMatch && method === "GET") return respond(await getGroupDetailsAndMessages(groupMatch[1], user, env));
+  const groupMsgMatch = path.match(/^\/api\/groups\/([a-zA-Z0-9_-]+)\/messages$/);
+  if (groupMsgMatch && method === "POST") return respond(await sendGroupMessage(request, groupMsgMatch[1], user, env));
+  const groupMemberMatch = path.match(/^\/api\/groups\/([a-zA-Z0-9_-]+)\/members$/);
+  if (groupMemberMatch && method === "POST") return respond(await addGroupMembers(request, groupMemberMatch[1], user, env));
+  const groupKickMatch = path.match(/^\/api\/groups\/([a-zA-Z0-9_-]+)\/members\/kick$/);
+  if (groupKickMatch && method === "POST") return respond(await kickGroupMember(request, groupKickMatch[1], user, env));
+  const groupRoleMatch = path.match(/^\/api\/groups\/([a-zA-Z0-9_-]+)\/members\/role$/);
+  if (groupRoleMatch && method === "POST") return respond(await setGroupMemberRole(request, groupRoleMatch[1], user, env));
+  const groupTransferMatch = path.match(/^\/api\/groups\/([a-zA-Z0-9_-]+)\/members\/transfer-owner$/);
+  if (groupTransferMatch && method === "POST") return respond(await transferGroupOwnership(request, groupTransferMatch[1], user, env));
+  const groupBotMatch = path.match(/^\/api\/groups\/([a-zA-Z0-9_-]+)\/bot$/);
+  if (groupBotMatch && method === "POST") return respond(await toggleGroupBot(request, groupBotMatch[1], user, env));
+
+  if (path === "/api/chat/upload" && method === "POST") return respond(await handleChatUpload(request, user, env));
+  if (path === "/api/user/heartbeat" && method === "POST") return respond(await handleHeartbeat(request, user, env));
+
   if (path === "/api/messages/conversations" && method === "GET") return respond(await getConversations(user, env));
   const messageMatch = path.match(/^\/api\/messages\/([0-9a-f-]{36})$/i);
   if (messageMatch && method === "GET") return respond(await getMessagesWithUser(messageMatch[1], user, env));

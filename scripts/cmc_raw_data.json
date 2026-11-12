@@ -1,0 +1,715 @@
+{
+  "student": {
+    "ma_sinh_vien": "BAI250001",
+    "ho_ten": "Sinh viên CMC",
+    "nganh": "Công nghệ thông tin",
+    "lop": "25AI",
+    "email": "",
+    "khoa": "",
+    "ngay_sinh": "29/09/2007"
+  },
+  "gpa": {
+    "overall_10": 6.99,
+    "overall_4": 2.73,
+    "total_credits": 28,
+    "passed_credits": 28,
+    "classification": "Khá ✨",
+    "badgeColor": "#00b4d8",
+    "total_subjects": 15,
+    "weak_count": 6
+  },
+  "semesters": [
+    {
+      "semester_name": "3 - Năm học 2025_2026",
+      "hoc_ky": "3",
+      "nam_hoc": "2025_2026",
+      "subjects": [
+        {
+          "ma_mon": "INFO2007",
+          "ten_hoc_phan": "Cơ sở dữ liệu",
+          "so_tin_chi": 4,
+          "diem_he_10": 5.5,
+          "diem_he_4": 2,
+          "diem_chu": "C",
+          "passed": true,
+          "countsInGpa": true,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "PROG2005",
+          "ten_hoc_phan": "Cơ sở lập trình",
+          "so_tin_chi": 4,
+          "diem_he_10": 9,
+          "diem_he_4": 4,
+          "diem_chu": "A+",
+          "passed": true,
+          "countsInGpa": true,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "GENE1017",
+          "ten_hoc_phan": "Đá cầu",
+          "so_tin_chi": 1,
+          "diem_he_10": 7.1,
+          "diem_he_4": 0,
+          "diem_chu": "P",
+          "passed": true,
+          "countsInGpa": false,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "GENE1007",
+          "ten_hoc_phan": "Kỹ năng mềm và tư duy khởi nghiệp",
+          "so_tin_chi": 2,
+          "diem_he_10": 8.5,
+          "diem_he_4": 4,
+          "diem_chu": "A",
+          "passed": true,
+          "countsInGpa": true,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "PROG2006",
+          "ten_hoc_phan": "Lập trình hướng đối tượng",
+          "so_tin_chi": 4,
+          "diem_he_10": 6.2,
+          "diem_he_4": 2,
+          "diem_chu": "C",
+          "passed": true,
+          "countsInGpa": true,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "MATH2005",
+          "ten_hoc_phan": "Toán rời rạc",
+          "so_tin_chi": 3,
+          "diem_he_10": 6.5,
+          "diem_he_4": 2.5,
+          "diem_chu": "C+",
+          "passed": true,
+          "countsInGpa": true,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        }
+      ],
+      "total_credits": 18,
+      "gpa_credits": 17,
+      "gpa_10": 7.02,
+      "gpa_4": 2.79,
+      "weighted_10": 119.3,
+      "weighted_4": 47.5
+    },
+    {
+      "semester_name": "2 - Năm học 2025_2026",
+      "hoc_ky": "2",
+      "nam_hoc": "2025_2026",
+      "subjects": [
+        {
+          "ma_mon": "MATH2002",
+          "ten_hoc_phan": "Đại số tuyến tính",
+          "so_tin_chi": 3,
+          "diem_he_10": 5.1,
+          "diem_he_4": 1.5,
+          "diem_chu": "D+",
+          "passed": true,
+          "countsInGpa": true,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "GENE1004",
+          "ten_hoc_phan": "Lịch sử Đảng Cộng sản Việt Nam",
+          "so_tin_chi": 2,
+          "diem_he_10": 6.6,
+          "diem_he_4": 2.5,
+          "diem_chu": "C+",
+          "passed": true,
+          "countsInGpa": true,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "ENG-1004",
+          "ten_hoc_phan": "Tiếng Anh cấp độ 4",
+          "so_tin_chi": 8,
+          "diem_he_10": 6.1,
+          "diem_he_4": 0,
+          "diem_chu": "P",
+          "passed": true,
+          "countsInGpa": false,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "GENE1001",
+          "ten_hoc_phan": "Triết học Mác - Lênin",
+          "so_tin_chi": 3,
+          "diem_he_10": 6.7,
+          "diem_he_4": 2.5,
+          "diem_chu": "C+",
+          "passed": true,
+          "countsInGpa": true,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        }
+      ],
+      "total_credits": 16,
+      "gpa_credits": 8,
+      "gpa_10": 6.08,
+      "gpa_4": 2.13,
+      "weighted_10": 48.6,
+      "weighted_4": 17
+    },
+    {
+      "semester_name": "1 - Năm học 2025_2026",
+      "hoc_ky": "1",
+      "nam_hoc": "2025_2026",
+      "subjects": [
+        {
+          "ma_mon": "GENE1012",
+          "ten_hoc_phan": "Bóng chuyền hơi",
+          "so_tin_chi": 1,
+          "diem_he_10": 7.9,
+          "diem_he_4": 0,
+          "diem_chu": "P",
+          "passed": true,
+          "countsInGpa": false,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "GENE1011",
+          "ten_hoc_phan": "Bóng rổ",
+          "so_tin_chi": 1,
+          "diem_he_10": 2.4,
+          "diem_he_4": 0,
+          "diem_chu": "NP",
+          "passed": false,
+          "countsInGpa": false,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "INFO2013",
+          "ten_hoc_phan": "Nhập môn công nghệ thông tin",
+          "so_tin_chi": 3,
+          "diem_he_10": 9.3,
+          "diem_he_4": 4,
+          "diem_chu": "A+",
+          "passed": true,
+          "countsInGpa": true,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "ENG-1002",
+          "ten_hoc_phan": "Tiếng Anh cấp độ 2",
+          "so_tin_chi": 8,
+          "diem_he_10": 5.4,
+          "diem_he_4": 0,
+          "diem_chu": "P",
+          "passed": true,
+          "countsInGpa": false,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        },
+        {
+          "ma_mon": "ENG-1003",
+          "ten_hoc_phan": "Tiếng Anh cấp độ 3",
+          "so_tin_chi": 8,
+          "diem_he_10": 6.6,
+          "diem_he_4": 0,
+          "diem_chu": "P",
+          "passed": true,
+          "countsInGpa": false,
+          "chi_tiet_diem": {
+            "chuyen_can": 0,
+            "bai_tap": 0,
+            "giua_ky": 0,
+            "cuoi_ky": 0
+          }
+        }
+      ],
+      "total_credits": 21,
+      "gpa_credits": 3,
+      "gpa_10": 9.3,
+      "gpa_4": 4,
+      "weighted_10": 27.900000000000002,
+      "weighted_4": 12
+    }
+  ],
+  "weak_subjects": [
+    {
+      "ma_mon": "INFO2007",
+      "ten_hoc_phan": "Cơ sở dữ liệu",
+      "so_tin_chi": 4,
+      "diem_he_10": 5.5,
+      "diem_he_4": 2,
+      "diem_chu": "C",
+      "hoc_ky": "3",
+      "nam_hoc": "2025_2026",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      },
+      "gpaGainIfA": 0.29
+    },
+    {
+      "ma_mon": "PROG2006",
+      "ten_hoc_phan": "Lập trình hướng đối tượng",
+      "so_tin_chi": 4,
+      "diem_he_10": 6.2,
+      "diem_he_4": 2,
+      "diem_chu": "C",
+      "hoc_ky": "3",
+      "nam_hoc": "2025_2026",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      },
+      "gpaGainIfA": 0.29
+    },
+    {
+      "ma_mon": "MATH2002",
+      "ten_hoc_phan": "Đại số tuyến tính",
+      "so_tin_chi": 3,
+      "diem_he_10": 5.1,
+      "diem_he_4": 1.5,
+      "diem_chu": "D+",
+      "hoc_ky": "2",
+      "nam_hoc": "2025_2026",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      },
+      "gpaGainIfA": 0.27
+    },
+    {
+      "ma_mon": "MATH2005",
+      "ten_hoc_phan": "Toán rời rạc",
+      "so_tin_chi": 3,
+      "diem_he_10": 6.5,
+      "diem_he_4": 2.5,
+      "diem_chu": "C+",
+      "hoc_ky": "3",
+      "nam_hoc": "2025_2026",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      },
+      "gpaGainIfA": 0.16
+    },
+    {
+      "ma_mon": "GENE1001",
+      "ten_hoc_phan": "Triết học Mác - Lênin",
+      "so_tin_chi": 3,
+      "diem_he_10": 6.7,
+      "diem_he_4": 2.5,
+      "diem_chu": "C+",
+      "hoc_ky": "2",
+      "nam_hoc": "2025_2026",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      },
+      "gpaGainIfA": 0.16
+    },
+    {
+      "ma_mon": "GENE1004",
+      "ten_hoc_phan": "Lịch sử Đảng Cộng sản Việt Nam",
+      "so_tin_chi": 2,
+      "diem_he_10": 6.6,
+      "diem_he_4": 2.5,
+      "diem_chu": "C+",
+      "hoc_ky": "2",
+      "nam_hoc": "2025_2026",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      },
+      "gpaGainIfA": 0.11
+    }
+  ],
+  "active_courses": [
+    {
+      "ma_mon": "INFO3001",
+      "ten_mon": "Pháp lý và Đạo đức nghề nghiệp",
+      "so_tin_chi": 2,
+      "giang_vien": "Trần Đức Dũng",
+      "phong": "VPC2-504",
+      "trang_thai": "Học đi",
+      "hinh_thuc": "Lý thuyết/ Lý thuyết kết hợp thực hành",
+      "ma_lop": "INFO3001-1-1-26(N06)"
+    },
+    {
+      "ma_mon": "MATH2001",
+      "ten_mon": "Giải tích",
+      "so_tin_chi": 3,
+      "giang_vien": "Nguyễn Thế Hoàng",
+      "phong": "VPC2-504",
+      "trang_thai": "Học đi",
+      "hinh_thuc": "Lý thuyết/ Lý thuyết kết hợp thực hành",
+      "ma_lop": "MATH2001-1-1-26(N06)"
+    },
+    {
+      "ma_mon": "PROG2008",
+      "ten_mon": "Phát triển ứng dụng web",
+      "so_tin_chi": 4,
+      "giang_vien": "Nguyễn Đức Giang",
+      "phong": "VPC2-303",
+      "trang_thai": "Học đi",
+      "hinh_thuc": "Lý thuyết/ Lý thuyết kết hợp thực hành",
+      "ma_lop": "PROG2008-1-1-26(N05)"
+    },
+    {
+      "ma_mon": "INFO2002",
+      "ten_mon": "Cấu trúc dữ liệu và giải thuật",
+      "so_tin_chi": 3,
+      "giang_vien": "Nguyễn Khánh Sơn",
+      "phong": "VPC2-702",
+      "trang_thai": "Học đi",
+      "hinh_thuc": "Lý thuyết/ Lý thuyết kết hợp thực hành",
+      "ma_lop": "INFO2002-1-1-26(N03)"
+    },
+    {
+      "ma_mon": "INFO2011",
+      "ten_mon": "Công nghệ phần mềm",
+      "so_tin_chi": 4,
+      "giang_vien": "Nguyễn Thị Vân Anh",
+      "phong": "VPC2-702",
+      "trang_thai": "Học đi",
+      "hinh_thuc": "Lý thuyết/ Lý thuyết kết hợp thực hành",
+      "ma_lop": "INFO2011-1-1-26(N08)"
+    }
+  ],
+  "raw_subjects": [
+    {
+      "ma_mon": "INFO2007",
+      "ten_hoc_phan": "Cơ sở dữ liệu",
+      "so_tin_chi": 4,
+      "diem_he_10": 5.5,
+      "diem_he_4": 2,
+      "diem_chu": "C",
+      "hoc_ky": "3",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "PROG2005",
+      "ten_hoc_phan": "Cơ sở lập trình",
+      "so_tin_chi": 4,
+      "diem_he_10": 9,
+      "diem_he_4": 4,
+      "diem_chu": "A+",
+      "hoc_ky": "3",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "GENE1017",
+      "ten_hoc_phan": "Đá cầu",
+      "so_tin_chi": 1,
+      "diem_he_10": 7.1,
+      "diem_he_4": 0,
+      "diem_chu": "P",
+      "hoc_ky": "3",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "GENE1007",
+      "ten_hoc_phan": "Kỹ năng mềm và tư duy khởi nghiệp",
+      "so_tin_chi": 2,
+      "diem_he_10": 8.5,
+      "diem_he_4": 4,
+      "diem_chu": "A",
+      "hoc_ky": "3",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "PROG2006",
+      "ten_hoc_phan": "Lập trình hướng đối tượng",
+      "so_tin_chi": 4,
+      "diem_he_10": 6.2,
+      "diem_he_4": 2,
+      "diem_chu": "C",
+      "hoc_ky": "3",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "MATH2005",
+      "ten_hoc_phan": "Toán rời rạc",
+      "so_tin_chi": 3,
+      "diem_he_10": 6.5,
+      "diem_he_4": 2.5,
+      "diem_chu": "C+",
+      "hoc_ky": "3",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "MATH2002",
+      "ten_hoc_phan": "Đại số tuyến tính",
+      "so_tin_chi": 3,
+      "diem_he_10": 5.1,
+      "diem_he_4": 1.5,
+      "diem_chu": "D+",
+      "hoc_ky": "2",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "GENE1004",
+      "ten_hoc_phan": "Lịch sử Đảng Cộng sản Việt Nam",
+      "so_tin_chi": 2,
+      "diem_he_10": 6.6,
+      "diem_he_4": 2.5,
+      "diem_chu": "C+",
+      "hoc_ky": "2",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "ENG-1004",
+      "ten_hoc_phan": "Tiếng Anh cấp độ 4",
+      "so_tin_chi": 8,
+      "diem_he_10": 6.1,
+      "diem_he_4": 0,
+      "diem_chu": "P",
+      "hoc_ky": "2",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "GENE1001",
+      "ten_hoc_phan": "Triết học Mác - Lênin",
+      "so_tin_chi": 3,
+      "diem_he_10": 6.7,
+      "diem_he_4": 2.5,
+      "diem_chu": "C+",
+      "hoc_ky": "2",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "GENE1012",
+      "ten_hoc_phan": "Bóng chuyền hơi",
+      "so_tin_chi": 1,
+      "diem_he_10": 7.9,
+      "diem_he_4": 0,
+      "diem_chu": "P",
+      "hoc_ky": "1",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "GENE1011",
+      "ten_hoc_phan": "Bóng rổ",
+      "so_tin_chi": 1,
+      "diem_he_10": 2.4,
+      "diem_he_4": 0,
+      "diem_chu": "NP",
+      "hoc_ky": "1",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Không đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "INFO2013",
+      "ten_hoc_phan": "Nhập môn công nghệ thông tin",
+      "so_tin_chi": 3,
+      "diem_he_10": 9.3,
+      "diem_he_4": 4,
+      "diem_chu": "A+",
+      "hoc_ky": "1",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "ENG-1002",
+      "ten_hoc_phan": "Tiếng Anh cấp độ 2",
+      "so_tin_chi": 8,
+      "diem_he_10": 5.4,
+      "diem_he_4": 0,
+      "diem_chu": "P",
+      "hoc_ky": "1",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    },
+    {
+      "ma_mon": "ENG-1003",
+      "ten_hoc_phan": "Tiếng Anh cấp độ 3",
+      "so_tin_chi": 8,
+      "diem_he_10": 6.6,
+      "diem_he_4": 0,
+      "diem_chu": "P",
+      "hoc_ky": "1",
+      "nam_hoc": "2025_2026",
+      "xep_loai": "Đạt",
+      "chi_tiet_diem": {
+        "chuyen_can": 0,
+        "bai_tap": 0,
+        "giua_ky": 0,
+        "cuoi_ky": 0
+      }
+    }
+  ]
+}

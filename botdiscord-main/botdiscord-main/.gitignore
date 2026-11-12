@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+
+# Facebook session cookies (including the temporary autosave file)
+appstate.json
+appstate.json.tmp
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Cache & Temporary Files
+data/cache/
+*-player-script.js

@@ -289,7 +289,79 @@ async function startEmbeddedServer(rootPath, port = 8787) {
               last_synced_at TEXT,
               created_at TEXT
             );
+            CREATE TABLE IF NOT EXISTS chat_groups (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              avatar_url TEXT DEFAULT NULL,
+              created_by TEXT NOT NULL,
+              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS chat_group_members (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              group_id TEXT NOT NULL,
+              user_id TEXT NOT NULL,
+              role TEXT NOT NULL DEFAULT 'member',
+              joined_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(group_id, user_id)
+            );
+            CREATE TABLE IF NOT EXISTS chat_group_messages (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              group_id TEXT NOT NULL,
+              sender_id TEXT NOT NULL,
+              message TEXT NOT NULL,
+              media_url TEXT DEFAULT NULL,
+              media_type TEXT DEFAULT NULL,
+              media_name TEXT DEFAULT NULL,
+              media_size INTEGER DEFAULT 0,
+              reply_to_id INTEGER DEFAULT NULL,
+              reply_to_name TEXT DEFAULT NULL,
+              reply_to_text TEXT DEFAULT NULL,
+              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS direct_messages (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              sender_id TEXT NOT NULL,
+              receiver_id TEXT NOT NULL,
+              message TEXT NOT NULL,
+              is_read INTEGER NOT NULL DEFAULT 0,
+              media_url TEXT DEFAULT NULL,
+              media_type TEXT DEFAULT NULL,
+              media_name TEXT DEFAULT NULL,
+              media_size INTEGER DEFAULT 0,
+              reply_to_id INTEGER DEFAULT NULL,
+              reply_to_name TEXT DEFAULT NULL,
+              reply_to_text TEXT DEFAULT NULL,
+              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS friendships (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_id TEXT NOT NULL,
+              friend_id TEXT NOT NULL,
+              status TEXT NOT NULL DEFAULT 'accepted',
+              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(user_id, friend_id)
+            );
           `);
+          const colsToAdd = [
+            "ALTER TABLE profiles ADD COLUMN last_active_at TEXT DEFAULT NULL;",
+            "ALTER TABLE chat_group_messages ADD COLUMN media_url TEXT DEFAULT NULL;",
+            "ALTER TABLE chat_group_messages ADD COLUMN media_type TEXT DEFAULT NULL;",
+            "ALTER TABLE chat_group_messages ADD COLUMN media_name TEXT DEFAULT NULL;",
+            "ALTER TABLE chat_group_messages ADD COLUMN media_size INTEGER DEFAULT 0;",
+            "ALTER TABLE chat_group_messages ADD COLUMN reply_to_id INTEGER DEFAULT NULL;",
+            "ALTER TABLE chat_group_messages ADD COLUMN reply_to_name TEXT DEFAULT NULL;",
+            "ALTER TABLE chat_group_messages ADD COLUMN reply_to_text TEXT DEFAULT NULL;",
+            "ALTER TABLE direct_messages ADD COLUMN media_url TEXT DEFAULT NULL;",
+            "ALTER TABLE direct_messages ADD COLUMN media_type TEXT DEFAULT NULL;",
+            "ALTER TABLE direct_messages ADD COLUMN media_name TEXT DEFAULT NULL;",
+            "ALTER TABLE direct_messages ADD COLUMN media_size INTEGER DEFAULT 0;",
+            "ALTER TABLE direct_messages ADD COLUMN reply_to_id INTEGER DEFAULT NULL;",
+            "ALTER TABLE direct_messages ADD COLUMN reply_to_name TEXT DEFAULT NULL;",
+            "ALTER TABLE direct_messages ADD COLUMN reply_to_text TEXT DEFAULT NULL;"
+          ];
+          for (const colSql of colsToAdd) {
+            try { sqliteDb.exec(colSql); } catch {}
+          }
         } catch {}
         envVars.DB = {
           prepare(sql) {

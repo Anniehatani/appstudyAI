@@ -2376,6 +2376,8 @@ window.openUserProfileModal = async function(userId) {
       ? (isCoverGradient ? `background: ${resolvedCover};` : `background-image: url('${esc(resolvedCover)}'); background-size: cover; background-position: center;`)
       : `background: linear-gradient(135deg, #ff71a2, #ff4b82, #c084fc);`;
 
+    const profileStatus = formatActiveStatus(prof.last_active_at);
+
     modalRoot.innerHTML = `
       <div class="user-profile-modal-overlay" onclick="closeUserProfileModal(event)">
         <div class="user-profile-card" style="position:relative; overflow:hidden;" onclick="event.stopPropagation()">
@@ -2391,25 +2393,50 @@ window.openUserProfileModal = async function(userId) {
               </div>
               <div class="user-profile-actions">
                 ${isSelf ? `
-                  <button type="button" class="btn-duo btn-duo-purple" style="padding:8px 14px; font-size:12.5px; background:#5865f2; color:#fff;" onclick="closeUserProfileModal(); state.page='shop'; render();">
-                    ✨ Hiệu ứng Nitro
-                  </button>
                   <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="closeUserProfileModal(); state.page='settings'; render();">
                     ✏️ Sửa hồ sơ
                   </button>
-                ` : `
-                  <button type="button" id="btn-toggle-friend-${esc(prof.user_id)}" class="btn-duo ${isFriend ? 'btn-duo-white' : 'btn-duo-pink'}" style="padding:8px 16px; font-size:13px;" onclick="toggleFriendship('${esc(prof.user_id)}')">
-                    ${isFriend ? '✓ Bạn bè (Hủy)' : '➕ Kết bạn'}
-                  </button>
-                  <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="closeUserProfileModal(); openDirectChat('${esc(prof.user_id)}')">
-                    💬 Nhắn tin
-                  </button>
-                `}
+                ` : (() => {
+                  const fStat = res.friendStatus || (isFriend ? 'accepted' : 'none');
+                  if (fStat === 'accepted') {
+                    return `
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="toggleFriendship('${esc(prof.user_id)}')">
+                        ✓ Bạn bè (Hủy)
+                      </button>
+                      <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="closeUserProfileModal(); openMessenger('direct', '${esc(prof.user_id)}')">
+                        💬 Nhắn tin
+                      </button>
+                    `;
+                  } else if (fStat === 'pending_sent') {
+                    return `
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="toggleFriendship('${esc(prof.user_id)}')">
+                        ⏳ Đã gửi lời mời (Hủy)
+                      </button>
+                    `;
+                  } else if (fStat === 'pending_received') {
+                    return `
+                      <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 14px; font-size:13px;" onclick="acceptFriendRequest('${esc(prof.user_id)}')">
+                        ✓ Chấp nhận
+                      </button>
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="rejectFriendRequest('${esc(prof.user_id)}')">
+                        ✕ Từ chối
+                      </button>
+                    `;
+                  } else {
+                    return `
+                      <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="toggleFriendship('${esc(prof.user_id)}')">
+                        ➕ Gửi lời mời kết bạn
+                      </button>
+                    `;
+                  }
+                })()}
               </div>
             </div>
 
             <h2 class="user-profile-name">${esc(prof.full_name || "Học viên 3TG")}</h2>
-            <div class="user-profile-handle">@${esc(prof.username || "hocvien")}</div>
+            <div class="user-profile-handle">
+              @${esc(prof.username || "hocvien")} • <span class="active-status-dot ${profileStatus.badgeClass}"></span><span style="font-weight:700; color:${profileStatus.isOnline ? '#10b981' : 'var(--ink-500)'};">${esc(profileStatus.text)}</span>
+            </div>
 
             ${prof.bio ? `<div class="user-profile-bio">${esc(prof.bio)}</div>` : ''}
 
@@ -2475,202 +2502,1397 @@ window.toggleFriendship = async function(targetUserId) {
       body: { targetUserId }
     });
     showToast(res.message);
-    const btn = document.getElementById(`btn-toggle-friend-${targetUserId}`);
-    if (btn) {
-      if (res.isFriend) {
-        btn.className = "btn-duo btn-duo-white";
-        btn.textContent = "✓ Bạn bè (Hủy)";
-      } else {
-        btn.className = "btn-duo btn-duo-pink";
-        btn.textContent = "➕ Kết bạn";
-      }
+    await fetchFriends();
+    await fetchFriendRequests();
+    if (searchFriendsResults) {
+      searchFriendsResults = searchFriendsResults.map(u => u.user_id === targetUserId ? { ...u, is_friend: res.isFriend, friendStatus: res.friendStatus } : u);
     }
-    // Refresh friends list if currently on friends page
-    if (state.page === "friends") {
-      fetchFriends();
+    closeUserProfileModal();
+    render();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.acceptFriendRequest = async function(targetUserId) {
+  playSound("level_up");
+  try {
+    const res = await api("/api/friends/accept", {
+      method: "POST",
+      body: { targetUserId }
+    });
+    showToast(res.message);
+    await fetchFriendRequests();
+    await fetchFriends();
+    if (searchFriendsResults) {
+      searchFriendsResults = searchFriendsResults.map(u => u.user_id === targetUserId ? { ...u, is_friend: true, friendStatus: 'accepted' } : u);
     }
+    closeUserProfileModal();
+    render();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.rejectFriendRequest = async function(targetUserId) {
+  playSound("click");
+  try {
+    const res = await api("/api/friends/reject", {
+      method: "POST",
+      body: { targetUserId }
+    });
+    showToast(res.message);
+    await fetchFriendRequests();
+    if (searchFriendsResults) {
+      searchFriendsResults = searchFriendsResults.map(u => u.user_id === targetUserId ? { ...u, is_friend: false, friendStatus: 'none' } : u);
+    }
+    closeUserProfileModal();
+    render();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.cancelSentFriendRequest = async function(targetUserId) {
+  playSound("click");
+  try {
+    const res = await api("/api/friends/toggle", {
+      method: "POST",
+      body: { targetUserId }
+    });
+    showToast(res.message);
+    await fetchFriendRequests();
+    if (searchFriendsResults) {
+      searchFriendsResults = searchFriendsResults.map(u => u.user_id === targetUserId ? { ...u, is_friend: false, friendStatus: 'none' } : u);
+    }
+    closeUserProfileModal();
+    render();
   } catch (err) {
     showToast(err.message, true);
   }
 };
 
 // ========================================================
-// HỘP THOẠI NHẮN TIN 1-1 TRỰC TIẾP (DIRECT MESSAGES)
 // ========================================================
-let chatPollInterval = null;
+// FULLSCREEN MESSENGER & GROUP CHAT SYSTEM (SPRINT 5)
+// ========================================================
+let messengerPollInterval = null;
+let activeMessenger = null; // { type: 'direct'|'group', id: string, isFullscreen: false, activeTab: 'all', searchQuery: '', replyingTo: null, pendingAttachment: null, isRecordingAudio: false }
+let voiceMediaRecorder = null;
+let voiceAudioChunks = [];
 
-window.openDirectChat = async function(targetUserId) {
-  if (!targetUserId) return;
+function formatActiveStatus(lastActiveAt) {
+  if (!lastActiveAt) return { text: "Không hoạt động", isOnline: false, badgeClass: "offline" };
+  const d = new Date(lastActiveAt).getTime();
+  if (isNaN(d)) return { text: "Không hoạt động", isOnline: false, badgeClass: "offline" };
+  const diff = Date.now() - d;
+  if (diff < 3 * 60 * 1000) {
+    return { text: "Đang hoạt động", isOnline: true, badgeClass: "online" };
+  } else if (diff < 60 * 60 * 1000) {
+    const mins = Math.max(1, Math.floor(diff / 60000));
+    return { text: `Hoạt động ${mins} phút trước`, isOnline: false, badgeClass: "recent" };
+  } else if (diff < 24 * 60 * 60 * 1000) {
+    const hours = Math.floor(diff / 3600000);
+    return { text: `Hoạt động ${hours} giờ trước`, isOnline: false, badgeClass: "offline" };
+  } else if (diff < 7 * 24 * 60 * 60 * 1000) {
+    const days = Math.floor(diff / 86400000);
+    return { text: `Hoạt động ${days} ngày trước`, isOnline: false, badgeClass: "offline" };
+  } else {
+    return { text: "Không hoạt động", isOnline: false, badgeClass: "offline" };
+  }
+}
+
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+}
+
+// Background heartbeat to update user's online status
+if (!window._heartbeatStarted) {
+  window._heartbeatStarted = true;
+  setInterval(() => {
+    if (state && state.user) {
+      api("/api/user/heartbeat", { method: "POST" }).catch(() => {});
+    }
+  }, 40000);
+}
+
+window.openMessenger = async function(type = 'direct', id = null, isFullscreen = false) {
   playSound("click");
   const modalRoot = document.getElementById("modal-root");
   if (!modalRoot) return;
 
+  activeMessenger = {
+    type: type,
+    id: id,
+    isFullscreen: !!isFullscreen,
+    activeTab: 'all',
+    searchQuery: '',
+    replyingTo: null,
+    pendingAttachment: null,
+    isRecordingAudio: false
+  };
+
+  if (!conversationsData) await fetchConversations();
+  if (!chatGroupsData) await fetchChatGroups();
+
+  if (!activeMessenger.id) {
+    if (type === 'group' && chatGroupsData && chatGroupsData.length) {
+      activeMessenger.id = chatGroupsData[0].id;
+    } else if (conversationsData && conversationsData.length) {
+      activeMessenger.id = conversationsData[0].user.user_id;
+      activeMessenger.type = 'direct';
+    } else if (chatGroupsData && chatGroupsData.length) {
+      activeMessenger.id = chatGroupsData[0].id;
+      activeMessenger.type = 'group';
+    }
+  }
+
+  await renderMessengerModal();
+  startMessengerPolling();
+};
+
+window.openDirectChat = function(targetUserId) {
+  openMessenger('direct', targetUserId);
+};
+
+window.closeMessenger = function(e) {
+  if (e && e.target && !e.target.classList.contains("messenger-overlay") && !e.target.classList.contains("user-profile-close-btn")) {
+    return;
+  }
+  if (messengerPollInterval) {
+    clearInterval(messengerPollInterval);
+    messengerPollInterval = null;
+  }
+  if (voiceMediaRecorder && voiceMediaRecorder.state !== "inactive") {
+    try { voiceMediaRecorder.stop(); } catch {}
+  }
+  activeMessenger = null;
+  const modalRoot = document.getElementById("modal-root");
+  if (modalRoot) modalRoot.innerHTML = "";
+};
+
+window.toggleMessengerFullscreen = function() {
+  if (!activeMessenger) return;
+  activeMessenger.isFullscreen = !activeMessenger.isFullscreen;
+  renderMessengerModal();
+};
+
+window.switchMessengerConversation = async function(type, id) {
+  if (!activeMessenger) return;
+  activeMessenger.type = type;
+  activeMessenger.id = id;
+  activeMessenger.replyingTo = null;
+  activeMessenger.pendingAttachment = null;
+  await renderMessengerModal();
+};
+
+window.setMessengerTab = function(tab) {
+  if (!activeMessenger) return;
+  activeMessenger.activeTab = tab;
+  renderMessengerModal();
+};
+
+window.searchMessengerConversations = function(query) {
+  if (!activeMessenger) return;
+  activeMessenger.searchQuery = String(query || "").trim().toLowerCase();
+  renderMessengerModal();
+};
+
+function renderMessengerMessageRow(m, isGroup) {
+  const isMine = m.isMine;
+  const isAi = m.isAi || m.senderId === '3tg-ai-bot' || m.senderId === '3tg-bot';
+  const avatarMini = renderDecoratedAvatar(m.avatarUrl, m.avatarDecoration, 32, m.senderName);
+
+  let mediaHtml = "";
+  if (m.mediaUrl) {
+    if (m.mediaType === "image") {
+      mediaHtml = `
+        <div class="msg-media-wrap">
+          <img src="${esc(m.mediaUrl)}" class="msg-media-img" onclick="openMediaLightbox('${esc(m.mediaUrl)}', 'image')" alt="${esc(m.mediaName || 'Ảnh')}" loading="lazy">
+        </div>
+      `;
+    } else if (m.mediaType === "video") {
+      mediaHtml = `
+        <div class="msg-media-wrap">
+          <video src="${esc(m.mediaUrl)}" controls class="msg-media-video" preload="metadata"></video>
+        </div>
+      `;
+    } else if (m.mediaType === "audio") {
+      mediaHtml = `
+        <div class="msg-media-audio-card">
+          <div class="audio-header">
+            <span class="audio-icon">🎙️</span>
+            <span class="audio-title">${esc(m.mediaName || 'Tin nhắn âm thanh')}</span>
+          </div>
+          <audio src="${esc(m.mediaUrl)}" controls class="msg-media-audio-player" preload="metadata"></audio>
+        </div>
+      `;
+    } else {
+      mediaHtml = `
+        <a href="${esc(m.mediaUrl)}" target="_blank" download="${esc(m.mediaName || 'file')}" class="msg-file-card">
+          <div class="msg-file-badge">📁</div>
+          <div class="msg-file-meta">
+            <div class="msg-file-name" title="${esc(m.mediaName)}">${esc(m.mediaName || 'Tệp đính kèm')}</div>
+            <div class="msg-file-sub">${formatBytes(m.mediaSize)} • Bấm để tải về</div>
+          </div>
+          <div class="msg-file-download-arrow">⬇</div>
+        </a>
+      `;
+    }
+  }
+
+  let quoteHtml = "";
+  if (m.replyToText) {
+    quoteHtml = `
+      <div class="msg-quote-card" onclick="scrollToMessengerMessage(${m.replyToId})">
+        <div class="msg-quote-author">↩️ ${esc(m.replyToName || 'Thành viên')}</div>
+        <div class="msg-quote-snippet">${esc(m.replyToText)}</div>
+      </div>
+    `;
+  }
+
+  const safeSenderName = (m.senderName || "Bạn").replace(/'/g, "\\'");
+  const safeSnippet = (m.message || m.mediaName || "Tệp").slice(0, 100).replace(/'/g, "\\'").replace(/\n/g, " ");
+
+  return `
+    <div class="msg-row ${isMine ? 'mine' : 'other'} ${isAi ? 'ai-bot' : ''}" id="msg-${m.id}">
+      ${!isMine ? `<div style="flex-shrink:0; margin-top:auto;">${avatarMini}</div>` : ''}
+      <div class="msg-bubble-group">
+        ${(!isMine && isGroup && !isAi) ? `<span class="msg-sender-name">${esc(m.senderName)}</span>` : ''}
+        ${isAi ? `<span class="ai-msg-badge">✨ 🤖 Bot 3TG</span>` : ''}
+        
+        <div class="msg-bubble-wrap">
+          <div class="msg-bubble">
+            ${quoteHtml}
+            ${mediaHtml}
+            ${m.message ? `<div style="white-space:pre-wrap;">${esc(m.message)}</div>` : ''}
+          </div>
+          <button type="button" class="msg-reply-trigger-btn" onclick="setMessengerReply(${m.id}, '${safeSenderName}', '${safeSnippet}')" title="Trả lời tin nhắn này">
+            ↩️
+          </button>
+        </div>
+
+        <span class="msg-time">${esc(String(m.createdAt || '').slice(11, 16))}</span>
+      </div>
+    </div>
+  `;
+}
+
+async function renderMessengerModal() {
+  const modalRoot = document.getElementById("modal-root");
+  if (!modalRoot || !activeMessenger) return;
+
+  const convos = conversationsData || [];
+  const groups = chatGroupsData || [];
+  const q = activeMessenger.searchQuery || "";
+  const tab = activeMessenger.activeTab || "all";
+
+  // Filter conversations
+  const filteredConvos = convos.filter(c => {
+    if (tab === "groups") return false;
+    if (!q) return true;
+    return (c.user.full_name || "").toLowerCase().includes(q) || (c.user.username || "").toLowerCase().includes(q);
+  });
+
+  const filteredGroups = groups.filter(g => {
+    if (tab === "direct") return false;
+    if (!q) return true;
+    return (g.name || "").toLowerCase().includes(q);
+  });
+
+  // Load active conversation details
+  let activeTitle = "3TG Messenger";
+  let activeSubtitle = "Trò chuyện trực tiếp & Nhóm học tập";
+  let activeStatusObj = null;
+  let activeAvatarHtml = `<div class="group-avatar-circle" style="background:var(--lumi-pink);">💬</div>`;
+  let messagesList = [];
+  let isGroup = activeMessenger.type === "group";
+  let groupMembers = [];
+
+  if (activeMessenger.id) {
+    try {
+      if (isGroup) {
+        const res = await api(`/api/groups/${activeMessenger.id}`);
+        const grp = res.group || {};
+        groupMembers = res.members || [];
+        messagesList = res.messages || [];
+        activeTitle = grp.name || "Nhóm học tập";
+        activeSubtitle = `👥 ${groupMembers.length} thành viên • Gõ /AI [câu hỏi]`;
+        activeAvatarHtml = `
+          <div class="group-avatar-circle">
+            👥
+          </div>
+        `;
+      } else {
+        const res = await api(`/api/messages/${activeMessenger.id}`);
+        const targetUser = res.targetUser || {};
+        messagesList = (res.messages || []).map(m => ({
+          id: m.id,
+          senderName: m.isMine ? "Bạn" : (targetUser.full_name || "Học viên"),
+          avatarUrl: m.isMine ? (state.user?.avatar_url) : targetUser.avatar_url,
+          avatarDecoration: m.isMine ? (state.user?.avatar_decoration) : targetUser.avatar_decoration,
+          message: m.message,
+          mediaUrl: m.mediaUrl,
+          mediaType: m.mediaType,
+          mediaName: m.mediaName,
+          mediaSize: m.mediaSize,
+          replyToId: m.replyToId,
+          replyToName: m.replyToName,
+          replyToText: m.replyToText,
+          isMine: m.isMine,
+          createdAt: m.createdAt
+        }));
+        activeStatusObj = formatActiveStatus(targetUser.last_active_at);
+        activeTitle = targetUser.full_name || "Học viên 3TG";
+        activeSubtitle = `${activeStatusObj.text} • Nhấp xem hồ sơ`;
+        activeAvatarHtml = renderDecoratedAvatar(targetUser.avatar_url, targetUser.avatar_decoration, 44, targetUser.full_name);
+      }
+    } catch (err) {
+      console.warn("Load conversation error:", err);
+    }
+  }
+
+  // Render messages HTML
+  let messagesHtml = "";
+  if (!activeMessenger.id) {
+    messagesHtml = `
+      <div style="text-align:center; padding:60px 20px; color:var(--ink-400);">
+        <span style="font-size:56px;">🌸</span>
+        <h3 style="font-weight:900; margin-top:12px; color:var(--ink-900);">Chào mừng bạn đến với 3TG Messenger!</h3>
+        <p style="font-size:14px; max-width:400px; margin:8px auto;">Hãy chọn một cuộc trò chuyện ở cột bên trái hoặc tạo nhóm mới để bắt đầu học tập cùng nhau.</p>
+        <button type="button" class="messenger-btn-new-group" style="padding:10px 24px; font-size:14px; margin-top:12px;" onclick="openCreateGroupModal()">
+          ➕ Tạo nhóm học tập ngay
+        </button>
+      </div>
+    `;
+  } else if (!messagesList.length) {
+    messagesHtml = `
+      <div style="text-align:center; padding:40px 20px; color:var(--ink-400);">
+        ${renderThoBayMau({ state: THO_STATES.CHEERING, size: 110, speech: isGroup ? "Chào cả nhóm nào! Thử gõ /AI cách có người yêu xem sao! 💬" : "Gửi lời chào đầu tiên nào! 💬" })}
+        <p style="font-weight:800; font-size:16px; margin-top:12px; color:var(--ink-900);">Chưa có tin nhắn nào trong cuộc trò chuyện này.</p>
+        <span style="font-size:13px;">Hãy gửi tin nhắn, đính kèm ảnh/video/tệp hoặc sticker bên dưới để bắt đầu nhé!</span>
+      </div>
+    `;
+  } else {
+    messagesHtml = messagesList.map(m => renderMessengerMessageRow(m, isGroup)).join("");
+  }
+
   modalRoot.innerHTML = `
-    <div class="user-profile-modal-overlay" onclick="closeDirectChat(event)">
-      <div class="direct-chat-modal" onclick="event.stopPropagation()">
-        <div class="chat-header">
-          <div class="chat-header-user">
-            <span class="chat-header-avatar">✿</span>
-            <div>
-              <h4 class="chat-header-title">Đang kết nối tin nhắn...</h4>
-              <span class="chat-header-subtitle">Trò chuyện trực tiếp</span>
+    <div class="messenger-overlay" onclick="closeMessenger(event)">
+      <div class="messenger-shell ${activeMessenger.isFullscreen ? 'fullscreen' : ''}" onclick="event.stopPropagation()">
+        <!-- SIDEBAR -->
+        <div class="messenger-sidebar">
+          <div class="messenger-sidebar-header">
+            <div class="messenger-brand">
+              <span>🌸</span>
+              <span>3TG Messenger</span>
+            </div>
+            <button type="button" class="messenger-btn-new-group" onclick="openCreateGroupModal()" title="Tạo nhóm chat học tập mới">
+              ➕ Tạo nhóm mới
+            </button>
+          </div>
+
+          <div class="messenger-sidebar-search">
+            <input type="text" class="chat-input" placeholder="🔍 Tìm cuộc trò chuyện..." value="${esc(q)}" oninput="searchMessengerConversations(this.value)" style="font-size:13.5px; padding:7px 14px; border-radius:12px;">
+          </div>
+
+          <div class="messenger-filter-tabs">
+            <button type="button" class="messenger-filter-chip ${tab === 'all' ? 'active' : ''}" onclick="setMessengerTab('all')">
+              Tất cả (${convos.length + groups.length})
+            </button>
+            <button type="button" class="messenger-filter-chip ${tab === 'groups' ? 'active' : ''}" onclick="setMessengerTab('groups')">
+              👥 Nhóm (${groups.length})
+            </button>
+            <button type="button" class="messenger-filter-chip ${tab === 'direct' ? 'active' : ''}" onclick="setMessengerTab('direct')">
+              👤 Cá nhân (${convos.length})
+            </button>
+          </div>
+
+          <div class="messenger-inbox-list">
+            ${/* Render Groups */ ''}
+            ${filteredGroups.map(g => {
+              const isSelected = activeMessenger.type === 'group' && activeMessenger.id === g.id;
+              return `
+                <div class="messenger-inbox-item ${isSelected ? 'active' : ''}" onclick="switchMessengerConversation('group', '${esc(g.id)}')">
+                  <div class="group-avatar-circle" style="width:42px; height:42px; font-size:18px;">
+                    👥
+                  </div>
+                  <div style="flex:1; overflow:hidden;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <h4 style="font-size:14.5px; font-weight:900; margin:0; color:var(--ink-900); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        ${esc(g.name)}
+                      </h4>
+                      <span style="font-size:10.5px; color:var(--ink-400); font-weight:700;">${esc(String(g.last_time || '').slice(11, 16))}</span>
+                    </div>
+                    <div style="font-size:12px; color:var(--lumi-pink); font-weight:700; margin:1px 0;">
+                      Nhóm • 👥 ${g.member_count} bạn
+                    </div>
+                    <div style="font-size:12.5px; color:var(--ink-600); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                      ${esc(g.last_message || 'Bắt đầu trò chuyện trong nhóm nào!')}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join("")}
+
+            ${/* Render Direct Chats */ ''}
+            ${filteredConvos.map(c => {
+              const u = c.user;
+              const isSelected = activeMessenger.type === 'direct' && activeMessenger.id === u.user_id;
+              const avatarThumb = renderDecoratedAvatar(u.avatar_url, u.avatar_decoration, 40, u.full_name);
+              const userStatus = formatActiveStatus(u.last_active_at);
+              return `
+                <div class="messenger-inbox-item ${isSelected ? 'active' : ''}" onclick="switchMessengerConversation('direct', '${esc(u.user_id)}')">
+                  <div style="position:relative; flex-shrink:0;">
+                    <span style="background:transparent; border:none; padding:0; overflow:visible;">${avatarThumb}</span>
+                    <span class="inbox-status-dot ${userStatus.isOnline ? 'online' : ''}"></span>
+                  </div>
+                  <div style="flex:1; overflow:hidden;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <h4 style="font-size:14.5px; font-weight:900; margin:0; color:var(--ink-900); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        ${esc(u.full_name)}
+                      </h4>
+                      <span style="font-size:10.5px; color:var(--ink-400); font-weight:700;">${esc(String(c.lastTime || '').slice(11, 16))}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">
+                      <div style="font-size:12.5px; color:var(--ink-600); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">
+                        ${c.isMine ? '<strong>Bạn:</strong> ' : ''}${esc(c.lastMessage)}
+                      </div>
+                      ${c.unreadCount ? `<span style="background:#ef4444; color:#fff; font-size:10px; font-weight:900; padding:1px 6px; border-radius:999px;">${c.unreadCount}</span>` : ''}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join("")}
+
+            ${(!filteredGroups.length && !filteredConvos.length) ? `
+              <div style="text-align:center; padding:32px 16px; color:var(--ink-400); font-weight:700; font-size:13px;">
+                Không tìm thấy cuộc trò chuyện nào phù hợp.
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        <!-- MAIN CHAT PANEL -->
+        <div class="messenger-main">
+          <div class="messenger-header">
+            <div class="messenger-header-left" ${!isGroup && activeMessenger.id ? `onclick="openUserProfileModal('${esc(activeMessenger.id)}')"` : ''} style="cursor:pointer;">
+              <div style="position:relative; display:inline-block;">
+                <span style="background:transparent; border:none; padding:0; overflow:visible;">${activeAvatarHtml}</span>
+                ${!isGroup && activeStatusObj ? `<span class="inbox-status-dot ${activeStatusObj.isOnline ? 'online' : ''}"></span>` : ''}
+              </div>
+              <div>
+                <h3 style="font-size:16px; font-weight:900; color:var(--ink-900); margin:0 0 2px 0;">
+                  ${esc(activeTitle)}
+                </h3>
+                <span style="font-size:12px; font-weight:700; color:${isGroup ? 'var(--lumi-pink)' : (activeStatusObj?.isOnline ? '#10b981' : 'var(--ink-400)')};">
+                  ${!isGroup && activeStatusObj ? `<span class="active-status-dot ${activeStatusObj.badgeClass}"></span>` : ''}${esc(activeSubtitle)}
+                </span>
+              </div>
+            </div>
+
+            <div class="messenger-header-actions">
+              ${isGroup ? `
+                <button type="button" class="messenger-header-btn" onclick="openAddGroupMemberModal('${esc(activeMessenger.id)}')">
+                  ➕ Thêm bạn
+                </button>
+                <button type="button" class="messenger-header-btn" onclick="openGroupMembersModal('${esc(activeMessenger.id)}')">
+                  👥 Thành viên (${groupMembers.length})
+                </button>
+              ` : (activeMessenger.id ? `
+                <button type="button" class="messenger-header-btn" onclick="openUserProfileModal('${esc(activeMessenger.id)}')">
+                  Hồ sơ
+                </button>
+              ` : '')}
+              <button type="button" class="messenger-header-btn" onclick="toggleMessengerFullscreen()" title="${activeMessenger.isFullscreen ? 'Thu nhỏ cửa sổ' : 'Bật toàn màn hình'}">
+                ${activeMessenger.isFullscreen ? '🗗 Thu nhỏ' : '⛶ Toàn màn hình'}
+              </button>
+              <button type="button" class="messenger-header-btn pink" onclick="closeMessenger()">
+                ✕ Đóng
+              </button>
             </div>
           </div>
-          <button type="button" class="user-profile-close-btn" style="position:static;" onclick="closeDirectChat()">✕</button>
-        </div>
-        <div class="chat-messages-container" id="chat-messages-container">
-          <div style="padding:40px; text-align:center;"><span class="quiz-spinner"></span></div>
+
+          <div class="messenger-thread" id="messenger-thread">
+            ${messagesHtml}
+          </div>
+
+          ${activeMessenger.id ? `
+            <div class="messenger-footer">
+              <!-- Replying Banner (if any) -->
+              ${activeMessenger.replyingTo ? `
+                <div class="messenger-reply-bar">
+                  <div class="reply-info">
+                    <span class="reply-arrow">↩️</span>
+                    <span class="reply-to">Đang trả lời <strong>${esc(activeMessenger.replyingTo.name)}</strong>:</span>
+                    <span class="reply-snippet">${esc(activeMessenger.replyingTo.text)}</span>
+                  </div>
+                  <button type="button" class="reply-cancel-btn" onclick="cancelMessengerReply()" title="Hủy trả lời">✕</button>
+                </div>
+              ` : ''}
+
+              <!-- Pending Attachment Banner (if any) -->
+              ${activeMessenger.pendingAttachment ? `
+                <div class="messenger-attachment-bar">
+                  <div class="attachment-meta">
+                    <span style="font-size:16px;">${
+                      activeMessenger.pendingAttachment.type === 'image' ? '🖼️' :
+                      activeMessenger.pendingAttachment.type === 'video' ? '🎥' :
+                      activeMessenger.pendingAttachment.type === 'audio' ? '🎵' : '📄'
+                    }</span>
+                    <span class="attachment-name">${esc(activeMessenger.pendingAttachment.name)}</span>
+                    <span class="attachment-size">(${formatBytes(activeMessenger.pendingAttachment.size)})</span>
+                  </div>
+                  <button type="button" class="reply-cancel-btn" onclick="cancelMessengerAttachment()" title="Hủy tệp đính kèm">✕</button>
+                </div>
+              ` : ''}
+
+              <!-- Input Row with Attachment Buttons & Voice Record -->
+              <form class="chat-input-row" onsubmit="event.preventDefault(); submitMessengerMessage();">
+                <input type="file" id="messenger-file-input" style="display:none;" onchange="handleMessengerFileSelected(this)">
+                
+                <button type="button" class="composer-tool-btn" onclick="triggerMessengerFileInput()" title="Gửi tệp, ảnh, video, âm thanh (📎)">
+                  📎
+                </button>
+                <button type="button" class="composer-tool-btn ${activeMessenger.isRecordingAudio ? 'recording' : ''}" id="messenger-voice-btn" onclick="toggleMessengerVoiceRecord()" title="Ghi âm gửi tin nhắn thoại (🎙️)">
+                  🎙️
+                </button>
+
+                <input type="text" id="messenger-input" class="chat-input" placeholder="${isGroup ? 'Nhập tin nhắn hoặc /AI [câu hỏi]... (Enter để gửi)' : 'Nhập tin nhắn... (Enter để gửi, Shift+Enter xuống dòng)'}" autocomplete="off" maxlength="1500" autofocus>
+                
+                <button type="submit" class="btn-duo btn-duo-pink" style="padding:10px 20px; font-size:14px; white-space:nowrap;">
+                  ➤ Gửi
+                </button>
+              </form>
+            </div>
+          ` : ''}
         </div>
       </div>
     </div>
   `;
 
-  async function loadChatMessages() {
-    try {
-      const data = await api(`/api/messages/${targetUserId}`);
-      const targetUser = data.targetUser || {};
-      const messages = data.messages || [];
+  const thread = document.getElementById("messenger-thread");
+  if (thread) thread.scrollTop = thread.scrollHeight;
 
-      let avatarHtml = renderDecoratedAvatar(targetUser.avatar_url, targetUser.avatar_decoration, 40, targetUser.full_name);
-
-      const msgsHtml = messages.length ? messages.map(m => `
-        <div class="chat-bubble-wrap ${m.isMine ? 'mine' : 'other'}">
-          <div class="chat-bubble">${esc(m.message)}</div>
-          <span class="chat-time">${esc(String(m.createdAt || '').slice(11, 16))}</span>
-        </div>
-      `).join("") : `
-        <div style="text-align:center; padding:30px 16px; color:var(--ink-400);">
-          ${renderThoBayMau({ state: THO_STATES.CHEERING, size: 100, speech: "Gửi lời chào đầu tiên nào! 💬" })}
-          <p style="font-weight:700; margin-top:10px;">Chưa có tin nhắn nào giữa hai bạn.</p>
-          <span style="font-size:13px;">Hãy gửi một tin nhắn hoặc sticker bên dưới để bắt đầu trò chuyện nhé!</span>
-        </div>
-      `;
-
-      modalRoot.innerHTML = `
-        <div class="user-profile-modal-overlay" onclick="closeDirectChat(event)">
-          <div class="direct-chat-modal" onclick="event.stopPropagation()">
-            <div class="chat-header">
-              <div class="chat-header-user" onclick="openUserProfileModal('${esc(targetUserId)}')">
-                <span class="chat-header-avatar" style="background:transparent; border:none; padding:0; overflow:visible;">${avatarHtml}</span>
-                <div>
-                  <h4 class="chat-header-title">${esc(targetUser.full_name || "Học viên")}</h4>
-                  <span class="chat-header-subtitle">● Đang hoạt động • Nhấp xem hồ sơ</span>
-                </div>
-              </div>
-              <button type="button" class="user-profile-close-btn" style="position:static;" onclick="closeDirectChat()">✕</button>
-            </div>
-
-            <div class="chat-messages-container" id="chat-messages-container">
-              ${msgsHtml}
-            </div>
-
-            <div class="chat-footer-bar">
-              <div class="chat-quick-emojis">
-                <span class="chat-emoji-pill" onclick="sendQuickEmoji('👋 Chào bạn!', '${esc(targetUserId)}')">👋 Chào bạn</span>
-                <span class="chat-emoji-pill" onclick="sendQuickEmoji('🐰 Cùng học bài nhé!', '${esc(targetUserId)}')">🐰 Cùng học bài</span>
-                <span class="chat-emoji-pill" onclick="sendQuickEmoji('🔥 Quyết tâm giữ Streak!', '${esc(targetUserId)}')">🔥 Giữ Streak</span>
-                <span class="chat-emoji-pill" onclick="sendQuickEmoji('⭐ Cố lên nhé!', '${esc(targetUserId)}')">⭐ Cố lên</span>
-                <span class="chat-emoji-pill" onclick="sendQuickEmoji('🎉 Chúc mừng bạn!', '${esc(targetUserId)}')">🎉 Chúc mừng</span>
-              </div>
-              <form class="chat-input-row" onsubmit="event.preventDefault(); sendDirectMessage('${esc(targetUserId)}');">
-                <input type="text" id="direct-chat-input" class="chat-input" placeholder="Nhập tin nhắn..." autocomplete="off" maxlength="500">
-                <button type="submit" class="btn-duo btn-duo-pink" style="padding:10px 18px; font-size:14px;">
-                  Gửi ➔
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      `;
-
-      const box = document.getElementById("chat-messages-container");
-      if (box) box.scrollTop = box.scrollHeight;
-
-      const inp = document.getElementById("direct-chat-input");
-      if (inp) inp.focus();
-
-    } catch (err) {
-      showToast(err.message, true);
-      closeDirectChat();
-    }
+  const inp = document.getElementById("messenger-input");
+  if (inp) {
+    inp.focus();
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        submitMessengerMessage();
+      }
+    });
   }
+}
 
-  await loadChatMessages();
-
-  if (chatPollInterval) clearInterval(chatPollInterval);
-  chatPollInterval = setInterval(async () => {
-    const box = document.getElementById("chat-messages-container");
-    if (!box) {
-      clearInterval(chatPollInterval);
-      chatPollInterval = null;
+function startMessengerPolling() {
+  if (messengerPollInterval) clearInterval(messengerPollInterval);
+  messengerPollInterval = setInterval(async () => {
+    if (!activeMessenger || !activeMessenger.id) return;
+    const thread = document.getElementById("messenger-thread");
+    if (!thread) {
+      clearInterval(messengerPollInterval);
+      messengerPollInterval = null;
       return;
     }
     try {
-      const data = await api(`/api/messages/${targetUserId}`);
-      const messages = data.messages || [];
-      const msgsHtml = messages.map(m => `
-        <div class="chat-bubble-wrap ${m.isMine ? 'mine' : 'other'}">
-          <div class="chat-bubble">${esc(m.message)}</div>
-          <span class="chat-time">${esc(String(m.createdAt || '').slice(11, 16))}</span>
-        </div>
-      `).join("");
-      box.innerHTML = msgsHtml;
+      if (activeMessenger.type === "group") {
+        const res = await api(`/api/groups/${activeMessenger.id}`);
+        const messages = res.messages || [];
+        const threadHtml = messages.map(m => renderMessengerMessageRow(m, true)).join("");
+        if (thread.innerHTML !== threadHtml) {
+          const wasAtBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 70;
+          thread.innerHTML = threadHtml;
+          if (wasAtBottom) thread.scrollTop = thread.scrollHeight;
+        }
+      } else {
+        const res = await api(`/api/messages/${activeMessenger.id}`);
+        const messages = res.messages || [];
+        const targetUser = res.targetUser || {};
+        const mapped = messages.map(m => ({
+          id: m.id,
+          senderName: m.isMine ? "Bạn" : (targetUser.full_name || "Học viên"),
+          avatarUrl: m.isMine ? (state.user?.avatar_url) : targetUser.avatar_url,
+          avatarDecoration: m.isMine ? (state.user?.avatar_decoration) : targetUser.avatar_decoration,
+          message: m.message,
+          mediaUrl: m.mediaUrl,
+          mediaType: m.mediaType,
+          mediaName: m.mediaName,
+          mediaSize: m.mediaSize,
+          replyToId: m.replyToId,
+          replyToName: m.replyToName,
+          replyToText: m.replyToText,
+          isMine: m.isMine,
+          createdAt: m.createdAt
+        }));
+        const threadHtml = mapped.map(m => renderMessengerMessageRow(m, false)).join("");
+        if (thread.innerHTML !== threadHtml) {
+          const wasAtBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 70;
+          thread.innerHTML = threadHtml;
+          if (wasAtBottom) thread.scrollTop = thread.scrollHeight;
+        }
+      }
     } catch {}
-  }, 4000);
+  }, 3500);
+}
+
+window.sendMessengerQuick = function(text) {
+  const inp = document.getElementById("messenger-input");
+  if (inp) inp.value = text;
+  submitMessengerMessage();
 };
 
-window.closeDirectChat = function(e) {
-  if (e && e.target && !e.target.classList.contains("user-profile-modal-overlay") && !e.target.classList.contains("user-profile-close-btn")) {
+window.submitMessengerMessage = function() {
+  if (!activeMessenger || !activeMessenger.id) return;
+  const inp = document.getElementById("messenger-input");
+  if (!inp) return;
+  const text = inp.value.trim();
+  const attachment = activeMessenger.pendingAttachment;
+
+  if (!text && !attachment) return;
+
+  const replyData = activeMessenger.replyingTo ? {
+    replyToId: activeMessenger.replyingTo.id,
+    replyToName: activeMessenger.replyingTo.name,
+    replyToText: activeMessenger.replyingTo.text
+  } : {};
+
+  const payload = {
+    message: text,
+    mediaUrl: attachment ? attachment.url : null,
+    mediaType: attachment ? attachment.type : null,
+    mediaName: attachment ? attachment.name : null,
+    mediaSize: attachment ? attachment.size : 0,
+    ...replyData
+  };
+
+  // 1. NGAY LẬP TỨC: Xóa input, đóng thanh đính kèm/reply, phát âm thanh click
+  inp.value = "";
+  activeMessenger.replyingTo = null;
+  activeMessenger.pendingAttachment = null;
+  playSound("click");
+
+  const replyBar = document.querySelector(".messenger-reply-bar");
+  if (replyBar) replyBar.remove();
+  const attachBar = document.querySelector(".messenger-attachment-bar");
+  if (attachBar) attachBar.remove();
+
+  // 2. OPTIMISTIC UI: Hiện tin nhắn lên màn hình NGAY LẬP TỨC (0ms)
+  const isGroup = activeMessenger.type === "group";
+  const convId = activeMessenger.id;
+  const tempId = "temp_" + Date.now();
+  const optimisticMsg = {
+    id: tempId,
+    isMine: true,
+    senderId: state?.user?.userId,
+    senderName: state?.user?.profile?.full_name || state?.user?.name || "Bạn",
+    avatarUrl: state?.user?.profile?.avatar_url || state?.user?.avatar_url,
+    avatarDecoration: state?.user?.profile?.avatar_decoration || state?.user?.avatar_decoration,
+    message: text,
+    mediaUrl: payload.mediaUrl,
+    mediaType: payload.mediaType,
+    mediaName: payload.mediaName,
+    mediaSize: payload.mediaSize,
+    replyToId: payload.replyToId,
+    replyToName: payload.replyToName,
+    replyToText: payload.replyToText,
+    createdAt: new Date().toISOString()
+  };
+
+  const thread = document.getElementById("messenger-thread");
+  if (thread) {
+    thread.insertAdjacentHTML("beforeend", renderMessengerMessageRow(optimisticMsg, isGroup));
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  // 3. GỬI BẤT ĐỒNG BỘ LÊN SERVER
+  const endpoint = isGroup ? `/api/groups/${convId}/messages` : `/api/messages/${convId}`;
+  api(endpoint, {
+    method: "POST",
+    body: payload
+  }).then((res) => {
+    // Nếu có phản hồi ngay từ Bot 3TG hoặc AI, render ngay lập tức!
+    if (res && res.aiMessage) {
+      const curThread = document.getElementById("messenger-thread");
+      if (curThread && activeMessenger && activeMessenger.id === convId) {
+        curThread.insertAdjacentHTML("beforeend", renderMessengerMessageRow(res.aiMessage, isGroup));
+        curThread.scrollTop = curThread.scrollHeight;
+      }
+    }
+    if (isGroup) {
+      fetchChatGroups();
+    } else {
+      fetchConversations();
+    }
+  }).catch((err) => {
+    // Nếu gửi lỗi, xóa tin nhắn optimistic và thông báo cho người dùng
+    const failedEl = document.getElementById(`msg-${tempId}`);
+    if (failedEl) failedEl.remove();
+    showToast(err.message || "Gửi tin nhắn thất bại, vui lòng thử lại.", true);
+  });
+};
+
+async function refreshMessengerThread() {
+  if (!activeMessenger || !activeMessenger.id) return;
+  const thread = document.getElementById("messenger-thread");
+  if (!thread) return;
+
+  try {
+    let messages = [];
+    let isGroup = activeMessenger.type === "group";
+    if (isGroup) {
+      const res = await api(`/api/groups/${activeMessenger.id}`);
+      messages = res.messages || [];
+    } else {
+      const res = await api(`/api/messages/${activeMessenger.id}`);
+      const targetUser = res.targetUser || {};
+      messages = (res.messages || []).map(m => ({
+        id: m.id,
+        senderName: m.isMine ? "Bạn" : (targetUser.full_name || "Học viên"),
+        avatarUrl: m.isMine ? (state.user?.avatar_url) : targetUser.avatar_url,
+        avatarDecoration: m.isMine ? (state.user?.avatar_decoration) : targetUser.avatar_decoration,
+        message: m.message,
+        mediaUrl: m.mediaUrl,
+        mediaType: m.mediaType,
+        mediaName: m.mediaName,
+        mediaSize: m.mediaSize,
+        replyToId: m.replyToId,
+        replyToName: m.replyToName,
+        replyToText: m.replyToText,
+        isMine: m.isMine,
+        createdAt: m.createdAt
+      }));
+    }
+
+    const threadHtml = messages.map(m => renderMessengerMessageRow(m, isGroup)).join("");
+    thread.innerHTML = threadHtml;
+    thread.scrollTop = thread.scrollHeight;
+  } catch {}
+}
+
+window.setMessengerReply = function(id, name, text) {
+  if (!activeMessenger) return;
+  activeMessenger.replyingTo = { id, name, text };
+  renderMessengerModal();
+  const inp = document.getElementById("messenger-input");
+  if (inp) inp.focus();
+};
+
+window.cancelMessengerReply = function() {
+  if (!activeMessenger) return;
+  activeMessenger.replyingTo = null;
+  renderMessengerModal();
+};
+
+window.scrollToMessengerMessage = function(msgId) {
+  const el = document.getElementById(`msg-${msgId}`);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("msg-highlight-pulse");
+    setTimeout(() => el.classList.remove("msg-highlight-pulse"), 1200);
+  }
+};
+
+window.fillMessengerAiPrompt = function() {
+  const inp = document.getElementById("messenger-input");
+  if (inp) {
+    inp.value = "/AI ";
+    inp.focus();
+  }
+};
+
+window.triggerMessengerFileInput = function() {
+  const inp = document.getElementById("messenger-file-input");
+  if (inp) inp.click();
+};
+
+window.handleMessengerFileSelected = async function(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  input.value = "";
+
+  if (file.size > 25 * 1024 * 1024) {
+    showToast("Tệp tải lên cần nhỏ hơn 25 MB.", true);
     return;
   }
-  if (chatPollInterval) {
-    clearInterval(chatPollInterval);
-    chatPollInterval = null;
+
+  showToast(`Đang tải lên "${file.name}"... ⏳`);
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await api("/api/chat/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    if (res.ok) {
+      activeMessenger.pendingAttachment = {
+        url: res.url,
+        type: res.type,
+        name: res.name,
+        size: res.size
+      };
+      showToast(`Đã đính kèm "${res.name}"! ✨`);
+      renderMessengerModal();
+    }
+  } catch (err) {
+    showToast(err.message || "Tải tệp lên thất bại.", true);
+  }
+};
+
+window.cancelMessengerAttachment = function() {
+  if (!activeMessenger) return;
+  activeMessenger.pendingAttachment = null;
+  renderMessengerModal();
+};
+
+window.toggleMessengerVoiceRecord = async function() {
+  if (!activeMessenger) return;
+
+  if (activeMessenger.isRecordingAudio) {
+    // STOP RECORDING
+    if (voiceMediaRecorder && voiceMediaRecorder.state !== "inactive") {
+      voiceMediaRecorder.stop();
+    }
+    activeMessenger.isRecordingAudio = false;
+    const btn = document.getElementById("messenger-voice-btn");
+    if (btn) btn.classList.remove("recording");
+    return;
+  }
+
+  // START RECORDING
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast("Trình duyệt không hỗ trợ micro trực tiếp. Vui lòng chọn tệp âm thanh qua nút 📎.", true);
+    triggerMessengerFileInput();
+    return;
+  }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    voiceAudioChunks = [];
+    voiceMediaRecorder = new MediaRecorder(stream);
+
+    voiceMediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) voiceAudioChunks.push(e.data);
+    };
+
+    voiceMediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      const audioBlob = new Blob(voiceAudioChunks, { type: "audio/webm" });
+      if (audioBlob.size < 100) return;
+
+      showToast("Đang tải lên bản ghi âm... ⏳");
+      try {
+        const formData = new FormData();
+        formData.append("file", audioBlob, `voice_${Date.now()}.webm`);
+        const res = await api("/api/chat/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        if (res.ok) {
+          activeMessenger.pendingAttachment = {
+            url: res.url,
+            type: "audio",
+            name: "Tin nhắn thoại 🎙️",
+            size: res.size
+          };
+          renderMessengerModal();
+          showToast("Đã đính kèm tin nhắn thoại! Bấm Gửi để gửi ngay nhé ✨");
+        }
+      } catch (err) {
+        showToast("Không thể tải lên bản ghi âm: " + err.message, true);
+      }
+    };
+
+    voiceMediaRecorder.start();
+    activeMessenger.isRecordingAudio = true;
+    const btn = document.getElementById("messenger-voice-btn");
+    if (btn) btn.classList.add("recording");
+    showToast("🔴 Đang ghi âm... Nhấn lại vào biểu tượng 🎙️ để dừng và gửi.");
+  } catch (err) {
+    console.warn("Mic permission error:", err);
+    showToast("Không thể truy cập Micro. Hãy kiểm tra quyền mic hoặc chọn tệp âm thanh 📎", true);
+  }
+};
+
+window.openMediaLightbox = function(url, type = "image") {
+  const modalRoot = document.getElementById("modal-root");
+  if (!modalRoot) return;
+
+  const overlay = document.createElement("div");
+  overlay.className = "media-lightbox-overlay";
+  overlay.onclick = () => overlay.remove();
+
+  if (type === "video") {
+    overlay.innerHTML = `<video src="${esc(url)}" controls autoplay class="media-lightbox-content" onclick="event.stopPropagation()"></video>`;
+  } else {
+    overlay.innerHTML = `<img src="${esc(url)}" class="media-lightbox-content" onclick="event.stopPropagation()" alt="Ảnh chi tiết">`;
+  }
+  document.body.appendChild(overlay);
+};
+
+window.openCreateGroupModal = async function() {
+  playSound("click");
+  const modalRoot = document.getElementById("modal-root");
+  if (!modalRoot) return;
+
+  if (!friendsData) {
+    try {
+      const res = await api("/api/friends");
+      friendsData = res.friends || [];
+    } catch {}
+  }
+  const friends = friendsData || [];
+
+  modalRoot.innerHTML = `
+    <div class="user-profile-modal-overlay" onclick="closeCreateGroupModal(event)">
+      <div class="group-create-modal" onclick="event.stopPropagation()">
+        <div class="chat-header">
+          <div class="chat-header-user">
+            <span class="chat-header-avatar" style="background:#fff0f5; font-size:20px;">👥</span>
+            <div>
+              <h4 class="chat-header-title">Tạo Nhóm Học Tập Mới 🌸</h4>
+              <span class="chat-header-subtitle">Học cùng nhau, cùng tiến bộ mỗi ngày!</span>
+            </div>
+          </div>
+          <button type="button" class="user-profile-close-btn" style="position:static;" onclick="closeCreateGroupModal()">✕</button>
+        </div>
+
+        <form style="display:flex; flex-direction:column; flex:1; overflow:hidden;" onsubmit="event.preventDefault(); submitCreateGroup();">
+          <div style="padding:18px 20px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:16px;">
+            <div>
+              <label style="display:block; font-size:13.5px; font-weight:800; color:var(--ink-900); margin-bottom:6px;">
+                Tên nhóm học tập *
+              </label>
+              <input type="text" id="group-name-input" class="chat-input" placeholder="VD: Biệt Đội Săn A+ 🎓, Nhóm Ôn Thi Giải Tích..." required maxlength="60" autofocus style="width:100%;">
+            </div>
+
+            <div>
+              <label style="display:block; font-size:13.5px; font-weight:800; color:var(--ink-900); margin-bottom:8px;">
+                Chọn bạn bè vào nhóm (${friends.length} bạn bè)
+              </label>
+              ${friends.length ? `
+                <div style="display:flex; flex-direction:column; gap:8px; max-height:240px; overflow-y:auto; padding-right:4px;">
+                  ${friends.map(f => {
+                    const avatarHtml = renderDecoratedAvatar(f.avatar_url, f.avatar_decoration, 36, f.full_name);
+                    return `
+                      <label class="group-friend-select-item" id="lbl-friend-${esc(f.friend_user_id)}">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                          <span style="background:transparent; border:none; padding:0; overflow:visible;">${avatarHtml}</span>
+                          <div>
+                            <div style="font-size:14px; font-weight:800; color:var(--ink-900);">${esc(f.full_name)}</div>
+                            <div style="font-size:11.5px; color:var(--ink-500); font-weight:600;">@${esc(f.username || 'hocvien')} • ⭐ ${f.total_xp} XP</div>
+                          </div>
+                        </div>
+                        <input type="checkbox" name="group-members" value="${esc(f.friend_user_id)}" style="width:18px; height:18px; accent-color:var(--lumi-pink); cursor:pointer;" onchange="toggleGroupFriendCheckbox(this, '${esc(f.friend_user_id)}')">
+                      </label>
+                    `;
+                  }).join("")}
+                </div>
+              ` : `
+                <div style="text-align:center; padding:24px 16px; background:#fff5f8; border:2px dashed #ffd6e5; border-radius:18px;">
+                  <span style="font-size:32px;">👥</span>
+                  <p style="font-size:13.5px; font-weight:700; color:var(--ink-700); margin:8px 0 4px;">Bạn chưa có người bạn nào!</p>
+                  <span style="font-size:12px; color:var(--ink-500);">Hãy sang tab "Tìm học viên" kết bạn và chờ đối phương chấp nhận để cùng tạo nhóm nhé.</span>
+                </div>
+              `}
+            </div>
+          </div>
+
+          <div style="padding:14px 20px; background:#fff0f5; border-top:2px solid var(--ink-900); display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn-duo btn-duo-white" style="padding:8px 16px; font-size:13px;" onclick="closeCreateGroupModal()">
+              Hủy
+            </button>
+            <button type="submit" class="btn-duo btn-duo-pink" style="padding:8px 20px; font-size:13.5px;">
+              ✨ Tạo nhóm ngay
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+};
+
+window.closeCreateGroupModal = function(e) {
+  if (e && e.target && !e.target.classList.contains("user-profile-modal-overlay") && !e.target.classList.contains("user-profile-close-btn")) {
+    return;
   }
   const modalRoot = document.getElementById("modal-root");
   if (modalRoot) modalRoot.innerHTML = "";
 };
 
-window.sendDirectMessage = async function(targetUserId) {
-  const inp = document.getElementById("direct-chat-input");
-  if (!inp) return;
-  const text = inp.value.trim();
-  if (!text) return;
-  inp.value = "";
-  playSound("click");
-
-  const box = document.getElementById("chat-messages-container");
-  if (box) {
-    const div = document.createElement("div");
-    div.className = "chat-bubble-wrap mine";
-    div.innerHTML = `<div class="chat-bubble">${esc(text)}</div><span class="chat-time">Vừa xong</span>`;
-    box.appendChild(div);
-    box.scrollTop = box.scrollHeight;
+window.toggleGroupFriendCheckbox = function(cb, userId) {
+  const lbl = document.getElementById(`lbl-friend-${userId}`);
+  if (lbl) {
+    if (cb.checked) lbl.classList.add("selected");
+    else lbl.classList.remove("selected");
   }
+};
+
+window.submitCreateGroup = async function() {
+  const nameInp = document.getElementById("group-name-input");
+  if (!nameInp) return;
+  const name = nameInp.value.trim();
+  if (!name) {
+    showToast("Vui lòng nhập tên nhóm học tập!", true);
+    return;
+  }
+  const checkboxes = document.querySelectorAll('input[name="group-members"]:checked');
+  const memberIds = Array.from(checkboxes).map(c => c.value);
 
   try {
-    await api(`/api/messages/${targetUserId}`, {
+    const res = await api("/api/groups", {
       method: "POST",
-      body: { message: text }
+      body: { name, memberIds }
     });
+    playSound("level_up");
+    showToast(`Đã tạo nhóm "${name}" thành công! 🎉`);
+    closeCreateGroupModal();
+    await fetchChatGroups();
+    openMessenger('group', res.group.id);
   } catch (err) {
     showToast(err.message, true);
   }
 };
 
-window.sendQuickEmoji = function(text, targetUserId) {
-  const inp = document.getElementById("direct-chat-input");
-  if (inp) inp.value = text;
-  sendDirectMessage(targetUserId);
+window.openGroupMembersModal = async function(groupId) {
+  playSound("click");
+  const modalRoot = document.getElementById("modal-root");
+  if (!modalRoot || !groupId) return;
+
+  try {
+    const res = await api(`/api/groups/${groupId}`);
+    const members = res.members || [];
+    const grp = res.group || {};
+    const myRole = res.myRole || (grp.created_by === (state?.user?.userId) ? 'admin' : 'member');
+    const isOwner = myRole === 'admin';
+    const isDeputy = myRole === 'deputy';
+    const canManage = isOwner || isDeputy;
+    const hasBot = !!res.hasBot;
+    const currentUserId = state?.user?.userId;
+
+    modalRoot.innerHTML = `
+      <div class="user-profile-modal-overlay" onclick="closeGroupMembersModal(event)">
+        <div class="group-create-modal" style="max-width:520px; width:95%;" onclick="event.stopPropagation()">
+          <div class="chat-header">
+            <div class="chat-header-user">
+              <span class="chat-header-avatar" style="background:#fff0f5; font-size:22px;">👥</span>
+              <div>
+                <h4 class="chat-header-title">${esc(grp.name || "Nhóm học tập")}</h4>
+                <span class="chat-header-subtitle">
+                  ${members.length} thành viên • ${hasBot ? '🤖 Có Bot 3TG hỗ trợ' : 'Chưa có Bot'}
+                </span>
+              </div>
+            </div>
+            <button type="button" class="user-profile-close-btn" style="position:static;" onclick="closeGroupMembersModal()">✕</button>
+          </div>
+
+          <div style="padding:16px 20px; overflow-y:auto; max-height:420px; display:flex; flex-direction:column; gap:10px;">
+            <!-- Bot Status Banner -->
+            ${!hasBot ? `
+              <div class="group-bot-banner">
+                <div class="group-bot-banner-text">
+                  <span>🤖</span>
+                  <span>Nhóm chưa có <strong>Bot 3TG</strong> hỗ trợ giải bài & giải trí.</span>
+                </div>
+                ${canManage ? `
+                  <button type="button" class="btn-member-action btn-success" onclick="toggleGroupBotAction('${esc(groupId)}', 'add')">
+                    ➕ Thêm Bot
+                  </button>
+                ` : ''}
+              </div>
+            ` : ''}
+
+            <!-- Members List -->
+            ${members.map(m => {
+              const isMe = m.user_id === currentUserId;
+              const isBot = m.user_id === '3tg-bot' || m.role === 'bot';
+              const avatarThumb = renderDecoratedAvatar(m.avatar_url, m.avatar_decoration, 40, m.full_name);
+              
+              const statusObj = isBot 
+                ? { isOnline: true, text: "🟢 Hoạt động 24/7" } 
+                : formatActiveStatus(m.last_active_at);
+
+              let roleBadgeHtml = '';
+              if (m.role === 'admin') {
+                roleBadgeHtml = `<span class="member-role-badge badge-admin">👑 Trưởng nhóm</span>`;
+              } else if (m.role === 'deputy') {
+                roleBadgeHtml = `<span class="member-role-badge badge-deputy">🛡️ Phó nhóm</span>`;
+              } else if (isBot) {
+                roleBadgeHtml = `<span class="member-role-badge badge-bot">🤖 Trợ lý Bot</span>`;
+              } else {
+                roleBadgeHtml = `<span class="member-role-badge badge-member">👤 Thành viên</span>`;
+              }
+
+              let actionsHtml = '';
+              if (isBot) {
+                if (canManage) {
+                  actionsHtml = `
+                    <button type="button" class="btn-member-action btn-danger" onclick="toggleGroupBotAction('${esc(groupId)}', 'remove')" title="Mời Bot 3TG ra khỏi nhóm">
+                      🚫 Mời Bot ra
+                    </button>
+                  `;
+                }
+              } else if (isMe) {
+                actionsHtml = `<span style="font-size:11px; font-weight:700; color:var(--lumi-pink);">(Bạn)</span>`;
+              } else if (isOwner) {
+                const roleBtn = m.role === 'deputy'
+                  ? `<button type="button" class="btn-member-action btn-demote" onclick="setGroupRoleAction('${esc(groupId)}', '${esc(m.user_id)}', 'member', '${esc(m.full_name)}')" title="Hạ chức vụ về Thành viên">🔻 Thu hồi Phó</button>`
+                  : `<button type="button" class="btn-member-action btn-promote" onclick="setGroupRoleAction('${esc(groupId)}', '${esc(m.user_id)}', 'deputy', '${esc(m.full_name)}')" title="Bổ nhiệm làm Phó nhóm">🛡️ Bổ nhiệm Phó</button>`;
+                
+                actionsHtml = `
+                  <div class="member-actions-row">
+                    ${roleBtn}
+                    <button type="button" class="btn-member-action btn-transfer" onclick="transferGroupOwnerAction('${esc(groupId)}', '${esc(m.user_id)}', '${esc(m.full_name)}')" title="Chuyển quyền Trưởng nhóm (Key holder)">
+                      👑 Chuyển Key
+                    </button>
+                    <button type="button" class="btn-member-action btn-danger" onclick="kickGroupMemberAction('${esc(groupId)}', '${esc(m.user_id)}', '${esc(m.full_name)}')" title="Mời thành viên rời nhóm">
+                      🚫 Kick
+                    </button>
+                  </div>
+                `;
+              } else if (isDeputy && m.role === 'member') {
+                actionsHtml = `
+                  <button type="button" class="btn-member-action btn-danger" onclick="kickGroupMemberAction('${esc(groupId)}', '${esc(m.user_id)}', '${esc(m.full_name)}')" title="Mời thành viên rời nhóm">
+                    🚫 Kick
+                  </button>
+                `;
+              }
+
+              return `
+                <div class="member-item-card">
+                  <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+                    <span style="background:transparent; border:none; padding:0; overflow:visible; flex-shrink:0;">${avatarThumb}</span>
+                    <div style="min-width:0;">
+                      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span style="font-size:14px; font-weight:800; color:var(--ink-900); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(m.full_name)}</span>
+                        ${roleBadgeHtml}
+                      </div>
+                      <div style="font-size:11.5px; color:var(--ink-500); font-weight:600; margin-top:2px;">
+                        ${isBot ? '@bot3tg' : `@${esc(m.username || 'hocvien')}`} • <span style="color:${statusObj.isOnline ? '#10b981' : 'var(--ink-400)'};">${statusObj.text}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="flex-shrink:0;">
+                    ${actionsHtml}
+                  </div>
+                </div>
+              `;
+            }).join("")}
+          </div>
+
+          <div style="padding:14px 20px; background:#fff0f5; border-top:2.5px solid var(--ink-900); display:flex; justify-content:space-between; align-items:center;">
+            <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="closeGroupMembersModal(); openAddGroupMemberModal('${esc(groupId)}');">
+              ➕ Thêm bạn bè
+            </button>
+            <button type="button" class="btn-duo" style="padding:8px 18px; font-size:13px;" onclick="closeGroupMembersModal()">
+              Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.kickGroupMemberAction = async function(groupId, targetUserId, name) {
+  playSound("click");
+  if (!confirm(`Bạn có chắc chắn muốn mời "${name}" ra khỏi nhóm học tập không?`)) return;
+  try {
+    const res = await api(`/api/groups/${groupId}/members/kick`, {
+      method: "POST",
+      body: JSON.stringify({ targetUserId })
+    });
+    showToast(res.message || "Đã xóa thành viên khỏi nhóm.");
+    openGroupMembersModal(groupId);
+    if (activeMessenger && activeMessenger.id === groupId) {
+      renderMessengerModal();
+    }
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.setGroupRoleAction = async function(groupId, targetUserId, role, name) {
+  playSound("click");
+  const promptText = role === 'deputy'
+    ? `Bổ nhiệm "${name}" làm Phó nhóm để cùng quản lý nhóm học tập?`
+    : `Thu hồi quyền Phó nhóm của "${name}", chuyển về Thành viên tiêu chuẩn?`;
+  if (!confirm(promptText)) return;
+  try {
+    const res = await api(`/api/groups/${groupId}/members/role`, {
+      method: "POST",
+      body: JSON.stringify({ targetUserId, role })
+    });
+    showToast(res.message || "Đã cập nhật chức vụ thành viên.");
+    openGroupMembersModal(groupId);
+    if (activeMessenger && activeMessenger.id === groupId) {
+      renderMessengerModal();
+    }
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.transferGroupOwnerAction = async function(groupId, targetUserId, name) {
+  playSound("click");
+  if (!confirm(`⚠️ BẠN CÓ CHẮC CHẮN muốn chuyển giao quyền TRƯỞNG NHÓM (Key holder) cho "${name}" không?\nSau khi chuyển, bạn sẽ trở thành Phó nhóm!`)) return;
+  try {
+    const res = await api(`/api/groups/${groupId}/members/transfer-owner`, {
+      method: "POST",
+      body: JSON.stringify({ targetUserId })
+    });
+    showToast(res.message || "Đã chuyển giao quyền Trưởng nhóm thành công!");
+    openGroupMembersModal(groupId);
+    if (activeMessenger && activeMessenger.id === groupId) {
+      renderMessengerModal();
+    }
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.toggleGroupBotAction = async function(groupId, action) {
+  playSound("click");
+  const actionText = action === 'remove' 
+    ? "Bạn có muốn mời Trợ lý Bot 3TG ra khỏi nhóm không?"
+    : "Mời Trợ lý Bot 3TG vào nhóm để hỗ trợ học tập và giải trí?";
+  if (!confirm(actionText)) return;
+  try {
+    const res = await api(`/api/groups/${groupId}/bot`, {
+      method: "POST",
+      body: JSON.stringify({ action })
+    });
+    showToast(res.message || "Đã cập nhật trạng thái Bot 3TG!");
+    openGroupMembersModal(groupId);
+    if (activeMessenger && activeMessenger.id === groupId) {
+      renderMessengerModal();
+    }
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.closeGroupMembersModal = function(e) {
+  if (e && e.target && !e.target.classList.contains("user-profile-modal-overlay") && !e.target.classList.contains("user-profile-close-btn")) {
+    return;
+  }
+  // Re-open messenger modal if was active
+  if (activeMessenger) {
+    renderMessengerModal();
+  } else {
+    const modalRoot = document.getElementById("modal-root");
+    if (modalRoot) modalRoot.innerHTML = "";
+  }
+};
+
+window.openAddGroupMemberModal = async function(groupId) {
+  playSound("click");
+  const modalRoot = document.getElementById("modal-root");
+  if (!modalRoot || !groupId) return;
+
+  if (!friendsData) {
+    try {
+      const res = await api("/api/friends");
+      friendsData = res.friends || [];
+    } catch {}
+  }
+
+  // Get current members to filter
+  let existingMemberIds = new Set();
+  try {
+    const grpRes = await api(`/api/groups/${groupId}`);
+    (grpRes.members || []).forEach(m => existingMemberIds.add(m.user_id));
+  } catch {}
+
+  const availableFriends = (friendsData || []).filter(f => !existingMemberIds.has(f.friend_user_id));
+
+  modalRoot.innerHTML = `
+    <div class="user-profile-modal-overlay" onclick="closeGroupMembersModal(event)">
+      <div class="group-create-modal" style="max-width:460px;" onclick="event.stopPropagation()">
+        <div class="chat-header">
+          <div class="chat-header-user">
+            <span class="chat-header-avatar" style="background:#fff0f5; font-size:20px;">➕</span>
+            <div>
+              <h4 class="chat-header-title">Thêm bạn bè vào nhóm</h4>
+              <span class="chat-header-subtitle">Chọn bạn bè để mời vào nhóm học tập</span>
+            </div>
+          </div>
+          <button type="button" class="user-profile-close-btn" style="position:static;" onclick="closeGroupMembersModal()">✕</button>
+        </div>
+        <form style="display:flex; flex-direction:column; flex:1;" onsubmit="event.preventDefault(); submitAddGroupMembers('${esc(groupId)}');">
+          <div style="padding:16px 20px; overflow-y:auto; max-height:300px; display:flex; flex-direction:column; gap:8px;">
+            ${availableFriends.length ? availableFriends.map(f => {
+              const avatarThumb = renderDecoratedAvatar(f.avatar_url, f.avatar_decoration, 36, f.full_name);
+              return `
+                <label class="group-friend-select-item" id="lbl-add-friend-${esc(f.friend_user_id)}">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="background:transparent; border:none; padding:0; overflow:visible;">${avatarThumb}</span>
+                    <div>
+                      <div style="font-size:14px; font-weight:800; color:var(--ink-900);">${esc(f.full_name)}</div>
+                      <div style="font-size:11.5px; color:var(--ink-500); font-weight:600;">@${esc(f.username || 'hocvien')} • ⭐ ${f.total_xp} XP</div>
+                    </div>
+                  </div>
+                  <input type="checkbox" name="add-group-members" value="${esc(f.friend_user_id)}" style="width:18px; height:18px; accent-color:var(--lumi-pink); cursor:pointer;">
+                </label>
+              `;
+            }).join("") : `
+              <div style="text-align:center; padding:24px 16px; color:var(--ink-500); font-size:13.5px;">
+                Tất cả bạn bè của bạn đã có mặt trong nhóm này! 🌟
+              </div>
+            `}
+          </div>
+          <div style="padding:14px 20px; background:#fff0f5; border-top:2px solid var(--ink-900); display:flex; justify-content:flex-end; gap:10px;">
+            <button type="button" class="btn-duo btn-duo-white" style="padding:8px 16px; font-size:13px;" onclick="closeGroupMembersModal()">Hủy</button>
+            ${availableFriends.length ? `
+              <button type="submit" class="btn-duo btn-duo-pink" style="padding:8px 20px; font-size:13.5px;">✓ Thêm vào nhóm</button>
+            ` : ''}
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+};
+
+window.submitAddGroupMembers = async function(groupId) {
+  const checkboxes = document.querySelectorAll('input[name="add-group-members"]:checked');
+  const memberIds = Array.from(checkboxes).map(c => c.value);
+  if (!memberIds.length) {
+    showToast("Vui lòng chọn ít nhất 1 bạn bè!", true);
+    return;
+  }
+  try {
+    const res = await api(`/api/groups/${groupId}/members`, {
+      method: "POST",
+      body: { memberIds }
+    });
+    playSound("level_up");
+    showToast(res.message);
+    closeGroupMembersModal();
+    if (activeMessenger) renderMessengerModal();
+  } catch (err) {
+    showToast(err.message, true);
+  }
 };
 
 // ========================================================
 // TRANG BẠN BÈ & KẾT NỐI (FRIENDS HUB)
 // ========================================================
 let friendsData = null;
+let friendRequestsData = null;
+let chatGroupsData = null;
 let conversationsData = null;
 let searchFriendsResults = null;
-let currentFriendsTab = "messages"; // Tin nhắn là phần chính mặc định!
+let currentFriendsTab = "messages";
 
 async function fetchFriends() {
   try {
@@ -2682,13 +3904,32 @@ async function fetchFriends() {
   }
 }
 
+async function fetchFriendRequests() {
+  try {
+    const res = await api("/api/friends/requests");
+    friendRequestsData = res || { incoming: [], outgoing: [] };
+    render();
+  } catch (err) {
+    console.warn("fetchFriendRequests error:", err);
+  }
+}
+
+async function fetchChatGroups() {
+  try {
+    const res = await api("/api/groups");
+    chatGroupsData = res.groups || [];
+    render();
+  } catch (err) {
+    console.warn("fetchChatGroups error:", err);
+  }
+}
+
 async function fetchConversations() {
   try {
     const res = await api("/api/messages/conversations");
     conversationsData = res.conversations || [];
     const totalUnread = conversationsData.reduce((s, c) => s + (Number(c.unreadCount) || 0), 0);
     
-    // Cập nhật thông báo tin nhắn trên sidebar
     const navBadge = document.getElementById("nav-friends-count");
     if (navBadge) {
       if (totalUnread > 0) {
@@ -2731,22 +3972,35 @@ window.switchFriendsTab = function(tab) {
   playSound("click");
   currentFriendsTab = tab;
   if (tab === "friends" && !friendsData) fetchFriends();
-  if (tab === "messages") fetchConversations();
+  if (tab === "messages") {
+    fetchConversations();
+    fetchChatGroups();
+  }
+  if (tab === "requests") fetchFriendRequests();
   render();
 };
 
 function renderFriends() {
   if (currentFriendsTab === "messages" && !conversationsData) {
     fetchConversations();
+    fetchChatGroups();
     return `<div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải tin nhắn...</span></div>`;
   }
   if (currentFriendsTab === "friends" && !friendsData) {
     fetchFriends();
     return `<div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải danh sách bạn bè từ Cloudflare D1...</span></div>`;
   }
+  if (currentFriendsTab === "requests" && !friendRequestsData) {
+    fetchFriendRequests();
+    return `<div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải lời mời kết bạn...</span></div>`;
+  }
 
   const friends = friendsData || [];
   const convos = conversationsData || [];
+  const groups = chatGroupsData || [];
+  const requests = friendRequestsData || { incoming: [], outgoing: [] };
+  const incomingReqs = requests.incoming || [];
+  const outgoingReqs = requests.outgoing || [];
   const totalUnread = convos.reduce((s, c) => s + (Number(c.unreadCount) || 0), 0);
 
   return `
@@ -2754,17 +4008,21 @@ function renderFriends() {
       <div class="banner-with-mascot" style="margin-bottom:20px;">
         <div style="flex:1;">
           <h1 class="page-title" style="margin-bottom:6px;">Bạn bè & Nhắn tin 👥</h1>
-          <p class="page-subtitle" style="margin:0 0 14px 0;">Trò chuyện 1-1 trực tiếp, kết bạn và học cùng nhau trên Cloudflare D1!</p>
+          <p class="page-subtitle" style="margin:0 0 14px 0;">Messenger toàn màn hình xịn sò, Tạo nhóm chat học tập & Kết bạn 2 chiều an toàn!</p>
           
           <!-- THANH TAB GỌN GÀNG ĐỒNG NHẤT KHÔNG RỚT DÒNG -->
-          <div class="friends-tab-bar">
+          <div class="friends-tab-bar" style="flex-wrap:wrap; gap:8px;">
             <button type="button" class="friends-tab-btn ${currentFriendsTab === 'messages' ? 'active' : ''}" onclick="switchFriendsTab('messages')">
-              <span>💬 Tin nhắn</span>
-              ${totalUnread > 0 ? `<span class="tab-unread-pill">${totalUnread} mới</span>` : `<span class="tab-count-pill">${convos.length}</span>`}
+              <span>💬 Tin nhắn & Nhóm</span>
+              ${totalUnread > 0 ? `<span class="tab-unread-pill">${totalUnread} mới</span>` : `<span class="tab-count-pill">${convos.length + groups.length}</span>`}
             </button>
             <button type="button" class="friends-tab-btn ${currentFriendsTab === 'friends' ? 'active' : ''}" onclick="switchFriendsTab('friends')">
               <span>👥 Bạn bè</span>
               <span class="tab-count-pill">${friends.length}</span>
+            </button>
+            <button type="button" class="friends-tab-btn ${currentFriendsTab === 'requests' ? 'active' : ''}" onclick="switchFriendsTab('requests')">
+              <span>🔔 Lời mời kết bạn</span>
+              ${incomingReqs.length > 0 ? `<span class="tab-unread-pill">${incomingReqs.length} mới</span>` : ''}
             </button>
             <button type="button" class="friends-tab-btn ${currentFriendsTab === 'search' ? 'active' : ''}" onclick="switchFriendsTab('search')">
               <span>🔍 Tìm học viên</span>
@@ -2772,7 +4030,7 @@ function renderFriends() {
           </div>
         </div>
         <div class="banner-mascot-aside page-inline-mascot">
-          ${renderThoBayMau({ state: THO_STATES.CHEERING, size: 126, speech: "Học cùng bạn bè là vui nhất! 🌟", speechDirection: "top" })}
+          ${renderThoBayMau({ state: THO_STATES.CHEERING, size: 126, speech: "Học cùng bạn bè và nhóm chat là vui nhất! 🌟", speechDirection: "top" })}
         </div>
       </div>
 
@@ -2780,6 +4038,7 @@ function renderFriends() {
         <div class="friends-list-container">
           ${friends.length ? friends.map(f => {
             const avatarHtml = renderDecoratedAvatar(f.avatar_url, f.avatar_decoration, 44, f.full_name);
+            const fStatus = formatActiveStatus(f.last_active_at);
             return `
               <div class="friend-card">
                 <div class="friend-info-left" onclick="openUserProfileModal('${esc(f.friend_user_id)}')">
@@ -2789,13 +4048,13 @@ function renderFriends() {
                       ${esc(f.full_name)}
                     </h3>
                     <div style="font-size:12.5px; color:var(--ink-500); font-weight:700;">
-                      @${esc(f.username || 'hocvien')} • ⭐ ${f.total_xp} XP • 🔥 ${f.current_streak} ngày
+                      @${esc(f.username || 'hocvien')} • ⭐ ${f.total_xp} XP • <span class="active-status-dot ${fStatus.badgeClass}"></span><span style="color:${fStatus.isOnline ? '#10b981' : 'inherit'};">${esc(fStatus.text)}</span>
                     </div>
                     ${f.school ? `<div style="font-size:11.5px; color:var(--lumi-pink); margin-top:2px;">🏫 ${esc(f.school)}</div>` : ''}
                   </div>
                 </div>
                 <div class="friend-card-actions">
-                  <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="openDirectChat('${esc(f.friend_user_id)}')">
+                  <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="openMessenger('direct', '${esc(f.friend_user_id)}')">
                     💬 Nhắn tin
                   </button>
                   <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="openUserProfileModal('${esc(f.friend_user_id)}')">
@@ -2808,12 +4067,90 @@ function renderFriends() {
             <div class="empty-state" style="background:#fff; border:2.5px dashed var(--lumi-pink-border); border-radius:28px; padding:44px 20px; text-align:center;">
               <span style="font-size:48px;">👥</span>
               <h3 style="font-weight:900; color:var(--ink-900); font-size:20px; margin-top:12px;">Bạn chưa có người bạn nào!</h3>
-              <p style="font-size:14.5px; color:var(--ink-500); max-width:420px; margin:6px auto 18px;">Hãy sang tab Tìm kiếm học viên hoặc vào Bảng xếp hạng để soi hồ sơ và bấm Kết bạn nhé!</p>
+              <p style="font-size:14.5px; color:var(--ink-500); max-width:420px; margin:6px auto 18px;">Hãy sang tab Tìm kiếm học viên để gửi lời mời kết bạn và cùng học tập nhé!</p>
               <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 22px;" onclick="switchFriendsTab('search')">
                 🔍 Tìm kiếm học viên ngay ➔
               </button>
             </div>
           `}
+        </div>
+      ` : currentFriendsTab === 'requests' ? `
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <!-- LỜI MỜI ĐÃ NHẬN -->
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+              <h3 style="font-size:17px; font-weight:900; color:var(--ink-900); margin:0;">
+                📥 Lời mời kết bạn đã nhận (${incomingReqs.length})
+              </h3>
+              ${incomingReqs.length ? `<span class="tab-unread-pill" style="font-size:11px;">Chờ bạn duyệt</span>` : ''}
+            </div>
+
+            ${incomingReqs.length ? `
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                ${incomingReqs.map(r => {
+                  const avatarThumb = renderDecoratedAvatar(r.avatar_url, r.avatar_decoration, 44, r.full_name);
+                  return `
+                    <div class="request-card">
+                      <div class="friend-info-left" onclick="openUserProfileModal('${esc(r.user_id)}')">
+                        <span class="friend-avatar-badge" style="background:transparent; border:none; padding:0; overflow:visible;">${avatarThumb}</span>
+                        <div>
+                          <h4 style="font-size:15.5px; font-weight:900; margin:0 0 2px 0; color:var(--ink-900);">${esc(r.full_name)}</h4>
+                          <div style="font-size:12px; color:var(--ink-500); font-weight:600;">@${esc(r.username || 'hocvien')} • ⭐ ${r.total_xp} XP</div>
+                          ${r.school ? `<div style="font-size:11.5px; color:var(--lumi-pink);">🏫 ${esc(r.school)}</div>` : ''}
+                        </div>
+                      </div>
+                      <div style="display:flex; gap:8px; align-items:center;">
+                        <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="acceptFriendRequest('${esc(r.user_id)}')">
+                          ✓ Chấp nhận
+                        </button>
+                        <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="rejectFriendRequest('${esc(r.user_id)}')">
+                          ✕ Từ chối
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            ` : `
+              <div style="background:#ffffff; border:2px dashed #ffd6e5; border-radius:20px; padding:28px 20px; text-align:center;">
+                <span style="font-size:32px;">💌</span>
+                <p style="font-size:14px; font-weight:700; color:var(--ink-700); margin:8px 0 0;">Không có lời mời kết bạn nào đang chờ bạn chấp nhận.</p>
+              </div>
+            `}
+          </div>
+
+          <!-- LỜI MỜI ĐÃ GỬI -->
+          <div>
+            <h3 style="font-size:17px; font-weight:900; color:var(--ink-900); margin:0 0 12px 0;">
+              📤 Lời mời bạn đã gửi (${outgoingReqs.length})
+            </h3>
+            ${outgoingReqs.length ? `
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                ${outgoingReqs.map(r => {
+                  const avatarThumb = renderDecoratedAvatar(r.avatar_url, r.avatar_decoration, 44, r.full_name);
+                  return `
+                    <div class="request-card">
+                      <div class="friend-info-left" onclick="openUserProfileModal('${esc(r.user_id)}')">
+                        <span class="friend-avatar-badge" style="background:transparent; border:none; padding:0; overflow:visible;">${avatarThumb}</span>
+                        <div>
+                          <h4 style="font-size:15.5px; font-weight:900; margin:0 0 2px 0; color:var(--ink-900);">${esc(r.full_name)}</h4>
+                          <div style="font-size:12px; color:var(--ink-500); font-weight:600;">@${esc(r.username || 'hocvien')} • ⭐ ${r.total_xp} XP</div>
+                          <span style="font-size:11.5px; color:#d97706; font-weight:700;">⏳ Đang chờ bạn ấy đồng ý kết bạn...</span>
+                        </div>
+                      </div>
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="cancelSentFriendRequest('${esc(r.user_id)}')">
+                        Hủy lời mời
+                      </button>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            ` : `
+              <div style="background:#ffffff; border:2px dashed #ffd6e5; border-radius:20px; padding:24px 20px; text-align:center;">
+                <p style="font-size:13.5px; color:var(--ink-500); margin:0;">Bạn chưa gửi lời mời kết bạn nào đang chờ phản hồi.</p>
+              </div>
+            `}
+          </div>
         </div>
       ` : currentFriendsTab === 'search' ? `
         <div class="friends-search-container">
@@ -2822,12 +4159,13 @@ function renderFriends() {
               <span style="font-size:20px;">🔍</span>
               <input type="text" class="chat-input" placeholder="Tìm kiếm theo Tên học viên, Tên đăng nhập (@username) hoặc Trường..." oninput="searchFriendsInput(this.value)" autofocus style="font-size:15px; border-radius:14px;">
             </div>
-            <p style="font-size:12.5px; color:var(--ink-500); margin:8px 0 0 32px;">Gợi ý: Nhập tên bạn bè hoặc trường học để kết nối trực tiếp từ Cloudflare D1.</p>
+            <p style="font-size:12.5px; color:var(--ink-500); margin:8px 0 0 32px;">Gợi ý: Nhập tên bạn bè hoặc trường học để gửi lời mời kết bạn trực tiếp từ Cloudflare D1.</p>
           </div>
 
           <div class="friends-search-results">
             ${searchFriendsResults ? (searchFriendsResults.length ? searchFriendsResults.map(u => {
               const avatarHtml = renderDecoratedAvatar(u.avatar_url, u.avatar_decoration, 44, u.full_name);
+              const fStat = u.friendStatus || (u.is_friend ? 'accepted' : 'none');
               return `
                 <div class="friend-card">
                   <div class="friend-info-left" onclick="openUserProfileModal('${esc(u.user_id)}')">
@@ -2843,9 +4181,29 @@ function renderFriends() {
                     </div>
                   </div>
                   <div class="friend-card-actions">
-                    <button type="button" class="btn-duo ${u.is_friend ? 'btn-duo-white' : 'btn-duo-pink'}" style="padding:8px 16px; font-size:13px;" onclick="toggleFriendship('${esc(u.user_id)}')">
-                      ${u.is_friend ? '✓ Đã kết bạn' : '➕ Kết bạn'}
-                    </button>
+                    ${fStat === 'accepted' ? `
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="toggleFriendship('${esc(u.user_id)}')">
+                        ✓ Đã kết bạn
+                      </button>
+                      <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 14px; font-size:13px;" onclick="openMessenger('direct', '${esc(u.user_id)}')">
+                        💬 Nhắn tin
+                      </button>
+                    ` : fStat === 'pending_sent' ? `
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="cancelSentFriendRequest('${esc(u.user_id)}')">
+                        ⏳ Đã gửi lời mời (Hủy)
+                      </button>
+                    ` : fStat === 'pending_received' ? `
+                      <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 14px; font-size:13px;" onclick="acceptFriendRequest('${esc(u.user_id)}')">
+                        ✓ Chấp nhận
+                      </button>
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:8px 12px; font-size:13px;" onclick="rejectFriendRequest('${esc(u.user_id)}')">
+                        ✕ Từ chối
+                      </button>
+                    ` : `
+                      <button type="button" class="btn-duo btn-duo-pink" style="padding:8px 16px; font-size:13px;" onclick="toggleFriendship('${esc(u.user_id)}')">
+                        ➕ Kết bạn
+                      </button>
+                    `}
                     <button type="button" class="btn-duo btn-duo-white" style="padding:8px 14px; font-size:13px;" onclick="openUserProfileModal('${esc(u.user_id)}')">
                       Hồ sơ
                     </button>
@@ -2864,54 +4222,118 @@ function renderFriends() {
           </div>
         </div>
       ` : `
+        <!-- MESSAGES TAB: DIRECT & GROUPS WITH FULLSCREEN MESSENGER LAUNCHER -->
         <div class="friends-messages-container">
-          ${convos.length ? convos.map(c => {
-            const u = c.user;
-            const avatarHtml = renderDecoratedAvatar(u.avatar_url, u.avatar_decoration, 44, u.full_name);
-            return `
-              <div class="friend-card" style="cursor:pointer;" onclick="openDirectChat('${esc(u.user_id)}')">
-                <div class="friend-info-left">
-                  <span class="friend-avatar-badge" style="background:transparent; border:none; padding:0; overflow:visible;">${avatarHtml}</span>
-                  <div>
-                    <h3 style="font-size:16px; font-weight:900; margin:0 0 3px 0; color:var(--ink-900);">
-                      ${esc(u.full_name)}
-                    </h3>
-                    <div style="font-size:13.5px; color:var(--ink-700); font-weight:600; max-width:440px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                      ${c.isMine ? '<strong>Bạn:</strong> ' : ''}${esc(c.lastMessage)}
+          <!-- TOP TOOLBAR -->
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 18px; font-size:14px;" onclick="openMessenger('all', null, true)">
+                ⛶ Mở Messenger Toàn Màn Hình
+              </button>
+              <button type="button" class="btn-duo btn-duo-white" style="padding:10px 18px; font-size:14px;" onclick="openCreateGroupModal()">
+                ➕ Tạo nhóm chat mới 👥
+              </button>
+            </div>
+            <span style="font-size:13px; font-weight:700; color:var(--ink-500);">
+              ${groups.length} nhóm học tập • ${convos.length} cuộc trò chuyện
+            </span>
+          </div>
+
+          ${/* Nhóm học tập */ ''}
+          ${groups.length ? `
+            <div style="margin-bottom:20px;">
+              <h3 style="font-size:16.5px; font-weight:900; color:var(--ink-900); margin-bottom:10px; display:flex; align-items:center; gap:8px;">
+                <span>👥 Nhóm học tập của bạn (${groups.length})</span>
+              </h3>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                ${groups.map(g => `
+                  <div class="friend-card" style="cursor:pointer;" onclick="openMessenger('group', '${esc(g.id)}')">
+                    <div class="friend-info-left">
+                      <div class="group-avatar-circle" style="width:44px; height:44px; font-size:20px;">👥</div>
+                      <div>
+                        <h3 style="font-size:16px; font-weight:900; margin:0 0 3px 0; color:var(--ink-900);">
+                          ${esc(g.name)}
+                        </h3>
+                        <div style="font-size:12px; color:var(--lumi-pink); font-weight:700; margin-bottom:2px;">
+                          👥 ${g.member_count} thành viên
+                        </div>
+                        <div style="font-size:13.5px; color:var(--ink-700); font-weight:600; max-width:440px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                          ${esc(g.last_message || 'Bấm để tham gia thảo luận nhóm!')}
+                        </div>
+                      </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                      <span style="font-size:11px; font-weight:700; color:var(--ink-400);">${esc(String(g.last_time || '').slice(11, 16))}</span>
+                      <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12.5px;">Vào nhóm chat ➔</button>
                     </div>
                   </div>
-                </div>
-                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
-                  <span style="font-size:11px; font-weight:700; color:var(--ink-400);">${esc(String(c.lastTime || '').slice(11, 16))}</span>
-                  ${c.unreadCount ? `<span style="background:#ef4444; color:#fff; font-size:10.5px; font-weight:900; padding:2px 7px; border-radius:999px;">${c.unreadCount} mới</span>` : ''}
-                  <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 12px; font-size:12.5px;">Mở chat ➔</button>
-                </div>
-              </div>
-            `;
-          }).join("") : `
-            <div class="empty-state" style="background:#fff; border:2.5px dashed var(--lumi-pink-border); border-radius:28px; padding:40px 20px; text-align:center;">
-              <div style="display:flex; justify-content:center; margin-bottom:12px;">
-                ${renderThoBayMau({ state: THO_STATES.CONFUSED_PHONE, size: 120, speech: "Hộp thư chưa có tin nhắn nào nè! Kết bạn rồi trò chuyện nhé! 💬", speechDirection: "top" })}
-              </div>
-              <h3 style="font-weight:900; color:var(--ink-900); font-size:20px; margin-top:10px;">Chưa có tin nhắn nào</h3>
-              <p style="font-size:14.5px; color:var(--ink-500); max-width:440px; margin:6px auto 20px;">Hộp thư của bạn hiện đang trống. Hãy kết bạn hoặc tìm kiếm học viên khác để bắt đầu trò chuyện nhé!</p>
-              <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
-                <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 22px; font-size:14px;" onclick="switchFriendsTab('search')">
-                  🔍 Tìm kiếm học viên ➔
-                </button>
-                <button type="button" class="btn-duo btn-duo-white" style="padding:10px 22px; font-size:14px;" onclick="switchFriendsTab('friends')">
-                  👥 Danh sách bạn bè ➔
-                </button>
+                `).join("")}
               </div>
             </div>
-          `}
+          ` : ''}
+
+          ${/* Tin nhắn cá nhân 1-1 */ ''}
+          <div>
+            <h3 style="font-size:16.5px; font-weight:900; color:var(--ink-900); margin-bottom:10px;">
+              💬 Tin nhắn trực tiếp 1-1 (${convos.length})
+            </h3>
+            ${convos.length ? `
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                ${convos.map(c => {
+                  const u = c.user;
+                  const avatarHtml = renderDecoratedAvatar(u.avatar_url, u.avatar_decoration, 44, u.full_name);
+                  const cStatus = formatActiveStatus(u.last_active_at);
+                  return `
+                    <div class="friend-card" style="cursor:pointer;" onclick="openMessenger('direct', '${esc(u.user_id)}')">
+                      <div class="friend-info-left">
+                        <span class="friend-avatar-badge" style="background:transparent; border:none; padding:0; overflow:visible;">${avatarHtml}</span>
+                        <div>
+                          <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px;">
+                            <h3 style="font-size:16px; font-weight:900; margin:0; color:var(--ink-900);">
+                              ${esc(u.full_name)}
+                            </h3>
+                            <span class="active-status-dot ${cStatus.badgeClass}"></span>
+                            <span style="font-size:11.5px; font-weight:700; color:${cStatus.isOnline ? '#10b981' : 'var(--ink-400)'};">${esc(cStatus.text)}</span>
+                          </div>
+                          <div style="font-size:13.5px; color:var(--ink-700); font-weight:600; max-width:440px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            ${c.isMine ? '<strong>Bạn:</strong> ' : ''}${esc(c.lastMessage)}
+                          </div>
+                        </div>
+                      </div>
+                      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                        <span style="font-size:11px; font-weight:700; color:var(--ink-400);">${esc(String(c.lastTime || '').slice(11, 16))}</span>
+                        ${c.unreadCount ? `<span style="background:#ef4444; color:#fff; font-size:10.5px; font-weight:900; padding:2px 7px; border-radius:999px;">${c.unreadCount} mới</span>` : ''}
+                        <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 12px; font-size:12.5px;">Mở chat ➔</button>
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            ` : (!groups.length ? `
+              <div class="empty-state" style="background:#fff; border:2.5px dashed var(--lumi-pink-border); border-radius:28px; padding:40px 20px; text-align:center;">
+                <div style="display:flex; justify-content:center; margin-bottom:12px;">
+                  ${renderThoBayMau({ state: THO_STATES.CONFUSED_PHONE, size: 120, speech: "Hộp thư chưa có tin nhắn nào nè! Kết bạn hoặc tạo nhóm nhé! 💬", speechDirection: "top" })}
+                </div>
+                <h3 style="font-weight:900; color:var(--ink-900); font-size:20px; margin-top:10px;">Chưa có tin nhắn nào</h3>
+                <p style="font-size:14.5px; color:var(--ink-500); max-width:440px; margin:6px auto 20px;">Hộp thư của bạn hiện đang trống. Hãy tạo nhóm chat học tập hoặc kết bạn để bắt đầu trò chuyện nhé!</p>
+                <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+                  <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 22px; font-size:14px;" onclick="openCreateGroupModal()">
+                    ➕ Tạo nhóm chat mới 👥
+                  </button>
+                  <button type="button" class="btn-duo btn-duo-white" style="padding:10px 22px; font-size:14px;" onclick="switchFriendsTab('search')">
+                    🔍 Tìm kiếm học viên ➔
+                  </button>
+                </div>
+              </div>
+            ` : '')}
+          </div>
         </div>
       `}
     </div>
   `;
 }
 
-// ========================================================
+
 // DISCORD-STYLE PROFILE EFFECTS & AVATAR DECORATIONS
 // ========================================================
 export const DISCORD_EFFECTS_REGISTRY = {
