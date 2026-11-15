@@ -50,6 +50,7 @@
   --bg-page: #fff9fb;
   --bg-soft: #fbf0f4;
   --card-bg: #ffffff;
+  --theme-accent-text: var(--lumi-pink);
 
   font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 16px;
@@ -7660,6 +7661,7 @@ button:focus-visible, input:focus-visible {
   --duo-purple-light: rgba(206, 130, 255, 0.16);
   --feedback-green-light: rgba(88, 204, 2, 0.18);
   --feedback-green-text: #4ade80;
+  --theme-accent-text: #ff85aa;
 }
 
 /* Smooth theme transition */
@@ -7683,25 +7685,25 @@ html, body {
 }
 
 [data-theme="dark"] .nav-item:hover {
-  background: rgba(255, 92, 141, 0.12);
-  color: #ff85aa;
+  background: var(--lumi-pink-light);
+  color: var(--theme-accent-text);
 }
 
 [data-theme="dark"] .nav-item.active {
-  background: rgba(255, 92, 141, 0.18);
-  color: #ff85aa;
-  border-color: rgba(255, 92, 141, 0.35);
-  box-shadow: 0 4px 18px rgba(255, 92, 141, 0.15);
+  background: var(--lumi-pink-light);
+  color: var(--theme-accent-text);
+  border-color: var(--lumi-pink-border);
+  box-shadow: 0 4px 18px var(--lumi-pink-glow);
 }
 
 [data-theme="dark"] .nav-count {
-  background: rgba(255, 92, 141, 0.15);
-  color: #ff85aa;
-  border-color: rgba(255, 92, 141, 0.3);
+  background: var(--lumi-pink-soft);
+  color: var(--theme-accent-text);
+  border-color: var(--lumi-pink-border);
 }
 
 [data-theme="dark"] .sidebar-bottom {
-  border-top-color: rgba(255, 92, 141, 0.2);
+  border-top-color: var(--lumi-pink-border);
 }
 
 [data-theme="dark"] .streak-mini {
@@ -10611,5 +10613,468 @@ html, body {
 [data-theme="dark"] .group-bot-banner-text {
   color: #f8fafc;
 }
+
+/* ========================================================
+   PREMIUM THEME ENGINE (8 PALETTES - LIGHT & DARK MODE)
+   ======================================================== */
+
+/* 1. XANH ĐẠI DƯƠNG (CYBER OCEAN BLUE) */
+:root[data-color-theme="ocean_blue"],
+[data-color-theme="ocean_blue"] {
+  --lumi-pink: #0284c7;
+  --lumi-pink-dark: #0369a1;
+  --lumi-pink-hover: #0ea5e9;
+  --lumi-pink-light: #e0f2fe;
+  --lumi-pink-soft: #f0f9ff;
+  --lumi-pink-wash: #f8fafc;
+  --lumi-pink-border: #bae6fd;
+  --lumi-pink-glow: rgba(2, 132, 199, 0.35);
+  --theme-accent-text: #0284c7;
+  --bg-page: #f0f9ff;
+  --bg-soft: #e0f2fe;
+}
+:root[data-theme="dark"][data-color-theme="ocean_blue"],
+[data-theme="dark"][data-color-theme="ocean_blue"],
+[data-theme="dark"] [data-color-theme="ocean_blue"] {
+  --bg-page: #071322;
+  --bg-soft: #0e2038;
+  --card-bg: #142947;
+  --ink-900: #f0f9ff;
+  --ink-700: #bae6fd;
+  --ink-500: #7dd3fc;
+  --ink-300: #38bdf8;
+  --border-light: #1d3d63;
+  --border-dark: #13263e;
+  --lumi-pink: #38bdf8;
+  --lumi-pink-dark: #0284c7;
+  --lumi-pink-hover: #7dd3fc;
+  --lumi-pink-light: rgba(56, 189, 248, 0.16);
+  --lumi-pink-soft: rgba(56, 189, 248, 0.08);
+  --lumi-pink-wash: rgba(56, 189, 248, 0.04);
+  --lumi-pink-border: rgba(56, 189, 248, 0.35);
+  --lumi-pink-glow: rgba(56, 189, 248, 0.45);
+  --theme-accent-text: #7dd3fc;
+}
+
+/* 2. RỪNG NGỌC LỤC BẢO (EMERALD MINT) */
+:root[data-color-theme="emerald_forest"],
+[data-color-theme="emerald_forest"] {
+  --lumi-pink: #059669;
+  --lumi-pink-dark: #047857;
+  --lumi-pink-hover: #10b981;
+  --lumi-pink-light: #d1fae5;
+  --lumi-pink-soft: #ecfdf5;
+  --lumi-pink-wash: #f0fdf4;
+  --lumi-pink-border: #a7f3d0;
+  --lumi-pink-glow: rgba(5, 150, 105, 0.35);
+  --theme-accent-text: #047857;
+  --bg-page: #f0fdf4;
+  --bg-soft: #e7f7ed;
+}
+:root[data-theme="dark"][data-color-theme="emerald_forest"],
+[data-theme="dark"][data-color-theme="emerald_forest"],
+[data-theme="dark"] [data-color-theme="emerald_forest"] {
+  --bg-page: #051610;
+  --bg-soft: #0c261c;
+  --card-bg: #123326;
+  --ink-900: #f0fdf4;
+  --ink-700: #a7f3d0;
+  --ink-500: #6ee7b7;
+  --ink-300: #34d399;
+  --border-light: #1a4735;
+  --border-dark: #0e2a1f;
+  --lumi-pink: #34d399;
+  --lumi-pink-dark: #059669;
+  --lumi-pink-hover: #6ee7b7;
+  --lumi-pink-light: rgba(52, 211, 153, 0.16);
+  --lumi-pink-soft: rgba(52, 211, 153, 0.08);
+  --lumi-pink-wash: rgba(52, 211, 153, 0.04);
+  --lumi-pink-border: rgba(52, 211, 153, 0.35);
+  --lumi-pink-glow: rgba(52, 211, 153, 0.45);
+  --theme-accent-text: #6ee7b7;
+}
+
+/* 3. HOÀNG HÔN HỔ PHÁCH (SUNSET AMBER) */
+:root[data-color-theme="sunset_amber"],
+[data-color-theme="sunset_amber"] {
+  --lumi-pink: #ea580c;
+  --lumi-pink-dark: #c2410c;
+  --lumi-pink-hover: #f97316;
+  --lumi-pink-light: #ffedd5;
+  --lumi-pink-soft: #fff7ed;
+  --lumi-pink-wash: #fffbf5;
+  --lumi-pink-border: #fed7aa;
+  --lumi-pink-glow: rgba(234, 88, 12, 0.35);
+  --theme-accent-text: #c2410c;
+  --bg-page: #fff7ed;
+  --bg-soft: #ffedd5;
+}
+:root[data-theme="dark"][data-color-theme="sunset_amber"],
+[data-theme="dark"][data-color-theme="sunset_amber"],
+[data-theme="dark"] [data-color-theme="sunset_amber"] {
+  --bg-page: #190e06;
+  --bg-soft: #28170b;
+  --card-bg: #361f0e;
+  --ink-900: #fff7ed;
+  --ink-700: #fed7aa;
+  --ink-500: #fb923c;
+  --ink-300: #f97316;
+  --border-light: #4c2c15;
+  --border-dark: #2e1a0d;
+  --lumi-pink: #fb923c;
+  --lumi-pink-dark: #ea580c;
+  --lumi-pink-hover: #fdba74;
+  --lumi-pink-light: rgba(251, 146, 60, 0.16);
+  --lumi-pink-soft: rgba(251, 146, 60, 0.08);
+  --lumi-pink-wash: rgba(251, 146, 60, 0.04);
+  --lumi-pink-border: rgba(251, 146, 60, 0.35);
+  --lumi-pink-glow: rgba(251, 146, 60, 0.45);
+  --theme-accent-text: #fdba74;
+}
+
+/* 4. TÍM THẠCH ANH (ROYAL AMETHYST) */
+:root[data-color-theme="royal_amethyst"],
+[data-color-theme="royal_amethyst"] {
+  --lumi-pink: #9333ea;
+  --lumi-pink-dark: #7e22ce;
+  --lumi-pink-hover: #a855f7;
+  --lumi-pink-light: #f3e8ff;
+  --lumi-pink-soft: #faf5ff;
+  --lumi-pink-wash: #fcf8ff;
+  --lumi-pink-border: #e9d5ff;
+  --lumi-pink-glow: rgba(147, 51, 234, 0.35);
+  --theme-accent-text: #7e22ce;
+  --bg-page: #faf5ff;
+  --bg-soft: #f3e8ff;
+}
+:root[data-theme="dark"][data-color-theme="royal_amethyst"],
+[data-theme="dark"][data-color-theme="royal_amethyst"],
+[data-theme="dark"] [data-color-theme="royal_amethyst"] {
+  --bg-page: #13091f;
+  --bg-soft: #1e1030;
+  --card-bg: #2b1744;
+  --ink-900: #faf5ff;
+  --ink-700: #e9d5ff;
+  --ink-500: #c084fc;
+  --ink-300: #a855f7;
+  --border-light: #3c2061;
+  --border-dark: #24133b;
+  --lumi-pink: #c084fc;
+  --lumi-pink-dark: #9333ea;
+  --lumi-pink-hover: #d8b4fe;
+  --lumi-pink-light: rgba(192, 132, 252, 0.16);
+  --lumi-pink-soft: rgba(192, 132, 252, 0.08);
+  --lumi-pink-wash: rgba(192, 132, 252, 0.04);
+  --lumi-pink-border: rgba(192, 132, 252, 0.35);
+  --lumi-pink-glow: rgba(192, 132, 252, 0.45);
+  --theme-accent-text: #d8b4fe;
+}
+
+/* 5. HUYẾT LONG RUBY (CRIMSON BLOOD) */
+:root[data-color-theme="crimson_ruby"],
+[data-color-theme="crimson_ruby"] {
+  --lumi-pink: #e11d48;
+  --lumi-pink-dark: #be123c;
+  --lumi-pink-hover: #f43f5e;
+  --lumi-pink-light: #ffe4e6;
+  --lumi-pink-soft: #fff1f2;
+  --lumi-pink-wash: #fff5f6;
+  --lumi-pink-border: #fecdd3;
+  --lumi-pink-glow: rgba(225, 29, 72, 0.35);
+  --theme-accent-text: #be123c;
+  --bg-page: #fff1f2;
+  --bg-soft: #ffe4e6;
+}
+:root[data-theme="dark"][data-color-theme="crimson_ruby"],
+[data-theme="dark"][data-color-theme="crimson_ruby"],
+[data-theme="dark"] [data-color-theme="crimson_ruby"] {
+  --bg-page: #18060a;
+  --bg-soft: #280b12;
+  --card-bg: #38101a;
+  --ink-900: #fff1f2;
+  --ink-700: #fecdd3;
+  --ink-500: #fb7185;
+  --ink-300: #f43f5e;
+  --border-light: #521624;
+  --border-dark: #300d16;
+  --lumi-pink: #fb7185;
+  --lumi-pink-dark: #e11d48;
+  --lumi-pink-hover: #fda4af;
+  --lumi-pink-light: rgba(251, 113, 133, 0.16);
+  --lumi-pink-soft: rgba(251, 113, 133, 0.08);
+  --lumi-pink-wash: rgba(251, 113, 133, 0.04);
+  --lumi-pink-border: rgba(251, 113, 133, 0.35);
+  --lumi-pink-glow: rgba(251, 113, 133, 0.45);
+  --theme-accent-text: #fda4af;
+}
+
+/* 6. VÀNG CHANH CYBERPUNK (CYBER LIME) */
+:root[data-color-theme="cyber_lime"],
+[data-color-theme="cyber_lime"] {
+  --lumi-pink: #65a30d;
+  --lumi-pink-dark: #4d7c0f;
+  --lumi-pink-hover: #84cc16;
+  --lumi-pink-light: #ecfccb;
+  --lumi-pink-soft: #f7fee7;
+  --lumi-pink-wash: #fbfef2;
+  --lumi-pink-border: #d9f99d;
+  --lumi-pink-glow: rgba(101, 163, 13, 0.35);
+  --theme-accent-text: #4d7c0f;
+  --bg-page: #f7fee7;
+  --bg-soft: #ecfccb;
+}
+:root[data-theme="dark"][data-color-theme="cyber_lime"],
+[data-theme="dark"][data-color-theme="cyber_lime"],
+[data-theme="dark"] [data-color-theme="cyber_lime"] {
+  --bg-page: #0e1505;
+  --bg-soft: #18240a;
+  --card-bg: #22330e;
+  --ink-900: #f7fee7;
+  --ink-700: #d9f99d;
+  --ink-500: #a3e635;
+  --ink-300: #84cc16;
+  --border-light: #314a14;
+  --border-dark: #1b290b;
+  --lumi-pink: #a3e635;
+  --lumi-pink-dark: #65a30d;
+  --lumi-pink-hover: #bef264;
+  --lumi-pink-light: rgba(163, 230, 53, 0.16);
+  --lumi-pink-soft: rgba(163, 230, 53, 0.08);
+  --lumi-pink-wash: rgba(163, 230, 53, 0.04);
+  --lumi-pink-border: rgba(163, 230, 53, 0.35);
+  --lumi-pink-glow: rgba(163, 230, 53, 0.45);
+  --theme-accent-text: #bef264;
+}
+
+/* 7. TRÀ SỮA CARAMEL (VINTAGE MOCHA) */
+:root[data-color-theme="vintage_mocha"],
+[data-color-theme="vintage_mocha"] {
+  --lumi-pink: #b45309;
+  --lumi-pink-dark: #92400e;
+  --lumi-pink-hover: #d97706;
+  --lumi-pink-light: #fef3c7;
+  --lumi-pink-soft: #fffbeb;
+  --lumi-pink-wash: #fffdf5;
+  --lumi-pink-border: #fde68a;
+  --lumi-pink-glow: rgba(180, 83, 9, 0.35);
+  --theme-accent-text: #92400e;
+  --bg-page: #fffbeb;
+  --bg-soft: #fef3c7;
+}
+:root[data-theme="dark"][data-color-theme="vintage_mocha"],
+[data-theme="dark"][data-color-theme="vintage_mocha"],
+[data-theme="dark"] [data-color-theme="vintage_mocha"] {
+  --bg-page: #171109;
+  --bg-soft: #261b0f;
+  --card-bg: #352615;
+  --ink-900: #fffbeb;
+  --ink-700: #fde68a;
+  --ink-500: #fbbf24;
+  --ink-300: #f59e0b;
+  --border-light: #4e381f;
+  --border-dark: #2e2112;
+  --lumi-pink: #fbbf24;
+  --lumi-pink-dark: #b45309;
+  --lumi-pink-hover: #fcd34d;
+  --lumi-pink-light: rgba(251, 191, 36, 0.16);
+  --lumi-pink-soft: rgba(251, 191, 36, 0.08);
+  --lumi-pink-wash: rgba(251, 191, 36, 0.04);
+  --lumi-pink-border: rgba(251, 191, 36, 0.35);
+  --lumi-pink-glow: rgba(251, 191, 36, 0.45);
+  --theme-accent-text: #fcd34d;
+}
+
+/* 8. CỰC QUANG BẮC CỰC (AURORA TEAL) */
+:root[data-color-theme="aurora_teal"],
+[data-color-theme="aurora_teal"] {
+  --lumi-pink: #0d9488;
+  --lumi-pink-dark: #0f766e;
+  --lumi-pink-hover: #14b8a6;
+  --lumi-pink-light: #ccfbf1;
+  --lumi-pink-soft: #f0fdfa;
+  --lumi-pink-wash: #f6fefc;
+  --lumi-pink-border: #99f6e4;
+  --lumi-pink-glow: rgba(13, 148, 136, 0.35);
+  --theme-accent-text: #0f766e;
+  --bg-page: #f0fdfa;
+  --bg-soft: #ccfbf1;
+}
+:root[data-theme="dark"][data-color-theme="aurora_teal"],
+[data-theme="dark"][data-color-theme="aurora_teal"],
+[data-theme="dark"] [data-color-theme="aurora_teal"] {
+  --bg-page: #061514;
+  --bg-soft: #0d2422;
+  --card-bg: #143331;
+  --ink-900: #f0fdfa;
+  --ink-700: #99f6e4;
+  --ink-500: #2dd4bf;
+  --ink-300: #14b8a6;
+  --border-light: #1e4a47;
+  --border-dark: #112c2a;
+  --lumi-pink: #2dd4bf;
+  --lumi-pink-dark: #0d9488;
+  --lumi-pink-hover: #5eead4;
+  --lumi-pink-light: rgba(45, 212, 191, 0.16);
+  --lumi-pink-soft: rgba(45, 212, 191, 0.08);
+  --lumi-pink-wash: rgba(45, 212, 191, 0.04);
+  --lumi-pink-border: rgba(45, 212, 191, 0.35);
+  --lumi-pink-glow: rgba(45, 212, 191, 0.45);
+  --theme-accent-text: #5eead4;
+}
+
+/* ========================================================
+   THEME SHOP CARDS & PREVIEW MODAL STYLING
+   ======================================================== */
+.theme-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.theme-shop-card {
+  background: var(--card-bg);
+  border: 2px solid var(--border-light);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.theme-shop-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--lumi-pink);
+  box-shadow: 0 8px 24px var(--lumi-pink-light);
+}
+
+.theme-shop-card.equipped {
+  border-color: var(--feedback-green);
+  box-shadow: 0 0 0 2px var(--feedback-green), 0 8px 20px rgba(88, 204, 2, 0.15);
+}
+
+.theme-preview-banner {
+  height: 96px;
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.theme-color-dots {
+  display: flex;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.theme-color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.theme-card-body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.theme-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.theme-badge-pill {
+  font-size: 11px;
+  font-weight: 900;
+  padding: 2px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.3px;
+}
+
+.theme-price-tag {
+  font-size: 13px;
+  font-weight: 900;
+  color: #2563eb;
+}
+
+.theme-card-title {
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ink-900);
+  margin: 0 0 6px 0;
+}
+
+.theme-card-desc {
+  font-size: 12.5px;
+  color: var(--ink-500);
+  line-height: 1.45;
+  margin: 0 0 14px 0;
+  flex: 1;
+}
+
+.theme-card-mockup {
+  background: var(--bg-soft);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.theme-card-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Floating Live Preview Bar */
+.theme-preview-floating-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--card-bg);
+  border: 2px solid var(--lumi-pink);
+  box-shadow: 0 12px 36px var(--lumi-pink-glow), 0 4px 12px rgba(0, 0, 0, 0.25);
+  border-radius: 999px;
+  padding: 8px 16px 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 99999;
+  animation: slideUpFloat 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-preview-floating-bar span {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--ink-900);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@keyframes slideUpFloat {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
 
 

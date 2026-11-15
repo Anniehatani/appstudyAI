@@ -961,7 +961,15 @@ const SHOP_PROFILE_ITEMS = [
   { item_code: "bg_sakura_bridge", name: "Hình Nền Động: Cầu Hoa Anh Đào (GIF)", description: "Ảnh động cầu gỗ cổ kính soi bóng dòng sông dưới tán hoa anh đào bay lượn tuyệt đẹp.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/sakura-bridge.gif" },
   { item_code: "bg_goth_smoker", name: "Hình Nền Động: Goth Girl Khói Thuốc (GIF)", description: "Ảnh động cô gái phong cách gothic khói thuốc mờ ảo, nét vẽ anime vintage hoài niệm cực chất.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/goth-smoker.gif" },
   { item_code: "bg_anime_girl_windblown", name: "Hình Nền Động: Thiếu Nữ Gió Lộng (GIF)", description: "Ảnh động cô gái anime đứng bên hàng rào với mái tóc tung bay trong gió đầy cảm xúc.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/windblown-anime-girl-fence-monochrome.gif" },
-  { item_code: "bg_winged_maiden", name: "Hình Nền Động: Nàng Tiên Cánh Trắng (GIF)", description: "Ảnh động thiếu nữ với đôi cánh lấp lánh cử động mềm mại bay bổng tựa thiên thần.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/winged-maiden.gif" }
+  { item_code: "bg_winged_maiden", name: "Hình Nền Động: Nàng Tiên Cánh Trắng (GIF)", description: "Ảnh động thiếu nữ với đôi cánh lấp lánh cử động mềm mại bay bổng tựa thiên thần.", price_gems: 100, type: "wallpaper", cover_url: "/media/hinhnen/winged-maiden.gif" },
+  { item_code: "theme_ocean_blue", name: "Theme: Xanh Đại Dương (Cyber Ocean)", description: "Tông xanh biển sâu và xanh cyan công nghệ cao mát mắt, gia tăng 200% khả năng tập trung khi làm bài.", price_gems: 50, type: "profile_theme" },
+  { item_code: "theme_emerald_forest", name: "Theme: Rừng Ngọc Lục Bảo (Emerald Forest)", description: "Tông xanh ngọc lục bảo và bạc hà dịu nhẹ, giải tỏa căng thẳng cho đôi mắt khi ôn thi thâu đêm.", price_gems: 50, type: "profile_theme" },
+  { item_code: "theme_sunset_amber", name: "Theme: Hoàng Hôn Hổ Phách (Sunset Amber)", description: "Sự kết hợp rực rỡ giữa ánh cam hoàng hôn và vàng hổ phách, truyền lửa nhiệt huyết và đam mê chinh phục.", price_gems: 50, type: "profile_theme" },
+  { item_code: "theme_royal_amethyst", name: "Theme: Tím Thạch Anh (Royal Amethyst)", description: "Tông tím hoàng gia huyền bí, biểu tượng của trí tuệ đỉnh cao và phong cách học tập sang trọng.", price_gems: 50, type: "profile_theme" },
+  { item_code: "theme_crimson_ruby", name: "Theme: Huyết Long Ruby (Crimson Blood)", description: "Tông đỏ ruby rực cháy của những chiến binh kiên cường, bất bại trên mọi bảng xếp hạng học tập.", price_gems: 50, type: "profile_theme" },
+  { item_code: "theme_cyber_lime", name: "Theme: Vàng Chanh Cyberpunk (Cyber Lime)", description: "Tông vàng chanh neon điện tử đậm chất hacker tương lai, phá cách và bứt phá mọi giới hạn.", price_gems: 50, type: "profile_theme" },
+  { item_code: "theme_vintage_mocha", name: "Theme: Trà Sữa Caramel (Vintage Mocha)", description: "Sắc nâu caramel ngọt ngào, ấm cúng và tao nhã như một góc quán cà phê chill giữa chiều thu.", price_gems: 50, type: "profile_theme" },
+  { item_code: "theme_aurora_teal", name: "Theme: Cực Quang Huyền Ảo (Aurora Teal)", description: "Vẻ đẹp diệu kỳ của dải cực quang phương Bắc với tông xanh ngọc lam ánh kim lung linh trên nền trời đêm.", price_gems: 50, type: "profile_theme" }
 ];
 const SHOP_PROFILE_ITEMS_BY_CODE = new Map(SHOP_PROFILE_ITEMS.map(function (item) { return [item.item_code, item]; }));
 
@@ -1449,7 +1457,7 @@ async function buyShopItem(request, user, env) {
   const existingInv = await env.DB.prepare(
     "SELECT id, quantity FROM user_inventory WHERE user_id = ? AND item_code = ? LIMIT 1"
   ).bind(user.userId, itemCode).first();
-  if ((itemCode.startsWith("mascot_") || itemCode.startsWith("deco_") || itemCode.startsWith("fx_") || itemCode.startsWith("bg_")) && existingInv && Number(existingInv.quantity) >= 1) {
+  if ((itemCode.startsWith("mascot_") || itemCode.startsWith("deco_") || itemCode.startsWith("fx_") || itemCode.startsWith("bg_") || itemCode.startsWith("theme_")) && existingInv && Number(existingInv.quantity) >= 1) {
     throw new HttpError(400, "Bạn đã sở hữu vật phẩm này rồi, không thể mua lại!");
   }
 
@@ -1488,6 +1496,9 @@ async function buyShopItem(request, user, env) {
     const coverUrl = wpItem ? wpItem.cover_url : itemCode;
     ops.push(env.DB.prepare("UPDATE profiles SET cover_url = ? WHERE user_id = ?").bind(coverUrl, user.userId));
     user.profile.cover_url = coverUrl;
+  } else if (itemCode.startsWith("theme_")) {
+    ops.push(env.DB.prepare("UPDATE profiles SET profile_theme = ? WHERE user_id = ?").bind(itemCode, user.userId));
+    user.profile.profile_theme = itemCode;
   }
 
   if (typeof env.DB.batch === "function") {

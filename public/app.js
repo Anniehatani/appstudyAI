@@ -678,6 +678,15 @@ function updateShell() {
   if (weekNode && state.overview) {
     weekNode.innerHTML = renderWeek(state.overview.week, state.overview.today);
   }
+
+  // Theme Sync
+  try {
+    const activePreview = document.getElementById("theme-preview-floating-bar");
+    if (!activePreview) {
+      const activeTh = state.profile?.profile_theme || localStorage.getItem("3tg_color_theme") || "theme_sakura_pink";
+      applyColorTheme(activeTh, false, false);
+    }
+  } catch {}
 }
 
 function subjectIcon(subject) {
@@ -4644,6 +4653,282 @@ export const DISCORD_WALLPAPERS_REGISTRY = {
 };
 window.DISCORD_WALLPAPERS_REGISTRY = DISCORD_WALLPAPERS_REGISTRY;
 
+export const THEMES_REGISTRY = {
+  theme_sakura_pink: {
+    code: "theme_sakura_pink",
+    name: "Hoa Anh Đào (Tone Pink Sakura)",
+    themeAttr: "sakura",
+    badge: "🌸 MẶC ĐỊNH",
+    icon: "🌸",
+    color: "#ff4b82",
+    accent: "#ff4b82",
+    secondary: "#ff6092",
+    gradient: "linear-gradient(135deg, #ff4b82 0%, #ff758c 100%)",
+    dots: ["#ff4b82", "#d4225d", "#ffe6ef", "#fff5f8"],
+    description: "Sắc hồng hoa anh đào pastel ngọt ngào signature của 3TG Study, tươi trẻ, ấm áp và tràn đầy cảm hứng học tập.",
+    price: 0,
+    isDefault: true
+  },
+  theme_ocean_blue: {
+    code: "theme_ocean_blue",
+    name: "Xanh Đại Dương (Cyber Ocean)",
+    themeAttr: "ocean_blue",
+    badge: "🌊 ĐẠI DƯƠNG",
+    icon: "🌊",
+    color: "#0284c7",
+    accent: "#0284c7",
+    secondary: "#38bdf8",
+    gradient: "linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)",
+    dots: ["#0284c7", "#0369a1", "#38bdf8", "#e0f2fe"],
+    description: "Tông xanh biển sâu và xanh cyan công nghệ cao mát mắt, gia tăng 200% khả năng tập trung khi làm bài.",
+    price: 50
+  },
+  theme_emerald_forest: {
+    code: "theme_emerald_forest",
+    name: "Rừng Ngọc Lục Bảo (Emerald Mint)",
+    themeAttr: "emerald_forest",
+    badge: "🌲 THIÊN NHIÊN",
+    icon: "🌲",
+    color: "#059669",
+    accent: "#059669",
+    secondary: "#34d399",
+    gradient: "linear-gradient(135deg, #059669 0%, #34d399 100%)",
+    dots: ["#059669", "#047857", "#34d399", "#d1fae5"],
+    description: "Tông xanh ngọc lục bảo và bạc hà dịu nhẹ, giải tỏa căng thẳng cho đôi mắt khi ôn thi thâu đêm.",
+    price: 50
+  },
+  theme_sunset_amber: {
+    code: "theme_sunset_amber",
+    name: "Hoàng Hôn Hổ Phách (Sunset Amber)",
+    themeAttr: "sunset_amber",
+    badge: "🌅 HOÀNG HÔN",
+    icon: "🌅",
+    color: "#ea580c",
+    accent: "#ea580c",
+    secondary: "#fb923c",
+    gradient: "linear-gradient(135deg, #ea580c 0%, #f97316 100%)",
+    dots: ["#ea580c", "#c2410c", "#fb923c", "#ffedd5"],
+    description: "Sự kết hợp rực rỡ giữa ánh cam hoàng hôn và vàng hổ phách, truyền lửa nhiệt huyết và đam mê chinh phục.",
+    price: 50
+  },
+  theme_royal_amethyst: {
+    code: "theme_royal_amethyst",
+    name: "Tím Thạch Anh (Royal Amethyst)",
+    themeAttr: "royal_amethyst",
+    badge: "🔮 HOÀNG GIA",
+    icon: "🔮",
+    color: "#9333ea",
+    accent: "#9333ea",
+    secondary: "#c084fc",
+    gradient: "linear-gradient(135deg, #9333ea 0%, #c084fc 100%)",
+    dots: ["#9333ea", "#7e22ce", "#c084fc", "#f3e8ff"],
+    description: "Tông tím hoàng gia huyền bí, biểu tượng của trí tuệ đỉnh cao và phong cách học tập sang trọng.",
+    price: 50
+  },
+  theme_crimson_ruby: {
+    code: "theme_crimson_ruby",
+    name: "Huyết Long Ruby (Crimson Blood)",
+    themeAttr: "crimson_ruby",
+    badge: "🩸 HUYẾT LONG",
+    icon: "🩸",
+    color: "#e11d48",
+    accent: "#e11d48",
+    secondary: "#fb7185",
+    gradient: "linear-gradient(135deg, #e11d48 0%, #fb7185 100%)",
+    dots: ["#e11d48", "#be123c", "#fb7185", "#ffe4e6"],
+    description: "Tông đỏ ruby rực cháy của những chiến binh kiên cường, bất bại trên mọi bảng xếp hạng học tập.",
+    price: 50
+  },
+  theme_cyber_lime: {
+    code: "theme_cyber_lime",
+    name: "Vàng Chanh Cyberpunk (Cyber Lime)",
+    themeAttr: "cyber_lime",
+    badge: "⚡ CYBERPUNK",
+    icon: "⚡",
+    color: "#65a30d",
+    accent: "#65a30d",
+    secondary: "#a3e635",
+    gradient: "linear-gradient(135deg, #65a30d 0%, #a3e635 100%)",
+    dots: ["#65a30d", "#4d7c0f", "#a3e635", "#ecfccb"],
+    description: "Tông vàng chanh neon điện tử đậm chất hacker tương lai, phá cách và bứt phá mọi giới hạn.",
+    price: 50
+  },
+  theme_vintage_mocha: {
+    code: "theme_vintage_mocha",
+    name: "Trà Sữa Caramel (Vintage Mocha)",
+    themeAttr: "vintage_mocha",
+    badge: "☕ TRÀ SỮA",
+    icon: "☕",
+    color: "#b45309",
+    accent: "#b45309",
+    secondary: "#fbbf24",
+    gradient: "linear-gradient(135deg, #b45309 0%, #fbbf24 100%)",
+    dots: ["#b45309", "#92400e", "#fbbf24", "#fef3c7"],
+    description: "Sắc nâu caramel ngọt ngào, ấm cúng và tao nhã như một góc quán cà phê chill giữa chiều thu.",
+    price: 50
+  },
+  theme_aurora_teal: {
+    code: "theme_aurora_teal",
+    name: "Cực Quang Huyền Ảo (Aurora Teal)",
+    themeAttr: "aurora_teal",
+    badge: "🌌 CỰC QUANG",
+    icon: "🌌",
+    color: "#0d9488",
+    accent: "#0d9488",
+    secondary: "#2dd4bf",
+    gradient: "linear-gradient(135deg, #0d9488 0%, #2dd4bf 100%)",
+    dots: ["#0d9488", "#0f766e", "#2dd4bf", "#ccfbf1"],
+    description: "Vẻ đẹp diệu kỳ của dải cực quang phương Bắc với tông xanh ngọc lam ánh kim lung linh trên nền trời đêm.",
+    price: 50
+  }
+};
+window.THEMES_REGISTRY = THEMES_REGISTRY;
+
+export function applyColorTheme(themeKey, persist = true, notify = false) {
+  let themeObj = null;
+  if (themeKey && THEMES_REGISTRY[themeKey]) {
+    themeObj = THEMES_REGISTRY[themeKey];
+  } else if (themeKey) {
+    themeObj = Object.values(THEMES_REGISTRY).find(t => t.code === themeKey || t.themeAttr === themeKey);
+  }
+  
+  const attrVal = themeObj && themeObj.themeAttr ? themeObj.themeAttr : "sakura";
+  
+  if (attrVal === "sakura") {
+    document.documentElement.removeAttribute("data-color-theme");
+  } else {
+    document.documentElement.setAttribute("data-color-theme", attrVal);
+  }
+  
+  state.currentColorTheme = themeObj ? themeObj.code : "theme_sakura_pink";
+  
+  if (persist) {
+    localStorage.setItem("3tg_color_theme", state.currentColorTheme);
+  }
+  
+  if (notify && themeObj) {
+    playSound("fanfare");
+    showToast(`Đã áp dụng Theme "${themeObj.name}" thành công! ${themeObj.icon || '🎨'}`);
+  }
+}
+window.applyColorTheme = applyColorTheme;
+
+export function livePreviewTheme(themeCode) {
+  const theme = THEMES_REGISTRY[themeCode];
+  if (!theme) return;
+  
+  // Áp dụng tạm thời giao diện trực tiếp
+  applyColorTheme(themeCode, false, false);
+  
+  // Tạo thanh floating preview bar
+  let bar = document.getElementById("theme-preview-floating-bar");
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.id = "theme-preview-floating-bar";
+    bar.className = "theme-preview-floating-bar";
+    document.body.appendChild(bar);
+  }
+  
+  const isOwned = (state.inventory || []).some(i => i.item_code === themeCode && Number(i.quantity) > 0) ||
+                  (shopData?.items || []).some(i => i.item_code === themeCode && Number(i.owned) > 0) ||
+                  theme.price === 0;
+  const isEquipped = state.profile && (state.profile.profile_theme === themeCode || (!state.profile.profile_theme && theme.isDefault));
+  
+  bar.innerHTML = `
+    <span>${theme.icon || '🎨'} Đang xem thử: <b>${esc(theme.name)}</b></span>
+    ${isEquipped ? `
+      <button type="button" class="btn-duo btn-duo-green" style="padding:6px 14px; font-size:12px;" disabled>✓ Đang dùng</button>
+    ` : isOwned ? `
+      <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12px;" onclick="equipDecoration('profile_theme', '${esc(theme.isDefault ? '' : themeCode)}'); cancelLiveThemePreview();">Trang bị</button>
+    ` : `
+      <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12px;" onclick="buyItem('${esc(themeCode)}'); cancelLiveThemePreview();">Mua (50 💎)</button>
+    `}
+    <button type="button" class="btn-duo btn-duo-white" style="padding:6px 12px; font-size:12px;" onclick="cancelLiveThemePreview()">✕ Thoát thử</button>
+  `;
+}
+window.livePreviewTheme = livePreviewTheme;
+
+export function cancelLiveThemePreview() {
+  const bar = document.getElementById("theme-preview-floating-bar");
+  if (bar) bar.remove();
+  const equipped = state.profile?.profile_theme || localStorage.getItem("3tg_color_theme") || "theme_sakura_pink";
+  applyColorTheme(equipped, false, false);
+}
+window.cancelLiveThemePreview = cancelLiveThemePreview;
+
+export function previewThemeModal(themeCode) {
+  const theme = THEMES_REGISTRY[themeCode];
+  if (!theme) return;
+  
+  const isOwned = (state.inventory || []).some(i => i.item_code === themeCode && Number(i.quantity) > 0) ||
+                  (shopData?.items || []).some(i => i.item_code === themeCode && Number(i.owned) > 0) ||
+                  theme.price === 0;
+  const isEquipped = state.profile && (state.profile.profile_theme === themeCode || (!state.profile.profile_theme && theme.isDefault));
+  
+  modalRoot.innerHTML = `
+    <div class="discord-preview-modal-overlay" onclick="closeUserProfileModal(event)">
+      <div class="discord-preview-card" style="max-width:440px;" onclick="event.stopPropagation()">
+        <div class="theme-preview-banner" style="background:${theme.gradient}; border-radius:20px 20px 0 0; position:relative;">
+          <div class="theme-color-dots">
+            ${theme.dots.map(d => `<span class="theme-color-dot" style="background:${d};"></span>`).join("")}
+          </div>
+          <button type="button" class="user-profile-close-btn" style="position:absolute; top:12px; right:12px; z-index:10; background:#ffffff; border:2px solid #e2e8f0; width:34px; height:34px; border-radius:50%; font-size:15px; font-weight:900; color:#0f172a; cursor:pointer;" onclick="closeUserProfileModal()">✕</button>
+        </div>
+        <div class="discord-preview-body" style="padding:18px 20px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span class="theme-badge-pill" style="background:${theme.color}; color:#fff; font-size:11px; font-weight:900;">${esc(theme.badge)}</span>
+            <span style="font-size:14px; font-weight:900; color:#2563eb;">${theme.price === 0 ? 'Miễn phí' : `💎 ${theme.price} ĐQ`}</span>
+          </div>
+          <h2 style="font-size:20px; font-weight:900; margin:0 0 6px 0; color:var(--ink-900);">${esc(theme.name)}</h2>
+          <p style="font-size:13px; color:var(--ink-500); line-height:1.45; margin:0 0 16px 0;">${esc(theme.description)}</p>
+          
+          <div style="background:var(--bg-soft); border:1.5px solid var(--border-light); border-radius:16px; padding:14px; margin-bottom:18px;">
+            <div style="font-size:11px; font-weight:900; color:var(--ink-500); text-transform:uppercase; margin-bottom:10px; letter-spacing:0.5px;">Mô phỏng giao diện mẫu:</div>
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+              <button type="button" style="background:${theme.color}; color:#fff; border:none; padding:8px 18px; border-radius:12px; font-weight:900; font-size:13px; box-shadow:0 4px 0 ${theme.dots[1]}; cursor:default;">
+                Nút Chính Mẫu
+              </button>
+              <span style="background:${theme.dots[3]}; color:${theme.dots[0]}; border:1px solid ${theme.dots[2]}; padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:900;">
+                ✓ Huy hiệu VIP
+              </span>
+            </div>
+            <div style="display:flex; justify-content:flex-end;">
+              <div style="background:${theme.color}; color:#fff; padding:8px 14px; border-radius:14px 14px 2px 14px; font-size:12.5px; font-weight:700; box-shadow:0 2px 0 ${theme.dots[1]}; max-width:85%;">
+                Tin nhắn mẫu với tông màu ${esc(theme.name)} ✨
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button type="button" class="btn-duo btn-duo-white" style="width:100%; padding:10px; font-weight:900;" onclick="closeUserProfileModal(); livePreviewTheme('${esc(themeCode)}');">
+              👁️ Xem thử trên toàn bộ App
+            </button>
+            <div class="discord-preview-btn-row" style="margin-top:0;">
+              ${isEquipped ? `
+                <button type="button" class="btn-duo btn-duo-green" style="flex:1; padding:10px; font-weight:900;" disabled>
+                  ✓ Đang dùng
+                </button>
+              ` : isOwned ? `
+                <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:10px; font-weight:900;" onclick="closeUserProfileModal(); equipDecoration('profile_theme', '${esc(theme.isDefault ? '' : themeCode)}');">
+                  Trang bị Theme này 🎨
+                </button>
+              ` : `
+                <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:10px; font-weight:900;" onclick="closeUserProfileModal(); buyItem('${esc(themeCode)}');">
+                  💎 Mua ngay (${theme.price} 💎)
+                </button>
+              `}
+              <button type="button" class="btn-duo btn-duo-white" style="padding:10px 18px; font-weight:800;" onclick="closeUserProfileModal()">
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+window.previewThemeModal = previewThemeModal;
+
 export function generateAvatarDecorationSvg(decoCode) {
   if (decoCode === "deco_manga_ghoul") {
     return `
@@ -5575,8 +5860,11 @@ window.equipDecoration = async function(type, itemCode) {
     if (res.profile) {
       state.profile = Object.assign({}, state.profile, res.profile);
     }
+    if (type === "profile_theme") {
+      applyColorTheme(itemCode || "theme_sakura_pink", true, false);
+    }
     playSound("fanfare");
-    showToast(itemCode ? "Đã trang bị hiệu ứng thành công! 🌸" : "Đã tháo hiệu ứng.");
+    showToast(itemCode ? "Đã trang bị thành công! 🌸" : "Đã chuyển về mặc định.");
     updateShell();
     render();
   } catch (err) {
@@ -5858,13 +6146,16 @@ function renderShop() {
         </div>
       </div>
 
-      <!-- SHOP CATEGORY TABS (THỨ TỰ MỚI: VẬT PHẨM -> MASCOT THỎ 7 MÀU -> KHUNG AVT -> HÌNH NỀN) -->
+      <!-- SHOP CATEGORY TABS (THỨ TỰ MỚI: VẬT PHẨM -> MASCOT THỎ 7 MÀU -> THEME -> KHUNG AVT -> HÌNH NỀN) -->
       <div class="shop-category-tabs">
         <button type="button" class="shop-category-tab ${state.shopTab === 'items' ? 'active' : ''}" onclick="switchShopTab('items')">
           🛡️ Vật Phẩm
         </button>
         <button type="button" class="shop-category-tab ${state.shopTab === 'mascot' ? 'active' : ''}" onclick="switchShopTab('mascot')">
           🐰 Mascot Thỏ 7 Màu
+        </button>
+        <button type="button" class="shop-category-tab ${state.shopTab === 'themes' ? 'active tab-themes' : ''}" onclick="switchShopTab('themes')">
+          🎨 Theme Giao Diện
         </button>
         <button type="button" class="shop-category-tab ${state.shopTab === 'nitro' ? 'active tab-nitro' : ''}" onclick="switchShopTab('nitro')">
           🖼️ Khung Avatar
@@ -5971,6 +6262,87 @@ function renderShop() {
                   <span class="mascot-token-badge ${isEquipped ? 'mascot-badge-equipped' : isUnlocked ? 'mascot-badge-unlocked' : 'mascot-badge-locked'}">
                     ${isEquipped ? 'Đang dùng' : isUnlocked ? '✓ Có' : '🔒 Khóa'}
                   </span>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- TAB THEMES: 8 BỘ THEME MÀU SẮC ĐỒNG GIÁ 50 💎 -->
+      ${state.shopTab === 'themes' ? `
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+            <div>
+              <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0;">
+                Bộ Sưu Tập Theme Sắc Màu Toàn Diện (Xanh Đại Dương, Ngọc Lục Bảo, Hoàng Hôn...) 🎨✨
+              </h2>
+              <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">
+                Thay đổi toàn bộ diện mạo ứng dụng: Nút bấm 3D, viền sáng, tin nhắn, thanh tiến trình và Chế độ Sáng/Tối mượt mà 100%!
+              </p>
+            </div>
+            <span style="background:linear-gradient(135deg, #0284c7, #9333ea); color:#fff; font-size:11px; font-weight:900; padding:4px 12px; border-radius:999px; box-shadow:0 2px 8px rgba(2,132,199,0.3);">
+              💎 Đồng Giá 50 ĐQ
+            </span>
+          </div>
+
+          <div class="theme-shop-grid">
+            ${Object.values(THEMES_REGISTRY).map(item => {
+              const shopItem = items.find(i => i.item_code === item.code);
+              const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => inv.item_code === item.code && Number(inv.quantity) >= 1) || item.price === 0;
+              const isEquipped = state.profile && (state.profile.profile_theme === item.code || (!state.profile.profile_theme && item.isDefault));
+
+              return `
+                <div class="theme-shop-card ${isEquipped ? 'equipped' : ''}" onclick="previewThemeModal('${esc(item.code)}')">
+                  <div class="theme-preview-banner" style="background:${item.gradient};">
+                    <div class="theme-color-dots">
+                      ${item.dots.map(d => `<span class="theme-color-dot" style="background:${d};"></span>`).join("")}
+                    </div>
+                    ${isEquipped ? `
+                      <span style="position:absolute; top:8px; right:8px; background:#10b981; color:#fff; font-size:10px; font-weight:900; padding:2px 8px; border-radius:999px; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                        ✓ Đang dùng
+                      </span>
+                    ` : ''}
+                  </div>
+
+                  <div class="theme-card-body">
+                    <div class="theme-badge-row">
+                      <span class="theme-badge-pill" style="background:${item.color}; color:#fff;">${esc(item.badge)}</span>
+                      <span class="theme-price-tag">${item.price === 0 ? 'Miễn phí' : `💎 ${item.price} ĐQ`}</span>
+                    </div>
+
+                    <h4 class="theme-card-title">${esc(item.name)}</h4>
+                    <p class="theme-card-desc">${esc(item.description)}</p>
+
+                    <div class="theme-card-mockup">
+                      <button type="button" style="background:${item.color}; color:#fff; border:none; padding:5px 12px; border-radius:8px; font-size:11px; font-weight:900; box-shadow:0 3px 0 ${item.dots[1]}; cursor:default;">
+                        Mẫu nút
+                      </button>
+                      <span style="font-size:11px; font-weight:800; color:${item.color};">
+                        ${esc(item.dots[0])}
+                      </span>
+                    </div>
+
+                    <div class="theme-card-actions" onclick="event.stopPropagation()">
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:6px 10px; font-size:11.5px; font-weight:800;" onclick="previewThemeModal('${esc(item.code)}')">
+                        👁️ Xem
+                      </button>
+
+                      ${isEquipped ? `
+                        <button type="button" class="btn-duo btn-duo-green" style="padding:6px 10px; font-size:11.5px; width:100%; font-weight:800;" disabled>
+                          ✓ Đang dùng
+                        </button>
+                      ` : isOwned ? `
+                        <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 10px; font-size:11.5px; width:100%; font-weight:800;" onclick="equipDecoration('profile_theme', '${esc(item.isDefault ? '' : item.code)}')">
+                          Trang bị
+                        </button>
+                      ` : `
+                        <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 10px; font-size:11.5px; width:100%; font-weight:800;" onclick="buyItem('${esc(item.code)}')">
+                          Mua (${item.price} 💎)
+                        </button>
+                      `}
+                    </div>
+                  </div>
                 </div>
               `;
             }).join("")}
@@ -6179,9 +6551,12 @@ window.buyItem = async function(itemCode) {
     if (res.profile) {
       state.profile = Object.assign({}, state.profile, res.profile);
     }
+    if (itemCode.startsWith("theme_")) {
+      applyColorTheme(itemCode, true, true);
+    }
     playSound("correct");
-    if (!res.profile && (itemCode.startsWith("deco_") || itemCode.startsWith("fx_") || itemCode.startsWith("bg_"))) {
-      const type = itemCode.startsWith("deco_") ? "avatar_decoration" : itemCode.startsWith("fx_") ? "profile_effect" : "wallpaper";
+    if (!res.profile && (itemCode.startsWith("deco_") || itemCode.startsWith("fx_") || itemCode.startsWith("bg_") || itemCode.startsWith("theme_"))) {
+      const type = itemCode.startsWith("deco_") ? "avatar_decoration" : itemCode.startsWith("fx_") ? "profile_effect" : itemCode.startsWith("theme_") ? "profile_theme" : "wallpaper";
       await equipDecoration(type, itemCode);
     } else {
       updateShell();
@@ -7923,18 +8298,37 @@ function renderSettings() {
               <h3 class="fb-side-card-title">🎒 Túi đồ học tập</h3>
               ${state.inventory && state.inventory.length ? `
                 <div style="display:flex; flex-direction:column; gap:12px;">
-                  ${state.inventory.map(item => `
+                  ${state.inventory.map(item => {
+                    const isTheme = item.item_code.startsWith("theme_");
+                    const themeMeta = isTheme ? THEMES_REGISTRY[item.item_code] : null;
+                    const isEquippedTheme = isTheme && state.profile?.profile_theme === item.item_code;
+                    const itemIcon = isTheme ? (themeMeta?.icon || '🎨') : (item.item_code === 'streak_freeze' ? '🧊' : (item.item_code === 'heart_refill' ? '❤️' : '🎁'));
+                    const itemName = isTheme ? (themeMeta?.name || item.item_code) : (item.item_code === 'streak_freeze' ? 'Đóng băng chuỗi học' : esc(item.item_code));
+                    const itemDesc = isTheme ? 'Theme màu sắc toàn ứng dụng' : (item.item_code === 'streak_freeze' ? 'Bảo vệ chuỗi khi bạn nghỉ 1 ngày' : '');
+
+                    return `
                     <div class="fb-inventory-item-row">
                       <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="font-size:24px;">${item.item_code === 'streak_freeze' ? '🧊' : (item.item_code === 'heart_refill' ? '❤️' : '🎁')}</span>
+                        <span style="font-size:24px;">${itemIcon}</span>
                         <div>
-                          <strong style="color:var(--ink-900);">${item.item_code === 'streak_freeze' ? 'Đóng băng chuỗi học' : esc(item.item_code)}</strong>
-                          <div style="font-size:12px; color:var(--ink-500);">${item.item_code === 'streak_freeze' ? 'Bảo vệ chuỗi khi bạn nghỉ 1 ngày' : ''}</div>
+                          <strong style="color:var(--ink-900);">${itemName}</strong>
+                          <div style="font-size:12px; color:var(--ink-500);">${itemDesc}</div>
                         </div>
                       </div>
-                      <span style="font-weight:900; color:var(--duo-blue);">x${item.quantity || 1}</span>
+                      ${isTheme ? `
+                        <div style="display:flex; align-items:center; gap:8px;">
+                          ${isEquippedTheme ? `
+                            <span style="font-size:11.5px; font-weight:900; color:#16a34a; background:#dcfce7; padding:4px 10px; border-radius:8px;">✓ Đang dùng</span>
+                          ` : `
+                            <button type="button" class="btn-duo btn-duo-pink" style="padding:4px 12px; font-size:11.5px; font-weight:800;" onclick="equipDecoration('profile_theme', '${esc(item.item_code)}')">Dùng</button>
+                          `}
+                        </div>
+                      ` : `
+                        <span style="font-weight:900; color:var(--duo-blue);">x${item.quantity || 1}</span>
+                      `}
                     </div>
-                  `).join("")}
+                    `;
+                  }).join("")}
                 </div>
               ` : `
                 <div style="text-align:center; padding:24px; color:var(--ink-500);">
@@ -7986,7 +8380,7 @@ window.openEditProfileModal = function() {
           <textarea id="edit-bio-input" class="form-input" rows="3" style="resize:none;" placeholder="Giới thiệu đôi nét về bản thân...">${esc(p.bio || '')}</textarea>
         </div>
         <button type="submit" class="btn-duo btn-duo-pink" style="padding:14px; font-size:15px; margin-top:8px;">
-          Lưu thay đổi
+          Lưu thay đổi2222222222222222222222222222222222222222222222222
         </button>
       </form>
     </div>
@@ -9906,6 +10300,9 @@ export function initThemeSystem() {
   const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   const currentTheme = saved || (prefersDark ? "dark" : "light");
   setAppTheme(currentTheme, false);
+
+  const savedColorTheme = localStorage.getItem("3tg_color_theme") || "theme_sakura_pink";
+  applyColorTheme(savedColorTheme, false, false);
 
   if (window.matchMedia) {
     window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", e => {
