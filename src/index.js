@@ -362,7 +362,7 @@ async function sessionUser(request, env) {
   const userId = getCookie(request, COOKIE_NAME);
   if (!/^[0-9a-f-]{36}$/i.test(userId)) return null;
   const account = await env.DB.prepare(
-    "SELECT a.id AS account_id, a.username, a.created_at AS account_created_at, p.id AS profile_id, p.full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.profile_theme, p.bio, p.cover_url, p.school, p.major, p.created_at AS profile_created_at, p.last_active_at " +
+    "SELECT a.id AS account_id, a.username, a.created_at AS account_created_at, p.id AS profile_id, p.full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.profile_theme, p.bio, p.cover_url, p.school, p.major, p.created_at AS profile_created_at, p.last_active_at, p.social_links, p.status_icon " +
     "FROM accounts a LEFT JOIN profiles p ON p.user_id = a.user_id " +
     "WHERE a.user_id = ? LIMIT 1"
   ).bind(userId).first();
@@ -391,6 +391,8 @@ async function sessionUser(request, env) {
     major: account.major || "",
     created_at: account.profile_created_at || account.account_created_at || "",
     last_active_at: account.last_active_at || account.profile_created_at || new Date().toISOString(),
+    social_links: account.social_links || "{}",
+    status_icon: account.status_icon || null,
     username: account.username
   };
   return { userId: userId, account: account, profile: profile };
@@ -922,9 +924,41 @@ async function updateProfile(request, user, env) {
   const school = String(body.school != null ? body.school : (user.profile.school || "")).trim().slice(0, 100);
   const major = String(body.major != null ? body.major : (user.profile.major || "")).trim().slice(0, 100);
   if (!fullName) throw new HttpError(400, "Nhập tên hiển thị trước khi lưu nhé.");
-  await env.DB.prepare("UPDATE profiles SET full_name = ?, bio = ?, school = ?, major = ? WHERE user_id = ?")
-    .bind(fullName, bio, school, major, user.userId).run();
-  return Object.assign({}, user.profile, { full_name: fullName, bio: bio, school: school, major: major });
+
+  let socialLinks = user.profile.social_links || "{}";
+  if (body.socialLinks != null || body.social_links != null) {
+    const rawSl = body.socialLinks != null ? body.socialLinks : body.social_links;
+    if (typeof rawSl === "object" && rawSl !== null) {
+      socialLinks = JSON.stringify({
+        facebook: String(rawSl.facebook || "").trim().slice(0, 200),
+        instagram: String(rawSl.instagram || "").trim().slice(0, 200),
+        tiktok: String(rawSl.tiktok || "").trim().slice(0, 200),
+        threads: String(rawSl.threads || "").trim().slice(0, 200),
+        github: String(rawSl.github || "").trim().slice(0, 200),
+        locket: String(rawSl.locket || "").trim().slice(0, 200)
+      });
+    } else if (typeof rawSl === "string") {
+      socialLinks = rawSl.trim().slice(0, 1000);
+    }
+  }
+
+  let statusIcon = user.profile.status_icon;
+  if (body.statusIcon !== undefined || body.status_icon !== undefined) {
+    const s = body.statusIcon !== undefined ? body.statusIcon : body.status_icon;
+    statusIcon = s ? String(s).trim().slice(0, 10) : null;
+  }
+
+  await env.DB.prepare("UPDATE profiles SET full_name = ?, bio = ?, school = ?, major = ?, social_links = ?, status_icon = ? WHERE user_id = ?")
+    .bind(fullName, bio, school, major, socialLinks, statusIcon, user.userId).run();
+  return Object.assign({}, user.profile, { full_name: fullName, bio: bio, school: school, major: major, social_links: socialLinks, status_icon: statusIcon });
+}
+
+async function updateProfileStatusIcon(request, user, env) {
+  const body = await readJson(request);
+  const statusIcon = body.statusIcon ? String(body.statusIcon).trim().slice(0, 10) : null;
+  await env.DB.prepare("UPDATE profiles SET status_icon = ? WHERE user_id = ?").bind(statusIcon, user.userId).run();
+  user.profile.status_icon = statusIcon;
+  return { ok: true, statusIcon, profile: user.profile };
 }
 
 async function setPresetAvatar(request, user, env) {
@@ -1777,7 +1811,7 @@ async function leaderboard(user, env) {
   const today = vietDate();
   const weekStart = mondayDate(today);
   const response = await env.DB.prepare(
-    "SELECT w.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.cover_url, w.league_name, w.weekly_xp " +
+    "SELECT w.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.cover_url, p.status_icon, w.league_name, w.weekly_xp " +
     "FROM weekly_leaderboards w " +
     "LEFT JOIN profiles p ON p.user_id = w.user_id " +
     "LEFT JOIN accounts a ON a.user_id = w.user_id " +
@@ -1832,7 +1866,7 @@ async function leaderboard(user, env) {
 
 async function getUserPublicProfile(targetUserId, currentUser, env) {
   const profile = await env.DB.prepare(
-    "SELECT p.id, p.user_id, p.full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.profile_theme, p.bio, p.cover_url, p.school, p.major, p.created_at, p.last_active_at, a.username " +
+    "SELECT p.id, p.user_id, p.full_name, p.avatar_url, p.avatar_decoration, p.profile_effect, p.profile_theme, p.bio, p.cover_url, p.school, p.major, p.created_at, p.last_active_at, p.social_links, p.status_icon, a.username " +
     "FROM profiles p LEFT JOIN accounts a ON a.user_id = p.user_id WHERE p.user_id = ? LIMIT 1"
   ).bind(targetUserId).first();
   if (!profile) throw new HttpError(404, "Không tìm thấy hồ sơ học viên này.");
@@ -1945,7 +1979,7 @@ async function getFriendRequests(currentUser, env) {
   const incoming = await env.DB.prepare(
     "SELECT f.id AS friendship_id, f.user_id, f.created_at, " +
     "COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
-    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, a.username, " +
+    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, p.status_icon, a.username, " +
     "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak " +
     "FROM friendships f " +
     "JOIN profiles p ON p.user_id = f.user_id " +
@@ -1958,7 +1992,7 @@ async function getFriendRequests(currentUser, env) {
   const outgoing = await env.DB.prepare(
     "SELECT f.id AS friendship_id, f.friend_id AS user_id, f.created_at, " +
     "COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
-    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, a.username, " +
+    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, p.status_icon, a.username, " +
     "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak " +
     "FROM friendships f " +
     "JOIN profiles p ON p.user_id = f.friend_id " +
@@ -1980,7 +2014,7 @@ async function getFriendsList(currentUser, env) {
       "CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END AS friend_user_id, " +
       "f.created_at AS friendship_date, " +
       "COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
-      "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, p.last_active_at, a.username, " +
+      "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, p.last_active_at, p.status_icon, a.username, " +
       "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak, " +
       "COALESCE(w.league_name, 'Bronze') AS league_name " +
     "FROM friendships f " +
@@ -2004,7 +2038,7 @@ async function searchUsers(request, currentUser, env) {
 
   const res = await env.DB.prepare(
     "SELECT p.user_id, COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
-    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, p.last_active_at, a.username, " +
+    "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, p.last_active_at, p.status_icon, a.username, " +
     "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak, " +
     "f.status AS friendship_status, f.user_id AS requester_id " +
     "FROM profiles p " +
@@ -2080,6 +2114,63 @@ async function getConversations(currentUser, env) {
   }
 
   return { conversations: convos };
+}
+
+async function getChatNotifications(user, env) {
+  const unreadDms = await env.DB.prepare(
+    "SELECT dm.id, dm.sender_id, dm.message, dm.media_type, dm.media_name, dm.created_at, " +
+    "COALESCE(p.full_name, a.username, 'Bạn học') AS sender_name, p.avatar_url, p.avatar_decoration, p.status_icon " +
+    "FROM direct_messages dm " +
+    "LEFT JOIN profiles p ON p.user_id = dm.sender_id " +
+    "LEFT JOIN accounts a ON a.user_id = dm.sender_id " +
+    "WHERE dm.receiver_id = ? AND dm.is_read = 0 " +
+    "ORDER BY dm.id DESC LIMIT 10"
+  ).bind(user.userId).all();
+
+  const sinceIso = new Date(Date.now() - 40000).toISOString();
+  const recentGroupMsgs = await env.DB.prepare(
+    "SELECT gm.id, gm.group_id, gm.sender_id, gm.message, gm.media_type, gm.media_name, gm.created_at, " +
+    "g.name AS group_name, g.avatar_url AS group_avatar, " +
+    "COALESCE(p.full_name, a.username, 'Thành viên') AS sender_name, p.avatar_url AS sender_avatar, p.avatar_decoration, p.status_icon " +
+    "FROM chat_group_messages gm " +
+    "JOIN chat_group_members mem ON mem.group_id = gm.group_id AND mem.user_id = ? " +
+    "JOIN chat_groups g ON g.id = gm.group_id " +
+    "LEFT JOIN profiles p ON p.user_id = gm.sender_id " +
+    "LEFT JOIN accounts a ON a.user_id = gm.sender_id " +
+    "WHERE gm.sender_id != ? AND gm.created_at >= ? " +
+    "ORDER BY gm.id DESC LIMIT 10"
+  ).bind(user.userId, user.userId, sinceIso).all();
+
+  const pendingRequests = await env.DB.prepare(
+    "SELECT COUNT(*) AS count FROM friendships WHERE friend_id = ? AND status = 'pending'"
+  ).bind(user.userId).first();
+
+  return {
+    unreadDirect: (unreadDms.results || []).map(m => ({
+      id: m.id,
+      senderId: m.sender_id,
+      senderName: m.sender_name,
+      avatarUrl: m.avatar_url,
+      avatarDecoration: m.avatar_decoration,
+      statusIcon: m.status_icon,
+      message: m.message || (m.media_type ? `[${m.media_type}] ${m.media_name || ''}` : ''),
+      createdAt: m.created_at
+    })),
+    recentGroups: (recentGroupMsgs.results || []).map(m => ({
+      id: m.id,
+      groupId: m.group_id,
+      groupName: m.group_name,
+      groupAvatar: m.group_avatar,
+      senderId: m.sender_id,
+      senderName: m.sender_name,
+      avatarUrl: m.sender_avatar,
+      avatarDecoration: m.avatar_decoration,
+      statusIcon: m.status_icon,
+      message: m.message || (m.media_type ? `[${m.media_type}] ${m.media_name || ''}` : ''),
+      createdAt: m.created_at
+    })),
+    pendingFriendRequests: pendingRequests ? Number(pendingRequests.count || 0) : 0
+  };
 }
 
 async function getMessagesWithUser(targetUserId, currentUser, env) {
@@ -3436,6 +3527,8 @@ async function routeApi(request, env) {
   if (groupBotMatch && method === "POST") return respond(await toggleGroupBot(request, groupBotMatch[1], user, env));
 
   if (path === "/api/chat/upload" && method === "POST") return respond(await handleChatUpload(request, user, env));
+  if (path === "/api/chat/notifications" && method === "GET") return respond(await getChatNotifications(user, env));
+  if (path === "/api/profile/status-icon" && method === "POST") return respond(await updateProfileStatusIcon(request, user, env));
   if (path === "/api/user/heartbeat" && method === "POST") return respond(await handleHeartbeat(request, user, env));
 
   if (path === "/api/messages/conversations" && method === "GET") return respond(await getConversations(user, env));

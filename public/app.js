@@ -313,6 +313,20 @@ function playSound(type) {
         o.start(now + i * 0.1);
         o.stop(now + i * 0.1 + 0.35);
       });
+    } else if (type === "message" || type === "chime") {
+      const notes = [587.33, 880, 1046.5]; // Happy Duolingo chime
+      notes.forEach((freq, i) => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.connect(g);
+        g.connect(audioCtx.destination);
+        o.type = "sine";
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.16, now + i * 0.08);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.28);
+        o.start(now + i * 0.08);
+        o.stop(now + i * 0.08 + 0.28);
+      });
     }
   } catch {
     // Ignore audio exceptions if browser blocks sound
@@ -662,7 +676,7 @@ function updateShell() {
     if (loginBtn) loginBtn.style.display = "none";
     if (avatarBtn) avatarBtn.style.display = "flex";
 
-    const avatarHtml = renderDecoratedAvatar(state.profile.avatar_url, state.profile.avatar_decoration, 38, name);
+    const avatarHtml = renderDecoratedAvatar(state.profile.avatar_url, state.profile.avatar_decoration, 38, name, state.profile.status_icon);
     if (sideAvatar) {
       sideAvatar.classList.toggle("with-nitro", !!state.profile.avatar_decoration);
       sideAvatar.innerHTML = avatarHtml;
@@ -964,6 +978,9 @@ async function loadAuthenticatedData() {
     state.page = "home";
     updateShell();
     render();
+    if (typeof startGlobalNotificationPoller === "function") {
+      startGlobalNotificationPoller();
+    }
   } catch (err) {
     showToast(err.message, true);
   }
@@ -2252,6 +2269,30 @@ window.claimLeaderboardReward = async function(weekStart) {
   }
 };
 
+export const DUOLINGO_STATUS_ICONS = ["🕶️", "🎉", "💪", "👀", "🍿", "🔥", "⚡", "🚀", "🌸", "💯", "💩", "🏆", "🐱", "☕", "🎮", "❤️"];
+window.DUOLINGO_STATUS_ICONS = DUOLINGO_STATUS_ICONS;
+
+window.setProfileStatusIcon = async function(icon) {
+  playSound("click");
+  try {
+    const res = await api("/api/profile/status-icon", {
+      method: "POST",
+      body: { statusIcon: icon || null }
+    });
+    if (state.profile) {
+      state.profile.status_icon = icon || null;
+    }
+    if (state.user && state.user.profile) {
+      state.user.profile.status_icon = icon || null;
+    }
+    playSound("fanfare");
+    showToast(icon ? `Đã đặt biểu tượng trạng thái: ${icon} ✨` : "Đã gỡ biểu tượng trạng thái!");
+    render();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
 function renderLeaderboard() {
   if (!leaderboardData) {
     fetchLeaderboard();
@@ -2260,11 +2301,15 @@ function renderLeaderboard() {
 
   const rows = leaderboardData.rows || [];
   const pendingReward = leaderboardData.pendingReward;
+  const myStatusIcon = state.profile?.status_icon || state.user?.profile?.status_icon || null;
+  const myAvatar = state.profile?.avatar_url || "";
+  const myDeco = state.profile?.avatar_decoration || null;
+  const myName = state.profile?.full_name || "Bạn";
 
   const rowsHtml = rows.map((row) => {
     const isMe = row.isMe;
     const medal = row.rank === 1 ? "🥇" : row.rank === 2 ? "🥈" : row.rank === 3 ? "🥉" : `${row.rank}`;
-    const avatarDecorated = renderDecoratedAvatar(row.avatar_url, row.avatar_decoration, 34, row.full_name);
+    const avatarDecorated = renderDecoratedAvatar(row.avatar_url, row.avatar_decoration, 34, row.full_name, row.status_icon);
 
     let prizeBadge = "";
     if (row.rank === 1) prizeBadge = '<span class="lb-prize-pill gold">+100 💎</span>';
@@ -2317,20 +2362,269 @@ function renderLeaderboard() {
         </div>
       ` : ''}
 
-      <div class="leader-list">
-        ${rowsHtml || `
-          <div class="empty-state" style="background:#fff; border:2px dashed var(--lumi-pink-border); border-radius:20px; padding:32px;">
-            <span style="font-size:42px;">✨</span>
-            <h3 style="font-weight:900; color:var(--ink-900); margin-top:8px;">Chưa có học viên nào trong giải tuần này!</h3>
-            <p style="font-size:14px; color:var(--ink-500); margin-top:4px;">
-              Hãy hoàn thành bài học ngay bây giờ để trở thành người đầu tiên dẫn đầu bảng xếp hạng 🥇
-            </p>
+      <div class="leaderboard-content-layout">
+        <div class="leaderboard-main-col">
+          <div class="leader-list">
+            ${rowsHtml || `
+              <div class="empty-state" style="background:#fff; border:2px dashed var(--lumi-pink-border); border-radius:20px; padding:32px;">
+                <span style="font-size:42px;">✨</span>
+                <h3 style="font-weight:900; color:var(--ink-900); margin-top:8px;">Chưa có học viên nào trong giải tuần này!</h3>
+                <p style="font-size:14px; color:var(--ink-500); margin-top:4px;">
+                  Hãy hoàn thành bài học ngay bây giờ để trở thành người đầu tiên dẫn đầu bảng xếp hạng 🥇
+                </p>
+              </div>
+            `}
           </div>
-        `}
+        </div>
+
+        <div class="leaderboard-side-col">
+          <div class="duo-status-widget">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <h3 style="margin:0; font-size:14.5px; font-weight:900; color:var(--ink-900);">Đặt biểu tượng trạng thái</h3>
+              ${myStatusIcon ? `<button type="button" class="btn-clear-status" onclick="setProfileStatusIcon(null)">XÓA</button>` : ''}
+            </div>
+            <div style="display:flex; justify-content:center; margin-bottom:16px; position:relative;">
+              <div style="position:relative; display:inline-block;">
+                ${renderDecoratedAvatar(myAvatar, myDeco, 74, myName, myStatusIcon)}
+                <div class="duo-status-speech-bubble-preview">
+                  ${myStatusIcon || '💬'}
+                </div>
+              </div>
+            </div>
+            <div class="duo-status-grid">
+              ${DUOLINGO_STATUS_ICONS.map(icon => `
+                <button type="button" class="duo-status-btn ${myStatusIcon === icon ? 'selected' : ''}" onclick="setProfileStatusIcon('${icon}')" title="Chọn biểu tượng ${icon}">
+                  ${icon}
+                </button>
+              `).join("")}
+            </div>
+            <div style="margin-top:14px; text-align:center; font-size:11.5px; color:var(--ink-400); font-weight:700;">
+              Biểu tượng trạng thái sẽ hiển thị trên avatar của bạn ở khắp mọi nơi!
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `;
 }
+
+export function parseSocialLinks(raw) {
+  if (!raw) return {};
+  if (typeof raw === "object") return raw;
+  try {
+    return JSON.parse(raw) || {};
+  } catch {
+    return {};
+  }
+}
+window.parseSocialLinks = parseSocialLinks;
+
+export function renderSocialLinks(socialLinksRaw, isSelf = false) {
+  const links = parseSocialLinks(socialLinksRaw);
+  const platforms = [
+    { key: "facebook", label: "Facebook", icon: "📘", getUrl: v => v.startsWith("http") ? v : `https://facebook.com/${v.replace(/^@/, '')}` },
+    { key: "instagram", label: "Instagram", icon: "📸", getUrl: v => v.startsWith("http") ? v : `https://instagram.com/${v.replace(/^@/, '')}` },
+    { key: "tiktok", label: "TikTok", icon: "🎵", getUrl: v => v.startsWith("http") ? v : `https://tiktok.com/@${v.replace(/^@/, '')}` },
+    { key: "threads", label: "Threads", icon: "🧵", getUrl: v => v.startsWith("http") ? v : `https://threads.net/@${v.replace(/^@/, '')}` },
+    { key: "github", label: "GitHub", icon: "💻", getUrl: v => v.startsWith("http") ? v : `https://github.com/${v.replace(/^@/, '')}` },
+    { key: "locket", label: "Locket", icon: "💛", getUrl: v => v.startsWith("http") ? v : `https://locket.camera/links/${v.replace(/^@/, '')}` }
+  ];
+
+  const activeLinks = platforms.filter(p => links[p.key] && String(links[p.key]).trim());
+
+  if (activeLinks.length === 0) {
+    if (isSelf) {
+      return `
+        <div class="profile-social-links-bar empty-self" style="margin-top:10px;">
+          <button type="button" class="btn-duo btn-duo-white" style="font-size:12px; padding:6px 14px; border-radius:999px; display:inline-flex; align-items:center; gap:6px;" onclick="openEditProfileModal()">
+            <span>🔗</span> <span>+ Thêm mạng xã hội (Facebook, IG, TikTok, Locket...)</span>
+          </button>
+        </div>
+      `;
+    }
+    return '';
+  }
+
+  return `
+    <div class="profile-social-links-bar" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; align-items:center;">
+      ${activeLinks.map(p => {
+        const val = String(links[p.key]).trim();
+        const url = p.getUrl(val);
+        return `
+          <a href="${esc(url)}" target="_blank" rel="noopener noreferrer" class="profile-social-badge" title="${p.label}: ${esc(val)}" onclick="if(window.electronAPI && window.electronAPI.openExternal){ event.preventDefault(); window.electronAPI.openExternal('${esc(url)}'); }">
+            <span class="social-icon">${p.icon}</span>
+            <span class="social-name">${p.label}</span>
+          </a>
+        `;
+      }).join("")}
+      ${isSelf ? `
+        <button type="button" class="profile-social-badge edit-social-badge" onclick="openEditProfileModal()" title="Chỉnh sửa liên kết">
+          ✏️
+        </button>
+      ` : ''}
+    </div>
+  `;
+}
+window.renderSocialLinks = renderSocialLinks;
+
+let globalNotificationTimer = null;
+const seenNotificationMsgIds = new Set();
+let isNotificationPollerInitialized = false;
+
+export function showDuolingoNotification({ title, subtitle = "Tin nhắn mới", message, avatarUrl, avatarDecoration, statusIcon, chatType = "direct", chatId = null }) {
+  let container = document.getElementById("duo-notification-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "duo-notification-container";
+    container.className = "duo-notification-container";
+    document.body.appendChild(container);
+  }
+
+  playSound("message");
+
+  const toast = document.createElement("div");
+  toast.className = "duo-msg-toast";
+
+  const avatarHtml = renderDecoratedAvatar(avatarUrl, avatarDecoration, 46, title || "3TG", statusIcon);
+
+  toast.innerHTML = `
+    <div class="duo-msg-toast-avatar">
+      ${avatarHtml}
+      <span class="duo-msg-toast-mascot-pill">💬</span>
+    </div>
+    <div class="duo-msg-toast-content">
+      <div class="duo-msg-toast-header">
+        <span class="duo-msg-toast-title">${esc(title || 'Bạn học 3TG')}</span>
+        <span class="duo-msg-toast-sub">• ${esc(subtitle)}</span>
+      </div>
+      <div class="duo-msg-toast-snippet">${esc(message || 'Đã gửi cho bạn một tin nhắn')}</div>
+      <div class="duo-msg-toast-hint">Nhấp để mở cuộc trò chuyện ➔</div>
+    </div>
+    <button type="button" class="duo-msg-toast-close" title="Đóng">✕</button>
+  `;
+
+  const closeBtn = toast.querySelector(".duo-msg-toast-close");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toast.classList.add("fade-out");
+      setTimeout(() => toast.remove(), 250);
+    });
+  }
+
+  toast.addEventListener("click", () => {
+    toast.classList.add("fade-out");
+    setTimeout(() => toast.remove(), 250);
+    if (chatType === "group" && chatId) {
+      openMessenger("group", chatId);
+    } else if (chatId) {
+      openMessenger("direct", chatId);
+    } else {
+      openMessenger();
+    }
+  });
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    if (toast.isConnected) {
+      toast.classList.add("fade-out");
+      setTimeout(() => toast.remove(), 250);
+    }
+  }, 6000);
+}
+window.showDuolingoNotification = showDuolingoNotification;
+
+export function startGlobalNotificationPoller() {
+  if (globalNotificationTimer) clearInterval(globalNotificationTimer);
+
+  const poll = async () => {
+    if (!state.user && !state.profile) return;
+    try {
+      const res = await api("/api/chat/notifications");
+      if (!res) return;
+
+      const unreadDms = res.unreadDirect || [];
+      const recentGroups = res.recentGroups || [];
+      const pendingFriendRequests = res.pendingFriendRequests || 0;
+
+      const totalUnreadChat = unreadDms.length;
+      const friendsNavCount = document.getElementById("nav-friends-count");
+      const mobileFriendsBadge = document.getElementById("mobile-friends-badge");
+      const combinedBadge = totalUnreadChat + pendingFriendRequests;
+
+      if (friendsNavCount) {
+        if (combinedBadge > 0) {
+          friendsNavCount.textContent = combinedBadge > 99 ? "99+" : String(combinedBadge);
+          friendsNavCount.style.display = "inline-flex";
+        } else {
+          friendsNavCount.style.display = "none";
+        }
+      }
+      if (mobileFriendsBadge) {
+        if (combinedBadge > 0) {
+          mobileFriendsBadge.textContent = combinedBadge > 99 ? "99+" : String(combinedBadge);
+          mobileFriendsBadge.style.display = "inline-flex";
+        } else {
+          mobileFriendsBadge.style.display = "none";
+        }
+      }
+
+      if (!isNotificationPollerInitialized) {
+        unreadDms.forEach(m => seenNotificationMsgIds.add(`dm_${m.id}`));
+        recentGroups.forEach(m => seenNotificationMsgIds.add(`grp_${m.id}`));
+        isNotificationPollerInitialized = true;
+        return;
+      }
+
+      for (const dm of unreadDms) {
+        const key = `dm_${dm.id}`;
+        if (!seenNotificationMsgIds.has(key)) {
+          seenNotificationMsgIds.add(key);
+          const isViewingThisDm = activeMessenger && activeMessenger.type === 'direct' && String(activeMessenger.id) === String(dm.senderId);
+          if (!isViewingThisDm) {
+            showDuolingoNotification({
+              title: dm.senderName || "Bạn học 3TG",
+              subtitle: "Tin nhắn trực tiếp",
+              message: dm.message || "Đã gửi một tin nhắn",
+              avatarUrl: dm.avatarUrl,
+              avatarDecoration: dm.avatarDecoration,
+              statusIcon: dm.statusIcon,
+              chatType: "direct",
+              chatId: dm.senderId
+            });
+          }
+        }
+      }
+
+      for (const gm of recentGroups) {
+        const key = `grp_${gm.id}`;
+        if (!seenNotificationMsgIds.has(key)) {
+          seenNotificationMsgIds.add(key);
+          const isViewingThisGroup = activeMessenger && activeMessenger.type === 'group' && String(activeMessenger.id) === String(gm.groupId);
+          if (!isViewingThisGroup) {
+            showDuolingoNotification({
+              title: gm.groupName || "Nhóm học tập",
+              subtitle: gm.senderName ? `${gm.senderName}` : "Tin nhắn nhóm",
+              message: gm.message || "Đã gửi một tin nhắn vào nhóm",
+              avatarUrl: gm.avatarUrl || gm.groupAvatar,
+              avatarDecoration: gm.avatarDecoration,
+              statusIcon: gm.statusIcon,
+              chatType: "group",
+              chatId: gm.groupId
+            });
+          }
+        }
+      }
+    } catch {
+      // Ignore polling errors
+    }
+  };
+
+  setTimeout(poll, 1200);
+  globalNotificationTimer = setInterval(poll, 4000);
+}
+window.startGlobalNotificationPoller = startGlobalNotificationPoller;
 
 // ========================================================
 // HỒ SƠ CÔNG KHAI HỌC VIÊN ("SOI ACC" & KẾT BẠN)
@@ -2398,7 +2692,7 @@ window.openUserProfileModal = async function(userId) {
           <div class="user-profile-body" style="position:relative; z-index:2;">
             <div class="user-profile-avatar-row">
               <div class="user-profile-avatar-wrap" style="overflow:visible; display:flex; align-items:center; justify-content:center;">
-                ${renderDecoratedAvatar(prof.avatar_url, prof.avatar_decoration, 84, prof.full_name)}
+                ${renderDecoratedAvatar(prof.avatar_url, prof.avatar_decoration, 84, prof.full_name, prof.status_icon)}
               </div>
               <div class="user-profile-actions">
                 ${isSelf ? `
@@ -2448,6 +2742,7 @@ window.openUserProfileModal = async function(userId) {
             </div>
 
             ${prof.bio ? `<div class="user-profile-bio">${esc(prof.bio)}</div>` : ''}
+            ${renderSocialLinks(prof.social_links, isSelf)}
 
             <div class="user-profile-meta">
               ${prof.school ? `<span>🏫 ${esc(prof.school)}</span>` : '<span>🏫 Đại học</span>'}
@@ -4082,7 +4377,7 @@ function renderFriends() {
       ${currentFriendsTab === 'friends' ? `
         <div class="friends-list-container">
           ${friends.length ? friends.map(f => {
-            const avatarHtml = renderDecoratedAvatar(f.avatar_url, f.avatar_decoration, 44, f.full_name);
+            const avatarHtml = renderDecoratedAvatar(f.avatar_url, f.avatar_decoration, 44, f.full_name, f.status_icon);
             const fStatus = formatActiveStatus(f.last_active_at);
             return `
               <div class="friend-card">
@@ -4133,7 +4428,7 @@ function renderFriends() {
             ${incomingReqs.length ? `
               <div style="display:flex; flex-direction:column; gap:10px;">
                 ${incomingReqs.map(r => {
-                  const avatarThumb = renderDecoratedAvatar(r.avatar_url, r.avatar_decoration, 44, r.full_name);
+                  const avatarThumb = renderDecoratedAvatar(r.avatar_url, r.avatar_decoration, 44, r.full_name, r.status_icon);
                   return `
                     <div class="request-card">
                       <div class="friend-info-left" onclick="openUserProfileModal('${esc(r.user_id)}')">
@@ -4172,7 +4467,7 @@ function renderFriends() {
             ${outgoingReqs.length ? `
               <div style="display:flex; flex-direction:column; gap:10px;">
                 ${outgoingReqs.map(r => {
-                  const avatarThumb = renderDecoratedAvatar(r.avatar_url, r.avatar_decoration, 44, r.full_name);
+                  const avatarThumb = renderDecoratedAvatar(r.avatar_url, r.avatar_decoration, 44, r.full_name, r.status_icon);
                   return `
                     <div class="request-card">
                       <div class="friend-info-left" onclick="openUserProfileModal('${esc(r.user_id)}')">
@@ -4209,7 +4504,7 @@ function renderFriends() {
 
           <div class="friends-search-results">
             ${searchFriendsResults ? (searchFriendsResults.length ? searchFriendsResults.map(u => {
-              const avatarHtml = renderDecoratedAvatar(u.avatar_url, u.avatar_decoration, 44, u.full_name);
+              const avatarHtml = renderDecoratedAvatar(u.avatar_url, u.avatar_decoration, 44, u.full_name, u.status_icon);
               const fStat = u.friendStatus || (u.is_friend ? 'accepted' : 'none');
               return `
                 <div class="friend-card">
@@ -5644,7 +5939,7 @@ export function generateAvatarDecorationSvg(decoCode) {
 }
 window.generateAvatarDecorationSvg = generateAvatarDecorationSvg;
 
-export function renderDecoratedAvatar(avatarUrl, decoCode, size = 48, name = "3TG") {
+export function renderDecoratedAvatar(avatarUrl, decoCode, size = 48, name = "3TG", statusIcon = null) {
   let innerHtml = "";
   if (avatarUrl) {
     if (avatarUrl.startsWith("mascot:")) {
@@ -5680,12 +5975,22 @@ export function renderDecoratedAvatar(avatarUrl, decoCode, size = 48, name = "3T
     }
   }
 
+  let statusHtml = "";
+  if (statusIcon) {
+    statusHtml = `
+      <div class="avatar-status-speech-bubble" style="font-size:${Math.max(12, Math.round(size * 0.34))}px;" title="Trạng thái: ${esc(statusIcon)}">
+        ${esc(statusIcon)}
+      </div>
+    `;
+  }
+
   return `
     <div class="discord-avatar-container" style="width:${size}px; height:${size}px; font-size:${Math.round(size * 0.42)}px;">
       <div class="avatar-base">
         ${innerHtml}
       </div>
       ${decoHtml}
+      ${statusHtml}
     </div>
   `;
 }
@@ -6592,6 +6897,18 @@ async function fetchDailyQuests() {
   }
 }
 window.fetchDailyQuests = fetchDailyQuests;
+window.fetchAchievements = fetchAchievements;
+
+window.switchAchievementTab = function(tab) {
+  playSound("click");
+  state.achievementTab = tab;
+  if (tab === "permanent" && !achievementsData) {
+    fetchAchievements();
+  } else if (tab === "quests" && !dailyQuestsData) {
+    fetchDailyQuests();
+  }
+  render();
+};
 
 window.claimDailyQuest = async function(questCode) {
   try {
@@ -6711,10 +7028,10 @@ function renderAchievements() {
 
       <!-- SWITCH TABS: NHIỆM VỤ HÀNG NGÀY vs THÀNH TÍCH TRỌN ĐỜI -->
       <div class="auth-switch-tabs" style="margin-bottom:24px; max-width:540px;">
-        <button type="button" class="auth-switch-tab ${currentTab === 'quests' ? 'active' : ''}" onclick="state.achievementTab='quests'; dailyQuestsData=null; fetchDailyQuests(); render();">
+        <button type="button" class="auth-switch-tab ${currentTab === 'quests' ? 'active' : ''}" onclick="window.switchAchievementTab('quests')">
           ⚡ Nhiệm vụ Hàng Ngày
         </button>
-        <button type="button" class="auth-switch-tab ${currentTab === 'permanent' ? 'active' : ''}" onclick="state.achievementTab='permanent'; achievementsData=null; fetchAchievements(); render();">
+        <button type="button" class="auth-switch-tab ${currentTab === 'permanent' ? 'active' : ''}" onclick="window.switchAchievementTab('permanent')">
           🎖️ Nhiệm Vụ Lâu Dài
         </button>
       </div>
@@ -6726,7 +7043,7 @@ function renderAchievements() {
               <h2 style="font-size:18px; font-weight:900; color:var(--ink-900); margin:0;">Nhiệm vụ Ngày ${dailyQuestsData ? esc(dailyQuestsData.date) : ''}</h2>
               <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">Làm mới mỗi ngày lúc 00:00 (GMT+7) · Tích lũy tối đa 100 💎 mỗi ngày!</p>
             </div>
-            <span style="font-size:12.5px; font-weight:800; color:var(--lumi-pink); background:#fff0f5; padding:6px 14px; border-radius:999px; border:1.5px solid #ffd4e2;">
+            <span style="font-size:12.5px; font-weight:800; color:var(--lumi-pink); background:var(--lumi-pink-soft, #fff0f5); padding:6px 14px; border-radius:999px; border:1.5px solid var(--lumi-pink-border, #ffd4e2);">
               ⏳ Hết hạn: 23:59:59 hôm nay
             </span>
           </div>
@@ -8120,7 +8437,7 @@ function renderSettings() {
           <div class="fb-avatar-row">
             <div class="fb-avatar-container" style="overflow:visible;">
               <div class="fb-avatar-large with-nitro" style="overflow:visible; background:transparent; border:none; box-shadow:none;">
-                ${renderDecoratedAvatar(profile.avatar_url, profile.avatar_decoration, 140, profile.full_name)}
+                ${renderDecoratedAvatar(profile.avatar_url, profile.avatar_decoration, 140, profile.full_name, profile.status_icon)}
               </div>
               <button type="button" class="fb-avatar-camera-btn" onclick="openAvatarModal()" title="Đổi ảnh đại diện" aria-label="Đổi ảnh đại diện">
                 📷
@@ -8150,6 +8467,7 @@ function renderSettings() {
             </h1>
             <div class="fb-user-handle">${profile.username ? `@${esc(profile.username)}` : ""}</div>
             <p class="fb-user-bio">${profile.bio ? esc(profile.bio) : '<span style="color:var(--ink-500); font-style:italic;">(Chưa có tiểu sử. Nhấn "Chỉnh sửa tiểu sử" để thêm)</span>'}</p>
+            ${renderSocialLinks(profile.social_links, true)}
           </div>
 
           <!-- TABS BAR -->
@@ -8356,8 +8674,9 @@ window.switchFbTab = function(tab) {
 window.openEditProfileModal = function() {
   playSound("click");
   const p = state.profile || {};
+  const social = parseSocialLinks(p.social_links);
   showModal(`
-    <div class="modal-dialog">
+    <div class="modal-dialog" style="max-width:520px;">
       <span class="modal-close" onclick="closeModal()">✕</span>
       <h2 style="font-size:22px; font-weight:900; color:var(--ink-900); margin-bottom:16px;">
         ✏️ Chỉnh sửa Trang cá nhân
@@ -8377,10 +8696,43 @@ window.openEditProfileModal = function() {
         </div>
         <div class="form-group">
           <label class="form-label">Tiểu sử (Bio)</label>
-          <textarea id="edit-bio-input" class="form-input" rows="3" style="resize:none;" placeholder="Giới thiệu đôi nét về bản thân...">${esc(p.bio || '')}</textarea>
+          <textarea id="edit-bio-input" class="form-input" rows="2" style="resize:none;" placeholder="Giới thiệu đôi nét về bản thân...">${esc(p.bio || '')}</textarea>
         </div>
+
+        <div style="border-top:1.5px dashed var(--lumi-pink-border, #ffd4e2); margin-top:4px; padding-top:10px;">
+          <label class="form-label" style="font-weight:900; color:var(--ink-900); margin-bottom:8px; display:block;">
+            🔗 Liên kết Mạng Xã Hội (Facebook, Instagram, TikTok, Threads, GitHub, Locket)
+          </label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="form-group" style="margin:0;">
+              <label class="form-label" style="font-size:12px; margin-bottom:3px;">📘 Facebook</label>
+              <input type="text" id="edit-fb-input" class="form-input" placeholder="Link hoặc username" value="${esc(social.facebook || '')}" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label" style="font-size:12px; margin-bottom:3px;">📸 Instagram</label>
+              <input type="text" id="edit-ig-input" class="form-input" placeholder="@username hoặc link" value="${esc(social.instagram || '')}" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label" style="font-size:12px; margin-bottom:3px;">🎵 TikTok</label>
+              <input type="text" id="edit-tiktok-input" class="form-input" placeholder="@username hoặc link" value="${esc(social.tiktok || '')}" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label" style="font-size:12px; margin-bottom:3px;">🧵 Threads</label>
+              <input type="text" id="edit-threads-input" class="form-input" placeholder="@username hoặc link" value="${esc(social.threads || '')}" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label" style="font-size:12px; margin-bottom:3px;">💻 GitHub</label>
+              <input type="text" id="edit-github-input" class="form-input" placeholder="username hoặc link" value="${esc(social.github || '')}" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label class="form-label" style="font-size:12px; margin-bottom:3px;">💛 Locket</label>
+              <input type="text" id="edit-locket-input" class="form-input" placeholder="username hoặc link" value="${esc(social.locket || '')}" />
+            </div>
+          </div>
+        </div>
+
         <button type="submit" class="btn-duo btn-duo-pink" style="padding:14px; font-size:15px; margin-top:8px;">
-          Lưu thay đổi2222222222222222222222222222222222222222222222222
+          Lưu thay đổi
         </button>
       </form>
     </div>
@@ -8395,11 +8747,20 @@ window.handleSaveProfileForm = async function(e) {
   const bio = document.getElementById("edit-bio-input").value.trim();
   if (!fullName) return;
 
+  const socialLinks = {
+    facebook: document.getElementById("edit-fb-input") ? document.getElementById("edit-fb-input").value.trim() : "",
+    instagram: document.getElementById("edit-ig-input") ? document.getElementById("edit-ig-input").value.trim() : "",
+    tiktok: document.getElementById("edit-tiktok-input") ? document.getElementById("edit-tiktok-input").value.trim() : "",
+    threads: document.getElementById("edit-threads-input") ? document.getElementById("edit-threads-input").value.trim() : "",
+    github: document.getElementById("edit-github-input") ? document.getElementById("edit-github-input").value.trim() : "",
+    locket: document.getElementById("edit-locket-input") ? document.getElementById("edit-locket-input").value.trim() : ""
+  };
+
   try {
     playSound("click");
     const res = await api("/api/profile", {
       method: "PATCH",
-      body: { fullName, bio, school, major }
+      body: { fullName, bio, school, major, socialLinks }
     });
     state.profile = res.profile;
     closeModal();
@@ -8580,6 +8941,9 @@ window.handleLogout = async function() {
   if (window.electronAPI?.clearSessionCookies) {
     try { await window.electronAPI.clearSessionCookies(); } catch {}
   }
+  if (globalNotificationTimer) clearInterval(globalNotificationTimer);
+  seenNotificationMsgIds.clear();
+  isNotificationPollerInitialized = false;
   state.profile = null;
   state.account = null;
   state.academicTranscript = null;

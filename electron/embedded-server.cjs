@@ -345,6 +345,8 @@ async function startEmbeddedServer(rootPath, port = 8787) {
           const colsToAdd = [
             "ALTER TABLE profiles ADD COLUMN profile_theme TEXT DEFAULT NULL;",
             "ALTER TABLE profiles ADD COLUMN last_active_at TEXT DEFAULT NULL;",
+            "ALTER TABLE profiles ADD COLUMN social_links TEXT DEFAULT '{}';",
+            "ALTER TABLE profiles ADD COLUMN status_icon TEXT DEFAULT NULL;",
             "ALTER TABLE chat_group_messages ADD COLUMN media_url TEXT DEFAULT NULL;",
             "ALTER TABLE chat_group_messages ADD COLUMN media_type TEXT DEFAULT NULL;",
             "ALTER TABLE chat_group_messages ADD COLUMN media_name TEXT DEFAULT NULL;",

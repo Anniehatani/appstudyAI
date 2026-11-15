@@ -698,11 +698,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  background: linear-gradient(135deg, #fff5f8 0%, #ffe4ec 100%);
-  border: 2.5px solid #18181b;
+  background: linear-gradient(135deg, var(--lumi-pink-soft, #fff5f8) 0%, var(--lumi-pink-light, #ffe4ec) 100%);
+  border: 2.5px solid var(--ink-900, #18181b);
   border-radius: 24px;
   padding: 24px 28px;
-  box-shadow: 0 8px 24px rgba(225, 29, 72, 0.12), 0 4px 0 #18181b;
+  box-shadow: 0 8px 24px var(--lumi-pink-glow, rgba(225, 29, 72, 0.12)), 0 4px 0 var(--ink-900, #18181b);
   margin-bottom: 24px;
 }
 
