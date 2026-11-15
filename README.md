@@ -12,14 +12,15 @@
 
 ## 📑 MỤC LỤC
 1. [Tổng quan dự án](#-t%E1%BB%95ng-quan-d%E1%BB%B1-%C3%A1n)
-2. [Tính năng nổi bật](#-t%C3%ADnh-n%C4%83ng-n%E1%BB%95i-b%E1%BA%ADt)
-   - [1. Phòng học ảo Pomodoro & Lofi Room (Study With Me)](#1-ph%C3%B2ng-h%E1%BB%8Dc-%E1%BA%A3o-pomodoro--lofi-room-study-with-me)
-   - [2. Cố vấn Học vụ Bot 3TG AI (Đọc ngữ cảnh & Giải toán LaTeX)](#2-c%E1%BB%91-v%E1%BA%A5n-h%E1%BB%8Dc-v%E1%BB%A5-bot-3tg-ai-%C4%91%E1%BB%8Dc-ng%E1%BB%AF-c%E1%BA%A3nh--gi%E1%BA%A3i-to%C3%A1n-latex)
-   - [3. Lộ trình học Gamification chuẩn Duolingo](#3-l%E1%BB%99-tr%C3%ACnh-h%E1%BB%8Dc-gamification-chu%E1%BA%A9n-duolingo)
-   - [4. Cửa hàng & Hệ thống 8 Bộ Theme đa sắc](#4-c%E1%BB%ADa-h%C3%A0ng--h%E1%BB%87-th%E1%BB%91ng-8-b%E1%BB%99-theme-%C4%91a-s%E1%BA%AFc)
-   - [5. Mạng xã hội sinh viên & 3TG Messenger](#5-m%E1%BA%A1ng-x%C3%A3-h%E1%BB%99i-sinh-vi%C3%AAn--3tg-messenger)
-   - [6. Sổ tay ghi chú đa năng (Smart Notebook)](#6-s%E1%BB%95-tay-ghi-ch%C3%BA-%C4%91a-n%C4%83ng-smart-notebook)
-   - [7. Cải thiện điểm & Tích hợp Cổng đào tạo IU](#7-c%E1%BA%A3i-thi%E1%BB%87n-%C4%91i%E1%BB%83m--t%C3%ADch-h%E1%BB%A3p-c%E1%BB%95ng-%C4%91%C3%A0o-t%E1%BA%A1o-iu)
+2. [Chi tiết tính năng chuyên sâu](#-chi-ti%E1%BA%BFt-t%C3%ADnh-n%C4%83ng-chuy%C3%AAn-s%C3%A2u)
+   - [1. Cửa hàng (Shop) & Hệ thống 8 Bộ Theme Đa Sắc Toàn Diện](#1-c%E1%BB%ADa-h%C3%A0ng-shop--h%E1%BB%87-th%E1%BB%91ng-8-b%E1%BB%99-theme-%C4%91a-s%E1%BA%AFc-to%C3%A0n-di%E1%BB%87n)
+   - [2. Trang cá nhân (Profile) & Mạng xã hội kết nối bạn bè](#2-trang-c%C3%A1-nh%C3%A2n-profile--m%E1%BA%A1ng-x%C3%A3-h%E1%BB%99i-k%E1%BA%BFt-n%E1%BB%91i-b%E1%BA%A1n-b%C3%A8)
+   - [3. Hỏi AI vào Note (Hỏi 3TG AI & Sổ tay ghi chú thông minh)](#3-h%E1%BB%8Fi-ai-v%C3%A0o-note-h%E1%BB%8Fi-3tg-ai--s%E1%BB%95-tay-ghi-ch%C3%BA-th%C3%B4ng-minh)
+   - [4. Phòng học ảo Pomodoro & Lofi Room (Study With Me)](#4-ph%C3%B2ng-h%E1%BB%8Dc-%E1%BA%A3o-pomodoro--lofi-room-study-with-me)
+   - [5. Cố vấn Học vụ Bot 3TG AI trong phòng học](#5-c%E1%BB%91-v%E1%BA%A5n-h%E1%BB%8Dc-v%E1%BB%A5-bot-3tg-ai-trong-ph%C3%B2ng-h%E1%BB%8Dc)
+   - [6. Lộ trình học Gamification chuẩn Duolingo](#6-l%E1%BB%99-tr%C3%ACnh-h%E1%BB%8Dc-gamification-chu%E1%BA%A9n-duolingo)
+   - [7. Mạng xã hội sinh viên & 3TG Messenger](#7-m%E1%BA%A1ng-x%C3%A3-h%E1%BB%99i-sinh-vi%C3%AAn--3tg-messenger)
+   - [8. Cải thiện điểm & Tích hợp Cổng đào tạo IU](#8-c%E1%BA%A3i-thi%E1%BB%87n-%C4%91i%E1%BB%83m--t%C3%ADch-h%E1%BB%A3p-c%E1%BB%95ng-%C4%91%C3%A0o-t%E1%BA%A1o-iu)
 3. [Kiến trúc kỹ thuật (Architecture)](#-ki%E1%BA%BFn-tr%C3%BAc-k%E1%BB%B9-thu%E1%BA%ADt-architecture)
 4. [Cấu trúc thư mục dự án](#-c%E1%BA%A5u-tr%C3%BAc-th%C6%B0-m%E1%BB%A5c-d%E1%BB%B1-%C3%A1n)
 5. [Cơ sở dữ liệu & Mô hình đồng bộ kép](#-c%C6%A1-s%E1%BB%9F-d%E1%BB%AF-li%E1%BB%87u--m%C3%B4-h%C3%ACnh-%C4%91%E1%BB%93ng-b%E1%BB%99-k%C3%A9p)
@@ -43,9 +44,129 @@ Bằng việc kết hợp tinh tế giữa:
 
 ---
 
-## 🚀 TÍNH NĂNG NỔI BẬT
+## 💎 CHI TIẾT TÍNH NĂNG CHUYÊN SÂU
 
-### 1. Phòng học ảo Pomodoro & Lofi Room (Study With Me)
+### 1. Cửa hàng (Shop) & Hệ thống 8 Bộ Theme Đa Sắc Toàn Diện
+Cửa hàng vật phẩm được xây dựng chuyên nghiệp, đáp ứng sở thích cá nhân hóa của từng học viên với giá cực kỳ hợp lý: chỉ **50 💎 Đá quý** cho mỗi bộ theme vĩnh viễn (kiếm được dễ dàng qua các ca học Pomodoro và hoàn thành bài học):
+
+#### 🎨 Danh mục 8 Bộ Theme Màu Sắc Độc Quyền (`THEMES_REGISTRY`):
+| STT | Mã Theme | Tên Bộ Theme | Màu chủ đạo / Accent | Gradient & Tone Dots | Giá bán | Ý nghĩa & Cảm hứng thiết kế |
+| :---: | :--- | :--- | :---: | :---: | :---: | :--- |
+| **1** | `theme_sakura_pink` | **Hoa Anh Đào (Tone Pink Sakura)** | `#ff4b82` | `linear-gradient(135deg, #ff4b82 0%, #ff758c 100%)` | **0 💎 (Mặc định)** | Sắc hồng hoa anh đào pastel ngọt ngào signature của 3TG, tươi trẻ, ấm áp và tràn đầy cảm hứng học tập. |
+| **2** | `theme_ocean_blue` | **Xanh Đại Dương (Cyber Ocean)** | `#0284c7` | `linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)` | **50 💎** | Tông xanh biển sâu và xanh cyan công nghệ cao mát mắt, gia tăng 200% khả năng tập trung khi làm bài. |
+| **3** | `theme_emerald_forest`| **Rừng Ngọc Lục Bảo (Emerald Mint)** | `#059669` | `linear-gradient(135deg, #059669 0%, #34d399 100%)` | **50 💎** | Tông xanh ngọc lục bảo và bạc hà dịu nhẹ, xoa dịu mắt mỏi khi ôn thi thâu đêm. |
+| **4** | `theme_sunset_amber` | **Hoàng Hôn Hổ Phách (Sunset Amber)** | `#ea580c` | `linear-gradient(135deg, #ea580c 0%, #f97316 100%)` | **50 💎** | Sự hòa quyện giữa sắc cam hoàng hôn và vàng hổ phách rực rỡ, truyền lửa nhiệt huyết và đam mê chinh phục. |
+| **5** | `theme_royal_amethyst`| **Tím Thạch Anh (Royal Amethyst)** | `#9333ea` | `linear-gradient(135deg, #9333ea 0%, #c084fc 100%)` | **50 💎** | Tông tím hoàng gia quý phái, biểu tượng của trí tuệ đỉnh cao và phong cách học tập sang trọng. |
+| **6** | `theme_crimson_ruby` | **Huyết Long Ruby (Crimson Blood)** | `#e11d48` | `linear-gradient(135deg, #e11d48 0%, #fb7185 100%)` | **50 💎** | Sắc đỏ ruby rực lửa của những chiến binh kiên cường, sẵn sàng bứt phá mọi bảng xếp hạng. |
+| **7** | `theme_cyber_lime` | **Vàng Chanh Cyberpunk (Cyber Lime)** | `#65a30d` | `linear-gradient(135deg, #65a30d 0%, #a3e635 100%)` | **50 💎** | Sắc vàng chanh neon điện tử đậm chất công nghệ tương lai, phá cách và kích thích tư duy logic. |
+| **8** | `theme_vintage_mocha` | **Trà Sữa Caramel (Vintage Mocha)** | `#b45309` | `linear-gradient(135deg, #b45309 0%, #fbbf24 100%)` | **50 💎** | Tông nâu caramel cà phê ấm cúng, thư thái như đang ngồi học tại một quán cafe vintage lofi. |
+
+#### 👁️ Tính năng Live Preview (Xem trước trực tiếp thời gian thực):
+- Khi duyệt trong Shop, người dùng có thể nhấp **"👁️ Xem trước"** ở bất kỳ bộ theme nào.
+- Hệ thống áp dụng ngay thuộc tính `data-color-theme` lên thẻ `<html>` và cập nhật biến CSS thời gian thực **ngay lập tức mà không cần tải lại trang**, cho phép người dùng lướt thử ứng dụng xem màu sắc có hợp mắt không trước khi quyết định chi 50 Đá quý.
+- Thanh công cụ phía dưới cho phép: **"✅ Áp dụng & Lưu"** hoặc **"✕ Hủy xem trước"** để quay về theme cũ an toàn.
+
+#### 💯 Cam kết Phủ sóng Màu sắc Toàn diện 100% (Không sót vị trí nào):
+Bộ theme được liên kết thông qua hệ thống biến CSS3 toàn cục (`--theme-accent`, `--theme-accent-hover`, `--theme-accent-soft`, `--theme-border`, `--theme-gradient`), tác động đồng bộ lên:
+- **Nền toàn trang:** Màu nền body, các mảng background trang trí, họa tiết chìm.
+- **Thanh điều hướng & Thanh bên:** Topbar, Sidebar, các biểu tượng danh mục đang kích hoạt (active navigation).
+- **Hệ thống nút bấm Duolingo 3D:** Hiệu ứng đổ bóng dưới chân nút (box-shadow 3D), trạng thái hover, nhấn xuống (active) đều mang màu sắc của theme.
+- **Bong bóng chat:** Tin nhắn người dùng trong 3TG Messenger và dock Cố vấn AI.
+- **Thanh tiến độ & Vòng tròn Pomodoro:** Vòng tròn đếm ngược SVG, thanh nạp kinh nghiệm XP, thanh tiến độ bài học.
+- **Hộp thoại & Thông báo:** Modal xác nhận, thông báo Toast, viền thẻ ghi chú, huy hiệu Bảng xếp hạng.
+
+#### 🎁 Các vật phẩm bổ trợ học tập khác trong Shop:
+- **❤️ Trái tim sinh lực (Heart Refill):** Hồi đầy lập tức 5 tim để tiếp tục làm bài trắc nghiệm mà không cần chờ thời gian hồi.
+- **🧊 Bùa đóng băng chuỗi học (Streak Freeze):** Bảo vệ ngọn lửa Streak liên tục nếu lỡ bận việc hoặc quên học 1 ngày.
+- **⚡ Bùa nhân đôi kinh nghiệm (Double XP Boost):** Nhân 2 toàn bộ số điểm XP nhận được trong 30 phút.
+- **🖼️ Khung Avatar Nitro VIP:** Bộ khung viền chuyển động phong cách Discord (Vương miện Vàng Hoàng Gia, Vòng Hào Quang Sakura, Khung Cyber Neon, Khung Pixel Gaming) hiển thị nổi bật trên toàn hệ thống.
+
+---
+
+### 2. Trang cá nhân (Profile) & Mạng xã hội kết nối bạn bè
+Hồ sơ học viên được thiết kế theo phong cách trang cá nhân Facebook hiện đại, tinh tế và tập trung vào trải nghiệm kết nối sâu sắc giữa các bạn học:
+
+#### 🖼️ Tối ưu hóa Chiều cao Ảnh bìa (Cover Banner):
+- Chiều cao ảnh bìa được tinh chỉnh cân đối lý tưởng ở mức **180px – 220px** (trước đây là ~320px chiếm quá nhiều màn hình), tạo không gian thoáng đãng để làm nổi bật thông tin học tập và danh hiệu.
+- **Tùy biến đa dạng:**
+  - Tải ảnh bìa tùy chọn từ máy tính (lưu trữ trên Cloudflare R2).
+  - Sử dụng link ảnh trực tiếp từ internet.
+  - Lựa chọn 6 bộ Gradient Preset tuyệt đẹp: *Cyber Study, Galaxy AI, Bình Minh Tri Thức, Thư Viện Xanh, Hoàng Hôn Tĩnh Lặng, Lumi Pastel Dream*.
+  - Hoặc chọn hình nền động phong cách Discord Wallpaper.
+
+#### 👑 Avatar & Khung viền Nitro:
+- Hỗ trợ đổi ảnh đại diện cá nhân hoặc chọn Mascot đại diện 3TG (Cú Bác Học, Thỏ Cần Cù, Mèo Thông Thái, Cáo Chiến Binh, Gấu Bác Học, Kỳ Lân, Chim Cánh Cụt, Hoa Lumi).
+- Khung viền Avatar Nitro độc quyền bao quanh ảnh đại diện tạo điểm nhấn đẳng cấp cho học viên chăm chỉ.
+
+#### 🕶️ Biểu tượng trạng thái (Status Icon) kiểu Duolingo:
+- Tích hợp bộ sưu tập **16 biểu tượng trạng thái học tập**:
+  `["🕶️", "🎉", "💪", "👀", "🍿", "🔥", "⚡", "🚀", "🌸", "💯", "💩", "🏆", "🐱", "☕", "🎮", "❤️"]`
+- Người dùng có thể đổi trạng thái 1-chạm tùy theo tâm trạng (Đang cày bài 🔥, Đang chill cafe ☕, Đang chiến đấu hết mình 💪, v.v.).
+- Biểu tượng trạng thái hiển thị mini ngay góc ảnh đại diện ở khắp mọi nơi: Avatar góc Topbar, Sidebar, Bảng xếp hạng tuần, Khung chat Messenger và Modal xem hồ sơ của bạn bè.
+
+#### 🔗 Hệ thống Liên kết Mạng xã hội Đa nền tảng (Social Links):
+Giúp sinh viên tìm hiểu sâu sắc về bạn bè, xây dựng nhóm học tập và giữ liên lạc ngoài giờ học với **6 nền tảng phổ biến nhất**:
+- 📘 **Facebook:** Nhập username hoặc link `https://facebook.com/username`
+- 📸 **Instagram:** Nhập `@username` hoặc link `https://instagram.com/username`
+- 🎵 **TikTok:** Kênh video học tập cá nhân `https://tiktok.com/@username`
+- 🧵 **Threads:** Mạng xã hội thảo luận `https://threads.net/@username`
+- 💻 **GitHub:** Kho lưu trữ mã nguồn và dự án của sinh viên IT `https://github.com/username`
+- 💛 **Locket:** Kết nối khoảnh khắc học tập tức thì `https://locket.camera/links/username`
+- **Giao diện hiển thị trực quan:** Các nút bấm liên kết bo tròn phong cách Duolingo có icon và tên mạng xã hội rõ ràng. Nhấp vào là tự động mở trang cá nhân của bạn bè trên trình duyệt. Có nút `+ Thêm mạng xã hội` nhanh chóng cho chính mình.
+
+#### ☁️ Đồng bộ hóa Đám mây Toàn vẹn (Cloudflare D1 & SQLite):
+- Toàn bộ dữ liệu `social_links` (định dạng JSON), `status_icon`, `avatar_decoration`, `profile_theme`, `cover_url` được lưu trữ an toàn trong bảng `profiles` trên **Cloudflare D1 Remote Database** và đồng bộ về **Local SQLite Replica** theo đúng mã tài khoản người học. Đăng nhập trên bất kỳ máy nào đều bảo toàn 100% hồ sơ.
+
+---
+
+### 3. Hỏi AI vào Note (Hỏi 3TG AI & Sổ tay ghi chú thông minh)
+Hệ thống kết nối liên hoàn hai chiều độc đáo giữa **Trợ lý Trí tuệ Nhân tạo 3TG AI** và **Sổ tay ghi chú cá nhân (Smart Notebook)**:
+
+#### 🔄 Luồng Tương tác Hai Chiều: AI ⇄ Sổ tay:
+1. **Chiều 1: Hỏi AI ➔ Lưu vào Sổ tay 1-Click:**
+   - **Tại trang Cố vấn 3TG AI:** Người học đặt câu hỏi về bất kỳ môn học nào (Giải tích, Đại số, Cấu trúc dữ liệu, Triết học, v.v.). AI giải đáp chi tiết kèm công thức. Dưới mỗi tin nhắn của AI có nút bấm nổi bật:
+     ```html
+     📌 Lưu vào Sổ tay
+     ```
+     Nhấp vào nút này, hệ thống tự động trích xuất tiêu đề `3TG AI · [Môn học] · [Tóm tắt câu hỏi]`, lấy toàn bộ lời giải và tạo ngay một trang ghi chú mới trong Sổ tay của học viên mà không cần copy/paste thủ công.
+   - **Tại Phòng học ảo Pomodoro:** Dưới mỗi câu trả lời của Bot AI (giải toán đạo hàm, phân tích slide bài giảng, sửa lỗi code), luôn có sẵn nút:
+     ```html
+     💾 Lưu vào Sổ tay
+     ```
+     Bấm lưu là lời giải được đồng bộ tức thì vào bảng `user_notes` trên Cloudflare D1 kèm thông báo Toast chúc mừng rực rỡ.
+2. **Chiều 2: Sổ tay ➔ Nạp trực tiếp vào Bàn học Pomodoro:**
+   - Khi bước vào Phòng học Pomodoro, tại thanh tài liệu bên trái có menu dropdown:
+     ```html
+     ＋ Thêm từ Sổ tay ghi chú...
+     ```
+     Học viên có thể chọn bất kỳ bài ghi chú nào đã lưu từ trước để mở lên bàn học trung tâm, vừa nghe nhạc Lofi vừa xem lại kiến thức quan trọng.
+
+#### 📝 Sổ tay Ghi chú Đa Năng (Smart Notebook):
+- **4 Kiểu giấy tập thân thuộc:**
+  - 📄 *Kẻ ngang:* Giấy tập vở học sinh phổ thông.
+  - 📐 *Ô li:* Giấy ô vuông kẻ ly chuẩn mực cho ghi chép toán học và đồ thị.
+  - ⬝ *Chấm Dot Grid:* Giấy chấm tọa độ tối ưu cho vẽ sơ đồ tư duy (Mindmap) và Bullet Journal.
+  - 📑 *Giấy trắng trơn:* Không gian tự do cho ghi chú phác thảo nhanh.
+- **Tùy biến phông chữ:** Phông Sans-serif hiện đại, Phông chữ viết tay (Handwriting), Phông Monospace cho dân IT, Phông Serif học thuật.
+- **✏️ Bảng công cụ Vẽ tay & Hình học (Canvas Drawing):**
+  - Tích hợp bảng vẽ trực tiếp lên trang ghi chú.
+  - Công cụ: Bút vẽ tự do, Đoạn thẳng, Đường tròn, Tam giác, Chấm điểm tọa độ.
+  - Bảng chọn màu mực đa sắc và thanh trượt điều chỉnh độ dày nét vẽ (từ 1px đến 12px) kèm công cụ tẩy xóa chuyên nghiệp.
+- **🔢 Thanh gõ Công thức Toán học 1-chạm:**
+  - Chèn nhanh các ký hiệu toán học phổ biến chỉ với 1 nhấp chuột:
+    $f(x)=$, $x^2$, $a/b$, $\sqrt{}$, $\int$, $\sum$, $d/dx$, $\lim$, $\partial/\partial x$, $\infty$, $\in$, $\cap$, $\angle$, $\triangle$, $\perp$, $\parallel$.
+- **🧮 Máy tính Khoa học (Study Calculator):**
+  - Mở cửa sổ máy tính khoa học nổi ngay cạnh trang ghi chú để thực hiện nhanh các phép tính lượng giác, logarit, lũy thừa, căn bậc n trong quá trình làm bài tập.
+- **⚡ Tự động lưu bản nháp (Auto-Save 500ms):**
+  - Cơ chế debounce tự động gửi bản ghi về máy chủ sau 500ms ngừng gõ, bảo đảm không bao giờ bị mất bài do tắt máy đột ngột hoặc mất điện.
+- **🔎 Bộ lọc & Tìm kiếm thông minh:**
+  - Lọc ghi chú theo từng Môn học đại học.
+  - Lọc theo từng Bài học cụ thể đã liên kết.
+  - Thanh tìm kiếm tức thì theo tiêu đề và toàn văn nội dung ghi chú.
+
+---
+
+### 4. Phòng học ảo Pomodoro & Lofi Room (Study With Me)
 Không gian tự học tập trung cao độ mô phỏng phòng thi an toàn (Safe Exam Browser / Kiosk Mode):
 - **Chu kỳ chuẩn khoa học:** 25 phút Siêu Tập Trung (Focus Phase) luân phiên với 5 phút Giải Lao (Break Phase).
 - **Cơ chế thưởng theo ca:** Mỗi ca 25 phút hoàn thành xuất sắc cộng ngay **+50 XP** và **+30 💎 Đá quý**. Tích lũy tuyến tính theo số ca học (1 ca = 1x, 2 ca = 2x, v.v.).
@@ -69,7 +190,7 @@ Không gian tự học tập trung cao độ mô phỏng phòng thi an toàn (Sa
 
 ---
 
-### 2. Cố vấn Học vụ Bot 3TG AI (Đọc ngữ cảnh & Giải toán LaTeX)
+### 5. Cố vấn Học vụ Bot 3TG AI trong phòng học
 Trợ lý AI chuyên biệt được tích hợp trực tiếp vào thanh bên phải của phòng Pomodoro:
 - **Đọc ngữ cảnh tài liệu trên màn hình (On-Screen Reading):** Có công tắc bật/tắt quyền riêng tư. Khi bật, Bot 3TG tự động nắm bắt tài liệu đang mở ở màn giữa (nội dung slide PowerPoint, đoạn văn bản Word, mã nguồn code hoặc giáo trình PDF) để giải đáp chính xác mà người dùng không cần sao chép dán lại.
 - **Trình bày công thức Toán học chuẩn LaTeX:**
@@ -85,7 +206,7 @@ Trợ lý AI chuyên biệt được tích hợp trực tiếp vào thanh bên p
 
 ---
 
-### 3. Lộ trình học Gamification chuẩn Duolingo
+### 6. Lộ trình học Gamification chuẩn Duolingo
 - **Kho học liệu khổng lồ:** Kết nối cơ sở dữ liệu với **10 môn học đại học**, **106 chương**, **4.094 bài học**, và **29.460 câu hỏi trắc nghiệm**.
 - **Cơ chế tiến độ tương tác:** Bản đồ lộ trình bài học theo các đảo kiến thức, chia thành các bài học nhỏ (bitesize) từ dễ đến nâng cao.
 - **Hệ thống Trái tim (Lives):** Người học có 5 trái tim; mỗi lần trả lời sai bị trừ 1 tim. Hết tim có thể dùng đá quý nạp lại hoặc luyện tập để hồi tim.
@@ -95,24 +216,7 @@ Trợ lý AI chuyên biệt được tích hợp trực tiếp vào thanh bên p
 
 ---
 
-### 4. Cửa hàng & Hệ thống 8 Bộ Theme đa sắc
-Shop vật phẩm phong phú với giá chỉ **50 💎 Đá quý** cho mỗi bộ giao diện:
-- **8 Bộ Theme màu sắc thiết kế tỉ mỉ:**
-  1. 🌸 **Tone Pink (Hồng Mộng Mơ):** Giao diện hồng phấn chủ đạo nguyên bản của 3TG.
-  2. 🌊 **Ocean Blue (Đại Dương Xanh):** Xanh dương tươi mát, dịu mắt giúp giảm căng thẳng khi học lâu.
-  3. 🌿 **Forest Green (Rừng Xanh Nhiệt Đới):** Xanh lá thiên nhiên, mang lại năng lượng tích cực và tập trung.
-  4. ⚡ **Cyberpunk Neon (Neon Công Nghệ):** Tím than và hồng neon phá cách, kích thích sự sáng tạo.
-  5. 🌇 **Sunset Orange (Hoàng Hôn Cam):** Sắc cam ấm áp, tràn đầy nhiệt huyết học tập.
-  6. 🔮 **Lavender Dream (Tím Oải Hương):** Tím pastel thanh lịch, thư thái cho những đêm ôn thi.
-  7. 🌌 **Midnight Velvet (Đêm Tối Tĩnh Lặng):** Dark mode tối ưu hóa cho màn hình OLED, bảo vệ mắt ban đêm.
-  8. 👑 **Royal Gold (Hoàng Gia Sang Trọng):** Vàng kim quyền lực dành cho những học bá dẫn đầu bảng xếp hạng.
-- **Tính năng Live Preview:** Cho phép xem trước hiệu ứng màu sắc trực tiếp trên giao diện Shop trước khi quyết định mua.
-- **Áp dụng toàn diện 100%:** Màu sắc chủ đề được đồng bộ toàn diện trên toàn bộ ứng dụng: Background nền, Thanh bên (Sidebar), Thanh điều hướng (Topbar), Danh sách Tab, Bong bóng chat, Hộp thoại xác nhận, Thanh tiến độ, Các nút bấm chính.
-- **Vật phẩm bổ trợ:** Mua thêm Tim hồi phục, Bùa đóng băng Streak (Streak Freeze), Bùa nhân đôi kinh nghiệm (Double XP).
-
----
-
-### 5. Mạng xã hội sinh viên & 3TG Messenger
+### 7. Mạng xã hội sinh viên & 3TG Messenger
 Không gian kết nối học tập giữa các sinh viên:
 - **3TG Messenger:** Trò chuyện thời gian thực theo nhóm học tập và tin nhắn cá nhân riêng tư.
 - **Trợ lý Bot 3TG trong khung chat:** Hỗ trợ điều khiển bằng lệnh chuyên dụng:
@@ -124,23 +228,10 @@ Không gian kết nối học tập giữa các sinh viên:
   - `!clean`: Dọn dẹp tin nhắn tạm trong nhóm.
   - `!ping` / `!uptime`: Kiểm tra độ trễ và thời gian hoạt động của máy chủ.
   - `!chao`: Lời chào và mẹo học tập theo từng khung giờ trong ngày.
-- **Hồ sơ cá nhân phong phú:**
-  - Khung Avatar trang trí, ảnh bìa, danh hiệu cá nhân, hiển thị biểu tượng trạng thái học tập (Đang học bài 🎧, Đang ôn thi 📚, Đang chill ☕, v.v.).
-  - **Liên kết Mạng xã hội đa nền tảng:** Kết nối trang cá nhân Facebook, Instagram, TikTok, Threads, GitHub, Locket để kết nối bạn bè sâu sắc hơn.
-  - Lưu trữ và đồng bộ hóa an toàn lên Cloudflare D1 theo tài khoản người dùng.
 
 ---
 
-### 6. Sổ tay ghi chú đa năng (Smart Notebook)
-- **Công cụ soạn thảo phong phú:** Lựa chọn kiểu giấy (kẻ ngang, ô li toán học, chấm dot, giấy trắng trơn).
-- **Vẽ tay tự do (Canvas Drawing):** Hỗ trợ viết vẽ bằng chuột hoặc bút cảm ứng, vẽ sơ đồ tư duy, chèn hình học cơ bản.
-- **Chèn công thức & Máy tính khoa học:** Bộ gõ công thức toán học và bảng tính khoa học tích hợp ngay cạnh trang viết.
-- **Tự động lưu (Auto-save):** Tự động lưu trữ nội dung nháp sau 500ms thao tác, không lo mất mát dữ liệu.
-- **Liên kết bài học:** Gắn nhãn ghi chú theo môn học và chương bài cụ thể.
-
----
-
-### 7. Cải thiện điểm & Tích hợp Cổng đào tạo IU
+### 8. Cải thiện điểm & Tích hợp Cổng đào tạo IU
 - **Tính toán GPA & Tích lũy:** Bảng tổng kết kết quả học tập, tự động tính điểm trung bình tích lũy theo thang điểm 4 và thang điểm 10.
 - **Dự báo cải thiện điểm:** Thuật toán tính toán số tín chỉ và điểm số cần đạt ở các kỳ tới để đạt danh hiệu Khá, Giỏi, Xuất sắc.
 - **Tích hợp cổng đào tạo IU (International University / Đại học Quốc tế):**
@@ -227,13 +318,9 @@ app study 2/
 │
 ├── public/                        # Giao diện người dùng (Frontend Web / Client)
 │   ├── index.html                 # Trang HTML chính của ứng dụng
-│   ├── app.js                     # Điều phối luồng ứng dụng chính, định tuyến trang, state
+│   ├── app.js                     # Điều phối ứng dụng, định tuyến, shop, profile, ghi chú, chat
 │   ├── pomodoro.js                # Trình điều khiển Phòng Pomodoro, Lofi Synth, Trình đọc file & Bot AI
 │   ├── tho-bay-mau.js             # Động cơ diễn hoạt Mascot Thỏ Bảy Màu (SVG Animation)
-│   ├── store.js                   # Cửa hàng vật phẩm, 8 bộ Theme đa sắc & Live Preview
-│   ├── social.js                  # Mạng xã hội, danh sách bạn bè, 3TG Messenger, bot lệnh
-│   ├── notes.js                   # Sổ tay ghi chú thông minh, canvas vẽ tay, máy tính
-│   ├── academic.js                # Quản lý học tập, tính điểm GPA, cải thiện điểm
 │   └── styles.css                 # Toàn bộ mã kiểu dáng CSS3, Dark Mode, Themes, Math & Layout
 │
 ├── src/                           # Mã nguồn backend (Cloudflare Worker Engine)
@@ -259,10 +346,10 @@ Hệ thống sử dụng cơ sở dữ liệu quan hệ **Cloudflare D1** làm n
 | `chapters` | 106 chương học phân cấp theo từng môn |
 | `lessons` | 4.094 bài giảng lý thuyết kèm video và tài liệu |
 | `questions` | 29.460 câu hỏi trắc nghiệm kiểm tra kiến thức kèm lời giải |
-| `profiles` | Hồ sơ người dùng: tên, avatar R2, khung viền, danh hiệu, **social_links**, **status_icon** |
+| `profiles` | Hồ sơ người dùng: tên, avatar R2, khung viền, danh hiệu, **social_links**, **status_icon**, **profile_theme**, **cover_url** |
 | `user_stats` | Chỉ số người học: Level, XP, số lượng Đá quý, số Tim, chuỗi ngày Streak |
 | `user_progress`| Tiến độ hoàn thành từng bài học, điểm số đạt được, số sao |
-| `user_notes` | Các trang Sổ tay ghi chú cá nhân, nội dung canvas nét vẽ |
+| `user_notes` | Các trang Sổ tay ghi chú cá nhân, nội dung canvas nét vẽ, lời giải AI đã lưu |
 | `user_pomodoro_sessions` | Lịch sử các ca học Pomodoro: số phút, số ca hoàn thành, phần thưởng nhận được |
 | `user_purchases` | Danh sách các bộ theme và vật phẩm đã mở khóa trong Shop |
 | `messenger_conversations` | Danh sách các phòng chat nhóm và hội thoại cá nhân |
@@ -359,6 +446,20 @@ Toàn bộ tài nguyên tĩnh trong thư mục `public/` cùng API backend `src/
 ## 📜 NHẬT KÝ PHIÊN BẢN & LỊCH SỬ CẬP NHẬT (CHANGELOG)
 
 ### 🚀 Phiên bản 9.9.9 (Bản cập nhật Siêu cấp - Hiện tại)
+- **Cửa hàng (Shop) & Hệ thống 8 Bộ Theme Đa Sắc:**
+  - Ra mắt 8 bộ Theme thiết kế độc quyền đồng giá 50 💎 Đá quý (`THEMES_REGISTRY`).
+  - Tích hợp tính năng **Live Preview thời gian thực** xem trước toàn bộ giao diện mà không cần tải lại trang.
+  - Phủ sóng màu sắc 100% không sót bất kỳ vị trí nào: Background, Topbar, Sidebar, Tabs, Nút bấm 3D Duolingo, Bong bóng chat, Hộp thoại Modal, Đồng hồ Pomodoro.
+- **Trang cá nhân (Profile) & Mạng xã hội:**
+  - Tối ưu hóa chiều cao ảnh bìa / Banner xuống mức 180px–220px thanh lịch, không chiếm quá nhiều diện tích màn hình.
+  - Tích hợp liên kết mạng xã hội chuyên sâu: 📘 Facebook, 📸 Instagram, 🎵 TikTok, 🧵 Threads, 💻 GitHub, 💛 Locket Camera.
+  - Ra mắt bộ 16 biểu tượng trạng thái học tập (Status Icons) kiểu Duolingo hiển thị mini trên góc avatar ở khắp mọi nơi.
+  - Đồng bộ toàn vẹn các cột `social_links`, `status_icon`, `profile_theme` lên Cloudflare D1 Remote & SQLite Replica.
+- **Hỏi AI vào Note & Sổ tay thông minh:**
+  - Tích hợp nút `📌 Lưu vào Sổ tay` tại khung chat Hỏi 3TG AI và nút `💾 Lưu vào Sổ tay` tại phòng học Pomodoro.
+  - Tự động tạo trang ghi chú với tiêu đề môn học và câu hỏi, lưu trọn vẹn lời giải vào Sổ tay.
+  - Menu `＋ Thêm từ Sổ tay ghi chú...` trong phòng học Pomodoro cho phép đưa bài ghi chú trực tiếp lên bàn học.
+  - Nâng cấp Sổ tay ghi chú: 4 kiểu giấy (kẻ ngang, ô li, dot grid, giấy trắng), bảng vẽ tay Canvas, thước kẻ hình học, thanh gõ ký hiệu toán học 1-chạm, máy tính khoa học và tự động lưu nháp 500ms.
 - **Phòng học Pomodoro & Lofi Room:**
   - Tăng kích thước Mascot Thỏ Bảy Màu lên **size 340** cực lớn và sắc nét ở chế độ Zen.
   - Thiết kế lại âm thanh: bổ sung nhịp trống Boom-Bap sống động cho Lofi, tiếng ồn trắng terrace ngoài trời kèm tiếng đá và cốc va chạm cho Cafe, tiếng lật sách tức thì cho Library.
@@ -370,13 +471,6 @@ Toàn bộ tài nguyên tĩnh trong thư mục `public/` cùng API backend `src/
   - Tích hợp bộ giải mã công thức Toán học chuẩn LaTeX: phân số hai tầng, đạo hàm riêng, giới hạn, số mũ, chỉ số dưới.
   - Phân luồng câu trả lời thông minh thành các bước (Bước 1, Bước 2, Mẹo nhớ) có viền màu đẹp mắt.
   - Đọc ngữ cảnh trực tiếp từ các file PowerPoint, Word, Code đang mở trên màn hình.
-- **Hệ thống Theme Đa sắc & Shop:**
-  - Ra mắt 8 bộ Theme màu sắc mới với giá 50 Đá quý.
-  - Hỗ trợ Live Preview trực tiếp trong Shop trước khi mua.
-  - Áp dụng màu chủ đề 100% không sót bất kỳ thành phần nào trên ứng dụng.
-- **Mạng xã hội & Hồ sơ:**
-  - Bổ sung liên kết mạng xã hội (Facebook, Instagram, TikTok, Threads, GitHub, Locket) vào trang cá nhân.
-  - Đồng bộ hóa toàn diện dữ liệu `social_links`, `status_icon`, `user_pomodoro_sessions` lên Cloudflare D1 Remote và SQLite Replica.
 
 ### 🌟 Sprint 3 — Hoàn thiện đóng gói & Hệ sinh thái
 - Hoàn thiện bộ cài đặt Setup và Portable v9.9.9.
