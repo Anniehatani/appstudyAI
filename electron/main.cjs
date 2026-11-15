@@ -59,7 +59,8 @@ async function createWindow() {
       preload: path.join(__dirname, "preload.cjs"),
       nodeIntegration: false,
       contextIsolation: true,
-      spellcheck: false
+      spellcheck: false,
+      plugins: true
     }
   });
 

@@ -107,60 +107,145 @@ export class PomodoroAudioEngine {
     }
   }
 
-  // --- Rain Generator (Filtered Pink Noise with Slow Natural Swells) ---
+  // --- Rain Generator (Deep Multi-layered Pink/Brown Noise + Gentle Droplets & Distant Thunder) ---
   startRainSound() {
-    const bufferSize = this.ctx.sampleRate * 4;
-    const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    const bufferSize = this.ctx.sampleRate * 8;
+    const noiseBuffer = this.ctx.createBuffer(2, bufferSize, this.ctx.sampleRate);
+    const left = noiseBuffer.getChannelData(0);
+    const right = noiseBuffer.getChannelData(1);
+
+    let b0L = 0, b1L = 0, b2L = 0, b3L = 0, b4L = 0, b5L = 0, b6L = 0;
+    let b0R = 0, b1R = 0, b2R = 0, b3R = 0, b4R = 0, b5R = 0, b6R = 0;
+
     for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
-      b0 = 0.99886 * b0 + white * 0.0555179;
-      b1 = 0.99332 * b1 + white * 0.0750759;
-      b2 = 0.96900 * b2 + white * 0.1538520;
-      b3 = 0.86650 * b3 + white * 0.3104856;
-      b4 = 0.55000 * b4 + white * 0.5329522;
-      b5 = -0.7616 * b5 - white * 0.0168980;
-      output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.085;
-      b6 = white * 0.115926;
+      const whiteL = Math.random() * 2 - 1;
+      b0L = 0.99886 * b0L + whiteL * 0.0555179;
+      b1L = 0.99332 * b1L + whiteL * 0.0750759;
+      b2L = 0.96900 * b2L + whiteL * 0.1538520;
+      b3L = 0.86650 * b3L + whiteL * 0.3104856;
+      b4L = 0.55000 * b4L + whiteL * 0.5329522;
+      b5L = -0.7616 * b5L - whiteL * 0.0168980;
+      left[i] = (b0L + b1L + b2L + b3L + b4L + b5L + b6L + whiteL * 0.5362) * 0.075;
+      b6L = whiteL * 0.115926;
+
+      const whiteR = Math.random() * 2 - 1;
+      b0R = 0.99886 * b0R + whiteR * 0.0555179;
+      b1R = 0.99332 * b1R + whiteR * 0.0750759;
+      b2R = 0.96900 * b2R + whiteR * 0.1538520;
+      b3R = 0.86650 * b3R + whiteR * 0.3104856;
+      b4R = 0.55000 * b4R + whiteR * 0.5329522;
+      b5R = -0.7616 * b5R - whiteR * 0.0168980;
+      right[i] = (b0R + b1R + b2R + b3R + b4R + b5R + b6R + whiteR * 0.5362) * 0.075;
+      b6R = whiteR * 0.115926;
     }
 
-    const whiteNoise = this.ctx.createBufferSource();
-    whiteNoise.buffer = noiseBuffer;
-    whiteNoise.loop = true;
+    const rainSrc = this.ctx.createBufferSource();
+    rainSrc.buffer = noiseBuffer;
+    rainSrc.loop = true;
 
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(850, this.ctx.currentTime);
+    const filter1 = this.ctx.createBiquadFilter();
+    filter1.type = "lowpass";
+    filter1.frequency.setValueAtTime(750, this.ctx.currentTime);
 
+    const filter2 = this.ctx.createBiquadFilter();
+    filter2.type = "highpass";
+    filter2.frequency.setValueAtTime(90, this.ctx.currentTime);
+
+    // Ultra slow natural swell LFO (28 seconds cycle)
     const lfo = this.ctx.createOscillator();
-    lfo.frequency.setValueAtTime(0.18, this.ctx.currentTime);
+    lfo.frequency.setValueAtTime(0.035, this.ctx.currentTime);
     const lfoGain = this.ctx.createGain();
-    lfoGain.gain.setValueAtTime(240, this.ctx.currentTime);
-    lfo.connect(filter.frequency);
+    lfoGain.gain.setValueAtTime(220, this.ctx.currentTime);
+    lfo.connect(filter1.frequency);
 
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.75, this.ctx.currentTime);
+    const rainGain = this.ctx.createGain();
+    rainGain.gain.setValueAtTime(0.85, this.ctx.currentTime);
 
-    whiteNoise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
+    rainSrc.connect(filter1);
+    filter1.connect(filter2);
+    filter2.connect(rainGain);
+    rainGain.connect(this.masterGain);
 
-    whiteNoise.start();
+    rainSrc.start();
     lfo.start();
-    this.nodes.push(whiteNoise, filter, lfo, lfoGain, gain);
+    this.nodes.push(rainSrc, filter1, filter2, lfo, lfoGain, rainGain);
+
+    // Natural random water droplet clicks (Poisson distribution)
+    const playDroplet = () => {
+      if (this.activeChannel !== "rain" || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      const baseFreq = 2200 + Math.random() * 1600;
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(baseFreq, now);
+      osc.frequency.exponentialRampToValueAtTime(800 + Math.random() * 400, now + 0.035);
+
+      const dropVol = 0.03 + Math.random() * 0.06;
+      g.gain.setValueAtTime(dropVol, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.04);
+
+      osc.connect(g);
+      g.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.045);
+
+      // Schedule next droplet randomly
+      const nextDelay = 350 + Math.random() * 950;
+      const tid = setTimeout(playDroplet, nextDelay);
+      this.intervalIds.push(tid);
+    };
+    playDroplet();
+
+    // Occasional distant gentle thunder rumble (every 50 to 90 seconds)
+    const playDistantThunder = () => {
+      if (this.activeChannel !== "rain" || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      const tDur = 4.5;
+      const tBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * tDur), this.ctx.sampleRate);
+      const td = tBuf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < td.length; i++) {
+        const white = Math.random() * 2 - 1;
+        last = (last + (0.04 * white)) / 1.04;
+        const progress = i / td.length;
+        const env = Math.sin(progress * Math.PI) ** 1.8;
+        td[i] = last * env * 3.5;
+      }
+      const tSrc = this.ctx.createBufferSource();
+      tSrc.buffer = tBuf;
+      const tFlt = this.ctx.createBiquadFilter();
+      tFlt.type = "lowpass";
+      tFlt.frequency.setValueAtTime(75, now);
+      const tG = this.ctx.createGain();
+      tG.gain.setValueAtTime(0.45, now);
+      tSrc.connect(tFlt);
+      tFlt.connect(tG);
+      tG.connect(this.masterGain);
+      tSrc.start(now);
+
+      const nextThunder = 55000 + Math.random() * 40000;
+      const thunderId = setTimeout(playDistantThunder, nextThunder);
+      this.intervalIds.push(thunderId);
+    };
+    const firstThunderId = setTimeout(playDistantThunder, 25000);
+    this.intervalIds.push(firstThunderId);
   }
 
-  // --- Lofi Beats Generator (Rhodes E-Piano Chords, Sub Kick, Rimshot & Tape Crackle) ---
+  // --- Lofi Beats Generator (16-Bar Rich Jazz Progression, Warm Rhodes, Swing Drums & Vinyl Crackle) ---
   startLofiBeats() {
-    const bufLen = this.ctx.sampleRate * 2;
-    const crackleBuf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
-    const data = crackleBuf.getChannelData(0);
+    // 1. Continuous Vintage Vinyl Crackle & Soft Tape Flutter Bed
+    const bufLen = this.ctx.sampleRate * 4;
+    const crackleBuf = this.ctx.createBuffer(2, bufLen, this.ctx.sampleRate);
+    const cLeft = crackleBuf.getChannelData(0);
+    const cRight = crackleBuf.getChannelData(1);
     for (let i = 0; i < bufLen; i++) {
-      if (Math.random() < 0.001) {
-        data[i] = (Math.random() * 2 - 1) * 0.18;
+      if (Math.random() < 0.0008) {
+        cLeft[i] = (Math.random() * 2 - 1) * 0.16;
+        cRight[i] = (Math.random() * 2 - 1) * 0.16;
       } else {
-        data[i] = (Math.random() * 2 - 1) * 0.012;
+        cLeft[i] = (Math.random() * 2 - 1) * 0.009;
+        cRight[i] = (Math.random() * 2 - 1) * 0.009;
       }
     }
     const crackle = this.ctx.createBufferSource();
@@ -169,11 +254,11 @@ export class PomodoroAudioEngine {
 
     const crackleFilter = this.ctx.createBiquadFilter();
     crackleFilter.type = "bandpass";
-    crackleFilter.frequency.setValueAtTime(1200, this.ctx.currentTime);
-    crackleFilter.Q.setValueAtTime(1.1, this.ctx.currentTime);
+    crackleFilter.frequency.setValueAtTime(1300, this.ctx.currentTime);
+    crackleFilter.Q.setValueAtTime(0.9, this.ctx.currentTime);
 
     const crackleGain = this.ctx.createGain();
-    crackleGain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    crackleGain.gain.setValueAtTime(0.25, this.ctx.currentTime);
 
     crackle.connect(crackleFilter);
     crackleFilter.connect(crackleGain);
@@ -181,70 +266,131 @@ export class PomodoroAudioEngine {
     crackle.start();
     this.nodes.push(crackle, crackleFilter, crackleGain);
 
-    const chords = [
-      [261.63, 329.63, 392.00, 493.88], // Cmaj7
-      [220.00, 261.63, 329.63, 392.00], // Am7
-      [293.66, 349.23, 440.00, 523.25], // Dm7
-      [196.00, 246.94, 293.66, 349.23]  // G7
+    // 2. Rich 16-Bar Jazz Progression (Nearly 1 minute before looping!)
+    const progression = [
+      [174.61, 261.63, 329.63, 392.00, 440.00], // Fmaj9
+      [164.81, 246.94, 329.63, 392.00, 440.00], // Em7(b13)
+      [146.83, 220.00, 261.63, 329.63, 349.23], // Dm9
+      [130.81, 220.00, 261.63, 329.63, 392.00], // Am7/C
+      [116.54, 233.08, 293.66, 349.23, 440.00], // Bbmaj7
+      [110.00, 220.00, 261.63, 329.63, 392.00, 493.88], // Am9
+      [98.00, 196.00, 261.63, 293.66, 349.23],  // Gm9
+      [130.81, 196.00, 261.63, 349.23, 440.00], // C13sus4
+      [146.83, 220.00, 261.63, 329.63, 349.23], // Dm9
+      [98.00, 196.00, 246.94, 329.63, 349.23, 440.00], // G13
+      [130.81, 196.00, 246.94, 293.66, 329.63, 392.00], // Cmaj9
+      [110.00, 220.00, 277.18, 329.63, 370.00, 415.30], // A7alt
+      [146.83, 220.00, 261.63, 329.63, 349.23], // Dm9
+      [98.00, 196.00, 261.63, 293.66, 349.23, 392.00], // G9sus4
+      [130.81, 196.00, 246.94, 329.63, 392.00], // Cmaj9
+      [130.81, 196.00, 246.94, 329.63]          // Cmaj7
     ];
-    let chordIdx = 0;
-    const bpm = 72;
-    const beatSec = 60 / bpm;
-    const barSec = beatSec * 4;
 
-    const playRhodesChord = (freqs) => {
+    let chordStep = 0;
+    const bpm = 68;
+    const beatSec = 60 / bpm; // ~0.882s
+    const barSec = beatSec * 4; // ~3.529s
+
+    // Rhodes E-Piano Synth (Dual Oscillators: Sine fundamental + Soft Triangle Harmonic + Tremolo)
+    const playWarmRhodes = (freqs) => {
       if (!this.ctx || this.activeChannel !== "lofi") return;
       const now = this.ctx.currentTime;
       freqs.forEach((freq, idx) => {
-        const osc = this.ctx.createOscillator();
-        const chordGain = this.ctx.createGain();
-        const f = this.ctx.createBiquadFilter();
+        const strumOffset = idx * (0.018 + Math.random() * 0.012);
+        const startTime = now + strumOffset;
 
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, now + idx * 0.025);
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const tremolo = this.ctx.createOscillator();
+        const tremoloGain = this.ctx.createGain();
+        const noteGain = this.ctx.createGain();
+        const flt = this.ctx.createBiquadFilter();
 
-        f.type = "lowpass";
-        f.frequency.setValueAtTime(950, now);
+        osc1.type = "sine";
+        osc1.frequency.setValueAtTime(freq, startTime);
 
-        chordGain.gain.setValueAtTime(0.0001, now);
-        chordGain.gain.exponentialRampToValueAtTime(0.065, now + 0.08);
-        chordGain.gain.exponentialRampToValueAtTime(0.0001, now + barSec * 0.9);
+        osc2.type = "triangle";
+        osc2.frequency.setValueAtTime(freq * 1.002, startTime); // subtle chorus detune
 
-        osc.connect(f);
-        f.connect(chordGain);
-        chordGain.connect(this.masterGain);
+        flt.type = "lowpass";
+        flt.frequency.setValueAtTime(1050, startTime);
+        flt.frequency.exponentialRampToValueAtTime(550, startTime + barSec * 0.9);
 
-        osc.start(now + idx * 0.025);
-        osc.stop(now + barSec);
+        tremolo.frequency.setValueAtTime(4.2, startTime);
+        tremoloGain.gain.setValueAtTime(0.08, startTime);
+        tremolo.connect(noteGain.gain);
+
+        const velocity = (0.055 / (idx + 1)) * (0.85 + Math.random() * 0.3);
+        noteGain.gain.setValueAtTime(0.0001, startTime);
+        noteGain.gain.exponentialRampToValueAtTime(velocity, startTime + 0.07);
+        noteGain.gain.exponentialRampToValueAtTime(0.0001, startTime + barSec * 0.95);
+
+        const mixGain = this.ctx.createGain();
+        mixGain.gain.setValueAtTime(0.7, startTime);
+        const overtoneGain = this.ctx.createGain();
+        overtoneGain.gain.setValueAtTime(0.3, startTime);
+
+        osc1.connect(mixGain);
+        osc2.connect(overtoneGain);
+        mixGain.connect(flt);
+        overtoneGain.connect(flt);
+        flt.connect(noteGain);
+        noteGain.connect(this.masterGain);
+
+        osc1.start(startTime);
+        osc2.start(startTime);
+        tremolo.start(startTime);
+
+        osc1.stop(startTime + barSec);
+        osc2.stop(startTime + barSec);
+        tremolo.stop(startTime + barSec);
       });
     };
 
-    const playDrum = (type) => {
+    // Organic Lofi Drums
+    const playLofiDrum = (type) => {
       if (!this.ctx || this.activeChannel !== "lofi") return;
       const now = this.ctx.currentTime;
       if (type === "kick") {
         const osc = this.ctx.createOscillator();
         const g = this.ctx.createGain();
-        osc.frequency.setValueAtTime(105, now);
-        osc.frequency.exponentialRampToValueAtTime(42, now + 0.15);
-        g.gain.setValueAtTime(0.22, now);
-        g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+        osc.frequency.setValueAtTime(110, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.16);
+        g.gain.setValueAtTime(0.24, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
         osc.connect(g);
         g.connect(this.masterGain);
         osc.start(now);
-        osc.stop(now + 0.22);
-      } else if (type === "snare") {
-        const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.1), this.ctx.sampleRate);
+        osc.stop(now + 0.24);
+      } else if (type === "rimshot") {
+        const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.12), this.ctx.sampleRate);
         const d = buf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 800);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 650);
         const src = this.ctx.createBufferSource();
         src.buffer = buf;
         const flt = this.ctx.createBiquadFilter();
         flt.type = "bandpass";
-        flt.frequency.setValueAtTime(1700, now);
+        flt.frequency.setValueAtTime(1650, now);
+        flt.Q.setValueAtTime(2.2, now);
         const g = this.ctx.createGain();
-        g.gain.setValueAtTime(0.14, now);
-        g.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        g.gain.setValueAtTime(0.13, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+        src.connect(flt);
+        flt.connect(g);
+        g.connect(this.masterGain);
+        src.start(now);
+      } else if (type === "hihat") {
+        const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.05), this.ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 300);
+        const src = this.ctx.createBufferSource();
+        src.buffer = buf;
+        const flt = this.ctx.createBiquadFilter();
+        flt.type = "highpass";
+        flt.frequency.setValueAtTime(6500, now);
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(0.045 + Math.random() * 0.03, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
         src.connect(flt);
         flt.connect(g);
         g.connect(this.masterGain);
@@ -252,7 +398,8 @@ export class PomodoroAudioEngine {
       }
     };
 
-    playRhodesChord(chords[0]);
+    playWarmRhodes(progression[0]);
+
     let beatCount = 0;
     const interval = setInterval(() => {
       if (this.activeChannel !== "lofi") {
@@ -260,91 +407,179 @@ export class PomodoroAudioEngine {
         return;
       }
       beatCount++;
-      if (beatCount % 4 === 0) {
-        chordIdx = (chordIdx + 1) % chords.length;
-        playRhodesChord(chords[chordIdx]);
+      const barBeat = beatCount % 4;
+
+      if (barBeat === 0) {
+        chordStep = (chordStep + 1) % progression.length;
+        playWarmRhodes(progression[chordStep]);
       }
-      if (beatCount % 4 === 0 || beatCount % 4 === 2) {
-        playDrum("kick");
+
+      // Swing kick groove
+      if (barBeat === 0 || (barBeat === 2 && Math.random() < 0.8)) {
+        playLofiDrum("kick");
       }
-      if (beatCount % 4 === 1 || beatCount % 4 === 3) {
-        playDrum("snare");
+      // Rimshot / snare on beats 1 and 3 (0-indexed 1 and 3)
+      if (barBeat === 1 || barBeat === 3) {
+        playLofiDrum("rimshot");
       }
+      // Hi-hats with swing timing
+      playLofiDrum("hihat");
+      setTimeout(() => {
+        if (this.activeChannel === "lofi") playLofiDrum("hihat");
+      }, (beatSec * 0.55) * 1000); // 55% swing feel
+
     }, beatSec * 1000);
 
     this.intervalIds.push(interval);
   }
 
-  // --- ENHANCED CAFE AMBIANCE (Audible Chatter Murmur, Coffee Cup Clinks, Espresso Steam) ---
+  // --- ENHANCED CAFE AMBIANCE (Rich Coffee Shop Room Murmur, Barista Steam & Spacious Cup Clinks) ---
   startCafeAmbiance() {
-    const bufLen = this.ctx.sampleRate * 3;
-    const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * 0.12;
+    // 1. Indistinct pleasant room chatter murmur bed
+    const bufLen = this.ctx.sampleRate * 6;
+    const buf = this.ctx.createBuffer(2, bufLen, this.ctx.sampleRate);
+    const dL = buf.getChannelData(0);
+    const dR = buf.getChannelData(1);
+    for (let i = 0; i < bufLen; i++) {
+      dL[i] = (Math.random() * 2 - 1) * 0.1;
+      dR[i] = (Math.random() * 2 - 1) * 0.1;
+    }
     const noise = this.ctx.createBufferSource();
     noise.buffer = buf;
     noise.loop = true;
 
-    const filter1 = this.ctx.createBiquadFilter();
-    filter1.type = "lowpass";
-    filter1.frequency.setValueAtTime(850, this.ctx.currentTime);
+    // Multi-formant speech bandpass filters simulating distant cafe murmurs
+    const f1 = this.ctx.createBiquadFilter();
+    f1.type = "bandpass";
+    f1.frequency.setValueAtTime(320, this.ctx.currentTime);
+    f1.Q.setValueAtTime(2.0, this.ctx.currentTime);
 
-    const filter2 = this.ctx.createBiquadFilter();
-    filter2.type = "peaking";
-    filter2.frequency.setValueAtTime(500, this.ctx.currentTime);
-    filter2.gain.setValueAtTime(6, this.ctx.currentTime);
+    const f2 = this.ctx.createBiquadFilter();
+    f2.type = "bandpass";
+    f2.frequency.setValueAtTime(760, this.ctx.currentTime);
+    f2.Q.setValueAtTime(2.2, this.ctx.currentTime);
+
+    const f3 = this.ctx.createBiquadFilter();
+    f3.type = "bandpass";
+    f3.frequency.setValueAtTime(1380, this.ctx.currentTime);
+    f3.Q.setValueAtTime(2.5, this.ctx.currentTime);
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.75, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.72, this.ctx.currentTime);
 
-    noise.connect(filter1);
-    filter1.connect(filter2);
-    filter2.connect(gain);
+    noise.connect(f1);
+    noise.connect(f2);
+    noise.connect(f3);
+    f1.connect(gain);
+    f2.connect(gain);
+    f3.connect(gain);
     gain.connect(this.masterGain);
-    noise.start();
-    this.nodes.push(noise, filter1, filter2, gain);
 
-    // Play porcelain cup / saucer clink (frequent & clear)
+    noise.start();
+    this.nodes.push(noise, f1, f2, f3, gain);
+
+    // 2. Realistic Porcelain Cup & Saucer Clink (Spaced out 14s - 30s)
     const playCupClink = () => {
       if (this.activeChannel !== "cafe" || !this.ctx) return;
       const now = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const cg = this.ctx.createGain();
-      const freqs = [1950, 2400, 2850, 3200];
+      const freqs = [2150, 2480, 2820, 3150];
       const f = freqs[Math.floor(Math.random() * freqs.length)];
+      osc.type = "sine";
       osc.frequency.setValueAtTime(f, now);
-      cg.gain.setValueAtTime(0.18, now);
-      cg.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+      cg.gain.setValueAtTime(0.14, now);
+      cg.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
       osc.connect(cg);
       cg.connect(this.masterGain);
       osc.start(now);
-      osc.stop(now + 0.2);
-    };
+      osc.stop(now + 0.24);
 
-    // Trigger one immediately so user hears it upon selection
-    playCupClink();
-    const clinkInterval = setInterval(() => {
-      if (Math.random() < 0.75) playCupClink();
-    }, 2400);
-    this.intervalIds.push(clinkInterval);
+      // Next cup clink at natural human interval
+      const nextClink = 14000 + Math.random() * 16000;
+      const id = setTimeout(playCupClink, nextClink);
+      this.intervalIds.push(id);
+    };
+    // Play one gentle clink after 2 seconds to establish the atmosphere
+    const initialClinkId = setTimeout(playCupClink, 2200);
+    this.intervalIds.push(initialClinkId);
+
+    // 3. Espresso Machine Steam Wand Hiss (every 35s - 65s)
+    const playEspressoSteam = () => {
+      if (this.activeChannel !== "cafe" || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      const sDur = 2.4;
+      const sBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * sDur), this.ctx.sampleRate);
+      const sd = sBuf.getChannelData(0);
+      for (let i = 0; i < sd.length; i++) {
+        const t = i / sd.length;
+        const env = Math.sin(t * Math.PI) ** 2;
+        sd[i] = (Math.random() * 2 - 1) * env * 0.18;
+      }
+      const sSrc = this.ctx.createBufferSource();
+      sSrc.buffer = sBuf;
+      const sFlt = this.ctx.createBiquadFilter();
+      sFlt.type = "lowpass";
+      sFlt.frequency.setValueAtTime(2200, now);
+      const sG = this.ctx.createGain();
+      sG.gain.setValueAtTime(0.28, now);
+      sSrc.connect(sFlt);
+      sFlt.connect(sG);
+      sG.connect(this.masterGain);
+      sSrc.start(now);
+
+      const nextSteam = 36000 + Math.random() * 28000;
+      const id = setTimeout(playEspressoSteam, nextSteam);
+      this.intervalIds.push(id);
+    };
+    const initialSteamId = setTimeout(playEspressoSteam, 18000);
+    this.intervalIds.push(initialSteamId);
+
+    // 4. Subtle Spoon Stir (2-3 tiny clinks spaced 0.12s apart)
+    const playSpoonStir = () => {
+      if (this.activeChannel !== "cafe" || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      [0, 0.12, 0.25].forEach((offset, idx) => {
+        const osc = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        osc.frequency.setValueAtTime(3200 + idx * 200, now + offset);
+        g.gain.setValueAtTime(0.06, now + offset);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.08);
+        osc.connect(g);
+        g.connect(this.masterGain);
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.09);
+      });
+
+      const nextStir = 28000 + Math.random() * 24000;
+      const id = setTimeout(playSpoonStir, nextStir);
+      this.intervalIds.push(id);
+    };
+    const initialStirId = setTimeout(playSpoonStir, 10000);
+    this.intervalIds.push(initialStirId);
   }
 
-  // --- ENHANCED BOOK / LIBRARY AMBIANCE (Audible Paper Rustles & Page Flips) ---
+  // --- ENHANCED BOOK & LIBRARY AMBIANCE (Tranquil Room Tone, Varied Page Turns & Pencil Notes) ---
   startBookFlipAmbiance() {
-    const bufLen = this.ctx.sampleRate * 2;
-    const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * 0.05;
+    // 1. Quiet library acoustic room tone
+    const bufLen = this.ctx.sampleRate * 4;
+    const buf = this.ctx.createBuffer(2, bufLen, this.ctx.sampleRate);
+    const dL = buf.getChannelData(0);
+    const dR = buf.getChannelData(1);
+    for (let i = 0; i < bufLen; i++) {
+      dL[i] = (Math.random() * 2 - 1) * 0.028;
+      dR[i] = (Math.random() * 2 - 1) * 0.028;
+    }
     const roomTone = this.ctx.createBufferSource();
     roomTone.buffer = buf;
     roomTone.loop = true;
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(750, this.ctx.currentTime);
+    filter.frequency.setValueAtTime(620, this.ctx.currentTime);
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.55, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
 
     roomTone.connect(filter);
     filter.connect(gain);
@@ -352,36 +587,109 @@ export class PomodoroAudioEngine {
     roomTone.start();
     this.nodes.push(roomTone, filter, gain);
 
-    // Realistic crisp page turn sound
-    const flipPage = () => {
+    // 2. Realistic Varied Study Sounds (Spaced 16s - 38s)
+    const playStudyAction = () => {
       if (this.activeChannel !== "book" || !this.ctx) return;
       const now = this.ctx.currentTime;
-      const duration = 0.35;
-      const fBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * duration), this.ctx.sampleRate);
-      const fd = fBuf.getChannelData(0);
-      for (let i = 0; i < fd.length; i++) {
-        const t = i / fd.length;
-        const envelope = (Math.sin(t * Math.PI * 2) ** 2) * Math.sin(t * Math.PI);
-        fd[i] = (Math.random() * 2 - 1) * envelope * 0.45;
+      const actionType = Math.floor(Math.random() * 4);
+
+      if (actionType === 0) {
+        // Slow deliberate page turn (smooth paper sliding across paper)
+        const duration = 0.48;
+        const fBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * duration), this.ctx.sampleRate);
+        const fd = fBuf.getChannelData(0);
+        for (let i = 0; i < fd.length; i++) {
+          const t = i / fd.length;
+          const envelope = (Math.sin(t * Math.PI) ** 1.5) * (0.8 + 0.2 * Math.sin(t * 30));
+          fd[i] = (Math.random() * 2 - 1) * envelope * 0.35;
+        }
+        const pageSrc = this.ctx.createBufferSource();
+        pageSrc.buffer = fBuf;
+        const pFlt = this.ctx.createBiquadFilter();
+        pFlt.type = "bandpass";
+        pFlt.frequency.setValueAtTime(1450, now);
+        pFlt.Q.setValueAtTime(1.4, now);
+        const pGain = this.ctx.createGain();
+        pGain.gain.setValueAtTime(0.55, now);
+        pageSrc.connect(pFlt);
+        pFlt.connect(pGain);
+        pGain.connect(this.masterGain);
+        pageSrc.start(now);
+      } else if (actionType === 1) {
+        // Quick crisp page flick
+        const duration = 0.22;
+        const fBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * duration), this.ctx.sampleRate);
+        const fd = fBuf.getChannelData(0);
+        for (let i = 0; i < fd.length; i++) {
+          const t = i / fd.length;
+          fd[i] = (Math.random() * 2 - 1) * Math.sin(t * Math.PI) * 0.45;
+        }
+        const pageSrc = this.ctx.createBufferSource();
+        pageSrc.buffer = fBuf;
+        const pFlt = this.ctx.createBiquadFilter();
+        pFlt.type = "highpass";
+        pFlt.frequency.setValueAtTime(1800, now);
+        const pGain = this.ctx.createGain();
+        pGain.gain.setValueAtTime(0.42, now);
+        pageSrc.connect(pFlt);
+        pFlt.connect(pGain);
+        pGain.connect(this.masterGain);
+        pageSrc.start(now);
+      } else if (actionType === 2) {
+        // Multi-page ruffle / flutter
+        const duration = 0.52;
+        const fBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * duration), this.ctx.sampleRate);
+        const fd = fBuf.getChannelData(0);
+        for (let i = 0; i < fd.length; i++) {
+          const t = i / fd.length;
+          const bursts = Math.abs(Math.sin(t * 18 * Math.PI));
+          fd[i] = (Math.random() * 2 - 1) * bursts * Math.sin(t * Math.PI) * 0.38;
+        }
+        const pageSrc = this.ctx.createBufferSource();
+        pageSrc.buffer = fBuf;
+        const pFlt = this.ctx.createBiquadFilter();
+        pFlt.type = "bandpass";
+        pFlt.frequency.setValueAtTime(2100, now);
+        pFlt.Q.setValueAtTime(1.1, now);
+        const pGain = this.ctx.createGain();
+        pGain.gain.setValueAtTime(0.48, now);
+        pageSrc.connect(pFlt);
+        pFlt.connect(pGain);
+        pGain.connect(this.masterGain);
+        pageSrc.start(now);
+      } else {
+        // Soft pencil scribble / highlighting note
+        [0, 0.14, 0.28, 0.42].forEach((offset) => {
+          const dur = 0.08;
+          const sBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * dur), this.ctx.sampleRate);
+          const sd = sBuf.getChannelData(0);
+          for (let i = 0; i < sd.length; i++) {
+            sd[i] = (Math.random() * 2 - 1) * (1 - i / sd.length) * 0.18;
+          }
+          const sSrc = this.ctx.createBufferSource();
+          sSrc.buffer = sBuf;
+          const sFlt = this.ctx.createBiquadFilter();
+          sFlt.type = "bandpass";
+          sFlt.frequency.setValueAtTime(3400, now + offset);
+          sFlt.Q.setValueAtTime(2.8, now + offset);
+          const sG = this.ctx.createGain();
+          sG.gain.setValueAtTime(0.22, now + offset);
+          sSrc.connect(sFlt);
+          sFlt.connect(sG);
+          sG.connect(this.masterGain);
+          sSrc.start(now + offset);
+        });
       }
-      const pageSrc = this.ctx.createBufferSource();
-      pageSrc.buffer = fBuf;
-      const pFlt = this.ctx.createBiquadFilter();
-      pFlt.type = "bandpass";
-      pFlt.frequency.setValueAtTime(1800, now);
-      pFlt.Q.setValueAtTime(1.8, now);
-      const pGain = this.ctx.createGain();
-      pGain.gain.setValueAtTime(0.65, now);
-      pageSrc.connect(pFlt);
-      pFlt.connect(pGain);
-      pGain.connect(this.masterGain);
-      pageSrc.start(now);
+
+      // Schedule next natural library action (16 to 38 seconds)
+      const nextDelay = 16000 + Math.random() * 22000;
+      const tid = setTimeout(playStudyAction, nextDelay);
+      this.intervalIds.push(tid);
     };
 
-    // Trigger one immediately so user hears it upon selection
-    flipPage();
-    const bookInterval = setInterval(flipPage, 3200);
-    this.intervalIds.push(bookInterval);
+    // Trigger one initial soft page turn after 1.8 seconds
+    const initialId = setTimeout(playStudyAction, 1800);
+    this.intervalIds.push(initialId);
   }
 
   // --- Pleasant Completion Bell Chime (Zen Bell) ---
@@ -698,12 +1006,12 @@ export function addMultipleLocalFiles(fileList) {
   if (!fileList || fileList.length === 0) return;
 
   Array.from(fileList).forEach(file => {
-    const isPdf = file.type === "application/pdf" || file.name.endsWith(".pdf");
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
     const isImage = file.type.startsWith("image/");
     const docId = "doc_" + Math.random().toString(36).slice(2, 9);
 
-    const reader = new FileReader();
     if (isImage) {
+      const reader = new FileReader();
       reader.onload = (e) => {
         pomodoroState.docs.push({
           id: docId,
@@ -716,18 +1024,19 @@ export function addMultipleLocalFiles(fileList) {
       };
       reader.readAsDataURL(file);
     } else if (isPdf) {
-      reader.onload = (e) => {
-        pomodoroState.docs.push({
-          id: docId,
-          name: file.name,
-          type: "pdf",
-          content: e.target.result
-        });
-        if (!pomodoroState.activeDocId) pomodoroState.activeDocId = docId;
-        if (window.render) window.render();
-      };
-      reader.readAsDataURL(file);
+      // Use native Blob URL for instant zero-overhead PDF rendering in Chromium
+      const blobUrl = URL.createObjectURL(file);
+      pomodoroState.docs.push({
+        id: docId,
+        name: file.name,
+        type: "pdf",
+        content: blobUrl,
+        blobUrl: blobUrl
+      });
+      if (!pomodoroState.activeDocId) pomodoroState.activeDocId = docId;
+      if (window.render) window.render();
     } else {
+      const reader = new FileReader();
       reader.onload = (e) => {
         pomodoroState.docs.push({
           id: docId,
@@ -814,11 +1123,15 @@ export async function askPomodoroAi(customPrompt = null) {
   // Attach context of the document currently on screen if enabled
   let contextDoc = "";
   const activeDoc = pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
-  if (pomodoroState.aiReadScreenContext && activeDoc && activeDoc.content) {
-    const textSnippet = activeDoc.type === "image" 
-      ? `(Người học đang mở ảnh sơ đồ/tài liệu: ${activeDoc.name})`
-      : activeDoc.content.slice(0, 3500);
-    contextDoc = `\n\n[NGỮ CẢNH TÀI LIỆU ĐANG HIỂN THỊ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n${textSnippet}\n[HÃY GIẢI ĐÁP DỰA TRÊN TÀI LIỆU TRÊN NẾU CÓ LIÊN QUAN]`;
+  if (pomodoroState.aiReadScreenContext && activeDoc) {
+    if (activeDoc.type === "text" && activeDoc.content) {
+      const textSnippet = activeDoc.content.slice(0, 3500);
+      contextDoc = `\n\n[NGỮ CẢNH TÀI LIỆU ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n${textSnippet}\n[HÃY GIẢI ĐÁP, HƯỚNG DẪN CHI TIẾT THEO TÀI LIỆU TRÊN NẾU CÓ LIÊN QUAN]`;
+    } else if (activeDoc.type === "pdf") {
+      contextDoc = `\n\n[NGỮ CẢNH TÀI LIỆU ĐANG MỞ TRÊN MÀN HÌNH]: Người học đang đọc tài liệu PDF "${activeDoc.name}". Hãy trợ giúp giải đáp, giảng giải các khái niệm, công thức hoặc câu hỏi theo chủ đề của tài liệu này một cách dễ hiểu nhất!`;
+    } else if (activeDoc.type === "image") {
+      contextDoc = `\n\n[NGỮ CẢNH TÀI LIỆU ĐANG MỞ TRÊN MÀN HÌNH]: Người học đang mở hình ảnh/sơ đồ "${activeDoc.name}".`;
+    }
   }
 
   try {
@@ -1278,7 +1591,7 @@ function renderPomodoroActiveRoom() {
                   </button>
                 </div>
               </div>
-              <div class="doc-viewer-scrollable-body">
+              <div class="doc-viewer-scrollable-body ${activeDoc.type === 'pdf' ? 'pdf-mode' : ''}">
                 ${renderDocContent(activeDoc)}
               </div>
             </div>

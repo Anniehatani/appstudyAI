@@ -3448,9 +3448,9 @@ async function completePomodoroSession(request, user, env) {
 
   // Lưu phiên vào bảng user_pomodoro_sessions
   await env.DB.prepare(
-    "INSERT INTO user_pomodoro_sessions (id, user_id, cycles, focus_minutes, xp_reward, gems_reward, doc_name, completed_at) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-  ).bind(sessionId, user.userId, cycles, focusMinutes, xpReward, gemsReward, docName, nowIso).run();
+    "INSERT INTO user_pomodoro_sessions (user_id, cycles, focus_minutes, xp_reward, gems_reward, doc_name, completed_at) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?)"
+  ).bind(user.userId, cycles, focusMinutes, xpReward, gemsReward, docName, nowIso).run();
 
   // Cộng thưởng XP và Đá quý vào user_stats
   const stats = await env.DB.prepare("SELECT * FROM user_stats WHERE user_id = ? LIMIT 1").bind(user.userId).first();
