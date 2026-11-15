@@ -528,12 +528,14 @@ async function api(path, options) {
   }
   return data;
 }
+window.api = api;
 
 function esc(value) {
   return String(value == null ? "" : value).replace(/[&<>"']/g, function (char) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char];
   });
 }
+window.esc = esc;
 
 function normalizeAnswer(value) {
   return String(value == null ? "" : value).trim().replace(/^[[(]\s*|\s*[)\].]$/g, "").toUpperCase();

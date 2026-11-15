@@ -4,17 +4,43 @@
  * - Chu kỳ chuẩn 25m Focus / 5m Break
  * - Thưởng +50 XP và 30 💎 mỗi ca 25 phút hoàn thành
  * - Tích lũy theo ca (1 ca = 1x, 2 ca = 2x, v.v.)
- * - Chế độ Siêu Tập Trung (Zen Mode) / Fullscreen chống phân tâm
- * - Chặn toàn bộ thông báo (DND Mode) khi đang trong phòng
+ * - Chế độ Safe Exam Browser / Fullscreen & DND Mode chống phân tâm
  * - Phím tắt thoát khẩn cấp: Ctrl + Q (hủy ca dở dang nếu chưa hết 25p)
- * - 4 kênh âm thanh Synth Web Audio API chạy 100% Offline (Lofi beat, Mưa rơi, Quán cafe, Tiếng lật sách) + Chuông báo
- * - Mascot Thỏ Bảy Màu động (Cắm cúi viết bài cực hài hước / Nghỉ ngơi trà sữa)
- * - Đính kèm tài liệu học (PDF, Text, Ảnh, Sổ tay ghi chú) hiển thị Split-Screen
- * - Trợ lý Mini Bot 3TG AI hỗ trợ giải bài tức thì không cần rời phòng
+ * - 4 Kênh âm thanh chill 100% Offline (Lofi beat, Mưa rơi, Quán cafe, Tiếng lật sách) + Chuông báo (Zen Bell)
+ * - Mascot Thỏ Bảy Màu động (Cắm cúi viết bài cực hài hước / Nghỉ ngơi trà sữa boba)
+ * - HỖ TRỢ NHIỀU TÀI LIỆU (Thêm bao nhiêu file cũng được!):
+ *   + Bên trái: Tab danh sách các file tài liệu & Sổ tay đã thêm
+ *   + Ở giữa: Trình đọc mở file tài liệu toàn màn hình
+ *   + Góc trên: Đồng hồ Pomodoro thu gọn thông minh (Clock Widget)
+ *   + Bên phải: Tab Cố vấn AI Bot 3TG đọc ngữ cảnh ngay trên màn hình (có công tắc bật/tắt quyền xem)
  * - Đồng bộ và lưu trữ lịch sử học tập vào Cloudflare D1 & SQLite
  */
 
 import { renderThoBayMau, THO_STATES } from "./tho-bay-mau.js";
+
+// Safe API caller helper
+async function callApi(path, options = {}) {
+  if (typeof window.api === "function") {
+    return window.api(path, options);
+  }
+  const config = Object.assign({ method: "GET", credentials: "same-origin" }, options);
+  config.headers = Object.assign({}, config.headers || {});
+  if (config.body && !(config.body instanceof FormData) && typeof config.body !== "string") {
+    config.headers["content-type"] = "application/json";
+    config.body = JSON.stringify(config.body);
+  }
+  const res = await fetch(path, config);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || data.message || "Lỗi kết nối máy chủ");
+  return data;
+}
+
+function safeEsc(value) {
+  if (typeof window.esc === "function") return window.esc(value);
+  return String(value == null ? "" : value).replace(/[&<>"']/g, function (char) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[char];
+  });
+}
 
 // ========================================================
 // 1. PROCEDURAL WEB AUDIO API SYNTHESIZER (100% OFFLINE)
@@ -24,7 +50,7 @@ export class PomodoroAudioEngine {
     this.ctx = null;
     this.masterGain = null;
     this.activeChannel = "none"; // "lofi" | "rain" | "cafe" | "book" | "none"
-    this.volume = 0.7; // 0.0 -> 1.0
+    this.volume = 0.8; // 0.0 -> 1.0
     this.nodes = [];
     this.intervalIds = [];
   }
@@ -95,7 +121,7 @@ export class PomodoroAudioEngine {
       b3 = 0.86650 * b3 + white * 0.3104856;
       b4 = 0.55000 * b4 + white * 0.5329522;
       b5 = -0.7616 * b5 - white * 0.0168980;
-      output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.07;
+      output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.085;
       b6 = white * 0.115926;
     }
 
@@ -105,16 +131,16 @@ export class PomodoroAudioEngine {
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+    filter.frequency.setValueAtTime(850, this.ctx.currentTime);
 
     const lfo = this.ctx.createOscillator();
     lfo.frequency.setValueAtTime(0.18, this.ctx.currentTime);
     const lfoGain = this.ctx.createGain();
-    lfoGain.gain.setValueAtTime(220, this.ctx.currentTime);
+    lfoGain.gain.setValueAtTime(240, this.ctx.currentTime);
     lfo.connect(filter.frequency);
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.65, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.75, this.ctx.currentTime);
 
     whiteNoise.connect(filter);
     filter.connect(gain);
@@ -125,17 +151,16 @@ export class PomodoroAudioEngine {
     this.nodes.push(whiteNoise, filter, lfo, lfoGain, gain);
   }
 
-  // --- Lofi Beats Generator (Rhodes E-Piano, Sub Kick, Rimshot & Tape Crackle) ---
+  // --- Lofi Beats Generator (Rhodes E-Piano Chords, Sub Kick, Rimshot & Tape Crackle) ---
   startLofiBeats() {
-    // 1. Vinyl tape crackle
     const bufLen = this.ctx.sampleRate * 2;
     const crackleBuf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
     const data = crackleBuf.getChannelData(0);
     for (let i = 0; i < bufLen; i++) {
       if (Math.random() < 0.001) {
-        data[i] = (Math.random() * 2 - 1) * 0.16;
+        data[i] = (Math.random() * 2 - 1) * 0.18;
       } else {
-        data[i] = (Math.random() * 2 - 1) * 0.01;
+        data[i] = (Math.random() * 2 - 1) * 0.012;
       }
     }
     const crackle = this.ctx.createBufferSource();
@@ -148,7 +173,7 @@ export class PomodoroAudioEngine {
     crackleFilter.Q.setValueAtTime(1.1, this.ctx.currentTime);
 
     const crackleGain = this.ctx.createGain();
-    crackleGain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    crackleGain.gain.setValueAtTime(0.3, this.ctx.currentTime);
 
     crackle.connect(crackleFilter);
     crackleFilter.connect(crackleGain);
@@ -156,7 +181,6 @@ export class PomodoroAudioEngine {
     crackle.start();
     this.nodes.push(crackle, crackleFilter, crackleGain);
 
-    // 2. Chords sequencer (Cmaj7, Am7, Dm7, G7)
     const chords = [
       [261.63, 329.63, 392.00, 493.88], // Cmaj7
       [220.00, 261.63, 329.63, 392.00], // Am7
@@ -183,7 +207,7 @@ export class PomodoroAudioEngine {
         f.frequency.setValueAtTime(950, now);
 
         chordGain.gain.setValueAtTime(0.0001, now);
-        chordGain.gain.exponentialRampToValueAtTime(0.055, now + 0.08);
+        chordGain.gain.exponentialRampToValueAtTime(0.065, now + 0.08);
         chordGain.gain.exponentialRampToValueAtTime(0.0001, now + barSec * 0.9);
 
         osc.connect(f);
@@ -203,7 +227,7 @@ export class PomodoroAudioEngine {
         const g = this.ctx.createGain();
         osc.frequency.setValueAtTime(105, now);
         osc.frequency.exponentialRampToValueAtTime(42, now + 0.15);
-        g.gain.setValueAtTime(0.2, now);
+        g.gain.setValueAtTime(0.22, now);
         g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
         osc.connect(g);
         g.connect(this.masterGain);
@@ -219,7 +243,7 @@ export class PomodoroAudioEngine {
         flt.type = "bandpass";
         flt.frequency.setValueAtTime(1700, now);
         const g = this.ctx.createGain();
-        g.gain.setValueAtTime(0.12, now);
+        g.gain.setValueAtTime(0.14, now);
         g.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
         src.connect(flt);
         flt.connect(g);
@@ -251,64 +275,76 @@ export class PomodoroAudioEngine {
     this.intervalIds.push(interval);
   }
 
-  // --- Cafe Ambiance ---
+  // --- ENHANCED CAFE AMBIANCE (Audible Chatter Murmur, Coffee Cup Clinks, Espresso Steam) ---
   startCafeAmbiance() {
     const bufLen = this.ctx.sampleRate * 3;
     const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
     const d = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * 0.045;
+    for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * 0.12;
     const noise = this.ctx.createBufferSource();
     noise.buffer = buf;
     noise.loop = true;
 
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.setValueAtTime(450, this.ctx.currentTime);
-    filter.Q.setValueAtTime(0.9, this.ctx.currentTime);
+    const filter1 = this.ctx.createBiquadFilter();
+    filter1.type = "lowpass";
+    filter1.frequency.setValueAtTime(850, this.ctx.currentTime);
+
+    const filter2 = this.ctx.createBiquadFilter();
+    filter2.type = "peaking";
+    filter2.frequency.setValueAtTime(500, this.ctx.currentTime);
+    filter2.gain.setValueAtTime(6, this.ctx.currentTime);
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.75, this.ctx.currentTime);
 
-    noise.connect(filter);
-    filter.connect(gain);
+    noise.connect(filter1);
+    filter1.connect(filter2);
+    filter2.connect(gain);
     gain.connect(this.masterGain);
     noise.start();
-    this.nodes.push(noise, filter, gain);
+    this.nodes.push(noise, filter1, filter2, gain);
 
-    const clinkInterval = setInterval(() => {
+    // Play porcelain cup / saucer clink (frequent & clear)
+    const playCupClink = () => {
       if (this.activeChannel !== "cafe" || !this.ctx) return;
-      if (Math.random() < 0.4) {
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const cg = this.ctx.createGain();
-        osc.frequency.setValueAtTime(1900 + Math.random() * 700, now);
-        cg.gain.setValueAtTime(0.035, now);
-        cg.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
-        osc.connect(cg);
-        cg.connect(this.masterGain);
-        osc.start(now);
-        osc.stop(now + 0.16);
-      }
-    }, 4000);
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const cg = this.ctx.createGain();
+      const freqs = [1950, 2400, 2850, 3200];
+      const f = freqs[Math.floor(Math.random() * freqs.length)];
+      osc.frequency.setValueAtTime(f, now);
+      cg.gain.setValueAtTime(0.18, now);
+      cg.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+      osc.connect(cg);
+      cg.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    };
+
+    // Trigger one immediately so user hears it upon selection
+    playCupClink();
+    const clinkInterval = setInterval(() => {
+      if (Math.random() < 0.75) playCupClink();
+    }, 2400);
     this.intervalIds.push(clinkInterval);
   }
 
-  // --- Book / Library Ambiance ---
+  // --- ENHANCED BOOK / LIBRARY AMBIANCE (Audible Paper Rustles & Page Flips) ---
   startBookFlipAmbiance() {
     const bufLen = this.ctx.sampleRate * 2;
     const buf = this.ctx.createBuffer(1, bufLen, this.ctx.sampleRate);
     const d = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * 0.012;
+    for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1) * 0.05;
     const roomTone = this.ctx.createBufferSource();
     roomTone.buffer = buf;
     roomTone.loop = true;
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.setValueAtTime(550, this.ctx.currentTime);
+    filter.frequency.setValueAtTime(750, this.ctx.currentTime);
 
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    gain.gain.setValueAtTime(0.55, this.ctx.currentTime);
 
     roomTone.connect(filter);
     filter.connect(gain);
@@ -316,30 +352,35 @@ export class PomodoroAudioEngine {
     roomTone.start();
     this.nodes.push(roomTone, filter, gain);
 
+    // Realistic crisp page turn sound
     const flipPage = () => {
       if (this.activeChannel !== "book" || !this.ctx) return;
       const now = this.ctx.currentTime;
-      const fBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.32), this.ctx.sampleRate);
+      const duration = 0.35;
+      const fBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * duration), this.ctx.sampleRate);
       const fd = fBuf.getChannelData(0);
       for (let i = 0; i < fd.length; i++) {
-        const env = Math.sin((i / fd.length) * Math.PI);
-        fd[i] = (Math.random() * 2 - 1) * env * 0.11;
+        const t = i / fd.length;
+        const envelope = (Math.sin(t * Math.PI * 2) ** 2) * Math.sin(t * Math.PI);
+        fd[i] = (Math.random() * 2 - 1) * envelope * 0.45;
       }
       const pageSrc = this.ctx.createBufferSource();
       pageSrc.buffer = fBuf;
       const pFlt = this.ctx.createBiquadFilter();
       pFlt.type = "bandpass";
-      pFlt.frequency.setValueAtTime(1500, now);
-      pFlt.Q.setValueAtTime(1.4, now);
+      pFlt.frequency.setValueAtTime(1800, now);
+      pFlt.Q.setValueAtTime(1.8, now);
       const pGain = this.ctx.createGain();
-      pGain.gain.setValueAtTime(0.3, now);
+      pGain.gain.setValueAtTime(0.65, now);
       pageSrc.connect(pFlt);
       pFlt.connect(pGain);
       pGain.connect(this.masterGain);
       pageSrc.start(now);
     };
 
-    const bookInterval = setInterval(flipPage, 8000);
+    // Trigger one immediately so user hears it upon selection
+    flipPage();
+    const bookInterval = setInterval(flipPage, 3200);
     this.intervalIds.push(bookInterval);
   }
 
@@ -355,7 +396,7 @@ export class PomodoroAudioEngine {
       osc.type = "sine";
       osc.frequency.setValueAtTime(freq, now + idx * 0.05);
 
-      g.gain.setValueAtTime(0.18 / (idx + 1), now + idx * 0.05);
+      g.gain.setValueAtTime(0.2 / (idx + 1), now + idx * 0.05);
       g.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
 
       osc.connect(g);
@@ -380,8 +421,15 @@ export const pomodoroState = {
   timerId: null,
   isPaused: false,
   completedCycles: 0,
-  currentDoc: null, // { name: "", type: "text"|"pdf"|"image"|"note", content: "" }
-  isDocExpanded: true,
+  
+  // MULTI-DOCUMENT ARCHITECTURE
+  docs: [], // Array of { id, name, type: "pdf"|"text"|"image"|"note", content, active }
+  activeDocId: null,
+  
+  // AI CONTEXT READING TOGGLE
+  aiReadScreenContext: true,
+  aiDockOpen: true,
+
   history: [],
   totalFocusMinutes: 0,
   totalCycles: 0,
@@ -391,9 +439,8 @@ export const pomodoroState = {
   peerStatusText: "Đang có 5 bạn trong nhóm 'hú' cùng ngồi học",
   quotesTimer: null,
   currentQuote: "Học đi không là sau này đi bốc vác đấy! ✍️",
-  aiDrawerOpen: false,
   aiChatHistory: [
-    { sender: "bot", text: "Xin chào! Mình là Trợ lý Bot 3TG trong phòng học Pomodoro 🎧 Bạn có câu hỏi nào về tài liệu hay bài học cần giải đáp không?" }
+    { sender: "bot", text: "Xin chào! Mình là Cố vấn AI Bot 3TG trong phòng học Pomodoro 🎧 Bật tùy chọn 'Đọc tài liệu trên màn hình' để mình xem và giải thích bài ngay cho bạn nhé!" }
   ],
   aiInput: "",
   isAskingAi: false,
@@ -431,7 +478,7 @@ function getRandomQuote(mode) {
 // 3. FULLSCREEN & SAFE EXAM BROWSER KIOSK HANDLING
 // ========================================================
 export async function enterPomodoroKiosk() {
-  window._isPomodoroActive = true; // DND: Block all notifications & popups
+  window._isPomodoroActive = true;
 
   try {
     if (window.electronAPI && typeof window.electronAPI.setFullscreen === "function") {
@@ -445,7 +492,7 @@ export async function enterPomodoroKiosk() {
 }
 
 export async function exitPomodoroKiosk() {
-  window._isPomodoroActive = false; // Restore notifications
+  window._isPomodoroActive = false;
 
   try {
     if (window.electronAPI && typeof window.electronAPI.setFullscreen === "function") {
@@ -458,7 +505,7 @@ export async function exitPomodoroKiosk() {
   document.body.classList.remove("pomodoro-kiosk-mode");
 }
 
-// Keyboard shortcut Ctrl + Q emergency exit listener
+// Emergency Exit (Ctrl + Q)
 window.addEventListener("keydown", (e) => {
   if (pomodoroState.active && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "q") {
     e.preventDefault();
@@ -479,6 +526,11 @@ export function startPomodoroSession() {
   pomodoroState.showCelebrationModal = false;
   pomodoroState.currentQuote = getRandomQuote("focus");
 
+  // Auto select first doc if available and none selected
+  if (!pomodoroState.activeDocId && pomodoroState.docs.length > 0) {
+    pomodoroState.activeDocId = pomodoroState.docs[0].id;
+  }
+
   enterPomodoroKiosk();
 
   // Start sound if selected
@@ -486,7 +538,6 @@ export function startPomodoroSession() {
   const selectedChannel = soundSelect ? soundSelect.value : (pomodoroAudio.activeChannel !== "none" ? pomodoroAudio.activeChannel : "lofi");
   pomodoroAudio.playChannel(selectedChannel);
 
-  // Clear previous intervals
   if (pomodoroState.timerId) clearInterval(pomodoroState.timerId);
   if (pomodoroState.quotesTimer) clearInterval(pomodoroState.quotesTimer);
 
@@ -506,15 +557,12 @@ function onPomodoroTick() {
     pomodoroState.remainingSeconds--;
     updatePomodoroDisplayInDom();
   } else {
-    // Phase completion!
     pomodoroAudio.playCompletionBell();
 
     if (pomodoroState.mode === "focus") {
-      // Completed 25 minutes Focus Cycle!
       pomodoroState.completedCycles++;
       handleFocusCycleCompleted();
     } else {
-      // Completed 5 minutes Break Cycle -> Automatically start next focus cycle
       pomodoroState.mode = "focus";
       pomodoroState.remainingSeconds = pomodoroState.focusDuration;
       pomodoroState.currentQuote = getRandomQuote("focus");
@@ -525,19 +573,20 @@ function onPomodoroTick() {
 }
 
 async function handleFocusCycleCompleted() {
-  // Award +50 XP and 30 💎 via API
   const xpAwarded = 50;
   const gemsAwarded = 30;
   pomodoroState.lastRewardXp = xpAwarded;
   pomodoroState.lastRewardGems = gemsAwarded;
 
+  const activeDoc = pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
+
   try {
-    const res = await window.api("/api/pomodoro/complete", {
+    const res = await callApi("/api/pomodoro/complete", {
       method: "POST",
       body: {
         cycles: 1,
         focusMinutes: 25,
-        docName: pomodoroState.currentDoc ? pomodoroState.currentDoc.name : null
+        docName: activeDoc ? activeDoc.name : (pomodoroState.docs.length > 0 ? pomodoroState.docs[0].name : null)
       }
     });
     if (res && res.ok) {
@@ -555,7 +604,6 @@ async function handleFocusCycleCompleted() {
     console.warn("[Pomodoro] Lưu kết quả thất bại:", err);
   }
 
-  // Switch to Break Mode (5 minutes)
   pomodoroState.mode = "break";
   pomodoroState.remainingSeconds = pomodoroState.breakDuration;
   pomodoroState.currentQuote = getRandomQuote("break");
@@ -580,7 +628,6 @@ export function closePomodoroExitConfirm() {
 }
 
 export function abandonPomodoroSession() {
-  // Stops session and leaves kiosk mode
   if (pomodoroState.timerId) clearInterval(pomodoroState.timerId);
   if (pomodoroState.quotesTimer) clearInterval(pomodoroState.quotesTimer);
   pomodoroAudio.stopAll();
@@ -623,8 +670,8 @@ export function finishBreakAndExit() {
 export async function loadPomodoroData() {
   try {
     const [peersRes, histRes] = await Promise.all([
-      window.api("/api/pomodoro/peers").catch(() => null),
-      window.api("/api/pomodoro/history").catch(() => null)
+      callApi("/api/pomodoro/peers").catch(() => null),
+      callApi("/api/pomodoro/history").catch(() => null)
     ]);
 
     if (peersRes) {
@@ -645,14 +692,114 @@ export async function loadPomodoroData() {
 }
 
 // ========================================================
-// 6. MINI BOT 3TG AI ASSISTANT DRAWER
+// 6. MULTI-DOCUMENT MANAGEMENT
 // ========================================================
-export function togglePomodoroAiDrawer() {
-  pomodoroState.aiDrawerOpen = !pomodoroState.aiDrawerOpen;
-  const drawer = document.getElementById("pomodoro-ai-drawer");
-  if (drawer) {
-    drawer.classList.toggle("open", pomodoroState.aiDrawerOpen);
+export function addMultipleLocalFiles(fileList) {
+  if (!fileList || fileList.length === 0) return;
+
+  Array.from(fileList).forEach(file => {
+    const isPdf = file.type === "application/pdf" || file.name.endsWith(".pdf");
+    const isImage = file.type.startsWith("image/");
+    const docId = "doc_" + Math.random().toString(36).slice(2, 9);
+
+    const reader = new FileReader();
+    if (isImage) {
+      reader.onload = (e) => {
+        pomodoroState.docs.push({
+          id: docId,
+          name: file.name,
+          type: "image",
+          content: e.target.result
+        });
+        if (!pomodoroState.activeDocId) pomodoroState.activeDocId = docId;
+        if (window.render) window.render();
+      };
+      reader.readAsDataURL(file);
+    } else if (isPdf) {
+      reader.onload = (e) => {
+        pomodoroState.docs.push({
+          id: docId,
+          name: file.name,
+          type: "pdf",
+          content: e.target.result
+        });
+        if (!pomodoroState.activeDocId) pomodoroState.activeDocId = docId;
+        if (window.render) window.render();
+      };
+      reader.readAsDataURL(file);
+    } else {
+      reader.onload = (e) => {
+        pomodoroState.docs.push({
+          id: docId,
+          name: file.name,
+          type: "text",
+          content: e.target.result
+        });
+        if (!pomodoroState.activeDocId) pomodoroState.activeDocId = docId;
+        if (window.render) window.render();
+      };
+      reader.readAsText(file);
+    }
+  });
+
+  if (window.showToast) window.showToast(`Đã thêm ${fileList.length} tài liệu học tập! ✨`);
+}
+
+export function addNoteToDocs(noteId) {
+  if (!window.state || !window.state.notes) return;
+  const note = window.state.notes.find(n => String(n.id) === String(noteId));
+  if (!note) return;
+
+  const docId = "note_" + note.id;
+  const existing = pomodoroState.docs.find(d => d.id === docId);
+  if (existing) {
+    pomodoroState.activeDocId = docId;
+  } else {
+    pomodoroState.docs.push({
+      id: docId,
+      name: note.title || "Ghi chú không tên",
+      type: "note",
+      content: note.content || ""
+    });
+    pomodoroState.activeDocId = docId;
   }
+  if (window.showToast) window.showToast(`Đã thêm ghi chú "${note.title}" vào bàn học! 📝`);
+  if (window.render) window.render();
+}
+
+export function setActiveDoc(docId) {
+  pomodoroState.activeDocId = docId;
+  if (window.render) window.render();
+}
+
+export function removeDoc(docId, event) {
+  if (event) event.stopPropagation();
+  pomodoroState.docs = pomodoroState.docs.filter(d => d.id !== docId);
+  if (pomodoroState.activeDocId === docId) {
+    pomodoroState.activeDocId = pomodoroState.docs.length > 0 ? pomodoroState.docs[0].id : null;
+  }
+  if (window.render) window.render();
+}
+
+export function closeActiveDoc() {
+  pomodoroState.activeDocId = null;
+  if (window.render) window.render();
+}
+
+// ========================================================
+// 7. MINI BOT 3TG AI ASSISTANT (ON-SCREEN CONTEXT READING)
+// ========================================================
+export function togglePomoAiContext(checked) {
+  pomodoroState.aiReadScreenContext = Boolean(checked);
+  if (window.showToast) {
+    window.showToast(checked ? "👀 Đã bật quyền đọc tài liệu trên màn hình cho AI!" : "🔒 Đã tắt quyền đọc tài liệu trên màn hình của AI.");
+  }
+}
+
+export function togglePomoAiDock() {
+  pomodoroState.aiDockOpen = !pomodoroState.aiDockOpen;
+  const dock = document.getElementById("pomo-ai-dock");
+  if (dock) dock.classList.toggle("collapsed", !pomodoroState.aiDockOpen);
 }
 
 export async function askPomodoroAi(customPrompt = null) {
@@ -664,20 +811,25 @@ export async function askPomodoroAi(customPrompt = null) {
   pomodoroState.aiInput = "";
   renderPomodoroAiMessages();
 
+  // Attach context of the document currently on screen if enabled
   let contextDoc = "";
-  if (pomodoroState.currentDoc && pomodoroState.currentDoc.content) {
-    contextDoc = `\n[Tài liệu đang học: ${pomodoroState.currentDoc.name}]:\n${pomodoroState.currentDoc.content.slice(0, 1500)}`;
+  const activeDoc = pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
+  if (pomodoroState.aiReadScreenContext && activeDoc && activeDoc.content) {
+    const textSnippet = activeDoc.type === "image" 
+      ? `(Người học đang mở ảnh sơ đồ/tài liệu: ${activeDoc.name})`
+      : activeDoc.content.slice(0, 3500);
+    contextDoc = `\n\n[NGỮ CẢNH TÀI LIỆU ĐANG HIỂN THỊ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n${textSnippet}\n[HÃY GIẢI ĐÁP DỰA TRÊN TÀI LIỆU TRÊN NẾU CÓ LIÊN QUAN]`;
   }
 
   try {
-    const res = await window.api("/api/chat", {
+    const res = await callApi("/api/chat", {
       method: "POST",
       body: {
         message: prompt + contextDoc
       }
     });
 
-    const reply = res?.reply || res?.message || "Thỏ Bảy Màu đã hiểu bài này! Cố lên nhé bạn!";
+    const reply = res?.reply || res?.message || "Thỏ Bảy Màu đã nắm được kiến thức bài này! Cố lên nhé bạn!";
     pomodoroState.aiChatHistory.push({ sender: "bot", text: reply });
   } catch (err) {
     pomodoroState.aiChatHistory.push({ sender: "bot", text: "Ối, có lỗi nhỏ khi kết nối Bot 3TG: " + err.message });
@@ -695,7 +847,7 @@ function renderPomodoroAiMessages() {
     <div class="pomo-ai-bubble ${m.sender}">
       <div class="pomo-ai-avatar">${m.sender === "bot" ? "🐰" : "👤"}</div>
       <div class="pomo-ai-text">
-        ${window.esc ? window.esc(m.text) : m.text}
+        ${safeEsc(m.text)}
         ${m.sender === "bot" ? `
           <button type="button" class="pomo-ai-save-btn" onclick="window.savePomoAiToNotes('${encodeURIComponent(m.text)}')">
             💾 Lưu vào Sổ tay
@@ -716,7 +868,7 @@ function renderPomodoroAiMessages() {
 window.savePomoAiToNotes = async function(encodedText) {
   const text = decodeURIComponent(encodedText);
   try {
-    await window.api("/api/notes", {
+    await callApi("/api/notes", {
       method: "POST",
       body: {
         title: "Ghi chú từ Phòng Pomodoro",
@@ -731,84 +883,7 @@ window.savePomoAiToNotes = async function(encodedText) {
 };
 
 // ========================================================
-// 7. DOCUMENT ATTACHMENT & SPLIT-VIEW CONTROLLER
-// ========================================================
-export function handleAttachLocalFile(file) {
-  if (!file) return;
-
-  const isPdf = file.type === "application/pdf" || file.name.endsWith(".pdf");
-  const isImage = file.type.startsWith("image/");
-  const isText = file.type.startsWith("text/") || file.name.endsWith(".txt") || file.name.endsWith(".md");
-
-  const reader = new FileReader();
-
-  if (isImage) {
-    reader.onload = (e) => {
-      pomodoroState.currentDoc = {
-        name: file.name,
-        type: "image",
-        content: e.target.result
-      };
-      if (window.showToast) window.showToast(`Đã đính kèm ảnh "${file.name}"! 🖼️`);
-      if (window.render) window.render();
-    };
-    reader.readAsDataURL(file);
-  } else if (isPdf) {
-    reader.onload = (e) => {
-      pomodoroState.currentDoc = {
-        name: file.name,
-        type: "pdf",
-        content: e.target.result
-      };
-      if (window.showToast) window.showToast(`Đã đính kèm PDF "${file.name}"! 📑`);
-      if (window.render) window.render();
-    };
-    reader.readAsDataURL(file);
-  } else {
-    reader.onload = (e) => {
-      pomodoroState.currentDoc = {
-        name: file.name,
-        type: "text",
-        content: e.target.result
-      };
-      if (window.showToast) window.showToast(`Đã đính kèm tài liệu "${file.name}"! 📄`);
-      if (window.render) window.render();
-    };
-    reader.readAsText(file);
-  }
-}
-
-export function handleAttachNote(noteId) {
-  if (!window.state || !window.state.notes) return;
-  const note = window.state.notes.find(n => String(n.id) === String(noteId));
-  if (note) {
-    pomodoroState.currentDoc = {
-      name: note.title || "Ghi chú không tên",
-      type: "note",
-      content: note.content || ""
-    };
-    if (window.showToast) window.showToast(`Đã chọn ghi chú "${pomodoroState.currentDoc.name}"! 📝`);
-    if (window.render) window.render();
-  }
-}
-
-export function clearAttachedDoc() {
-  pomodoroState.currentDoc = null;
-  if (window.render) window.render();
-}
-
-export function toggleDocSplitView() {
-  pomodoroState.isDocExpanded = !pomodoroState.isDocExpanded;
-  const docPane = document.getElementById("pomo-doc-pane");
-  const mainPane = document.getElementById("pomo-main-pane");
-  if (docPane && mainPane) {
-    docPane.classList.toggle("collapsed", !pomodoroState.isDocExpanded);
-    mainPane.classList.toggle("full-zen", !pomodoroState.isDocExpanded);
-  }
-}
-
-// ========================================================
-// 8. RENDERERS (LOBBY & ACTIVE ROOM)
+// 8. RENDERERS (LOBBY & WORKSPACE)
 // ========================================================
 
 function formatTime(totalSeconds) {
@@ -818,6 +893,7 @@ function formatTime(totalSeconds) {
 }
 
 function updatePomodoroDisplayInDom() {
+  // Update in central clock if present
   const timeEl = document.getElementById("pomo-clock-time");
   if (timeEl) timeEl.textContent = formatTime(pomodoroState.remainingSeconds);
 
@@ -825,14 +901,29 @@ function updatePomodoroDisplayInDom() {
   if (ringEl) {
     const total = pomodoroState.mode === "focus" ? pomodoroState.focusDuration : pomodoroState.breakDuration;
     const progress = (total - pomodoroState.remainingSeconds) / total;
-    const circumference = 2 * Math.PI * 110; // r = 110
+    const circumference = 2 * Math.PI * 110;
     const offset = circumference * (1 - progress);
     ringEl.style.strokeDashoffset = offset;
+  }
+
+  // Update in top collapsed widget if present
+  const topDigits = document.getElementById("pomo-top-widget-digits");
+  if (topDigits) topDigits.textContent = formatTime(pomodoroState.remainingSeconds);
+
+  const topProgress = document.getElementById("pomo-top-progress-bar");
+  if (topProgress) {
+    const total = pomodoroState.mode === "focus" ? pomodoroState.focusDuration : pomodoroState.breakDuration;
+    const pct = ((total - pomodoroState.remainingSeconds) / total) * 100;
+    topProgress.style.width = `${pct}%`;
   }
 
   const pauseBtn = document.getElementById("pomo-pause-btn");
   if (pauseBtn) {
     pauseBtn.innerHTML = pomodoroState.isPaused ? "▶ Tiếp tục" : "⏸ Tạm dừng";
+  }
+  const topPauseBtn = document.getElementById("pomo-top-pause-btn");
+  if (topPauseBtn) {
+    topPauseBtn.innerHTML = pomodoroState.isPaused ? "▶" : "⏸";
   }
 }
 
@@ -855,7 +946,7 @@ function updatePomodoroModalsInDom() {
   if (celebModal) celebModal.style.display = pomodoroState.showCelebrationModal ? "flex" : "none";
 }
 
-// Master Render Function
+// Master Router
 export function renderPomodoro() {
   if (pomodoroState.active) {
     return renderPomodoroActiveRoom();
@@ -863,7 +954,7 @@ export function renderPomodoro() {
   return renderPomodoroLobby();
 }
 
-// --- LOBBY SCREEN (Trước khi vào phòng) ---
+// --- LOBBY SCREEN (Chọn nhiều file, chọn âm thanh, xem lịch sử) ---
 function renderPomodoroLobby() {
   const notesList = (window.state && window.state.notes) || [];
 
@@ -875,7 +966,7 @@ function renderPomodoroLobby() {
           <div class="pomodoro-badge-pill">🎧 STUDY WITH ME • CHẾ ĐỘ SIÊU TẬP TRUNG ZEN</div>
           <h1 class="pomodoro-title">Phòng học Pomodoro cùng Thỏ Bảy Màu</h1>
           <p class="pomodoro-subtitle">
-            Cùng bạn bè ôn thi cuối kỳ, tập trung tuyệt đối không lướt điện thoại! Chu kỳ chuẩn 25 phút học / 5 phút nghỉ, âm thanh Lofi kích thích não bộ và nhận thưởng xứng đáng.
+            Cùng bạn bè ôn thi cuối kỳ, tập trung tuyệt đối không lướt điện thoại! Chu kỳ 25 phút học / 5 phút nghỉ, âm thanh Lofi & Cafe chill kích thích não bộ và nhận thưởng +50 XP & 30 💎 mỗi ca.
           </p>
 
           <!-- PEER STATUS BANNER -->
@@ -895,13 +986,13 @@ function renderPomodoroLobby() {
         </div>
       </div>
 
-      <!-- REWARD RULES CALLOUT -->
+      <!-- RULES ROW -->
       <div class="pomodoro-rules-card">
         <div class="rule-box">
           <div class="rule-icon">⏱️</div>
           <div class="rule-content">
             <strong>25 Phút Siêu Tập Trung</strong>
-            <span>Khóa chế độ toàn màn hình, tắt thông báo máy tính để tập trung tối đa như Safe Exam Browser.</span>
+            <span>Khóa toàn màn hình & tắt thông báo tin nhắn (như Safe Exam Browser) để chống sao nhãng.</span>
           </div>
         </div>
         <div class="rule-box">
@@ -920,40 +1011,53 @@ function renderPomodoroLobby() {
         </div>
       </div>
 
-      <!-- MAIN SETUP GRID -->
+      <!-- SETUP GRID -->
       <div class="pomodoro-setup-grid">
-        <!-- LEFT: STUDY DOCUMENT SELECTION -->
+        <!-- LEFT: MULTI-FILE SELECTION -->
         <div class="pomodoro-setup-card">
-          <h2 class="setup-card-title">📑 Chọn tài liệu cần học (Tùy chọn)</h2>
-          <p class="setup-card-desc">Gửi file hoặc chọn ghi chú để hiển thị chia đôi màn hình cùng đồng hồ học tập.</p>
+          <div class="setup-card-header-row">
+            <div>
+              <h2 class="setup-card-title">📑 Tài liệu cần học (Thêm không giới hạn)</h2>
+              <p class="setup-card-desc">Tải nhiều tài liệu hoặc chọn từ Sổ tay để xem ngay trên bàn học.</p>
+            </div>
+            <button type="button" class="btn-duo btn-duo-white" onclick="document.getElementById('pomo-multi-file-input').click()">
+              ＋ Thêm tệp
+            </button>
+          </div>
 
-          ${pomodoroState.currentDoc ? `
-            <div class="attached-doc-banner">
-              <span class="doc-icon">${pomodoroState.currentDoc.type === 'pdf' ? '📑' : pomodoroState.currentDoc.type === 'image' ? '🖼️' : '📝'}</span>
-              <div class="doc-info">
-                <strong>${window.esc ? window.esc(pomodoroState.currentDoc.name) : pomodoroState.currentDoc.name}</strong>
-                <small>${pomodoroState.currentDoc.type.toUpperCase()}</small>
+          <!-- Hidden Multi-file input -->
+          <input type="file" id="pomo-multi-file-input" style="display:none;" multiple accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp" onchange="window.handlePomoMultiFilesSelected(this)">
+
+          <!-- Document List Box -->
+          <div class="pomo-selected-docs-box">
+            ${pomodoroState.docs.length > 0 ? `
+              <div class="pomo-docs-chip-list">
+                ${pomodoroState.docs.map(doc => `
+                  <div class="pomo-doc-badge ${doc.id === pomodoroState.activeDocId ? 'active' : ''}">
+                    <span class="doc-badge-icon">${doc.type === 'pdf' ? '📑' : doc.type === 'image' ? '🖼️' : '📝'}</span>
+                    <span class="doc-badge-name" title="${safeEsc(doc.name)}">${safeEsc(doc.name)}</span>
+                    <button type="button" class="doc-badge-del" title="Xóa" onclick="window.removeDoc('${doc.id}', event)">✕</button>
+                  </div>
+                `).join("")}
               </div>
-              <button type="button" class="btn-remove-doc" onclick="window.clearAttachedDoc()">Gỡ bỏ ✕</button>
-            </div>
-          ` : `
-            <div class="doc-upload-dropzone" onclick="document.getElementById('pomo-file-input').click()">
-              <input type="file" id="pomo-file-input" style="display:none;" accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp" onchange="window.handlePomoFileSelected(this)">
-              <div class="dropzone-icon">📁</div>
-              <strong>Nhấp để tải tệp từ máy tính</strong>
-              <span>Hỗ trợ PDF, Text (.txt, .md), hoặc Ảnh tóm tắt bài học</span>
-            </div>
+            ` : `
+              <div class="doc-upload-dropzone" onclick="document.getElementById('pomo-multi-file-input').click()">
+                <div class="dropzone-icon">📁</div>
+                <strong>Nhấp hoặc kéo thả nhiều tệp vào đây</strong>
+                <span>Hỗ trợ chọn cùng lúc nhiều file PDF, Text (.txt, .md), hoặc Ảnh</span>
+              </div>
+            `}
+          </div>
 
-            <div class="doc-or-divider"><span>HOẶC CHỌN TỪ SỔ TAY GHI CHÚ</span></div>
+          <div class="doc-or-divider"><span>HOẶC CHỌN TỪ SỔ TAY GHI CHÚ</span></div>
 
-            <select class="form-input pomo-notes-select" onchange="window.handlePomoNoteSelected(this.value)">
-              <option value="">-- Chọn bài ghi chú từ Sổ tay 3TG --</option>
-              ${notesList.map(n => `<option value="${n.id}">${window.esc ? window.esc(n.title || 'Ghi chú không tên') : n.title}</option>`).join("")}
-            </select>
-          `}
+          <select class="form-input pomo-notes-select" onchange="if(this.value){ window.addNoteToDocs(this.value); this.value=''; }">
+            <option value="">-- Chọn bài ghi chú từ Sổ tay 3TG --</option>
+            ${notesList.map(n => `<option value="${n.id}">${safeEsc(n.title || 'Ghi chú không tên')}</option>`).join("")}
+          </select>
         </div>
 
-        <!-- RIGHT: AMBIENCE & ACTION -->
+        <!-- RIGHT: AMBIENCE & BIG START BUTTON -->
         <div class="pomodoro-setup-card">
           <h2 class="setup-card-title">🎵 Chọn âm thanh kích thích não bộ</h2>
           <p class="setup-card-desc">Âm thanh phòng học tự nhiên giúp tăng 40% khả năng tập trung (100% Offline).</p>
@@ -980,7 +1084,7 @@ function renderPomodoroLobby() {
               <div class="ambience-chip-card">
                 <span class="chip-icon">☕</span>
                 <strong>Quán Cafe</strong>
-                <small>Không gian ấm cúng</small>
+                <small>Chạm cốc & trò chuyện</small>
               </div>
             </label>
             <label class="ambience-chip-label">
@@ -988,7 +1092,7 @@ function renderPomodoroLobby() {
               <div class="ambience-chip-card">
                 <span class="chip-icon">📖</span>
                 <strong>Lật sách</strong>
-                <small>Tiếng thư viện yên tĩnh</small>
+                <small>Tiếng lật sách sột soạt</small>
               </div>
             </label>
           </div>
@@ -1046,7 +1150,7 @@ function renderPomodoroLobby() {
                 ${pomodoroState.history.map(s => `
                   <tr>
                     <td>${new Date(s.completed_at).toLocaleString('vi-VN')}</td>
-                    <td><strong>${window.esc ? window.esc(s.doc_name || 'Học tập trung tự do') : (s.doc_name || 'Học tập trung tự do')}</strong></td>
+                    <td><strong>${safeEsc(s.doc_name || 'Học tập trung tự do')}</strong></td>
                     <td><span class="cycle-pill">${s.cycles} ca</span></td>
                     <td>${s.focus_minutes} phút</td>
                     <td><span class="reward-pill">+${s.xp_reward} XP • +${s.gems_reward} 💎</span></td>
@@ -1063,144 +1167,226 @@ function renderPomodoroLobby() {
   `;
 }
 
-// --- ACTIVE ROOM SCREEN (Toàn màn hình Zen & Chia đôi màn hình) ---
+// --- ACTIVE WORKSPACE SCREEN (3 CỘT: Trái Tabs tài liệu - Giữa Reader/Zen - Phải Tab AI, Góc trên Clock Widget) ---
 function renderPomodoroActiveRoom() {
   const isFocus = pomodoroState.mode === "focus";
-  const hasDoc = Boolean(pomodoroState.currentDoc);
+  const activeDoc = pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
+  const notesList = (window.state && window.state.notes) || [];
 
   return `
     <div class="pomodoro-active-room ${isFocus ? 'focus-phase' : 'break-phase'}">
-      <!-- TOP STATUS & TOOLBAR BAR -->
+      <!-- TOP STATUS BAR WITH COLLAPSIBLE CLOCK WIDGET -->
       <header class="pomo-room-topbar">
         <div class="pomo-topbar-left">
           <div class="pomo-room-badge">
             <span class="pomo-live-dot"></span>
-            <span>${isFocus ? '🎯 CA HỌC TẬP TRUNG #' + (pomodoroState.completedCycles + 1) : '☕ GIỜ NGHỈ GIẢI LAO'}</span>
+            <span>${isFocus ? '🎯 CA #' + (pomodoroState.completedCycles + 1) : '☕ GIỜ NGHỈ GIẢI LAO'}</span>
           </div>
+
+          <!-- COMPACT COLLAPSIBLE POMODORO CLOCK WIDGET ON TOP -->
+          <div class="pomo-top-clock-widget">
+            <span class="widget-phase-label">${isFocus ? 'TẬP TRUNG' : 'GIẢI LAO'}</span>
+            <strong class="widget-time-digits" id="pomo-top-widget-digits">${formatTime(pomodoroState.remainingSeconds)}</strong>
+            <button type="button" class="widget-pause-btn" id="pomo-top-pause-btn" onclick="window.pausePomodoroTimer()" title="Tạm dừng / Tiếp tục">
+              ${pomodoroState.isPaused ? '▶' : '⏸'}
+            </button>
+            <div class="widget-progress-track">
+              <div class="widget-progress-fill" id="pomo-top-progress-bar" 
+                   style="width: ${(( (isFocus ? 1500 : 300) - pomodoroState.remainingSeconds ) / (isFocus ? 1500 : 300)) * 100}%;"></div>
+            </div>
+          </div>
+
           <div class="pomo-topbar-peers">${pomodoroState.peerStatusText}</div>
         </div>
 
         <div class="pomo-topbar-right">
-          <!-- Quick Sound Selector -->
+          <!-- 4 CHILL AUDIO CHANNELS -->
           <div class="pomo-sound-controls">
             <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'lofi' ? 'active' : ''}" title="Lofi Beats" onclick="window.pomodoroAudio.playChannel('lofi'); window.render();">🎵 Lofi</button>
             <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'rain' ? 'active' : ''}" title="Tiếng mưa" onclick="window.pomodoroAudio.playChannel('rain'); window.render();">🌧️ Mưa</button>
             <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'cafe' ? 'active' : ''}" title="Quán Cafe" onclick="window.pomodoroAudio.playChannel('cafe'); window.render();">☕ Cafe</button>
             <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'book' ? 'active' : ''}" title="Lật sách" onclick="window.pomodoroAudio.playChannel('book'); window.render();">📖 Sách</button>
-            <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'none' ? 'active' : ''}" title="Tắt tiếng" onclick="window.pomodoroAudio.stopAll(); window.render();">🔇 Tắt</button>
+            <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'none' ? 'active' : ''}" title="Tắt âm" onclick="window.pomodoroAudio.stopAll(); window.render();">🔇 Tắt</button>
           </div>
 
-          <!-- Mini Bot 3TG Drawer Toggle -->
-          <button type="button" class="btn-duo btn-duo-white pomo-ai-drawer-btn" onclick="window.togglePomodoroAiDrawer()">
-            💬 Hỏi Bot 3TG
-          </button>
-
-          <!-- Emergency Exit Button -->
-          <button type="button" class="btn-duo btn-pomo-exit-btn" onclick="window.openPomodoroExitConfirm()" title="Nhấn Ctrl + Q để thoát nhanh">
+          <!-- EMERGENCY EXIT BUTTON (Ctrl + Q) -->
+          <button type="button" class="btn-duo btn-pomo-exit-btn" onclick="window.openPomodoroExitConfirm()" title="Nhấn Ctrl + Q để thoát">
             🚪 Thoát (Ctrl + Q)
           </button>
         </div>
       </header>
 
-      <!-- SPLIT WORKSPACE BODY -->
-      <main class="pomo-room-body ${hasDoc && pomodoroState.isDocExpanded ? 'with-doc' : 'zen-only'}">
-        <!-- LEFT: DOCUMENT VIEWER PANE (IF ATTACHED) -->
-        ${hasDoc ? `
-          <section class="pomo-doc-pane ${!pomodoroState.isDocExpanded ? 'collapsed' : ''}" id="pomo-doc-pane">
-            <div class="pomo-doc-header">
-              <div class="pomo-doc-title-row">
-                <span class="doc-type-badge">${pomodoroState.currentDoc.type.toUpperCase()}</span>
-                <strong class="pomo-doc-name">${window.esc ? window.esc(pomodoroState.currentDoc.name) : pomodoroState.currentDoc.name}</strong>
-              </div>
-              <button type="button" class="pomo-doc-toggle-btn" onclick="window.toggleDocSplitView()" title="Thu gọn / Mở rộng tài liệu">
-                ${pomodoroState.isDocExpanded ? '◀ Thu gọn' : '▶ Xem tài liệu'}
-              </button>
-            </div>
-            <div class="pomo-doc-content-viewer">
-              ${renderDocContent(pomodoroState.currentDoc)}
-            </div>
-          </section>
-        ` : ""}
-
-        <!-- RIGHT / CENTER: POMODORO CLOCK & MASCOT ARENA -->
-        <section class="pomo-main-pane ${!hasDoc || !pomodoroState.isDocExpanded ? 'full-zen' : ''}" id="pomo-main-pane">
-          <!-- SPEECH BUBBLE -->
-          <div class="pomo-mascot-speech-wrap">
-            <div class="pomo-rabbit-speech-bubble" id="pomo-rabbit-speech-bubble">
-              ${pomodoroState.currentQuote}
-            </div>
-          </div>
-
-          <!-- MASCOT ANIMATION -->
-          <div class="pomo-mascot-stage">
-            ${isFocus 
-              ? renderThoBayMau({ state: THO_STATES.POMODORO_FOCUS, size: 230 }) 
-              : renderThoBayMau({ state: THO_STATES.POMODORO_BREAK, size: 230 })}
-          </div>
-
-          <!-- CIRCULAR SVG POMODORO TIMER -->
-          <div class="pomo-clock-wrap">
-            <svg class="pomo-clock-svg" viewBox="0 0 260 260">
-              <circle class="pomo-clock-track" cx="130" cy="130" r="110" />
-              <circle class="pomo-clock-fill" id="pomo-progress-ring-circle" cx="130" cy="130" r="110" 
-                      style="stroke-dasharray: ${2 * Math.PI * 110}; stroke-dashoffset: ${2 * Math.PI * 110 * (1 - ((isFocus ? 1500 : 300) - pomodoroState.remainingSeconds) / (isFocus ? 1500 : 300))};" />
-            </svg>
-            <div class="pomo-clock-center">
-              <span class="pomo-clock-phase">${isFocus ? 'SIÊU TẬP TRUNG' : 'GIẢI LAO THẢ LỎNG'}</span>
-              <span class="pomo-clock-digits" id="pomo-clock-time">${formatTime(pomodoroState.remainingSeconds)}</span>
-              <span class="pomo-clock-reward">${isFocus ? '+50 XP • +30 💎' : 'Đang tính điểm ca ' + pomodoroState.completedCycles}</span>
-            </div>
-          </div>
-
-          <!-- TIMER ACTIONS -->
-          <div class="pomo-clock-actions">
-            <button type="button" class="btn-duo btn-duo-white" id="pomo-pause-btn" onclick="window.pausePomodoroTimer()">
-              ${pomodoroState.isPaused ? '▶ Tiếp tục' : '⏸ Tạm dừng'}
+      <!-- 3-PANE WORKSPACE: LEFT (DOC TABS) | CENTER (DOCUMENT VIEWER / FULL CLOCK) | RIGHT (AI ASSISTANT TAB) -->
+      <main class="pomo-room-body">
+        
+        <!-- ==================== CỘT TRÁI: TAB DANH SÁCH FILE TÀI LIỆU ==================== -->
+        <aside class="pomo-files-sidebar" id="pomo-files-sidebar">
+          <div class="pomo-sidebar-header">
+            <strong class="sidebar-title">📁 TÀI LIỆU HỌC (${pomodoroState.docs.length})</strong>
+            <button type="button" class="btn-sidebar-add" onclick="document.getElementById('pomo-sidebar-file-input').click()" title="Thêm file từ máy">
+              ＋ Tệp
             </button>
-            ${!isFocus ? `
-              <button type="button" class="btn-duo btn-duo-pink" onclick="window.finishBreakAndContinue()">
-                ⚡ Vào ca tiếp theo ngay
-              </button>
-              <button type="button" class="btn-duo btn-duo-white" onclick="window.finishBreakAndExit()">
-                ✅ Nghỉ ngơi & Lưu kết quả
-              </button>
+            <input type="file" id="pomo-sidebar-file-input" style="display:none;" multiple accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp" onchange="window.handlePomoMultiFilesSelected(this)">
+          </div>
+
+          <!-- Quick Notes Dropdown in sidebar -->
+          <div class="sidebar-note-selector-wrap">
+            <select class="sidebar-note-select" onchange="if(this.value){ window.addNoteToDocs(this.value); this.value=''; }">
+              <option value="">＋ Thêm từ Sổ tay ghi chú...</option>
+              ${notesList.map(n => `<option value="${n.id}">${safeEsc(n.title || 'Ghi chú không tên')}</option>`).join("")}
+            </select>
+          </div>
+
+          <!-- List of Added Documents -->
+          <div class="pomo-files-list">
+            ${pomodoroState.docs.map(doc => `
+              <div class="pomo-file-item ${doc.id === pomodoroState.activeDocId ? 'active' : ''}" onclick="window.setActiveDoc('${doc.id}')">
+                <span class="file-item-icon">${doc.type === 'pdf' ? '📑' : doc.type === 'image' ? '🖼️' : '📝'}</span>
+                <span class="file-item-name" title="${safeEsc(doc.name)}">${safeEsc(doc.name)}</span>
+                <button type="button" class="file-item-close" title="Gỡ file" onclick="window.removeDoc('${doc.id}', event)">✕</button>
+              </div>
+            `).join("")}
+
+            ${pomodoroState.docs.length === 0 ? `
+              <div class="pomo-files-empty">
+                Chưa có tài liệu nào.<br>Bấm <strong>＋ Tệp</strong> để thêm tài liệu học tập vào đây!
+              </div>
             ` : ""}
           </div>
-        </section>
-      </main>
 
-      <!-- SLIDE-OUT MINI AI DRAWER -->
-      <aside class="pomodoro-ai-drawer ${pomodoroState.aiDrawerOpen ? 'open' : ''}" id="pomodoro-ai-drawer">
-        <div class="pomo-ai-header">
-          <div class="pomo-ai-title">💬 Cố vấn Học vụ Bot 3TG AI</div>
-          <button type="button" class="pomo-ai-close-btn" onclick="window.togglePomodoroAiDrawer()">✕</button>
-        </div>
-        <div class="pomo-ai-quick-prompts">
-          <button type="button" class="ai-chip" onclick="window.askPomodoroAi('Tóm tắt 3 ý trọng tâm của tài liệu này')">📌 Tóm tắt 3 ý chính</button>
-          <button type="button" class="ai-chip" onclick="window.askPomodoroAi('Giải thích công thức này bằng ví dụ dễ hiểu')">💡 Giải thích dễ hiểu</button>
-          <button type="button" class="ai-chip" onclick="window.askPomodoroAi('Cho tôi 2 câu hỏi trắc nghiệm tự luyện')">🎯 2 câu trắc nghiệm</button>
-        </div>
-        <div class="pomo-ai-chat-thread" id="pomo-ai-chat-thread">
-          ${pomodoroState.aiChatHistory.map(m => `
-            <div class="pomo-ai-bubble ${m.sender}">
-              <div class="pomo-ai-avatar">${m.sender === "bot" ? "🐰" : "👤"}</div>
-              <div class="pomo-ai-text">
-                ${window.esc ? window.esc(m.text) : m.text}
-                ${m.sender === "bot" ? `
-                  <button type="button" class="pomo-ai-save-btn" onclick="window.savePomoAiToNotes('${encodeURIComponent(m.text)}')">
-                    💾 Lưu vào Sổ tay
+          <!-- View Mode Toggle Button -->
+          <div class="pomo-sidebar-bottom">
+            <button type="button" class="btn-zen-mode-toggle ${!pomodoroState.activeDocId ? 'active' : ''}" onclick="window.closeActiveDoc()">
+              ${!pomodoroState.activeDocId ? '🎯 Đang ở Chế độ Zen' : '🧘 Thu gọn sang Chế độ Zen'}
+            </button>
+          </div>
+        </aside>
+
+        <!-- ==================== Ở GIỮA: MỞ FILE HOẶC ĐỒNG HỒ ZEN TOÀN PHẦN ==================== -->
+        <section class="pomo-center-stage ${activeDoc ? 'doc-mode' : 'clock-mode'}">
+          ${activeDoc ? `
+            <!-- KHI ĐANG MỞ FILE TÀI LIỆU: TRÌNH ĐỌC TRUNG TÂM -->
+            <div class="pomo-doc-full-viewer">
+              <div class="doc-viewer-header">
+                <div class="doc-viewer-title-row">
+                  <span class="doc-badge-pill">${activeDoc.type.toUpperCase()}</span>
+                  <strong class="doc-active-name">${safeEsc(activeDoc.name)}</strong>
+                </div>
+                <div class="doc-viewer-actions">
+                  <button type="button" class="btn-viewer-tool" onclick="window.closeActiveDoc()" title="Đóng file xem đồng hồ">
+                    Đóng tài liệu ✕
+                  </button>
+                </div>
+              </div>
+              <div class="doc-viewer-scrollable-body">
+                ${renderDocContent(activeDoc)}
+              </div>
+            </div>
+          ` : `
+            <!-- KHI CHƯA MỞ FILE: ĐỒNG HỒ POMODORO & MASCOT THỎ BẢY MÀU CHÍNH DIỆN -->
+            <div class="pomo-zen-clock-arena">
+              <!-- SPEECH BUBBLE -->
+              <div class="pomo-mascot-speech-wrap">
+                <div class="pomo-rabbit-speech-bubble" id="pomo-rabbit-speech-bubble">
+                  ${pomodoroState.currentQuote}
+                </div>
+              </div>
+
+              <!-- MASCOT ANIMATION -->
+              <div class="pomo-mascot-stage">
+                ${isFocus 
+                  ? renderThoBayMau({ state: THO_STATES.POMODORO_FOCUS, size: 240 }) 
+                  : renderThoBayMau({ state: THO_STATES.POMODORO_BREAK, size: 240 })}
+              </div>
+
+              <!-- CIRCULAR SVG POMODORO TIMER -->
+              <div class="pomo-clock-wrap">
+                <svg class="pomo-clock-svg" viewBox="0 0 260 260">
+                  <circle class="pomo-clock-track" cx="130" cy="130" r="110" />
+                  <circle class="pomo-clock-fill" id="pomo-progress-ring-circle" cx="130" cy="130" r="110" 
+                          style="stroke-dasharray: ${2 * Math.PI * 110}; stroke-dashoffset: ${2 * Math.PI * 110 * (1 - ((isFocus ? 1500 : 300) - pomodoroState.remainingSeconds) / (isFocus ? 1500 : 300))};" />
+                </svg>
+                <div class="pomo-clock-center">
+                  <span class="pomo-clock-phase">${isFocus ? 'SIÊU TẬP TRUNG' : 'GIẢI LAO THẢ LỎNG'}</span>
+                  <span class="pomo-clock-digits" id="pomo-clock-time">${formatTime(pomodoroState.remainingSeconds)}</span>
+                  <span class="pomo-clock-reward">${isFocus ? '+50 XP • +30 💎' : 'Đang tính điểm ca ' + pomodoroState.completedCycles}</span>
+                </div>
+              </div>
+
+              <!-- TIMER ACTIONS -->
+              <div class="pomo-clock-actions">
+                <button type="button" class="btn-duo btn-duo-white" id="pomo-pause-btn" onclick="window.pausePomodoroTimer()">
+                  ${pomodoroState.isPaused ? '▶ Tiếp tục' : '⏸ Tạm dừng'}
+                </button>
+                ${!isFocus ? `
+                  <button type="button" class="btn-duo btn-duo-pink" onclick="window.finishBreakAndContinue()">
+                    ⚡ Vào ca tiếp theo ngay
+                  </button>
+                  <button type="button" class="btn-duo btn-duo-white" onclick="window.finishBreakAndExit()">
+                    ✅ Nghỉ ngơi & Lưu kết quả
                   </button>
                 ` : ""}
               </div>
             </div>
-          `).join("")}
-        </div>
-        <div class="pomo-ai-footer">
-          <input type="text" class="pomo-ai-input" placeholder="Hỏi Bot 3TG về bài học..." value="${pomodoroState.aiInput}" 
-                 oninput="window.pomodoroState.aiInput = this.value" onkeydown="if(event.key === 'Enter') window.askPomodoroAi()">
-          <button type="button" class="pomo-ai-send-btn" onclick="window.askPomodoroAi()">Gửi ➔</button>
-        </div>
-      </aside>
+          `}
+        </section>
+
+        <!-- ==================== BÊN PHẢI: TAB CỐ VẤN BOT 3TG AI ĐỌC NGỮ CẢNH ==================== -->
+        <aside class="pomo-ai-dock ${pomodoroState.aiDockOpen ? 'open' : 'collapsed'}" id="pomo-ai-dock">
+          <!-- Dock Header -->
+          <div class="pomo-ai-dock-header">
+            <div class="ai-dock-title-wrap">
+              <span class="ai-dock-sparkle">✨</span>
+              <strong>Cố vấn Bot 3TG AI</strong>
+            </div>
+            <button type="button" class="btn-dock-toggle" onclick="window.togglePomoAiDock()" title="Thu nhỏ / Mở rộng Tab AI">
+              ${pomodoroState.aiDockOpen ? '➔' : '◀'}
+            </button>
+          </div>
+
+          <!-- CONTEXT READING TOGGLE SWITCH -->
+          <div class="pomo-ai-context-bar">
+            <label class="pomo-ai-context-label" title="Khi bật, AI sẽ tự động đọc nội dung tài liệu đang mở ở màn hình giữa để giải thích và tóm tắt">
+              <input type="checkbox" ${pomodoroState.aiReadScreenContext ? 'checked' : ''} onchange="window.togglePomoAiContext(this.checked)">
+              <span class="pomo-switch-slider"></span>
+              <span class="context-switch-text">👀 Đọc tài liệu trên màn hình</span>
+            </label>
+            ${activeDoc ? `<span class="context-active-indicator" title="Đang liên kết: ${safeEsc(activeDoc.name)}">● Đang liên kết</span>` : `<span class="context-idle-indicator">Chưa mở file</span>`}
+          </div>
+
+          <!-- Quick Prompts Chips -->
+          <div class="pomo-ai-quick-prompts">
+            <button type="button" class="ai-chip" onclick="window.askPomodoroAi('Tóm tắt 3 ý trọng tâm của tài liệu trên màn hình')">📌 Tóm tắt 3 ý</button>
+            <button type="button" class="ai-chip" onclick="window.askPomodoroAi('Giải thích công thức và kiến thức trên màn hình bằng ví dụ dễ hiểu')">💡 Giải thích dễ hiểu</button>
+            <button type="button" class="ai-chip" onclick="window.askPomodoroAi('Tạo 3 câu hỏi trắc nghiệm kèm giải thích dựa vào bài này')">🎯 3 câu trắc nghiệm</button>
+          </div>
+
+          <!-- Chat Thread -->
+          <div class="pomo-ai-chat-thread" id="pomo-ai-chat-thread">
+            ${pomodoroState.aiChatHistory.map(m => `
+              <div class="pomo-ai-bubble ${m.sender}">
+                <div class="pomo-ai-avatar">${m.sender === "bot" ? "🐰" : "👤"}</div>
+                <div class="pomo-ai-text">
+                  ${safeEsc(m.text)}
+                  ${m.sender === "bot" ? `
+                    <button type="button" class="pomo-ai-save-btn" onclick="window.savePomoAiToNotes('${encodeURIComponent(m.text)}')">
+                      💾 Lưu vào Sổ tay
+                    </button>
+                  ` : ""}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+
+          <!-- Chat Composer Footer -->
+          <div class="pomo-ai-footer">
+            <input type="text" class="pomo-ai-input" placeholder="Hỏi Bot 3TG về bài học..." value="${pomodoroState.aiInput}" 
+                   oninput="window.pomodoroState.aiInput = this.value" onkeydown="if(event.key === 'Enter') window.askPomodoroAi()">
+            <button type="button" class="pomo-ai-send-btn" onclick="window.askPomodoroAi()">Gửi ➔</button>
+          </div>
+        </aside>
+
+      </main>
 
       <!-- MODAL: CONFIRM EMERGENCY EXIT (Ctrl + Q) -->
       <div class="pomo-modal-backdrop" id="pomo-exit-confirm-modal" style="display: ${pomodoroState.showExitModal ? 'flex' : 'none'};">
@@ -1253,20 +1439,24 @@ function renderDocContent(doc) {
   if (!doc) return `<div class="pomo-doc-empty">Chưa có tài liệu</div>`;
 
   if (doc.type === "image") {
-    return `<div class="pomo-doc-img-wrap"><img src="${doc.content}" alt="${doc.name}" class="pomo-doc-image"></div>`;
+    return `
+      <div class="pomo-doc-img-wrap">
+        <img src="${doc.content}" alt="${safeEsc(doc.name)}" class="pomo-doc-image">
+      </div>
+    `;
   }
 
   if (doc.type === "pdf") {
     return `
       <div class="pomo-doc-pdf-wrap">
-        <iframe src="${doc.content}" class="pomo-pdf-iframe" title="${doc.name}"></iframe>
+        <iframe src="${doc.content}" class="pomo-pdf-iframe" title="${safeEsc(doc.name)}"></iframe>
       </div>
     `;
   }
 
   return `
     <div class="pomo-doc-text-wrap">
-      <pre class="pomo-doc-pre">${window.esc ? window.esc(doc.content) : doc.content}</pre>
+      <pre class="pomo-doc-pre">${safeEsc(doc.content)}</pre>
     </div>
   `;
 }
@@ -1281,13 +1471,20 @@ window.closePomodoroExitConfirm = closePomodoroExitConfirm;
 window.abandonPomodoroSession = abandonPomodoroSession;
 window.finishBreakAndContinue = finishBreakAndContinue;
 window.finishBreakAndExit = finishBreakAndExit;
-window.togglePomodoroAiDrawer = togglePomodoroAiDrawer;
 window.askPomodoroAi = askPomodoroAi;
-window.handlePomoFileSelected = (input) => {
-  if (input.files && input.files[0]) handleAttachLocalFile(input.files[0]);
+window.togglePomoAiContext = togglePomoAiContext;
+window.togglePomoAiDock = togglePomoAiDock;
+
+window.handlePomoMultiFilesSelected = (input) => {
+  if (input.files && input.files.length > 0) {
+    addMultipleLocalFiles(input.files);
+    input.value = "";
+  }
 };
-window.handlePomoNoteSelected = handleAttachNote;
-window.clearAttachedDoc = clearAttachedDoc;
-window.toggleDocSplitView = toggleDocSplitView;
+window.addNoteToDocs = addNoteToDocs;
+window.setActiveDoc = setActiveDoc;
+window.removeDoc = removeDoc;
+window.closeActiveDoc = closeActiveDoc;
+
 window.renderPomodoro = renderPomodoro;
 window.loadPomodoroData = loadPomodoroData;
