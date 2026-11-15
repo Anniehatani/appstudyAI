@@ -464,6 +464,26 @@ function setupTopbarPopovers() {
 }
 window.setupTopbarPopovers = setupTopbarPopovers;
 
+let isHandlingSessionExpired = false;
+export function handleSessionExpired() {
+  if (isHandlingSessionExpired) return;
+  isHandlingSessionExpired = true;
+  showToast("Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại để tiếp tục học nhé!", true);
+  state.profile = null;
+  state.account = null;
+  state.authTab = "login";
+  state.page = "home";
+  if (typeof globalNotificationTimer !== "undefined" && globalNotificationTimer) {
+    clearInterval(globalNotificationTimer);
+  }
+  updateShell();
+  render();
+  setTimeout(() => {
+    isHandlingSessionExpired = false;
+  }, 3000);
+}
+window.handleSessionExpired = handleSessionExpired;
+
 // ========================================================
 // API CLIENT (VỚI BẮT MẤT KẾT NỐI MẠNG & TỰ HỒI PHỤC)
 // ========================================================
@@ -498,6 +518,9 @@ async function api(path, options) {
   let data = {};
   try { data = await response.json(); } catch {}
   if (!response.ok) {
+    if (response.status === 401 && path !== "/api/session" && path !== "/api/auth/login" && path !== "/api/auth/register") {
+      handleSessionExpired();
+    }
     const error = new Error(data.error || "3TG chưa tải được dữ liệu.");
     error.status = response.status;
     throw error;
@@ -6332,12 +6355,19 @@ window.switchShopTab = function(tab) {
 // SHOP (CỬA HÀNG ĐÁ QUÝ)
 // ========================================================
 let shopData = null;
+let isFetchingShop = false;
 async function fetchShop() {
+  if (isFetchingShop) return;
+  isFetchingShop = true;
   try {
     shopData = await api("/api/shop");
     render();
   } catch (err) {
-    showToast(err.message, true);
+    if (err.status !== 401) {
+      showToast(err.message, true);
+    }
+  } finally {
+    isFetchingShop = false;
   }
 }
 
