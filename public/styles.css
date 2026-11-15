@@ -12519,9 +12519,68 @@ body.pomodoro-kiosk-mode .page-view-enter {
   box-sizing: border-box;
 }
 .pomo-ai-dock.collapsed {
-  width: 48px !important;
-  min-width: 48px !important;
-  max-width: 48px !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  background: var(--card-bg, #ffffff);
+  border-left: 2px solid var(--theme-accent, #ff4b82);
+  cursor: pointer;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  padding: 0 !important;
+  user-select: none;
+}
+.pomo-ai-dock.collapsed .pomo-ai-dock-header,
+.pomo-ai-dock.collapsed .pomo-ai-context-bar,
+.pomo-ai-dock.collapsed .pomo-ai-quick-prompts,
+.pomo-ai-dock.collapsed .pomo-ai-chat-thread,
+.pomo-ai-dock.collapsed .pomo-ai-footer {
+  display: none !important;
+}
+.pomo-ai-dock .pomo-ai-collapsed-handle {
+  display: none;
+}
+.pomo-ai-dock.collapsed .pomo-ai-collapsed-handle {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 16px !important;
+  height: 100% !important;
+  width: 100% !important;
+  padding: 20px 0 !important;
+}
+.collapsed-handle-icon {
+  font-size: 20px;
+  animation: bounceSoft 2.5s infinite ease-in-out;
+}
+.collapsed-handle-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--ink-700);
+}
+.collapsed-handle-arrow {
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--theme-accent, #ff4b82);
+  background: rgba(255, 75, 130, 0.12);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+.pomo-ai-dock.collapsed:hover .collapsed-handle-arrow {
+  transform: translateX(-3px);
+  background: var(--theme-accent, #ff4b82);
+  color: #ffffff;
 }
 .pomo-ai-dock-header {
   padding: 12px 14px;
@@ -12659,11 +12718,277 @@ body.pomodoro-kiosk-mode .page-view-enter {
 }
 .pomo-ai-text {
   background: var(--bg-page, #f1f5f9);
-  border-radius: 12px;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--ink-900);
+  word-break: break-word;
+}
+.pomo-ai-text .pomo-ai-para {
+  margin: 0 0 10px 0;
+}
+.pomo-ai-text .pomo-ai-para:last-child {
+  margin-bottom: 0;
+}
+.pomo-ai-text .pomo-ai-strong {
+  font-weight: 800;
+  color: var(--ink-900);
+}
+.pomo-ai-text .pomo-ai-callout {
+  border-left: 3.5px solid var(--theme-accent, #ff4b82);
+  background: rgba(255, 75, 130, 0.08);
   padding: 8px 12px;
+  border-radius: 0 8px 8px 0;
+  margin: 8px 0;
   font-size: 13px;
+  line-height: 1.55;
+}
+.pomo-ai-text .pomo-ai-step-block {
+  background: var(--card-bg, #ffffff);
+  border: 1.5px solid var(--border-light, #e2e8f0);
+  border-left: 4px solid var(--theme-accent, #ff4b82);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 10px 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+.pomo-ai-text .pomo-ai-list-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.pomo-ai-text .pomo-ai-list-num {
+  font-weight: 900;
+  color: var(--theme-accent, #ff4b82);
+  flex-shrink: 0;
+}
+.pomo-ai-text .pomo-ai-bullet-list {
+  margin: 6px 0 10px 18px;
+  padding: 0;
+}
+.pomo-ai-text .pomo-ai-bullet-list li {
+  margin-bottom: 4px;
   line-height: 1.5;
+}
+.pomo-ai-text .pomo-math-block {
+  background: var(--card-bg, #ffffff);
+  border: 1.5px solid var(--border-light, #cbd5e1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  text-align: center;
+  font-family: 'Cambria Math', 'KaTeX_Math', 'Times New Roman', serif;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--ink-900);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  overflow-x: auto;
+}
+.pomo-ai-text .pomo-math-inline {
+  font-family: 'Cambria Math', 'KaTeX_Math', 'Times New Roman', serif;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--theme-accent, #ff4b82);
+  background: rgba(255, 75, 130, 0.08);
+  padding: 2px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.pomo-ai-text .math-frac {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  text-align: center;
+  margin: 0 4px;
+  font-size: 0.9em;
+  line-height: 1.1;
+}
+.pomo-ai-text .frac-num {
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
+}
+.pomo-ai-text .frac-den {
+  padding-top: 1px;
+}
+.pomo-ai-text .frac-bar {
+  display: none;
+}
+.pomo-ai-text .pomo-ai-code {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  background: rgba(0,0,0,0.06);
+  padding: 2px 5px;
+  border-radius: 5px;
+  color: #e11d48;
+}
+.sidebar-locked-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ink-500);
+  background: var(--bg-page, #f1f5f9);
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light, #e2e8f0);
+}
+.pomo-doc-media-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+}
+.pomo-center-video {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+}
+.pomo-doc-audio-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 24px;
+  height: 100%;
+}
+.audio-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--card-bg, #ffffff);
+  border: 2px solid var(--theme-accent, #ff4b82);
+  padding: 20px 28px;
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(255, 75, 130, 0.15);
+}
+.audio-banner-icon {
+  font-size: 36px;
+}
+.audio-banner-info strong {
+  display: block;
+  font-size: 16px;
+  color: var(--ink-900);
+}
+.audio-banner-info span {
+  font-size: 13px;
+  color: var(--ink-500);
+}
+.pomo-center-audio {
+  width: 420px;
+  max-width: 90%;
+}
+.pomo-doc-office-wrap {
+  padding: 24px;
+  overflow-y: auto;
+  height: 100%;
+}
+.office-doc-card {
+  background: var(--card-bg, #ffffff);
+  border: 1.5px solid var(--border-light, #e2e8f0);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+}
+.office-doc-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light, #e2e8f0);
+  margin-bottom: 16px;
+}
+.office-icon {
+  font-size: 28px;
+}
+.office-header-meta strong {
+  display: block;
+  font-size: 16px;
+  color: var(--ink-900);
+}
+.office-header-meta span {
+  font-size: 12.5px;
+  color: var(--ink-500);
+}
+.office-slide-card {
+  background: var(--bg-page, #f8fafc);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+.slide-card-header {
+  margin-bottom: 8px;
+}
+.slide-card-header .slide-pill {
+  background: var(--theme-accent, #ff4b82);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+.slide-card-body {
+  font-size: 13.5px;
+  line-height: 1.6;
   color: var(--ink-800);
+}
+.office-doc-sheet {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-900);
+}
+.office-doc-p {
+  margin: 0 0 12px 0;
+}
+.office-empty {
+  color: var(--ink-400);
+  font-style: italic;
+  padding: 20px 0;
+}
+.pomo-doc-code-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
+.code-viewer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #252526;
+  border-bottom: 1px solid #333333;
+  font-size: 12px;
+  font-family: monospace;
+}
+.btn-copy-code {
+  background: rgba(255,255,255,0.1);
+  color: #ffffff;
+  border: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-copy-code:hover {
+  background: var(--theme-accent, #ff4b82);
+}
+.pomo-doc-code-pre {
+  flex: 1;
+  margin: 0;
+  padding: 20px;
+  overflow: auto;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 13.5px;
+  line-height: 1.6;
 }
 .pomo-ai-bubble.user .pomo-ai-text {
   background: var(--theme-accent, #ff4b82);
