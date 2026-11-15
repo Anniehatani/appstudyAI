@@ -341,6 +341,16 @@ async function startEmbeddedServer(rootPath, port = 8787) {
               created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
               UNIQUE(user_id, friend_id)
             );
+            CREATE TABLE IF NOT EXISTS user_pomodoro_sessions (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              cycles INTEGER NOT NULL DEFAULT 1,
+              focus_minutes INTEGER NOT NULL DEFAULT 25,
+              xp_reward INTEGER NOT NULL DEFAULT 50,
+              gems_reward INTEGER NOT NULL DEFAULT 30,
+              doc_name TEXT DEFAULT NULL,
+              completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
           `);
           const colsToAdd = [
             "ALTER TABLE profiles ADD COLUMN profile_theme TEXT DEFAULT NULL;",

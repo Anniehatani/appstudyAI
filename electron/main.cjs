@@ -80,7 +80,7 @@ async function createWindow() {
         { label: "Tải lại trang", accelerator: "CmdOrCtrl+R", click: () => mainWindow.reload() },
         { type: "separator" },
         { label: "Ẩn cửa sổ", accelerator: "CmdOrCtrl+W", role: "minimize" },
-        { label: "Thoát ứng dụng", accelerator: "CmdOrCtrl+Q", role: "quit" }
+        { label: "Thoát ứng dụng", accelerator: "Alt+F4", role: "quit" }
       ]
     },
     {
@@ -139,6 +139,16 @@ ipcMain.handle("window:maximize", () => {
   }
 });
 ipcMain.handle("window:close", () => mainWindow?.close());
+ipcMain.handle("window:set-fullscreen", (event, flag) => {
+  if (mainWindow) {
+    mainWindow.setFullScreen(Boolean(flag));
+    return mainWindow.isFullScreen();
+  }
+  return false;
+});
+ipcMain.handle("window:is-fullscreen", () => {
+  return mainWindow ? mainWindow.isFullScreen() : false;
+});
 ipcMain.handle("auth:clear-cookies", async () => {
   try {
     if (mainWindow) {

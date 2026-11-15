@@ -1,4 +1,5 @@
 import { renderThoBayMau, generateThoBayMauSvg, THO_STATES, THO_METADATA } from "./tho-bay-mau.js";
+import { renderPomodoro, loadPomodoroData, pomodoroState, openPomodoroExitConfirm } from "./pomodoro.js";
 window.renderThoBayMau = renderThoBayMau;
 window.generateThoBayMauSvg = generateThoBayMauSvg;
 window.THO_STATES = THO_STATES;
@@ -2495,6 +2496,9 @@ const seenNotificationMsgIds = new Set();
 let isNotificationPollerInitialized = false;
 
 export function showDuolingoNotification({ title, subtitle = "Tin nhắn mới", message, avatarUrl, avatarDecoration, statusIcon, chatType = "direct", chatId = null }) {
+  if (window._isPomodoroActive) {
+    return; // DND Zen mode: suppress notifications while in Pomodoro study room
+  }
   let container = document.getElementById("duo-notification-container");
   if (!container) {
     container = document.createElement("div");
@@ -10394,6 +10398,9 @@ function render() {
     case "notes":
       view.innerHTML = renderNotes();
       break;
+    case "pomodoro":
+      view.innerHTML = renderPomodoro();
+      break;
     case "leaderboard":
       view.innerHTML = renderLeaderboard();
       break;
@@ -10506,6 +10513,12 @@ async function navigateToPage(targetPage) {
       }
     } else if (targetPage === "notes") {
       await loadNotes();
+    } else if (targetPage === "pomodoro") {
+      await loadPomodoroData();
+      if (!state.notes || state.notes.length === 0) {
+        await loadNotes().catch(() => {});
+      }
+      render();
     } else if (targetPage === "chat") {
       await loadChatConversations();
       render();
@@ -10610,8 +10623,14 @@ document.getElementById("header-avatar-btn")?.addEventListener("click", () => {
   }
 });
 
-// Keyboard shortcuts for Quiz (1, 2, 3, 4, Enter)
+// Keyboard shortcuts for Quiz (1, 2, 3, 4, Enter) and Pomodoro Emergency Exit (Ctrl + Q)
 document.addEventListener("keydown", function (e) {
+  if (pomodoroState.active && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "q") {
+    e.preventDefault();
+    e.stopPropagation();
+    openPomodoroExitConfirm();
+    return;
+  }
   if (e.key === "Escape" && document.getElementById("study-calculator-layer")) {
     window.closeStudyCalculator();
     return;

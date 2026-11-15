@@ -29,7 +29,9 @@ export const THO_STATES = {
   SLEEPY_AFK: "sleepy-afk",
   CHEERING_POM: "cheering-pom",
   TYPING_FAST: "typing-fast",
-  ANGRY_REMIND: "angry-remind"
+  ANGRY_REMIND: "angry-remind",
+  POMODORO_FOCUS: "pomodoro-focus",
+  POMODORO_BREAK: "pomodoro-break"
 };
 
 // Aliases for backward compatibility
@@ -159,6 +161,18 @@ export const THO_METADATA = {
     category: "Mở rộng",
     ref: "Cảnh báo mất Streak",
     quote: "Sắp hết ngày rồi mà chưa học bài hả?! Vào học ngay! 😤💢"
+  },
+  [THO_STATES.POMODORO_FOCUS]: {
+    name: "Siêu Tập Trung (Pomodoro Focus)",
+    category: "Mở rộng",
+    ref: "Phòng học Pomodoro",
+    quote: "Cắm cúi viết bài! Quyết tâm không lướt điện thoại, kiếm 30 💎 nào! ✍️🔥"
+  },
+  [THO_STATES.POMODORO_BREAK]: {
+    name: "Nghỉ ngơi Trà sữa (Pomodoro Break)",
+    category: "Mở rộng",
+    ref: "Phòng học Pomodoro Giải lao",
+    quote: "Hết 25 phút rồi! Hút một ngụm trà sữa trân châu mát lạnh rồi lát học tiếp! 🧋😎"
   }
 };
 
@@ -210,6 +224,8 @@ export function generateThoBayMauSvg({ state = "idle", size = 220, className = "
   const isPom = normalizedState === THO_STATES.CHEERING_POM;
   const isTyping = normalizedState === THO_STATES.TYPING_FAST;
   const isAngry = normalizedState === THO_STATES.ANGRY_REMIND;
+  const isPomoFocus = normalizedState === THO_STATES.POMODORO_FOCUS;
+  const isPomoBreak = normalizedState === THO_STATES.POMODORO_BREAK;
 
   // 1. SEAMLESS PLUMP MOCHI BODY SILHOUETTE (Đầu tròn phúng phính liền thân mũm mĩm)
   let bodyPath = "";
@@ -435,6 +451,47 @@ export function generateThoBayMauSvg({ state = "idle", size = 220, className = "
       <g id="blush">
         <ellipse cx="84" cy="126" rx="12" ry="7.5" fill="#fb7185" opacity="0.85" />
         <ellipse cx="176" cy="126" rx="12" ry="7.5" fill="#fb7185" opacity="0.85" />
+      </g>
+    `;
+  } else if (isPomoFocus) {
+    // Siêu tập trung: Mắt nheo lại cắm cúi + mày nghiêm túc
+    eyesSvg = `
+      <g class="tho-eyes-group">
+        <path d="M 98 114 L 114 114" stroke="#18181b" stroke-width="4.5" stroke-linecap="round" />
+        <path d="M 146 114 L 162 114" stroke="#18181b" stroke-width="4.5" stroke-linecap="round" />
+      </g>
+    `;
+    eyebrowsSvg = `
+      <path d="M 94 102 L 116 110" class="tho-stroke-main" fill="none" />
+      <path d="M 166 102 L 144 110" class="tho-stroke-main" fill="none" />
+    `;
+    mouthSvg = `<path d="M 124 136 Q 130 131 136 136" class="tho-stroke-main" fill="none" />`;
+    blushSvg = `
+      <g id="blush">
+        <ellipse cx="84" cy="126" rx="10" ry="6" fill="#fb7185" opacity="0.6" />
+        <ellipse cx="176" cy="126" rx="10" ry="6" fill="#fb7185" opacity="0.6" />
+      </g>
+    `;
+  } else if (isPomoBreak) {
+    // Giải lao cực chill: Đeo kính râm đen + cười tươi
+    eyesSvg = `
+      <g id="sunglasses" transform="translate(130, 112)">
+        <rect x="-42" y="-12" width="36" height="24" rx="6" fill="#18181b" />
+        <rect x="6" y="-12" width="36" height="24" rx="6" fill="#18181b" />
+        <line x1="-6" y1="0" x2="6" y2="0" stroke="#18181b" stroke-width="3.5" />
+        <line x1="-32" y1="-5" x2="-14" y2="5" stroke="#ffffff" stroke-width="1.8" opacity="0.8" />
+        <line x1="16" y1="-5" x2="34" y2="5" stroke="#ffffff" stroke-width="1.8" opacity="0.8" />
+      </g>
+    `;
+    eyebrowsSvg = `
+      <path d="M 96 92 Q 106 87 116 92" class="tho-stroke-med" fill="none" />
+      <path d="M 144 92 Q 154 87 164 92" class="tho-stroke-med" fill="none" />
+    `;
+    mouthSvg = `<path d="M 122 135 Q 130 148 138 135 Z" fill="#e11d48" class="tho-stroke-med" />`;
+    blushSvg = `
+      <g id="blush">
+        <ellipse cx="84" cy="126" rx="12" ry="7" fill="#fb7185" opacity="0.7" />
+        <ellipse cx="176" cy="126" rx="12" ry="7" fill="#fb7185" opacity="0.7" />
       </g>
     `;
   } else if (isPom) {
@@ -944,6 +1001,73 @@ export function generateThoBayMauSvg({ state = "idle", size = 220, className = "
     armsSvg = `
       ${renderChubbyArm(76, 166, 28, 36, "tho-anim-wave-l")}
       ${renderChubbyArm(184, 166, -28, 36, "tho-anim-wave-r")}
+    `;
+  }
+
+  // U. POMODORO SIÊU TẬP TRUNG (Focus)
+  else if (isPomoFocus) {
+    accessoriesFront += `
+      <!-- Băng đô quyết tử đỏ thắm trên trán -->
+      <g id="acc-headband" transform="translate(130, 76)">
+        <rect x="-56" y="-7" width="112" height="14" rx="3" fill="#ef4444" stroke="#18181b" stroke-width="2" />
+        <text x="0" y="3.5" text-anchor="middle" font-size="8" font-weight="900" fill="#ffffff" font-family="sans-serif">QUYẾT TỬ ĐỖ KỲ THI</text>
+        <path d="M -56 -2 L -68 -10 L -62 4 Z" fill="#ef4444" stroke="#18181b" stroke-width="1.5" />
+        <path d="M -56 2 L -66 12 L -58 6 Z" fill="#ef4444" stroke="#18181b" stroke-width="1.5" />
+      </g>
+      <!-- Bàn học gỗ trước ngực -->
+      <g id="acc-desk" transform="translate(130, 196)">
+        <rect x="-70" y="0" width="140" height="20" rx="4" fill="#f59e0b" stroke="#18181b" stroke-width="2.5" />
+        <!-- Vở bài tập mở sẵn -->
+        <polygon points="-30,-8 30,-8 36,8 -36,8" fill="#ffffff" stroke="#18181b" stroke-width="2" />
+        <line x1="0" y1="-8" x2="0" y2="8" stroke="#94a3b8" stroke-width="1.5" />
+        <!-- Bút chì đỏ cắm cúi viết xoẹt xoẹt -->
+        <g class="tho-anim-type-r" style="transform-box: fill-box; transform-origin: 10px 10px;">
+          <polygon points="12,-16 18,-18 10,2" fill="#ef4444" stroke="#18181b" stroke-width="1.5" />
+        </g>
+      </g>
+      <!-- Mồ hôi bay văng ra vì học quá căng -->
+      <g transform="translate(192, 88)">
+        <g class="tho-anim-pulse" style="transform-box: fill-box; transform-origin: center;">
+          <path d="M 0 0 C -5 8 5 12 4 6 Z" fill="#38bdf8" stroke="#0284c7" stroke-width="1.5" />
+        </g>
+      </g>
+    `;
+    armsSvg = `
+      ${renderChubbyArm(78, 168, -38, 36, "tho-anim-type-l")}
+      ${renderChubbyArm(182, 168, 38, 36, "tho-anim-type-r")}
+    `;
+  }
+
+  // V. POMODORO GIẢI LAO TRÀ SỮA (Break)
+  else if (isPomoBreak) {
+    accessoriesFront += `
+      <!-- Ly trà sữa trân châu boba siêu to khổng lồ -->
+      <g id="acc-boba" transform="translate(170, 162)">
+        <polygon points="0,0 26,0 22,40 4,40" fill="#fef08a" stroke="#18181b" stroke-width="2.2" />
+        <rect x="-2" y="-3" width="30" height="5" rx="2" fill="#f472b6" stroke="#18181b" stroke-width="1.5" />
+        <!-- Ống hút hồng xuyên qua nắp -->
+        <line x1="13" y1="-12" x2="13" y2="34" stroke="#ec4899" stroke-width="3.5" stroke-linecap="round" />
+        <!-- Trân châu đen tròn xoe -->
+        <circle cx="8" cy="33" r="3" fill="#18181b" />
+        <circle cx="16" cy="32" r="3" fill="#18181b" />
+        <circle cx="12" cy="26" r="2.8" fill="#18181b" />
+        <circle cx="17" cy="22" r="2.8" fill="#18181b" />
+      </g>
+      <!-- Nốt nhạc chill chill bay lượn -->
+      <g transform="translate(76, 85)">
+        <g class="tho-anim-bob" style="transform-box: fill-box; transform-origin: center;">
+          <text font-size="16" fill="#ec4899">🎵</text>
+        </g>
+      </g>
+      <g transform="translate(196, 75)">
+        <g class="tho-anim-pulse" style="transform-box: fill-box; transform-origin: center;">
+          <text font-size="14" fill="#a855f7">✨</text>
+        </g>
+      </g>
+    `;
+    armsSvg = `
+      ${renderChubbyArm(76, 166, -18, 36, "tho-anim-breathe-arm")}
+      ${renderChubbyArm(178, 164, 45, 34)}
     `;
   }
 

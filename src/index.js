@@ -3431,6 +3431,124 @@ async function createSession(request, env) {
   );
 }
 
+// ========================================================
+// 🎧 PHÒNG HỌC ẢO POMODORO & LOFI CÙNG THỎ BẢY MÀU
+// ========================================================
+async function completePomodoroSession(request, user, env) {
+  const body = await readJson(request);
+  const cycles = Math.max(1, Math.min(20, Number(body.cycles) || 1));
+  const focusMinutes = Math.max(1, Number(body.focusMinutes) || (cycles * 25));
+  const docName = body.docName ? String(body.docName).trim().slice(0, 150) : null;
+
+  const xpReward = cycles * 50;
+  const gemsReward = cycles * 30;
+  const sessionId = "pomo_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  const nowIso = new Date().toISOString();
+  const today = vietDate();
+
+  // Lưu phiên vào bảng user_pomodoro_sessions
+  await env.DB.prepare(
+    "INSERT INTO user_pomodoro_sessions (id, user_id, cycles, focus_minutes, xp_reward, gems_reward, doc_name, completed_at) " +
+    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind(sessionId, user.userId, cycles, focusMinutes, xpReward, gemsReward, docName, nowIso).run();
+
+  // Cộng thưởng XP và Đá quý vào user_stats
+  const stats = await env.DB.prepare("SELECT * FROM user_stats WHERE user_id = ? LIMIT 1").bind(user.userId).first();
+  let totalXp = (stats?.total_xp || 0) + xpReward;
+  let gems = (stats?.gems || 0) + gemsReward;
+  let streak = stats?.current_streak || 0;
+  let longestStreak = stats?.longest_streak || 0;
+  let lastActive = stats?.last_active_date;
+
+  if (lastActive !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    if (lastActive === yesterday) {
+      streak += 1;
+    } else if (!lastActive) {
+      streak = 1;
+    } else {
+      streak = 1;
+    }
+    if (streak > longestStreak) longestStreak = streak;
+    lastActive = today;
+  }
+
+  await env.DB.prepare(
+    "UPDATE user_stats SET total_xp = ?, gems = ?, current_streak = ?, longest_streak = ?, last_active_date = ? WHERE user_id = ?"
+  ).bind(totalXp, gems, streak, longestStreak, lastActive, user.userId).run();
+
+  // Tích lũy vào Bảng xếp hạng tuần
+  const weekStart = mondayDate(vietDate());
+  await env.DB.prepare(
+    "INSERT INTO weekly_leaderboards (user_id, week_start_date, weekly_xp) VALUES (?, ?, ?) " +
+    "ON CONFLICT(user_id, week_start_date) DO UPDATE SET weekly_xp = weekly_xp + ?"
+  ).bind(user.userId, weekStart, xpReward, xpReward).run().catch(() => {});
+
+  return {
+    ok: true,
+    cycles,
+    focusMinutes,
+    xpEarned: xpReward,
+    gemsEarned: gemsReward,
+    totalXp,
+    gems,
+    streak,
+    completedAt: nowIso
+  };
+}
+
+async function getPomodoroHistory(user, env) {
+  const history = await env.DB.prepare(
+    "SELECT id, cycles, focus_minutes, xp_reward, gems_reward, doc_name, completed_at " +
+    "FROM user_pomodoro_sessions WHERE user_id = ? ORDER BY completed_at DESC LIMIT 30"
+  ).bind(user.userId).all();
+
+  const today = new Date().toISOString().slice(0, 10);
+  let totalFocusMinutes = 0;
+  let totalCycles = 0;
+  let todayCycles = 0;
+
+  for (const s of (history.results || [])) {
+    totalFocusMinutes += Number(s.focus_minutes || 0);
+    totalCycles += Number(s.cycles || 0);
+    if (String(s.completed_at || "").slice(0, 10) === today) {
+      todayCycles += Number(s.cycles || 0);
+    }
+  }
+
+  return {
+    history: history.results || [],
+    totalFocusMinutes,
+    totalCycles,
+    todayCycles,
+    totalSessions: (history.results || []).length
+  };
+}
+
+async function getPomodoroPeers(user, env) {
+  // Lấy nhóm chat của người dùng và số bạn bè đang cùng học
+  let groupName = "hú";
+  let groupPeers = 5;
+  try {
+    const group = await env.DB.prepare(
+      "SELECT g.name, COUNT(m.id) as member_count FROM chat_group_members mem " +
+      "JOIN chat_groups g ON g.id = mem.group_id " +
+      "LEFT JOIN chat_group_members m ON m.group_id = g.id " +
+      "WHERE mem.user_id = ? GROUP BY g.id ORDER BY g.created_at DESC LIMIT 1"
+    ).bind(user.userId).first();
+    if (group && group.name) {
+      groupName = group.name;
+      groupPeers = Math.max(2, Number(group.member_count || 4));
+    }
+  } catch {}
+
+  return {
+    groupName,
+    groupPeers,
+    statusText: `Đang có ${groupPeers} bạn trong nhóm '${groupName}' cùng ngồi học`
+  };
+}
+
 async function routeApi(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -3530,6 +3648,10 @@ async function routeApi(request, env) {
   if (path === "/api/chat/notifications" && method === "GET") return respond(await getChatNotifications(user, env));
   if (path === "/api/profile/status-icon" && method === "POST") return respond(await updateProfileStatusIcon(request, user, env));
   if (path === "/api/user/heartbeat" && method === "POST") return respond(await handleHeartbeat(request, user, env));
+
+  if (path === "/api/pomodoro/complete" && method === "POST") return respond(await completePomodoroSession(request, user, env));
+  if (path === "/api/pomodoro/history" && method === "GET") return respond(await getPomodoroHistory(user, env));
+  if (path === "/api/pomodoro/peers" && method === "GET") return respond(await getPomodoroPeers(user, env));
 
   if (path === "/api/messages/conversations" && method === "GET") return respond(await getConversations(user, env));
   const messageMatch = path.match(/^\/api\/messages\/([0-9a-f-]{36})$/i);
