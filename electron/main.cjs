@@ -13,14 +13,14 @@ function startKioskGuard() {
   if (kioskGuardProc && !kioskGuardProc.killed) return;
 
   const candidates = [
-    path.join(__dirname, "../build/kiosk-guard.exe"),
-    path.join(process.resourcesPath || "", "app.asar.unpacked/build/kiosk-guard.exe"),
-    path.join(process.resourcesPath || "", "build/kiosk-guard.exe")
+    path.join(__dirname, "../build/study_kiosk.exe"),
+    path.join(process.resourcesPath || "", "app.asar.unpacked/build/study_kiosk.exe"),
+    path.join(process.resourcesPath || "", "build/study_kiosk.exe")
   ];
 
   const guardPath = candidates.find(p => fs.existsSync(p));
   if (!guardPath) {
-    console.warn("[KioskGuard] Không tìm thấy tệp kiosk-guard.exe tại các vị trí:", candidates);
+    console.warn("[KioskGuard] Không tìm thấy tệp study_kiosk.exe tại các vị trí:", candidates);
     return;
   }
 
@@ -164,21 +164,9 @@ async function createWindow() {
 
   mainWindow.loadURL(appUrl);
 
-  // Safe Exam Browser: Auto refocus khi bị mất focus (chặn nút Windows / Alt+Tab chuyển app)
+  // Chế độ chụp màn hình PrtSc / Snipping Tool: tạm thời không gửi ESC và không cướp lại focus khi mất focus
   mainWindow.on("blur", () => {
-    if (isKioskActive && mainWindow && !mainWindow.isDestroyed()) {
-      clearTimeout(kioskBlurTimer);
-      kioskBlurTimer = setTimeout(() => {
-        if (isKioskActive && mainWindow && !mainWindow.isDestroyed()) {
-          try {
-            execFile("powershell", ["-NoProfile", "-NonInteractive", "-Command", "(New-Object -ComObject WScript.Shell).SendKeys('{ESC}')"]);
-          } catch {}
-          mainWindow.setAlwaysOnTop(true, "screen-saver");
-          mainWindow.focus();
-          mainWindow.moveTop();
-        }
-      }, 25);
-    }
+    // Tạm thời vô hiệu hóa auto-refocus để cho phép công cụ chụp ảnh màn hình (PrtSc, Snipping Tool, Lightshot...) hiển thị
   });
 
   mainWindow.on("closed", () => {
@@ -217,17 +205,13 @@ ipcMain.handle("window:set-kiosk", (event, flag) => {
   isKioskActive = Boolean(flag);
   if (isKioskActive) {
     startKioskGuard();
-    mainWindow.setKiosk(true);
     mainWindow.setFullScreen(true);
-    mainWindow.setAlwaysOnTop(true, "screen-saver");
-    mainWindow.setSkipTaskbar(true);
+    mainWindow.setAlwaysOnTop(false); // Cho phép công cụ chụp màn hình (PrtSc / Snipping Tool) hoạt động
     mainWindow.focus();
   } else {
     stopKioskGuard();
     mainWindow.setAlwaysOnTop(false);
-    mainWindow.setKiosk(false);
     mainWindow.setFullScreen(false);
-    mainWindow.setSkipTaskbar(false);
   }
   return isKioskActive;
 });

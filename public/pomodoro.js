@@ -290,6 +290,14 @@ export class PomodoroMusicEngine {
       titleEl.innerHTML = `${track.icon} ${safeEsc(track.title)}`;
       titleEl.title = `${track.title} - ${track.artist}`;
     }
+    const durEl = document.getElementById("pomo-audio-time-duration");
+    if (durEl && this.audio && !isNaN(this.audio.duration) && this.audio.duration > 0) {
+      durEl.textContent = formatAudioTime(this.audio.duration);
+    }
+    const curEl = document.getElementById("pomo-audio-time-current");
+    if (curEl && this.audio) {
+      curEl.textContent = formatAudioTime(this.audio.currentTime || 0);
+    }
   }
 
   playCompletionBell() {
@@ -422,14 +430,8 @@ export async function exitPomodoroKiosk() {
   if (document.body) document.body.classList.remove("pomodoro-kiosk-mode");
 }
 
-// Chống sao nhãng / Auto refocus khi mất focus trong lúc đang trong ca học
+// Cho phép chụp màn hình (PrtSc / Win + Shift + S) - tạm thời không ép cướp lại focus khi blur
 if (typeof window !== "undefined") {
-  window.addEventListener("blur", () => {
-    if (pomodoroState.active && !pomodoroState.showExitModal && !pomodoroState.showCelebrationModal) {
-      window.focus();
-    }
-  });
-
   // Emergency Exit (Ctrl + Q)
   window.addEventListener("keydown", (e) => {
     if (pomodoroState.active && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "q") {
@@ -464,10 +466,15 @@ export function startPomodoroSession() {
   if (pomodoroState.heartbeatTimerId) clearInterval(pomodoroState.heartbeatTimerId);
   pomodoroState.heartbeatTimerId = setInterval(sendPomodoroHeartbeat, 25000);
 
-  // Start sound if selected
-  const soundSelect = document.getElementById("pomo-ambient-select");
-  const selectedChannel = soundSelect ? soundSelect.value : (pomodoroAudio.activeChannel !== "none" ? pomodoroAudio.activeChannel : "lofi");
-  pomodoroAudio.playChannel(selectedChannel);
+  // Start music track or channel selected in lobby
+  const trackSelect = document.getElementById("pomo-lobby-start-track");
+  if (trackSelect && !isNaN(parseInt(trackSelect.value, 10))) {
+    pomodoroAudio.playTrack(parseInt(trackSelect.value, 10), true);
+  } else {
+    const soundSelect = document.getElementById("pomo-ambient-select");
+    const selectedChannel = soundSelect ? soundSelect.value : (pomodoroAudio.activeChannel !== "none" ? pomodoroAudio.activeChannel : "lofi");
+    pomodoroAudio.playChannel(selectedChannel);
+  }
 
   if (pomodoroState.timerId) clearInterval(pomodoroState.timerId);
   if (pomodoroState.quotesTimer) clearInterval(pomodoroState.quotesTimer);
@@ -1578,7 +1585,7 @@ function renderPomodoroLobby() {
           <!-- Starting Track Selector -->
           <div class="lobby-track-picker-row" style="margin-top: 14px; display:flex; align-items:center; gap:10px;">
             <span style="font-weight:800; font-size:12px; color:var(--ink-700);">Bài bắt đầu:</span>
-            <select class="pomo-lobby-select" onchange="window.pomodoroAudio.playTrack(parseInt(this.value, 10), true)" style="flex:1; padding:7px 12px; border-radius:12px; border:1.5px solid var(--border-light, #e2e8f0); font-weight:700; font-size:12px; background:var(--bg-page, #f8fafc); color:var(--ink-800);">
+            <select class="pomo-lobby-select" id="pomo-lobby-start-track" onchange="window.pomodoroAudio.playTrack(parseInt(this.value, 10), true)" style="flex:1; padding:7px 12px; border-radius:12px; border:1.5px solid var(--border-light, #e2e8f0); font-weight:700; font-size:12px; background:var(--bg-page, #f8fafc); color:var(--ink-800);">
               ${pomodoroAudio.playlist.map((t, idx) => `
                 <option value="${idx}" ${pomodoroAudio.currentIndex === idx ? 'selected' : ''}>
                   ${t.icon} ${t.title} (${t.tag})
@@ -1698,7 +1705,7 @@ function renderPomodoroActiveRoom() {
           </div>
         </div>
 
-        <!-- 2. CENTER: YOUTUBE-STYLE MUSIC PLAYER WITH BUFFER BAR -->
+        <!-- 2. CENTER: YOUTUBE-STYLE MUSIC PLAYER CONTROLS & SONG TITLE (AS DRAWN BY USER) -->
         <div class="pomo-topbar-center-player">
           <!-- Controls row: Prev, Play/Pause, Next -->
           <div class="pomo-music-controls-row">
@@ -1713,35 +1720,23 @@ function renderPomodoroActiveRoom() {
             </button>
           </div>
 
-          <!-- Title row -->
+          <!-- Title row: Tên bài hát (clean, centered under controls) -->
           <div class="pomo-music-title-wrap">
             <span class="pomo-music-title" id="pomo-current-music-title" title="${safeEsc(currentTrack.title)} - ${safeEsc(currentTrack.artist)}">
               ${currentTrack.icon} ${safeEsc(currentTrack.title)}
             </span>
-          </div>
-
-          <!-- YouTube-style Seekbar with progressive buffer bar -->
-          <div class="pomo-music-seekbar-row">
-            <span class="pomo-music-time" id="pomo-audio-time-current">00:00</span>
-            <div class="pomo-youtube-seekbar-wrap" id="pomo-audio-seekbar-wrap" onclick="window.handlePomoAudioSeek(event)">
-              <div class="pomo-seekbar-bg">
-                <!-- Chunks load progressively like YouTube -->
-                <div class="pomo-audio-buffer-bar" id="pomo-audio-buffer-bar" style="width: 0%;"></div>
-                <!-- Played progress -->
-                <div class="pomo-audio-played-bar" id="pomo-audio-played-bar" style="width: 0%;"></div>
-              </div>
-              <!-- Draggable scrub thumb -->
-              <div class="pomo-audio-scrub-thumb" id="pomo-audio-scrub-thumb" style="left: 0%;"></div>
-            </div>
-            <span class="pomo-music-time" id="pomo-audio-time-duration">--:--</span>
+            <span class="pomo-music-time-inline">
+              (<span id="pomo-audio-time-current">00:00</span> / <span id="pomo-audio-time-duration">--:--</span>)
+            </span>
           </div>
         </div>
 
         <!-- 3. RIGHT: PLAYLIST DROPDOWN BUTTON & EXIT -->
         <div class="pomo-topbar-right">
-          <!-- PLAYLIST DROPDOWN TRIGGER BUTTON -->
-          <button type="button" class="btn-duo btn-pomo-playlist-toggle ${pomodoroState.showPlaylistDropdown ? 'active' : ''}" id="pomo-playlist-btn" onclick="window.togglePomodoroPlaylist(event)" title="Mở danh sách 17 bài nhạc Pomodoro">
-            🎵 Danh sách nhạc ⇩
+          <!-- PLAYLIST DROPDOWN TRIGGER BUTTON (PURPLE CAPSULE PILL AS DRAWN BY USER) -->
+          <button type="button" class="btn-pomo-playlist-pill ${pomodoroState.showPlaylistDropdown ? 'active' : ''}" id="pomo-playlist-btn" onclick="window.togglePomodoroPlaylist(event)" title="Mở danh sách 17 bài nhạc Pomodoro">
+            <span>Danh sách nhạc</span>
+            <span class="pill-arrow">▾</span>
           </button>
 
           <!-- EMERGENCY EXIT BUTTON (Ctrl + Q) -->
@@ -1750,7 +1745,21 @@ function renderPomodoroActiveRoom() {
           </button>
         </div>
 
-        <!-- 4. FLOATING PLAYLIST POPOVER (17 TRACKS) -->
+        <!-- 4. FULL-WIDTH TIMELINE SEEKBAR (SPANS HORIZONTALLY ACROSS BOTTOM OF HEADER) -->
+        <div class="pomo-timeline-seekbar-wrap" id="pomo-audio-seekbar-wrap" 
+             onmousedown="window.startPomoAudioScrub(event)" 
+             onmousemove="window.hoverPomoAudioScrub(event)" 
+             onmouseleave="window.leavePomoAudioScrub(event)" 
+             title="Nhấp hoặc kéo để tua nhạc">
+          <div class="pomo-timeline-bg">
+            <div class="pomo-audio-buffer-bar" id="pomo-audio-buffer-bar" style="width: 0%;"></div>
+            <div class="pomo-audio-played-bar" id="pomo-audio-played-bar" style="width: 0%;"></div>
+          </div>
+          <div class="pomo-audio-scrub-thumb" id="pomo-audio-scrub-thumb" style="left: 0%;"></div>
+          <div class="pomo-timeline-time-tooltip" id="pomo-timeline-tooltip">00:00</div>
+        </div>
+
+        <!-- 5. FLOATING PLAYLIST POPOVER (17 TRACKS) -->
         ${renderPomodoroPlaylistPopover()}
       </header>
 
@@ -2218,6 +2227,66 @@ export function handlePomoAudioSeek(e) {
   pomodoroAudio.updateTimeProgress();
 }
 
+export function startPomoAudioScrub(e) {
+  if (!pomodoroAudio.audio || !pomodoroAudio.audio.duration) return;
+  pomodoroAudio.isScrubbing = true;
+  const bar = document.getElementById("pomo-audio-seekbar-wrap");
+  if (!bar) return;
+
+  const seekAtEvent = (ev) => {
+    const rect = bar.getBoundingClientRect();
+    const clickX = ev.clientX - rect.left;
+    const pct = Math.max(0, Math.min(1, clickX / rect.width));
+    const targetTime = pct * pomodoroAudio.audio.duration;
+
+    const playedEl = document.getElementById("pomo-audio-played-bar");
+    const thumbEl = document.getElementById("pomo-audio-scrub-thumb");
+    const curEl = document.getElementById("pomo-audio-time-current");
+    if (playedEl) playedEl.style.width = (pct * 100) + "%";
+    if (thumbEl) thumbEl.style.left = (pct * 100) + "%";
+    if (curEl) curEl.textContent = formatAudioTime(targetTime);
+
+    return targetTime;
+  };
+
+  const initialTime = seekAtEvent(e);
+  pomodoroAudio.seek(initialTime);
+
+  const onMouseMove = (ev) => {
+    seekAtEvent(ev);
+  };
+
+  const onMouseUp = (ev) => {
+    const finalTime = seekAtEvent(ev);
+    pomodoroAudio.seek(finalTime);
+    pomodoroAudio.isScrubbing = false;
+    window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("mouseup", onMouseUp);
+  };
+
+  window.addEventListener("mousemove", onMouseMove);
+  window.addEventListener("mouseup", onMouseUp);
+}
+
+export function hoverPomoAudioScrub(e) {
+  const bar = document.getElementById("pomo-audio-seekbar-wrap");
+  const tip = document.getElementById("pomo-timeline-tooltip");
+  if (!bar || !tip || !pomodoroAudio.audio || !pomodoroAudio.audio.duration) return;
+  const rect = bar.getBoundingClientRect();
+  const hoverX = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+  const pct = hoverX / rect.width;
+  const hoverTime = pct * pomodoroAudio.audio.duration;
+
+  tip.textContent = `${formatAudioTime(hoverTime)} / ${formatAudioTime(pomodoroAudio.audio.duration)}`;
+  tip.style.left = `${hoverX}px`;
+  tip.classList.add("active");
+}
+
+export function leavePomoAudioScrub() {
+  const tip = document.getElementById("pomo-timeline-tooltip");
+  if (tip) tip.classList.remove("active");
+}
+
 export function setPomodoroPlaylistSearch(q) {
   pomodoroState.playlistSearch = q || "";
   const popover = document.getElementById("pomo-playlist-popover");
@@ -2293,5 +2362,8 @@ window.formatOfficeTextToHtml = formatOfficeTextToHtml;
 window.togglePomodoroPlaylist = togglePomodoroPlaylist;
 window.closePomodoroPlaylist = closePomodoroPlaylist;
 window.handlePomoAudioSeek = handlePomoAudioSeek;
+window.startPomoAudioScrub = startPomoAudioScrub;
+window.hoverPomoAudioScrub = hoverPomoAudioScrub;
+window.leavePomoAudioScrub = leavePomoAudioScrub;
 window.setPomodoroPlaylistSearch = setPomodoroPlaylistSearch;
 window.setPomodoroPlaylistCategory = setPomodoroPlaylistCategory;

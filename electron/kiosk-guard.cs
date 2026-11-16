@@ -56,9 +56,21 @@ public class KioskGuard {
             uint vk = hookStruct.vkCode;
             bool altDown = (hookStruct.flags & 0x20) != 0;
 
-            // 1. Block Windows Keys (LWIN, RWIN, APPS)
-            if (vk == VK_LWIN || vk == VK_RWIN || vk == VK_APPS) {
-                return (IntPtr)1; // Completely consumed, OS ignores!
+            // 0. Luôn cho phép phím chụp màn hình PrtSc (VK_SNAPSHOT = 0x2C)
+            if (vk == 0x2C) {
+                return CallNextHookEx(_hookID, nCode, wParam, lParam);
+            }
+
+            // 1. Chặn phím Windows (LWIN, RWIN) nhưng cho phép tổ hợp chụp ảnh màn hình Win + Shift + S
+            if (vk == VK_LWIN || vk == VK_RWIN) {
+                bool isShiftPressed = (GetKeyState(0x10) & 0x8000) != 0; // VK_SHIFT = 0x10
+                if (isShiftPressed) {
+                    return CallNextHookEx(_hookID, nCode, wParam, lParam);
+                }
+                return (IntPtr)1; // Consume phím Windows đơn lẻ
+            }
+            if (vk == VK_APPS) {
+                return (IntPtr)1;
             }
             // 2. Block Alt + Tab
             if (vk == VK_TAB && altDown) {
@@ -75,6 +87,9 @@ public class KioskGuard {
         }
         return CallNextHookEx(_hookID, nCode, wParam, lParam);
     }
+
+    [DllImport("user32.dll")]
+    private static extern short GetKeyState(int nVirtKey);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);

@@ -20,5 +20,5 @@ build/test_screenshots/
 smart_study_hub_cmc_uni-main/
 scratch/
 *.exe
-!build/kiosk-guard.exe
+!build/study_kiosk.exe
 

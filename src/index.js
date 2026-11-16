@@ -1172,7 +1172,7 @@ async function serveMedia(path, env, request) {
   } catch {
     return new Response("Not found", { status: 404 });
   }
-  if ((!key.startsWith("avatars/") && !key.startsWith("hinhnen/") && !key.startsWith("chat_files/") && !key.startsWith("pomodoro_music/")) || key.includes("..") || key.includes("\\")) {
+  if ((!key.startsWith("avatars/") && !key.startsWith("hinhnen/") && !key.startsWith("chat_files/") && !key.startsWith("pomodoro_music/")) || key.split("/").some(p => p === "..") || key.includes("\\")) {
     return new Response("Not found", { status: 404 });
   }
 

@@ -66,6 +66,122 @@ const https = require("https");
 const crypto = require("crypto");
 const { pathToFileURL } = require("url");
 
+function s3UriEncode(str) {
+  return encodeURI(str).replace(/[\[\]]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
+}
+
+function streamR2Media(req, res, pathname, config) {
+  const accountId = config.R2_ACCOUNT_ID;
+  const accessKey = config.R2_ACCESS_KEY_ID;
+  const secretKey = config.R2_SECRET_ACCESS_KEY;
+  const bucket = config.R2_BUCKET_NAME || "my-project-bucket";
+  if (!accountId || !accessKey || !secretKey) return false;
+
+  let key;
+  try {
+    key = decodeURIComponent(pathname.slice("/media/".length));
+  } catch {
+    return false;
+  }
+
+  if (
+    (!key.startsWith("avatars/") &&
+     !key.startsWith("hinhnen/") &&
+     !key.startsWith("chat_files/") &&
+     !key.startsWith("pomodoro_music/")) ||
+    key.split("/").some(part => part === "..") ||
+    key.includes("\\")
+  ) {
+    return false;
+  }
+
+  const host = `${accountId}.r2.cloudflarestorage.com`;
+  const rangeHeader = req.headers["range"];
+
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
+  const dateStamp = amzDate.slice(0, 8);
+  const region = "auto";
+  const service = "s3";
+  const canonicalUri = `/${bucket}/${s3UriEncode(key)}`;
+  const payloadHash = crypto.createHash("sha256").update("", "utf8").digest("hex");
+
+  let canonicalHeaders = `host:${host}\n`;
+  let signedHeaders = "host";
+  if (rangeHeader) {
+    canonicalHeaders += `range:${rangeHeader}\n`;
+    signedHeaders += ";range";
+  }
+  canonicalHeaders += `x-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
+  signedHeaders += ";x-amz-content-sha256;x-amz-date";
+
+  const canonicalRequest = `${req.method}\n${canonicalUri}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+  const algorithm = "AWS4-HMAC-SHA256";
+  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+  const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${crypto.createHash("sha256").update(canonicalRequest, "utf8").digest("hex")}`;
+
+  function hmacLocal(k, s) { return crypto.createHmac("sha256", k).update(s, "utf8").digest(); }
+  const kDate = hmacLocal("AWS4" + secretKey, dateStamp);
+  const kRegion = hmacLocal(kDate, region);
+  const kService = hmacLocal(kRegion, service);
+  const kSigning = hmacLocal(kService, "aws4_request");
+  const signature = crypto.createHmac("sha256", kSigning).update(stringToSign, "utf8").digest("hex");
+  const authHeader = `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  const reqHeaders = {
+    "host": host,
+    "x-amz-date": amzDate,
+    "x-amz-content-sha256": payloadHash,
+    "Authorization": authHeader
+  };
+  if (rangeHeader) reqHeaders["range"] = rangeHeader;
+
+  const r2Req = https.request({
+    hostname: host,
+    path: canonicalUri,
+    method: req.method,
+    headers: reqHeaders
+  }, (r2Res) => {
+    if (r2Res.statusCode !== 200 && r2Res.statusCode !== 206) {
+      if (!res.headersSent) {
+        res.writeHead(r2Res.statusCode);
+        res.end();
+      }
+      return;
+    }
+
+    const resHeaders = {
+      "accept-ranges": "bytes",
+      "cache-control": "public, max-age=31536000, immutable",
+      "x-content-type-options": "nosniff"
+    };
+    if (r2Res.headers["content-type"]) resHeaders["content-type"] = r2Res.headers["content-type"];
+    if (key.endsWith(".mp3")) resHeaders["content-type"] = "audio/mpeg";
+    if (r2Res.headers["content-range"]) resHeaders["content-range"] = r2Res.headers["content-range"];
+    if (r2Res.headers["content-length"]) resHeaders["content-length"] = r2Res.headers["content-length"];
+    if (r2Res.headers["etag"]) resHeaders["etag"] = r2Res.headers["etag"];
+
+    res.writeHead(r2Res.statusCode, resHeaders);
+    r2Res.pipe(res);
+  });
+
+  r2Req.on("error", (e) => {
+    if (!res.headersSent) {
+      res.writeHead(502, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+  });
+
+  req.on("close", () => {
+    if (!r2Req.destroyed) {
+      try { r2Req.destroy(); } catch {}
+    }
+  });
+
+  r2Req.end();
+  return true;
+}
+
 function createR2BucketAdapter(config) {
   const accountId = config.R2_ACCOUNT_ID;
   const accessKey = config.R2_ACCESS_KEY_ID;
@@ -91,7 +207,7 @@ function createR2BucketAdapter(config) {
           const dateStamp = amzDate.slice(0, 8);
           const region = "auto";
           const service = "s3";
-          const canonicalUri = `/${bucket}/${encodeURI(key)}`;
+          const canonicalUri = `/${bucket}/${s3UriEncode(key)}`;
           const payloadHash = hash("");
 
           let rangeVal = null;
@@ -515,7 +631,13 @@ async function startEmbeddedServer(rootPath, port = 8787) {
       const parsedUrl = new URL(req.url, `http://${req.headers.host || "127.0.0.1"}`);
       const pathname = parsedUrl.pathname;
 
-      // 1. API & MEDIA ROUTES (Delegated to Worker)
+      // 1. HIGH-SPEED STREAMING FOR R2 MEDIA (AVATARS, WALLPAPERS, POMODORO MUSIC)
+      if (pathname.startsWith("/media/")) {
+        const handled = streamR2Media(req, res, pathname, envVars);
+        if (handled) return;
+      }
+
+      // 2. API & MEDIA FALLBACK ROUTES (Delegated to Worker)
       if (pathname.startsWith("/api/") || pathname.startsWith("/media/")) {
         if (!worker || typeof worker.fetch !== "function") {
           await resolveWorker();
