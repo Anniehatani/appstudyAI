@@ -13,14 +13,33 @@ function startKioskGuard() {
   if (kioskGuardProc && !kioskGuardProc.killed) return;
 
   const candidates = [
+    path.join(__dirname, "kiosk_guard.exe"),
     path.join(__dirname, "../build/study_kiosk.exe"),
     path.join(process.resourcesPath || "", "app.asar.unpacked/build/study_kiosk.exe"),
     path.join(process.resourcesPath || "", "build/study_kiosk.exe")
   ];
 
-  const guardPath = candidates.find(p => fs.existsSync(p));
+  let guardPath = candidates.find(p => fs.existsSync(p));
   if (!guardPath) {
-    console.warn("[KioskGuard] Không tìm thấy tệp study_kiosk.exe tại các vị trí:", candidates);
+    const csFile = path.join(__dirname, "kiosk-guard.cs");
+    const targetExe = path.join(__dirname, "kiosk_guard.exe");
+    const cscPath = "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe";
+    if (fs.existsSync(csFile) && fs.existsSync(cscPath)) {
+      try {
+        const { spawnSync } = require("child_process");
+        const res = spawnSync(cscPath, ["/target:winexe", `/out:${targetExe}`, csFile]);
+        if (res.status === 0 && fs.existsSync(targetExe)) {
+          guardPath = targetExe;
+          console.log("[KioskGuard] Tự động biên dịch kiosk_guard.exe thành công!");
+        }
+      } catch (err) {
+        console.warn("[KioskGuard Compile Error]", err.message);
+      }
+    }
+  }
+
+  if (!guardPath) {
+    console.warn("[KioskGuard] Không tìm thấy tệp kiosk_guard.exe tại các vị trí:", candidates);
     return;
   }
 
@@ -205,17 +224,49 @@ ipcMain.handle("window:set-kiosk", (event, flag) => {
   isKioskActive = Boolean(flag);
   if (isKioskActive) {
     startKioskGuard();
+    try { mainWindow.setKiosk(true); } catch {}
     mainWindow.setFullScreen(true);
-    mainWindow.setAlwaysOnTop(false); // Cho phép công cụ chụp màn hình (PrtSc / Snipping Tool) hoạt động
     mainWindow.focus();
   } else {
     stopKioskGuard();
-    mainWindow.setAlwaysOnTop(false);
+    try { mainWindow.setKiosk(false); } catch {}
     mainWindow.setFullScreen(false);
   }
   return isKioskActive;
 });
 ipcMain.handle("window:is-kiosk", () => isKioskActive);
+ipcMain.handle("dialog:open-study-files", async () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return [];
+  const { dialog } = require("electron");
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: "Thêm tài liệu học tập vào phòng Pomodoro",
+    properties: ["openFile", "multiSelections"],
+    filters: [
+      { name: "Tài liệu học tập", extensions: ["pdf", "docx", "doc", "pptx", "ppt", "txt", "md", "js", "py", "java", "cpp", "c", "cs", "html", "css", "json", "sql", "mp4", "webm", "mp3", "wav", "png", "jpg", "jpeg", "webp"] },
+      { name: "Tất cả tệp", extensions: ["*"] }
+    ]
+  });
+  if (result.canceled || !result.filePaths || !result.filePaths.length) return [];
+  
+  const filesData = [];
+  for (const filePath of result.filePaths) {
+    try {
+      const fileName = path.basename(filePath);
+      const ext = path.extname(filePath).toLowerCase();
+      const buffer = fs.readFileSync(filePath);
+      filesData.push({
+        name: fileName,
+        path: filePath,
+        ext: ext,
+        size: buffer.length,
+        base64: buffer.toString("base64")
+      });
+    } catch (e) {
+      console.warn("[OpenFile Error]", e.message);
+    }
+  }
+  return filesData;
+});
 ipcMain.handle("auth:clear-cookies", async () => {
   try {
     if (mainWindow) {

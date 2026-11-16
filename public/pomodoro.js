@@ -345,12 +345,15 @@ export const pomodoroState = {
   completedCycles: 0,
   
   // MULTI-DOCUMENT ARCHITECTURE
-  docs: [], // Array of { id, name, type: "pdf"|"text"|"image"|"note", content, active }
+  docs: [], // Array of { id, name, type: "pdf"|"text"|"image"|"note"|"docx"|"pptx"|"code"|"video"|"audio", content, active }
   activeDocId: null,
+  sidebarOpen: typeof localStorage !== "undefined" && localStorage.getItem("pomo_sidebar_open") !== null ? localStorage.getItem("pomo_sidebar_open") !== "false" : true,
+  sidebarWidth: typeof localStorage !== "undefined" ? Math.max(180, Math.min(480, parseInt(localStorage.getItem("pomo_sidebar_w") || "260", 10))) : 260,
   
-  // AI CONTEXT READING TOGGLE
+  // AI CONTEXT READING TOGGLE & RESIZABLE DOCK
   aiReadScreenContext: true,
   aiDockOpen: true,
+  aiDockWidth: typeof localStorage !== "undefined" ? Math.max(260, Math.min(680, parseInt(localStorage.getItem("pomo_ai_w") || "360", 10))) : 360,
 
   history: [],
   totalFocusMinutes: 0,
@@ -967,88 +970,339 @@ export function formatOfficeTextToHtml(rawText) {
   `;
 }
 
-// Extract text from Office PPTX / DOCX zip packages
-export async function extractTextFromZipDoc(file, ext) {
+// ========================================================
+// 5. ZIP CENTRAL DIRECTORY PARSER & DOCUMENT RENDERERS
+// ========================================================
+
+// Read zipped files (DOCX, PPTX) robustly by parsing the ZIP Central Directory
+export async function readZipTextEntriesFromBuffer(buffer, targetRegex) {
+  const entries = new Map();
   try {
-    const buffer = await file.arrayBuffer();
     const view = new DataView(buffer);
-    let offset = 0;
-    const slides = [];
-    let docxText = "";
+    const byteLen = buffer.byteLength;
+    let eocd = -1;
 
-    while (offset + 30 < buffer.byteLength) {
-      const sig = view.getUint32(offset, true);
-      if (sig !== 0x04034b50) break; // Local file header signature
+    // Search backward for End of Central Directory signature 0x06054b50
+    for (let i = byteLen - 22; i >= Math.max(0, byteLen - 65558); i--) {
+      if (view.getUint32(i, true) === 0x06054b50) {
+        eocd = i;
+        break;
+      }
+    }
 
-      const compression = view.getUint16(offset + 8, true);
-      const compSize = view.getUint32(offset + 18, true);
-      const fnLen = view.getUint16(offset + 26, true);
-      const extraLen = view.getUint16(offset + 28, true);
+    if (eocd !== -1) {
+      const cdOffset = view.getUint32(eocd + 16, true);
+      const cdRecords = view.getUint16(eocd + 10, true);
+      let cdPtr = cdOffset;
 
-      const nameBytes = new Uint8Array(buffer, offset + 30, fnLen);
-      const filename = new TextDecoder().decode(nameBytes);
-      const dataStart = offset + 30 + fnLen + extraLen;
+      for (let r = 0; r < cdRecords && cdPtr + 46 <= byteLen; r++) {
+        if (view.getUint32(cdPtr, true) !== 0x02014b50) break;
+        const compression = view.getUint16(cdPtr + 10, true);
+        const compSize = view.getUint32(cdPtr + 20, true);
+        const fnLen = view.getUint16(cdPtr + 28, true);
+        const extraLen = view.getUint16(cdPtr + 30, true);
+        const commentLen = view.getUint16(cdPtr + 32, true);
+        const localHeaderOffset = view.getUint32(cdPtr + 42, true);
 
-      if (dataStart + compSize <= buffer.byteLength) {
-        const isTarget = filename === "word/document.xml" || /^ppt\/slides\/slide\d+\.xml$/i.test(filename);
-        if (isTarget) {
-          const compData = new Uint8Array(buffer, dataStart, compSize);
-          let xmlContent = "";
-          if (compression === 0) {
-            xmlContent = new TextDecoder().decode(compData);
-          } else if (compression === 8 && typeof DecompressionStream !== "undefined") {
-            try {
-              const ds = new DecompressionStream("deflate-raw");
-              const writer = ds.writable.getWriter();
-              writer.write(compData);
-              writer.close();
-              const decompressed = await new Response(ds.readable).arrayBuffer();
-              xmlContent = new TextDecoder().decode(decompressed);
-            } catch (e) {
-              console.warn("Decompress error for", filename, e);
-            }
-          }
+        const fnBytes = new Uint8Array(buffer, cdPtr + 46, fnLen);
+        const filename = new TextDecoder("utf-8").decode(fnBytes);
 
-          if (xmlContent) {
-            if (filename === "word/document.xml") {
-              const pMatches = xmlContent.split(/<\/w:p>/g);
-              const pTexts = pMatches.map(p => {
-                const runs = [...p.matchAll(/<w:t[^>]*>(.*?)<\/w:t>/g)].map(m => m[1]);
-                return runs.join("");
-              }).filter(t => t.trim());
-              docxText = pTexts.join("\n\n");
-            } else {
-              const slideNum = (filename.match(/\d+/) || ["1"])[0];
-              const tRuns = [...xmlContent.matchAll(/<a:t[^>]*>(.*?)<\/a:t>/g)].map(m => m[1]);
-              const combined = tRuns.join(" ").trim();
-              if (combined) {
-                slides.push({ num: parseInt(slideNum, 10), text: combined });
+        if (!targetRegex || targetRegex.test(filename)) {
+          if (localHeaderOffset + 30 <= byteLen && view.getUint32(localHeaderOffset, true) === 0x04034b50) {
+            const locFnLen = view.getUint16(localHeaderOffset + 26, true);
+            const locExtraLen = view.getUint16(localHeaderOffset + 28, true);
+            const dataStart = localHeaderOffset + 30 + locFnLen + locExtraLen;
+
+            if (dataStart + compSize <= byteLen) {
+              const compData = new Uint8Array(buffer, dataStart, compSize);
+              let text = "";
+              if (compression === 0) {
+                text = new TextDecoder("utf-8").decode(compData);
+              } else if (compression === 8 && typeof DecompressionStream !== "undefined") {
+                try {
+                  const ds = new DecompressionStream("deflate-raw");
+                  const writer = ds.writable.getWriter();
+                  writer.write(compData);
+                  writer.close();
+                  const decompressed = await new Response(ds.readable).arrayBuffer();
+                  text = new TextDecoder("utf-8").decode(decompressed);
+                } catch (e) {
+                  console.warn("Decompress error for", filename, e);
+                }
               }
+              if (text) entries.set(filename, text);
             }
           }
         }
+        cdPtr += 46 + fnLen + extraLen + commentLen;
       }
-      offset = dataStart + compSize;
+    }
+  } catch (err) {
+    console.warn("readZipTextEntriesFromBuffer error:", err);
+  }
+  return entries;
+}
+
+// Parse Word document.xml into clean HTML (with tables, headings, paragraphs) and clean plain text for AI
+export function parseDocxToHtmlAndText(xmlContent) {
+  if (!xmlContent) return { html: "", text: "" };
+  try {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlContent, "application/xml");
+    const body = xmlDoc.getElementsByTagName("w:body")[0];
+    if (!body) return parseDocxRegexFallback(xmlContent);
+
+    const htmlParts = [];
+    const textParts = [];
+
+    function extractRuns(node) {
+      let runHtml = "";
+      let runText = "";
+      const rNodes = node.getElementsByTagName("w:r");
+      for (let i = 0; i < rNodes.length; i++) {
+        const r = rNodes[i];
+        const isBold = r.getElementsByTagName("w:b").length > 0;
+        const isItalic = r.getElementsByTagName("w:i").length > 0;
+        const isUnderline = r.getElementsByTagName("w:u").length > 0;
+        
+        let tStr = "";
+        const tNodes = r.getElementsByTagName("w:t");
+        for (let j = 0; j < tNodes.length; j++) {
+          tStr += tNodes[j].textContent || "";
+        }
+        if (!tStr) continue;
+
+        runText += tStr;
+        let escaped = safeEsc(tStr);
+        if (isBold) escaped = `<strong>${escaped}</strong>`;
+        if (isItalic) escaped = `<em>${escaped}</em>`;
+        if (isUnderline) escaped = `<u>${escaped}</u>`;
+        runHtml += escaped;
+      }
+      return { html: runHtml, text: runText };
     }
 
-    if (ext === "pptx" || ext === "ppt") {
+    const children = Array.from(body.childNodes);
+    for (const child of children) {
+      const nodeName = child.nodeName;
+
+      if (nodeName === "w:tbl") {
+        // Table
+        const rows = child.getElementsByTagName("w:tr");
+        let tblHtml = `<div class="docx-table-container"><table class="docx-table"><tbody>`;
+        let tblText = "\n";
+        for (let r = 0; r < rows.length; r++) {
+          tblHtml += "<tr>";
+          const cells = rows[r].getElementsByTagName("w:tc");
+          const cellTexts = [];
+          for (let c = 0; c < cells.length; c++) {
+            const pInCell = cells[c].getElementsByTagName("w:p");
+            const cellParts = [];
+            for (let cp = 0; cp < pInCell.length; cp++) {
+              const res = extractRuns(pInCell[cp]);
+              if (res.html) cellParts.push(res.html);
+            }
+            const cellInnerHtml = cellParts.join("<br>") || "&nbsp;";
+            tblHtml += `<td>${cellInnerHtml}</td>`;
+            cellTexts.push(cellParts.join(" ").replace(/<[^>]+>/g, "").trim());
+          }
+          tblHtml += "</tr>";
+          tblText += `| ${cellTexts.join(" | ")} |\n`;
+        }
+        tblHtml += "</tbody></table></div>";
+        htmlParts.push(tblHtml);
+        textParts.push(tblText);
+      } else if (nodeName === "w:p") {
+        // Paragraph or Heading
+        const pStyle = child.getElementsByTagName("w:pStyle")[0];
+        const styleVal = pStyle ? (pStyle.getAttribute("w:val") || "").toLowerCase() : "";
+        const isHeading1 = styleVal.includes("heading1") || styleVal.includes("title");
+        const isHeading2 = styleVal.includes("heading2") || styleVal.includes("subtitle");
+        const isHeading3 = styleVal.includes("heading3");
+
+        const { html: pHtml, text: pText } = extractRuns(child);
+        if (!pText.trim()) continue;
+
+        if (isHeading1) {
+          htmlParts.push(`<h2 class="docx-heading docx-h1">${pHtml}</h2>`);
+          textParts.push(`\n## ${pText.trim()}\n`);
+        } else if (isHeading2) {
+          htmlParts.push(`<h3 class="docx-heading docx-h2">${pHtml}</h3>`);
+          textParts.push(`\n### ${pText.trim()}\n`);
+        } else if (isHeading3) {
+          htmlParts.push(`<h4 class="docx-heading docx-h3">${pHtml}</h4>`);
+          textParts.push(`\n#### ${pText.trim()}\n`);
+        } else {
+          const numPr = child.getElementsByTagName("w:numPr").length > 0;
+          if (numPr) {
+            htmlParts.push(`<div class="docx-bullet-item"><span class="docx-bullet-dot">•</span><span>${pHtml}</span></div>`);
+            textParts.push(`• ${pText.trim()}`);
+          } else {
+            htmlParts.push(`<p class="docx-paragraph">${pHtml}</p>`);
+            textParts.push(pText.trim());
+          }
+        }
+      }
+    }
+
+    const finalHtml = `<div class="docx-document-sheet">${htmlParts.join("\n")}</div>`;
+    const finalText = textParts.join("\n\n");
+    return { html: finalHtml, text: finalText };
+  } catch (err) {
+    console.warn("parseDocxToHtmlAndText DOM error:", err);
+    return parseDocxRegexFallback(xmlContent);
+  }
+}
+
+// Fallback regex parser for docx - never output raw XML tags
+export function parseDocxRegexFallback(xmlContent) {
+  if (!xmlContent) return { html: "", text: "" };
+  const paragraphs = xmlContent.split(/<\/w:p>/g);
+  const cleanParagraphs = [];
+  for (const p of paragraphs) {
+    const runs = [...p.matchAll(/<w:t[^>]*>(.*?)<\/w:t>/g)].map(m => m[1]);
+    const cleanText = runs.join("").trim();
+    if (cleanText) cleanParagraphs.push(cleanText);
+  }
+  const finalText = cleanParagraphs.join("\n\n");
+  const finalHtml = `
+    <div class="docx-document-sheet">
+      ${cleanParagraphs.map(p => `<p class="docx-paragraph">${safeEsc(p)}</p>`).join("")}
+    </div>
+  `;
+  return { html: finalHtml, text: finalText };
+}
+
+// Parse Note data from Note prefix __3TG_NOTE_V1__:
+export function parsePomoNoteData(raw) {
+  const str = String(raw || "");
+  const prefix = "__3TG_NOTE_V1__:";
+  if (!str.startsWith(prefix)) {
+    return {
+      plainText: str,
+      htmlBody: safeEsc(str).replace(/\n/g, "<br>"),
+      style: { paper: "lined", font: "sans", strokes: [] }
+    };
+  }
+
+  try {
+    const json = JSON.parse(str.slice(prefix.length));
+    const body = String(json.body || "");
+    const style = json.style || {};
+    const isHtml = json.format === "html";
+    
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = body;
+    const plainText = tempDiv.textContent || tempDiv.innerText || body;
+
+    let htmlBody = "";
+    if (isHtml) {
+      htmlBody = body;
+    } else {
+      htmlBody = safeEsc(body)
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/==(.+?)==/g, "<mark>$1</mark>")
+        .replace(/\$([^$\n]+)\$/g, '<span class="note-math">$1</span>')
+        .replace(/\r?\n/g, "<br>");
+    }
+
+    return {
+      plainText: plainText.trim(),
+      htmlBody: htmlBody,
+      style: {
+        paper: style.paper || "lined",
+        font: style.font || "sans",
+        strokes: Array.isArray(style.strokes) ? style.strokes : []
+      }
+    };
+  } catch (err) {
+    return {
+      plainText: str.slice(prefix.length),
+      htmlBody: safeEsc(str.slice(prefix.length)),
+      style: { paper: "lined", font: "sans", strokes: [] }
+    };
+  }
+}
+
+// Render rich student note view with paper lines, styled font, and stroke overlay
+export function renderNoteDocView(doc) {
+  const data = doc.noteData || parsePomoNoteData(doc.content);
+  const paperClass = `note-paper-${data.style.paper || 'lined'}`;
+  const fontClass = `note-font-${data.style.font || 'sans'}`;
+
+  return `
+    <div class="pomo-doc-note-container">
+      <div class="pomo-note-sheet ${paperClass} ${fontClass}">
+        <div class="pomo-note-title-badge">
+          <span class="pomo-note-icon">📝</span>
+          <h2 class="pomo-note-title">${safeEsc(doc.name)}</h2>
+          <button type="button" class="btn-viewer-tool" style="margin-left:auto;" onclick="window.askPomodoroAi('Giải thích và mở rộng các điểm chính trong ghi chú này')">
+            🤖 Hỏi AI về ghi chú này
+          </button>
+        </div>
+        <div class="pomo-note-body-content">
+          ${data.htmlBody}
+        </div>
+        ${data.style.strokes && data.style.strokes.length > 0 ? `
+          <svg class="pomo-note-drawing-layer" viewBox="0 0 800 600" preserveAspectRatio="none">
+            ${data.style.strokes.map(s => `
+              <path d="${safeEsc(s.d)}" stroke="${safeEsc(s.color || '#d63376')}" stroke-width="${s.width || 3}" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            `).join("")}
+          </svg>
+        ` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// Extract text and HTML from Office PPTX / DOCX zip packages
+export async function extractTextFromZipDoc(file, ext) {
+  try {
+    const buffer = await file.arrayBuffer();
+    const isPpt = ext === "pptx" || ext === "ppt";
+    const targetRegex = isPpt ? /^ppt\/slides\/slide\d+\.xml$/i : /^word\/document\.xml$/i;
+    const zipEntries = await readZipTextEntriesFromBuffer(buffer, targetRegex);
+
+    if (isPpt) {
+      const slides = [];
+      for (const [fn, xml] of zipEntries.entries()) {
+        const slideNumMatch = fn.match(/\d+/);
+        const num = slideNumMatch ? parseInt(slideNumMatch[0], 10) : 1;
+        const tRuns = [...xml.matchAll(/<a:t[^>]*>(.*?)<\/a:t>/g)].map(m => m[1]);
+        const combined = tRuns.join(" ").trim();
+        if (combined) slides.push({ num, text: combined });
+      }
       if (slides.length > 0) {
         slides.sort((a, b) => a.num - b.num);
-        return slides.map(s => `[SLIDE ${s.num}]\n${s.text}`).join("\n\n");
+        const plainText = slides.map(s => `[SLIDE ${s.num}]\n${s.text}`).join("\n\n");
+        const html = slides.map(s => `
+          <div class="office-slide-card">
+            <div class="slide-card-header"><span class="slide-pill">Slide ${s.num}</span></div>
+            <div class="slide-card-body">${safeEsc(s.text).replace(/\n/g, '<br>')}</div>
+          </div>
+        `).join("");
+        return { text: plainText, html: html };
       }
-    } else if (docxText) {
-      return docxText;
+    } else {
+      // DOCX
+      const docXml = zipEntries.get("word/document.xml");
+      if (docXml) {
+        return parseDocxToHtmlAndText(docXml);
+      }
     }
 
-    // Fallback: extract clean text chunks from buffer
+    // Fallback: extract clean text chunks from buffer without raw XML tags
     const decoder = new TextDecoder("utf-8", { fatal: false });
     const rawStr = decoder.decode(buffer);
-    const matches = rawStr.match(/[\p{L}\p{N}\s.,?!:;'"()\-+*/=]{4,}/gu) || [];
-    const filtered = matches.filter(m => m.trim().length > 5 && !/[<>{}\\/]/.test(m));
-    return filtered.slice(0, 50).join("\n");
+    const cleanRuns = [...rawStr.matchAll(/<w:t[^>]*>([^<]+)<\/w:t>/g)].map(m => m[1]);
+    if (cleanRuns.length > 0) {
+      const text = cleanRuns.join(" ");
+      return { text, html: `<div class="docx-document-sheet"><p class="docx-paragraph">${safeEsc(text)}</p></div>` };
+    }
+    return { text: "", html: "" };
   } catch (err) {
     console.warn("extractTextFromZipDoc error:", err);
-    return "";
+    return { text: "", html: "" };
   }
 }
 
@@ -1124,8 +1378,9 @@ export async function addMultipleLocalFiles(fileList) {
         id: docId,
         name: file.name,
         type: "pptx",
-        content: extracted,
-        extractedText: extracted
+        content: extracted.text,
+        htmlContent: extracted.html,
+        extractedText: extracted.text
       });
       if (!pomodoroState.activeDocId) pomodoroState.activeDocId = docId;
       if (window.render) window.render();
@@ -1135,8 +1390,9 @@ export async function addMultipleLocalFiles(fileList) {
         id: docId,
         name: file.name,
         type: "docx",
-        content: extracted,
-        extractedText: extracted
+        content: extracted.text,
+        htmlContent: extracted.html,
+        extractedText: extracted.text
       });
       if (!pomodoroState.activeDocId) pomodoroState.activeDocId = docId;
       if (window.render) window.render();
@@ -1207,12 +1463,14 @@ export function addNoteToDocs(noteId) {
   if (existing) {
     pomodoroState.activeDocId = docId;
   } else {
+    const parsed = parsePomoNoteData(note.content);
     pomodoroState.docs.push({
       id: docId,
       name: note.title || "Ghi chú không tên",
       type: "note",
       content: note.content || "",
-      extractedText: note.content || ""
+      noteData: parsed,
+      extractedText: parsed.plainText || note.title || ""
     });
     pomodoroState.activeDocId = docId;
   }
@@ -1249,10 +1507,145 @@ export function togglePomoAiContext(checked) {
   }
 }
 
+export function togglePomoSidebar() {
+  pomodoroState.sidebarOpen = !pomodoroState.sidebarOpen;
+  try {
+    localStorage.setItem("pomo_sidebar_open", String(pomodoroState.sidebarOpen));
+  } catch {}
+  if (window.render) window.render();
+  setTimeout(() => initPomoResizers(), 40);
+}
+
 export function togglePomoAiDock() {
   pomodoroState.aiDockOpen = !pomodoroState.aiDockOpen;
   const dock = document.getElementById("pomo-ai-dock");
   if (dock) dock.classList.toggle("collapsed", !pomodoroState.aiDockOpen);
+  const toggleBtn = dock ? dock.querySelector(".btn-dock-toggle") : null;
+  if (toggleBtn) toggleBtn.innerHTML = pomodoroState.aiDockOpen ? '➔' : '◀';
+  setTimeout(() => initPomoResizers(), 40);
+}
+
+export async function triggerAddPomoFiles() {
+  if (window.electronAPI && typeof window.electronAPI.openStudyFiles === "function") {
+    try {
+      const filesData = await window.electronAPI.openStudyFiles();
+      if (Array.isArray(filesData) && filesData.length > 0) {
+        const fileList = filesData.map(f => {
+          const binary = atob(f.base64);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          return new File([bytes], f.name, { type: "application/octet-stream" });
+        });
+        await addMultipleLocalFiles(fileList);
+        return;
+      }
+    } catch (err) {
+      console.warn("triggerAddPomoFiles electron error:", err);
+    }
+  }
+
+  // Universal DOM fallback:
+  let input = document.getElementById("pomo-hidden-file-input");
+  if (!input) {
+    input = document.createElement("input");
+    input.id = "pomo-hidden-file-input";
+    input.type = "file";
+    input.multiple = true;
+    input.style.display = "none";
+    input.onchange = (e) => {
+      if (e.target.files && e.target.files.length) {
+        addMultipleLocalFiles(Array.from(e.target.files));
+      }
+      e.target.value = "";
+    };
+    document.body.appendChild(input);
+  }
+  input.click();
+}
+
+export function initPomoResizers() {
+  const leftResizer = document.getElementById("pomo-left-resizer");
+  const rightResizer = document.getElementById("pomo-right-resizer");
+  const room = document.querySelector(".pomodoro-active-room");
+  if (!room) return;
+
+  if (leftResizer && !leftResizer._bound) {
+    leftResizer._bound = true;
+    const onStart = (e) => {
+      e.preventDefault();
+      leftResizer.classList.add("is-dragging");
+      document.body.classList.add("pomo-is-resizing");
+      const startX = e.clientX || (e.touches && e.touches[0].clientX);
+      const startW = pomodoroState.sidebarWidth || 260;
+
+      const onMove = (ev) => {
+        const curX = ev.clientX || (ev.touches && ev.touches[0].clientX);
+        const delta = curX - startX;
+        const newW = Math.max(180, Math.min(480, startW + delta));
+        pomodoroState.sidebarWidth = newW;
+        room.style.setProperty("--pomo-sidebar-width", newW + "px");
+      };
+
+      const onEnd = () => {
+        leftResizer.classList.remove("is-dragging");
+        document.body.classList.remove("pomo-is-resizing");
+        try {
+          localStorage.setItem("pomo_sidebar_w", String(pomodoroState.sidebarWidth));
+        } catch {}
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onEnd);
+        window.removeEventListener("touchmove", onMove);
+        window.removeEventListener("touchend", onEnd);
+      };
+
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onEnd);
+      window.addEventListener("touchmove", onMove, { passive: false });
+      window.addEventListener("touchend", onEnd);
+    };
+
+    leftResizer.addEventListener("mousedown", onStart);
+    leftResizer.addEventListener("touchstart", onStart, { passive: false });
+  }
+
+  if (rightResizer && !rightResizer._bound) {
+    rightResizer._bound = true;
+    const onStart = (e) => {
+      e.preventDefault();
+      rightResizer.classList.add("is-dragging");
+      document.body.classList.add("pomo-is-resizing");
+      const startX = e.clientX || (e.touches && e.touches[0].clientX);
+      const startW = pomodoroState.aiDockWidth || 360;
+
+      const onMove = (ev) => {
+        const curX = ev.clientX || (ev.touches && ev.touches[0].clientX);
+        const delta = startX - curX;
+        const newW = Math.max(260, Math.min(680, startW + delta));
+        pomodoroState.aiDockWidth = newW;
+        room.style.setProperty("--pomo-ai-width", newW + "px");
+      };
+
+      const onEnd = () => {
+        rightResizer.classList.remove("is-dragging");
+        document.body.classList.remove("pomo-is-resizing");
+        try {
+          localStorage.setItem("pomo_ai_w", String(pomodoroState.aiDockWidth));
+        } catch {}
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onEnd);
+        window.removeEventListener("touchmove", onMove);
+        window.removeEventListener("touchend", onEnd);
+      };
+
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onEnd);
+      window.addEventListener("touchmove", onMove, { passive: false });
+      window.addEventListener("touchend", onEnd);
+    };
+
+    rightResizer.addEventListener("mousedown", onStart);
+    rightResizer.addEventListener("touchstart", onStart, { passive: false });
+  }
 }
 
 export async function askPomodoroAi(customPrompt = null) {
@@ -1681,8 +2074,10 @@ function renderPomodoroActiveRoom() {
   const notesList = (window.state && window.state.notes) || [];
   const currentTrack = pomodoroAudio.getCurrentTrack();
 
+  setTimeout(() => initPomoResizers(), 40);
+
   return `
-    <div class="pomodoro-active-room ${isFocus ? 'focus-phase' : 'break-phase'}">
+    <div class="pomodoro-active-room ${isFocus ? 'focus-phase' : 'break-phase'}" style="--pomo-sidebar-width:${pomodoroState.sidebarWidth}px; --pomo-ai-width:${pomodoroState.aiDockWidth}px;">
       <!-- TOP STATUS BAR WITH COLLAPSIBLE CLOCK WIDGET -->
       <header class="pomo-room-topbar">
         <div class="pomo-topbar-left">
@@ -1783,10 +2178,13 @@ function renderPomodoroActiveRoom() {
       <main class="pomo-room-body">
         
         <!-- ==================== CỘT TRÁI: TAB DANH SÁCH FILE TÀI LIỆU ==================== -->
-        <aside class="pomo-files-sidebar" id="pomo-files-sidebar">
+        <aside class="pomo-files-sidebar ${pomodoroState.sidebarOpen ? '' : 'collapsed'}" id="pomo-files-sidebar">
           <div class="pomo-sidebar-header">
-            <strong class="sidebar-title">📁 TÀI LIỆU HỌC (${pomodoroState.docs.length})</strong>
-            <span class="sidebar-locked-badge" title="Để duy trì tập trung tuyệt đối (Safe Exam Mode), tệp chỉ được nạp ở sảnh trước khi vào phòng học">🔒 Đã khóa tệp</span>
+            <strong class="sidebar-title">📁 TÀI LIỆU (${pomodoroState.docs.length})</strong>
+            <div class="pomo-sidebar-header-btns">
+              <button type="button" class="btn-sidebar-add-inline" onclick="window.triggerAddPomoFiles()" title="Thêm tài liệu trực tiếp vào phòng">＋ Thêm tệp</button>
+              <button type="button" class="btn-sidebar-toggle-inline" onclick="window.togglePomoSidebar()" title="Thu gọn danh sách tài liệu">❮</button>
+            </div>
           </div>
 
           <!-- Quick Notes Dropdown in sidebar -->
@@ -1819,7 +2217,7 @@ function renderPomodoroActiveRoom() {
 
             ${pomodoroState.docs.length === 0 ? `
               <div class="pomo-files-empty">
-                Chưa có tài liệu nào.<br>Tài liệu được chọn ở sảnh trước khi bắt đầu ca học.
+                Chưa có tài liệu nào.<br>Bấm <b>＋ Thêm tệp</b> hoặc chọn Sổ tay ở trên để nạp bài học!
               </div>
             ` : ""}
           </div>
@@ -1832,8 +2230,17 @@ function renderPomodoroActiveRoom() {
           </div>
         </aside>
 
+        <!-- RESIZER CỘT TRÁI (KÉO CHỈNH ĐỘ RỘNG DANH SÁCH FILE) -->
+        <div class="pomo-resizer left-resizer" id="pomo-left-resizer" title="Kéo ngang để chỉnh độ rộng danh sách tài liệu"></div>
+
         <!-- ==================== Ở GIỮA: MỞ FILE HOẶC ĐỒNG HỒ ZEN TOÀN PHẦN ==================== -->
         <section class="pomo-center-stage ${activeDoc ? 'doc-mode' : 'clock-mode'}">
+          ${!pomodoroState.sidebarOpen ? `
+            <button type="button" class="pomo-sidebar-reopen-pill" onclick="window.togglePomoSidebar()" title="Mở lại danh sách tài liệu học">
+              📁 Tài liệu ❯
+            </button>
+          ` : ""}
+
           ${activeDoc ? `
             <!-- KHI ĐANG MỞ FILE TÀI LIỆU: TRÌNH ĐỌC TRUNG TÂM -->
             <div class="pomo-doc-full-viewer">
@@ -1843,6 +2250,9 @@ function renderPomodoroActiveRoom() {
                   <strong class="doc-active-name">${safeEsc(activeDoc.name)}</strong>
                 </div>
                 <div class="doc-viewer-actions">
+                  <button type="button" class="btn-viewer-tool" onclick="window.triggerAddPomoFiles()" title="Thêm tài liệu mới">
+                    ＋ Thêm tệp
+                  </button>
                   <button type="button" class="btn-viewer-tool" onclick="window.closeActiveDoc()" title="Đóng file xem đồng hồ">
                     Đóng tài liệu ✕
                   </button>
@@ -1900,6 +2310,9 @@ function renderPomodoroActiveRoom() {
             </div>
           `}
         </section>
+
+        <!-- RESIZER CỘT PHẢI (KÉO CHỈNH ĐỘ RỘNG TAB CỐ VẤN AI) -->
+        <div class="pomo-resizer right-resizer" id="pomo-right-resizer" title="Kéo ngang để chỉnh độ rộng Cố vấn AI"></div>
 
         <!-- ==================== BÊN PHẢI: TAB CỐ VẤN BOT 3TG AI ĐỌC NGỮ CẢNH ==================== -->
         <aside class="pomo-ai-dock ${pomodoroState.aiDockOpen ? 'open' : 'collapsed'}" id="pomo-ai-dock" onclick="if(this.classList.contains('collapsed')) window.togglePomoAiDock()">
@@ -2063,23 +2476,48 @@ function renderDocContent(doc) {
     `;
   }
 
-  if (doc.type === "pptx" || doc.type === "ppt" || doc.type === "docx" || doc.type === "doc") {
-    const isPpt = doc.type.startsWith("ppt");
+  if (doc.type === "note") {
+    return renderNoteDocView(doc);
+  }
+
+  if (doc.type === "docx" || doc.type === "doc") {
     return `
       <div class="pomo-doc-office-wrap">
         <div class="office-doc-card">
           <div class="office-doc-header">
-            <div class="office-icon">${isPpt ? '📊' : '📄'}</div>
+            <div class="office-icon">📄</div>
             <div class="office-header-meta">
               <strong>${safeEsc(doc.name)}</strong>
-              <span>${isPpt ? 'Bài thuyết trình PowerPoint' : 'Tài liệu văn bản Word'}</span>
+              <span>Tài liệu văn bản Word (.docx)</span>
             </div>
             <button type="button" class="btn-viewer-tool" style="margin-left:auto;" onclick="window.askPomodoroAi('Tóm tắt 3 ý trọng tâm của tài liệu trên màn hình')">
               🤖 Nhờ AI tóm tắt tài liệu
             </button>
           </div>
           <div class="office-doc-body">
-            ${formatOfficeTextToHtml(doc.extractedText || doc.content)}
+            ${doc.htmlContent || formatOfficeTextToHtml(doc.extractedText || doc.content)}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (doc.type === "pptx" || doc.type === "ppt") {
+    return `
+      <div class="pomo-doc-office-wrap">
+        <div class="office-doc-card">
+          <div class="office-doc-header">
+            <div class="office-icon">📊</div>
+            <div class="office-header-meta">
+              <strong>${safeEsc(doc.name)}</strong>
+              <span>Bài thuyết trình PowerPoint (.pptx)</span>
+            </div>
+            <button type="button" class="btn-viewer-tool" style="margin-left:auto;" onclick="window.askPomodoroAi('Tóm tắt 3 ý trọng tâm của các slide trên màn hình')">
+              🤖 Nhờ AI tóm tắt bài thuyết trình
+            </button>
+          </div>
+          <div class="office-doc-body">
+            ${doc.htmlContent || formatOfficeTextToHtml(doc.extractedText || doc.content)}
           </div>
         </div>
       </div>
@@ -2353,6 +2791,9 @@ window.finishBreakAndExit = finishBreakAndExit;
 window.askPomodoroAi = askPomodoroAi;
 window.togglePomoAiContext = togglePomoAiContext;
 window.togglePomoAiDock = togglePomoAiDock;
+window.togglePomoSidebar = togglePomoSidebar;
+window.triggerAddPomoFiles = triggerAddPomoFiles;
+window.initPomoResizers = initPomoResizers;
 
 window.handlePomoMultiFilesSelected = (input) => {
   if (input.files && input.files.length > 0) {
