@@ -777,8 +777,9 @@ export const pomodoroState = {
   totalCycles: 0,
   todayCycles: 0,
   peersCount: 5,
+  peers: [],
   groupName: "hú",
-  peerStatusText: "Đang có 5 bạn trong nhóm 'hú' cùng ngồi học",
+  peerStatusText: "Đang có 5 bạn cùng trực tuyến học tập",
   quotesTimer: null,
   currentQuote: "Học đi không là sau này đi bốc vác đấy! ✍️",
   aiChatHistory: [
@@ -823,7 +824,9 @@ export async function enterPomodoroKiosk() {
   window._isPomodoroActive = true;
 
   try {
-    if (window.electronAPI && typeof window.electronAPI.setFullscreen === "function") {
+    if (window.electronAPI && typeof window.electronAPI.setKiosk === "function") {
+      await window.electronAPI.setKiosk(true);
+    } else if (window.electronAPI && typeof window.electronAPI.setFullscreen === "function") {
       await window.electronAPI.setFullscreen(true);
     } else if (document.documentElement.requestFullscreen) {
       await document.documentElement.requestFullscreen().catch(() => {});
@@ -837,7 +840,9 @@ export async function exitPomodoroKiosk() {
   window._isPomodoroActive = false;
 
   try {
-    if (window.electronAPI && typeof window.electronAPI.setFullscreen === "function") {
+    if (window.electronAPI && typeof window.electronAPI.setKiosk === "function") {
+      await window.electronAPI.setKiosk(false);
+    } else if (window.electronAPI && typeof window.electronAPI.setFullscreen === "function") {
       await window.electronAPI.setFullscreen(false);
     } else if (document.fullscreenElement && document.exitFullscreen) {
       await document.exitFullscreen().catch(() => {});
@@ -847,14 +852,23 @@ export async function exitPomodoroKiosk() {
   document.body.classList.remove("pomodoro-kiosk-mode");
 }
 
-// Emergency Exit (Ctrl + Q)
-window.addEventListener("keydown", (e) => {
-  if (pomodoroState.active && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "q") {
-    e.preventDefault();
-    e.stopPropagation();
-    openPomodoroExitConfirm();
-  }
-});
+// Chống sao nhãng / Auto refocus khi mất focus trong lúc đang trong ca học
+if (typeof window !== "undefined") {
+  window.addEventListener("blur", () => {
+    if (pomodoroState.active && !pomodoroState.showExitModal && !pomodoroState.showCelebrationModal) {
+      window.focus();
+    }
+  });
+
+  // Emergency Exit (Ctrl + Q)
+  window.addEventListener("keydown", (e) => {
+    if (pomodoroState.active && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "q") {
+      e.preventDefault();
+      e.stopPropagation();
+      openPomodoroExitConfirm();
+    }
+  });
+}
 
 // ========================================================
 // 4. POMODORO TIMER ENGINE & CYCLE CONTROLLER
@@ -1017,9 +1031,9 @@ export async function loadPomodoroData() {
     ]);
 
     if (peersRes) {
-      pomodoroState.peersCount = peersRes.groupPeers || 5;
-      pomodoroState.groupName = peersRes.groupName || "hú";
-      pomodoroState.peerStatusText = peersRes.statusText || `Đang có ${pomodoroState.peersCount} bạn trong nhóm '${pomodoroState.groupName}' cùng ngồi học`;
+      pomodoroState.peersCount = peersRes.peersCount || peersRes.groupPeers || 5;
+      pomodoroState.peers = peersRes.peers || [];
+      pomodoroState.peerStatusText = peersRes.statusText || `Đang có ${pomodoroState.peersCount} bạn cùng trực tuyến học tập`;
     }
 
     if (histRes) {
@@ -1725,12 +1739,21 @@ function renderPomodoroLobby() {
           <!-- PEER STATUS BANNER -->
           <div class="pomodoro-peers-banner">
             <span class="pomodoro-live-dot"></span>
-            <span class="pomodoro-peers-text">${pomodoroState.peerStatusText}</span>
+            <span class="pomodoro-peers-text">${safeEsc(pomodoroState.peerStatusText)}</span>
             <div class="pomodoro-peer-avatars">
-              <span class="peer-avatar-circle" style="background:#ff4b82;">🐰</span>
-              <span class="peer-avatar-circle" style="background:#1cb0f6;">🌸</span>
-              <span class="peer-avatar-circle" style="background:#58cc02;">⭐</span>
-              <span class="peer-avatar-plus">+${Math.max(1, pomodoroState.peersCount - 3)}</span>
+              ${(pomodoroState.peers || []).slice(0, 5).map(p => {
+                const initial = (p.name || 'H').charAt(0).toUpperCase();
+                return `
+                  <div class="peer-avatar-click-wrap" onclick="if(window.openUserProfileModal) window.openUserProfileModal('${safeEsc(p.userId)}')" title="Nhấp để xem hồ sơ & kết bạn với ${safeEsc(p.name)} 👤">
+                    ${p.avatarUrl && !p.avatarUrl.startsWith('mascot:') ? `
+                      <img src="${safeEsc(p.avatarUrl)}" class="peer-avatar-img" alt="${safeEsc(p.name)}">
+                    ` : `
+                      <span class="peer-avatar-letter">${safeEsc(initial)}</span>
+                    `}
+                  </div>
+                `;
+              }).join("")}
+              ${pomodoroState.peersCount > 5 ? `<span class="peer-avatar-plus">+${pomodoroState.peersCount - 5}</span>` : ''}
             </div>
           </div>
         </div>
@@ -1959,7 +1982,11 @@ function renderPomodoroActiveRoom() {
             </div>
           </div>
 
-          <div class="pomo-topbar-peers">${pomodoroState.peerStatusText}</div>
+          <!-- CHỈ HIỂN THỊ SỐ NGƯỜI ĐANG HỌC - KHÔNG HIỂN THỊ AVATAR / PROFILE ĐỂ TRÁNH SAO NHÃNG -->
+          <div class="pomo-topbar-peers">
+            <span class="pomo-live-dot"></span>
+            <span>Đang có ${pomodoroState.peersCount} bạn cùng học tập trung</span>
+          </div>
         </div>
 
         <div class="pomo-topbar-right">

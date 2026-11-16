@@ -6367,6 +6367,9 @@ async function fetchShop() {
   isFetchingShop = true;
   try {
     shopData = await api("/api/shop");
+    if (shopData && shopData.items) {
+      state.inventory = shopData.items.filter(i => i.owned > 0).map(i => ({ item_code: i.item_code, quantity: i.owned }));
+    }
     render();
   } catch (err) {
     if (err.status !== 401) {
@@ -6727,7 +6730,9 @@ function renderShop() {
             ${Object.values(DISCORD_EFFECTS_REGISTRY).map(item => {
               const isDeco = item.type === "avatar_decoration";
               const shopItem = items.find(i => i.item_code === item.code);
-              const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => inv.item_code === item.code && Number(inv.quantity) >= 1);
+              const isOwned = (shopItem && shopItem.owned >= 1)
+                || (state.inventory || []).some(inv => inv.item_code === item.code && Number(inv.quantity) >= 1)
+                || (state.profile && (state.profile.avatar_decoration === item.code || state.profile.profile_effect === item.code));
               const isEquipped = isDeco
                 ? (state.profile && state.profile.avatar_decoration === item.code)
                 : (state.profile && state.profile.profile_effect === item.code);
@@ -6824,7 +6829,9 @@ function renderShop() {
             </div>
             ${Object.values(DISCORD_WALLPAPERS_REGISTRY).map(item => {
               const shopItem = items.find(i => i.item_code === item.code);
-              const isOwned = (shopItem && shopItem.owned >= 1) || (state.inventory || []).some(inv => (inv.item_code === item.code || inv.item_code === item.url) && Number(inv.quantity) >= 1);
+              const isOwned = (shopItem && shopItem.owned >= 1)
+                || (state.inventory || []).some(inv => (inv.item_code === item.code || inv.item_code === item.url) && Number(inv.quantity) >= 1)
+                || (state.profile && (state.profile.cover_url === item.url || state.profile.cover_url === item.code));
               const isEquipped = state.profile && (state.profile.cover_url === item.url || state.profile.cover_url === item.code);
 
               return `

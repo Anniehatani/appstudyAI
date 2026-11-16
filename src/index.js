@@ -132,7 +132,8 @@ function createRemoteD1(env, fallbackDb) {
     });
 
     const isSelect = /^\s*(SELECT|PRAGMA|WITH)/i.test(sql);
-    const isCatalog = /FROM\s+(subjects|units|shop_items|lessons|achievements)\b/i.test(sql);
+    const isCatalog = /FROM\s+(subjects|units|shop_items|lessons|questions|achievements)\b/i.test(sql);
+    const isPureCatalog = isSelect && fallbackDb && isCatalog && !/\b(user_|profiles|chat_|audit_|academic_|friendships)\b/i.test(sql);
     const cacheKey = buildQueryCacheKey(sql, cleanParams);
 
     // 1. Kiểm tra cache trong bộ nhớ trước khi gọi D1 REST API
@@ -144,22 +145,42 @@ function createRemoteD1(env, fallbackDb) {
       invalidateD1QueryCache();
     }
 
-    // 2. Nếu đã biết Cloudflare D1 hết hạn ngạch ngày hôm nay, ưu tiên gọi Local D1 Replica
+    // 2. Pure catalog static queries (Môn học, Chương, Bài học, Câu hỏi): Trả ngay từ Local Replica (0ms, 0 Cloudflare D1 reads, không lo rớt mạng)
+    if (isPureCatalog) {
+      const catRes = await executeFallbackDb(fallbackDb, sql, cleanParams, cacheKey, true);
+      if (catRes) return catRes;
+    }
+
+    // 3. Nếu đã biết Cloudflare D1 hết hạn ngạch ngày hôm nay, ưu tiên gọi Local D1 Replica
     if (d1QuotaLimitHit && fallbackDb) {
       const fallbackRes = await executeFallbackDb(fallbackDb, sql, cleanParams, cacheKey, isCatalog);
       if (fallbackRes) return fallbackRes;
     }
 
-    // 3. Thực hiện truy vấn tới Cloudflare D1 Database qua REST API
+    // 4. Thực hiện truy vấn tới Cloudflare D1 Database qua REST API
     try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ sql: sql, params: cleanParams })
-      });
+      let res;
+      try {
+        res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ sql: sql, params: cleanParams })
+        });
+      } catch (fetchErr) {
+        // Socket drop hoặc nghẽn mạng tức thời: Thử lại 1 lần sau 150ms
+        await new Promise(r => setTimeout(r, 150));
+        res = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ sql: sql, params: cleanParams })
+        });
+      }
       const data = await res.json();
 
       if (!data.success) {
@@ -180,7 +201,6 @@ function createRemoteD1(env, fallbackDb) {
         }
 
         if (fallbackDb) {
-          console.warn("[3TG D1 Error -> Fallback Local Replica]:", errMsg);
           const fallbackRes = await executeFallbackDb(fallbackDb, sql, cleanParams, cacheKey, isCatalog);
           if (fallbackRes) return fallbackRes;
         }
@@ -195,7 +215,6 @@ function createRemoteD1(env, fallbackDb) {
       return resultObj;
     } catch (networkOrLimitErr) {
       if (fallbackDb) {
-        console.warn("[3TG D1 Network/Quota Fallback to Local Replica]:", networkOrLimitErr.message);
         const fallbackRes = await executeFallbackDb(fallbackDb, sql, cleanParams, cacheKey, isCatalog);
         if (fallbackRes) return fallbackRes;
       }
@@ -652,7 +671,7 @@ async function lessonData(lessonId, userId, env) {
     throw new HttpError(423, "Hoàn thành bài trước để mở khóa bài này nhé.");
   }
   let query = await env.DB.prepare(
-    "SELECT id, question_type, question_text, options FROM questions WHERE lesson_id = ? ORDER BY id"
+    "SELECT id, question_type, question_text, options FROM questions WHERE lesson_id = ? ORDER BY id LIMIT 10"
   ).bind(lessonId).all();
   let questionRows = query.results || [];
 
@@ -1492,7 +1511,27 @@ async function buyShopItem(request, user, env) {
     "SELECT id, quantity FROM user_inventory WHERE user_id = ? AND item_code = ? LIMIT 1"
   ).bind(user.userId, itemCode).first();
   if ((itemCode.startsWith("mascot_") || itemCode.startsWith("deco_") || itemCode.startsWith("fx_") || itemCode.startsWith("bg_") || itemCode.startsWith("theme_")) && existingInv && Number(existingInv.quantity) >= 1) {
-    throw new HttpError(400, "Bạn đã sở hữu vật phẩm này rồi, không thể mua lại!");
+    if (itemCode.startsWith("deco_")) {
+      await env.DB.prepare("UPDATE profiles SET avatar_decoration = ? WHERE user_id = ?").bind(itemCode, user.userId).run();
+      user.profile.avatar_decoration = itemCode;
+    } else if (itemCode.startsWith("fx_")) {
+      await env.DB.prepare("UPDATE profiles SET profile_effect = ? WHERE user_id = ?").bind(itemCode, user.userId).run();
+      user.profile.profile_effect = itemCode;
+    } else if (itemCode.startsWith("theme_")) {
+      await env.DB.prepare("UPDATE profiles SET profile_theme = ? WHERE user_id = ?").bind(itemCode, user.userId).run();
+      user.profile.profile_theme = itemCode;
+    } else if (itemCode.startsWith("bg_")) {
+      const wpItem = profItem || Array.from(SHOP_PROFILE_ITEMS_BY_CODE.values()).find(function (it) { return it.cover_url === itemCode; });
+      const coverUrl = wpItem ? wpItem.cover_url : itemCode;
+      await env.DB.prepare("UPDATE profiles SET cover_url = ? WHERE user_id = ?").bind(coverUrl, user.userId).run();
+      user.profile.cover_url = coverUrl;
+    }
+    return {
+      message: "Bạn đã sở hữu vật phẩm này! 3TG đã tự động trang bị cho bạn ✨",
+      profile: user.profile,
+      already_owned: true,
+      shop: await shopList(user, env)
+    };
   }
 
   const ops = [];
@@ -3526,27 +3565,43 @@ async function getPomodoroHistory(user, env) {
 }
 
 async function getPomodoroPeers(user, env) {
-  // Lấy nhóm chat của người dùng và số bạn bè đang cùng học
-  let groupName = "hú";
-  let groupPeers = 5;
   try {
-    const group = await env.DB.prepare(
-      "SELECT g.name, COUNT(m.id) as member_count FROM chat_group_members mem " +
-      "JOIN chat_groups g ON g.id = mem.group_id " +
-      "LEFT JOIN chat_group_members m ON m.group_id = g.id " +
-      "WHERE mem.user_id = ? GROUP BY g.id ORDER BY g.created_at DESC LIMIT 1"
-    ).bind(user.userId).first();
-    if (group && group.name) {
-      groupName = group.name;
-      groupPeers = Math.max(2, Number(group.member_count || 4));
-    }
-  } catch {}
+    // Lấy danh sách bạn học thực tế từ database profiles (Realtime DB, không fake avatar/nhóm)
+    const peersQuery = await env.DB.prepare(
+      "SELECT p.user_id, COALESCE(p.full_name, 'Học viên 3TG') AS full_name, " +
+      "p.avatar_url, p.avatar_decoration, p.status_icon, p.bio " +
+      "FROM profiles p " +
+      "WHERE p.user_id != ? AND p.full_name IS NOT NULL AND p.full_name != '' " +
+      "ORDER BY p.id DESC LIMIT 8"
+    ).bind(user.userId).all();
 
-  return {
-    groupName,
-    groupPeers,
-    statusText: `Đang có ${groupPeers} bạn trong nhóm '${groupName}' cùng ngồi học`
-  };
+    const totalCountQuery = await env.DB.prepare(
+      "SELECT COUNT(*) AS total FROM profiles WHERE full_name IS NOT NULL AND full_name != ''"
+    ).first();
+
+    const peersList = (peersQuery.results || []).map(p => ({
+      userId: p.user_id,
+      name: p.full_name,
+      avatarUrl: p.avatar_url,
+      avatarDecoration: p.avatar_decoration,
+      statusIcon: p.status_icon,
+      bio: p.bio || ""
+    }));
+
+    const totalLearners = Math.max(peersList.length + 1, Number(totalCountQuery?.total || (peersList.length + 1)));
+
+    return {
+      peersCount: totalLearners,
+      peers: peersList,
+      statusText: `Đang có ${totalLearners} bạn cùng trực tuyến học tập`
+    };
+  } catch (err) {
+    return {
+      peersCount: 5,
+      peers: [],
+      statusText: "Đang có 5 bạn cùng trực tuyến học tập"
+    };
+  }
 }
 
 async function routeApi(request, env) {

@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   close: () => ipcRenderer.invoke("window:close"),
   setFullscreen: (flag) => ipcRenderer.invoke("window:set-fullscreen", flag),
   isFullscreen: () => ipcRenderer.invoke("window:is-fullscreen"),
+  setKiosk: (flag) => ipcRenderer.invoke("window:set-kiosk", flag),
+  isKiosk: () => ipcRenderer.invoke("window:is-kiosk"),
   openIuLogin: () => ipcRenderer.invoke("academic:open-iu-login"),
   clearSessionCookies: () => ipcRenderer.invoke("auth:clear-cookies")
 });

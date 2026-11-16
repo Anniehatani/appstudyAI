@@ -123,10 +123,27 @@ async function createWindow() {
 
   mainWindow.loadURL(appUrl);
 
+  // Safe Exam Browser: Auto refocus khi bị mất focus (chặn nút Windows / Alt+Tab chuyển app)
+  mainWindow.on("blur", () => {
+    if (isKioskActive && mainWindow && !mainWindow.isDestroyed()) {
+      clearTimeout(kioskBlurTimer);
+      kioskBlurTimer = setTimeout(() => {
+        if (isKioskActive && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.setAlwaysOnTop(true, "screen-saver");
+          mainWindow.focus();
+          mainWindow.moveTop();
+        }
+      }, 25);
+    }
+  });
+
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
 }
+
+let isKioskActive = false;
+let kioskBlurTimer = null;
 
 // IPC Handlers
 ipcMain.handle("app:ping", () => "pong");
@@ -150,6 +167,24 @@ ipcMain.handle("window:set-fullscreen", (event, flag) => {
 ipcMain.handle("window:is-fullscreen", () => {
   return mainWindow ? mainWindow.isFullScreen() : false;
 });
+ipcMain.handle("window:set-kiosk", (event, flag) => {
+  if (!mainWindow || mainWindow.isDestroyed()) return false;
+  isKioskActive = Boolean(flag);
+  if (isKioskActive) {
+    mainWindow.setKiosk(true);
+    mainWindow.setFullScreen(true);
+    mainWindow.setAlwaysOnTop(true, "screen-saver");
+    mainWindow.setSkipTaskbar(true);
+    mainWindow.focus();
+  } else {
+    mainWindow.setAlwaysOnTop(false);
+    mainWindow.setKiosk(false);
+    mainWindow.setFullScreen(false);
+    mainWindow.setSkipTaskbar(false);
+  }
+  return isKioskActive;
+});
+ipcMain.handle("window:is-kiosk", () => isKioskActive);
 ipcMain.handle("auth:clear-cookies", async () => {
   try {
     if (mainWindow) {
