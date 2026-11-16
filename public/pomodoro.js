@@ -108,11 +108,14 @@ export class PomodoroMusicEngine {
   }
 
   getCurrentTrack() {
+    if (!this.playlist || this.playlist.length === 0) {
+      return { id: "default", title: "Nhạc tập trung", artist: "3TG Lofi", tag: "Lofi", icon: "🎧", file: "" };
+    }
     return this.playlist[this.currentIndex] || this.playlist[0];
   }
 
   getTrackUrl(track) {
-    if (!track) return "";
+    if (!track || !track.file) return "";
     return `/media/pomodoro_music/${encodeURIComponent(track.file)}`;
   }
 
@@ -125,10 +128,13 @@ export class PomodoroMusicEngine {
     if (!track) return;
 
     const url = this.getTrackUrl(track);
-    const targetSrc = window.location.origin + url;
-    if (this.audio.src !== targetSrc && !this.audio.src.endsWith(url)) {
+    if (!url) return;
+    const origin = (typeof window !== "undefined" && window.location && window.location.origin) ? window.location.origin : "";
+    const targetSrc = origin + url;
+    const currentSrc = String(this.audio && this.audio.src ? this.audio.src : "");
+    if (this.audio && currentSrc !== targetSrc && !currentSrc.endsWith(url)) {
       this.audio.src = url;
-      this.audio.load();
+      if (typeof this.audio.load === "function") this.audio.load();
     }
 
     this.updateTrackMetaInDom();
@@ -397,7 +403,7 @@ export async function enterPomodoroKiosk() {
     }
   } catch {}
 
-  document.body.classList.add("pomodoro-kiosk-mode");
+  if (document.body) document.body.classList.add("pomodoro-kiosk-mode");
 }
 
 export async function exitPomodoroKiosk() {
@@ -413,7 +419,7 @@ export async function exitPomodoroKiosk() {
     }
   } catch {}
 
-  document.body.classList.remove("pomodoro-kiosk-mode");
+  if (document.body) document.body.classList.remove("pomodoro-kiosk-mode");
 }
 
 // Chống sao nhãng / Auto refocus khi mất focus trong lúc đang trong ca học
@@ -1531,7 +1537,7 @@ function renderPomodoroLobby() {
 
         <!-- RIGHT: AMBIENCE & BIG START BUTTON -->
         <div class="pomodoro-setup-card">
-          <h2 class="setup-card-title">🎵 Âm thanh kích thích não bộ (Cloudflare R2)</h2>
+          <h2 class="setup-card-title">🎵 Âm thanh kích thích não bộ</h2>
           <p class="setup-card-desc">17 bài nhạc độc quyền chất lượng cao tải mượt mà dạng stream từng đoạn như YouTube.</p>
 
           <div class="ambience-chips-grid">
@@ -1660,6 +1666,7 @@ function renderPomodoroActiveRoom() {
   const isFocus = pomodoroState.mode === "focus";
   const activeDoc = pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
   const notesList = (window.state && window.state.notes) || [];
+  const currentTrack = pomodoroAudio.getCurrentTrack();
 
   return `
     <div class="pomodoro-active-room ${isFocus ? 'focus-phase' : 'break-phase'}">
@@ -2115,7 +2122,7 @@ export function renderPomodoroPlaylistPopover() {
       <div class="pomo-playlist-header">
         <div class="pomo-playlist-header-title">
           <span class="pomo-playlist-header-icon">🎧</span>
-          <strong>Nhạc Pomodoro (Cloudflare R2)</strong>
+          <strong>Nhạc Pomodoro</strong>
         </div>
         <button type="button" class="pomo-playlist-close-x" onclick="window.closePomodoroPlaylist()" title="Đóng">✕</button>
       </div>

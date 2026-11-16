@@ -89,7 +89,7 @@ const splashTips = document.getElementById("splash-tips");
 const CUTE_LOADING_TIPS = [
   "Thỏ Bảy Màu đang nạp năng lượng và đồng bộ bài học cho bạn… 🥕",
   "Mỗi ngày học 15 phút cùng 3TG để thắp sáng ngọn lửa tri thức! 🔥",
-  "Đang tải hơn 29.000 câu hỏi chất lượng cao từ Cloudflare D1… ✨",
+  "Đang tải hơn 29.000 câu hỏi chất lượng cao… ✨",
   "Bạn có biết: Giữ chuỗi học liên tục sẽ nhận được nhiều Đá quý hơn đấy! 💎",
   "Học vui, nhớ lâu cùng Mascot Thỏ Bảy Màu và Trợ giảng AI! 🌸",
   "Sắp hoàn tất rồi, cùng chuẩn bị chinh phục đỉnh cao tri thức nhé! 🏆"
@@ -190,7 +190,7 @@ function updateNetworkUI(isOffline) {
     } else {
       connectionStatusEl.className = "footer-live";
       connectionStatusEl.innerHTML = `<i></i> Active`;
-      connectionStatusEl.setAttribute("title", "Hệ thống đang trực tuyến (Online) và kết nối Cloudflare D1");
+      connectionStatusEl.setAttribute("title", "Hệ thống đang trực tuyến (Online) và kết nối");
     }
   }
 }
@@ -796,7 +796,7 @@ function renderAuthScreen() {
       </div>
       <h1 class="auth-entry-title">3TG — Học Vui Mỗi Ngày</h1>
       <p class="auth-entry-subtitle">
-        Trải nghiệm học tập phong cách Duolingo với hơn 29.000 câu hỏi từ Cloudflare D1. Vui lòng đăng nhập hoặc tạo tài khoản để bắt đầu!
+        Trải nghiệm học tập phong cách Duolingo với hơn 29.000 câu hỏi. Vui lòng đăng nhập hoặc tạo tài khoản để bắt đầu!
       </p>
 
       <div class="auth-switch-tabs">
@@ -4358,7 +4358,7 @@ function renderFriends() {
   }
   if (currentFriendsTab === "friends" && !friendsData) {
     fetchFriends();
-    return `<div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải danh sách bạn bè từ Cloudflare D1...</span></div>`;
+    return `<div class="loading-shell"><span class="loading-flower">✿</span><span>Đang tải danh sách bạn bè...</span></div>`;
   }
   if (currentFriendsTab === "requests" && !friendRequestsData) {
     fetchFriendRequests();
@@ -4529,7 +4529,7 @@ function renderFriends() {
               <span style="font-size:20px;">🔍</span>
               <input type="text" class="chat-input" placeholder="Tìm kiếm theo Tên học viên, Tên đăng nhập (@username) hoặc Trường..." oninput="searchFriendsInput(this.value)" autofocus style="font-size:15px; border-radius:14px;">
             </div>
-            <p style="font-size:12.5px; color:var(--ink-500); margin:8px 0 0 32px;">Gợi ý: Nhập tên bạn bè hoặc trường học để gửi lời mời kết bạn trực tiếp từ Cloudflare D1.</p>
+            <p style="font-size:12.5px; color:var(--ink-500); margin:8px 0 0 32px;">Gợi ý: Nhập tên bạn bè hoặc trường học để gửi lời mời kết bạn trực tiếp.</p>
           </div>
 
           <div class="friends-search-results">
@@ -6799,7 +6799,7 @@ function renderShop() {
                 Kho 14 Hình Nền VIP & Ảnh Bìa Động R2 (Cloudflare Storage) 🌄✨
               </h2>
               <p style="font-size:13px; color:var(--ink-500); margin:2px 0 0;">
-                Tất cả hình nền lưu trữ an toàn trên Cloudflare R2 và lưu riêng theo từng tài khoản học viên. Mua bằng Đá quý để trang bị!
+                Tất cả hình nền lưu trữ an toàn và lưu riêng theo từng tài khoản học viên. Mua bằng Đá quý để trang bị!
               </p>
             </div>
             <span style="background:linear-gradient(135deg, #0ea5e9, #6366f1); color:#fff; font-size:11px; font-weight:900; padding:4px 12px; border-radius:999px; box-shadow:0 2px 8px rgba(14,165,233,0.3);">
@@ -8020,7 +8020,7 @@ function renderChat() {
             })}
             <h3 style="font-weight:900; color:var(--ink-900); margin-top:14px; font-size:22px;">Trợ giảng 3TG AI luôn sẵn sàng phục vụ bạn!</h3>
             <p style="font-size:15px; margin-top:6px; color:var(--ink-700); max-width:520px;">
-              ${isFreeMode ? "Hỏi đa môn, gửi ảnh hoặc tài liệu để AI đọc và hỗ trợ học." : "Giải thích từng bước, chi tiết công thức toán học và kiến thức đại học từ Cloudflare D1."}
+              ${isFreeMode ? "Hỏi đa môn, gửi ảnh hoặc tài liệu để AI đọc và hỗ trợ học." : "Giải thích từng bước, chi tiết công thức toán học và kiến thức đại học."}
             </p>
           </div>
         `}
@@ -8809,7 +8809,7 @@ window.handleSaveProfileForm = async function(e) {
     state.profile = res.profile;
     closeModal();
     playSound("fanfare");
-    showToast("Đã lưu hồ sơ thành công vào Cloudflare D1!");
+    showToast("Đã lưu hồ sơ thành công!");
     updateShell();
     render();
   } catch (err) {
@@ -8863,7 +8863,7 @@ window.handleUploadAvatarFile = async function(input) {
 
   try {
     playSound("click");
-    showToast("Đang tải ảnh lên Cloudflare D1...");
+    showToast("Đang tải ảnh lên...");
     const res = await api("/api/profile/avatar", {
       method: "POST",
       body: formData
@@ -8871,7 +8871,7 @@ window.handleUploadAvatarFile = async function(input) {
     state.profile = res.profile;
     closeModal();
     playSound("fanfare");
-    showToast("Đã cập nhật ảnh đại diện vào Cloudflare D1!");
+    showToast("Đã cập nhật ảnh đại diện!");
     updateShell();
     render();
   } catch (err) {
@@ -8913,7 +8913,7 @@ window.openCoverModal = function() {
       </p>
 
       <h4 style="font-size:13.5px; font-weight:900; color:#475569; margin:14px 0 8px; display:flex; align-items:center; gap:6px;">
-        <span>🌄</span> 14 Hình Nền R2 VIP (Cloudflare R2 Storage)
+        <span>🌄</span> 14 Hình Nền
       </h4>
       <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; margin-bottom:18px;">
         <div style="cursor:pointer; border-radius:12px; overflow:hidden; border:2.5px solid ${!state.profile?.cover_url ? '#ec4899' : '#e2e8f0'}; background:#fff0f5; position:relative; aspect-ratio:16/9; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8px;" onclick="handleSelectCover('')">
@@ -8970,7 +8970,7 @@ window.handleSelectCover = async function(coverBg) {
     state.profile = res.profile;
     closeModal();
     playSound("fanfare");
-    showToast("Đã lưu ảnh bìa mới vào Cloudflare D1!");
+    showToast("Đã lưu ảnh bìa mới!");
     render();
   } catch (err) {
     playSound("wrong");
@@ -10578,7 +10578,7 @@ async function syncLiveData(silent = true) {
       }
       if (!silent) {
         playSound("fanfare");
-        showToast("⚡ Đã đồng bộ số liệu mới nhất từ Cloudflare D1!");
+        showToast("⚡ Đã đồng bộ số liệu mới nhất!");
       }
     }
   } catch (err) {
@@ -10688,7 +10688,7 @@ document.getElementById("mobile-overlay")?.addEventListener("click", closeMobile
 
 async function initialize() {
   try {
-    showAppLoader("Đang chuẩn bị kho bài học 3TG… 🌸", "Thỏ Bảy Màu đang kiểm tra phiên học và đồng bộ Cloudflare D1…");
+    showAppLoader("Đang chuẩn bị kho bài học 3TG… 🌸", "Thỏ Bảy Màu đang kiểm tra phiên học và đồng bộ…");
     setAppLoaderProgress(25);
 
     const sessionRes = await api("/api/session").catch(() => null);
