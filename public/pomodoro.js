@@ -441,14 +441,57 @@ export async function exitPomodoroKiosk() {
 
 // Cho phép chụp màn hình (PrtSc / Win + Shift + S) - tạm thời không ép cướp lại focus khi blur
 if (typeof window !== "undefined") {
-  // Emergency Exit (Ctrl + Q)
+  // Global Pomodoro Keyboard Guard: Chặn triệt để các phím chức năng khi đang học (trừ PrtSc, Ctrl+C, Ctrl+V, Ctrl+A, Ctrl+X, Ctrl+Z, Ctrl+Q)
   window.addEventListener("keydown", (e) => {
-    if (pomodoroState.active && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "q") {
+    if (!pomodoroState.active) return;
+
+    // Cho phép chụp màn hình (PrtSc) để chụp báo lỗi
+    if (e.key === "PrintScreen") return;
+
+    // Thoát khẩn cấp (Ctrl + Q)
+    if ((e.ctrlKey || e.metaKey) && (e.key || "").toLowerCase() === "q") {
       e.preventDefault();
       e.stopPropagation();
       openPomodoroExitConfirm();
+      return;
     }
-  });
+
+    // Chặn triệt để phím Alt (Alt đơn, Alt+Tab, Alt+F4, Alt mở menu bar...)
+    if (e.key === "Alt" || e.altKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    // Chặn toàn bộ phím F1 đến F12
+    if (/^F\d+$/i.test(e.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    // Chặn phím Escape để không thoát toàn màn hình
+    if (e.key === "Escape") {
+      if (pomodoroState.showPlaylist) {
+        window.closePomodoroPlaylist();
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+
+    // Nếu người dùng nhấn Ctrl / Meta: Chỉ cho phép các phím soạn thảo C, V, A, X, Z
+    if (e.ctrlKey || e.metaKey) {
+      const k = (e.key || "").toLowerCase();
+      if (k === "c" || k === "v" || k === "a" || k === "x" || k === "z") {
+        return; // Cho phép copy, paste, select all, cut, undo
+      }
+      // Chặn mọi tổ hợp Ctrl khác (Ctrl+W, Ctrl+R, Ctrl+N, Ctrl+P, Ctrl+S, Ctrl+T, Ctrl+Shift+I...)
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  }, true);
 }
 
 // ========================================================

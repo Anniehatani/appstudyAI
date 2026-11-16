@@ -35,7 +35,7 @@ public class KioskGuard {
     private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     [DllImport("user32.dll")]
-    private static extern short GetKeyState(int nVirtKey);
+    private static extern short GetAsyncKeyState(int vKey);
 
     [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
@@ -140,24 +140,51 @@ public class KioskGuard {
                 return CallNextHookEx(_hookID, nCode, wParam, lParam);
             }
 
-            // 1. Chặn phím Windows (LWIN, RWIN) tuyệt đối để không mở Start Menu / Taskbar
-            if (vk == VK_LWIN || vk == VK_RWIN) {
+            // 1. Chặn phím Windows (LWIN, RWIN) & Context Menu (APPS) tuyệt đối
+            if (vk == VK_LWIN || vk == VK_RWIN || vk == VK_APPS) {
                 return (IntPtr)1;
             }
-            if (vk == VK_APPS) {
+
+            // 2. Chặn TẤT CẢ phím ALT (0x12, 0xA4, 0xA5) và bất kỳ tổ hợp nào khi giữ ALT
+            // (Alt, Alt+Tab, Alt+F4, Alt+Esc, Alt+Space, Alt mở menubar...)
+            if (vk == 0x12 || vk == 0xA4 || vk == 0xA5 || altDown) {
                 return (IntPtr)1;
             }
-            // 2. Block Alt + Tab
-            if (vk == VK_TAB && altDown) {
+
+            // 3. Chặn toàn bộ phím chức năng F1 đến F12 (0x70 đến 0x7B)
+            if (vk >= 0x70 && vk <= 0x7B) {
                 return (IntPtr)1;
             }
-            // 3. Block Alt + Esc
-            if (vk == VK_ESCAPE && altDown) {
+
+            // 4. Chặn phím ESC (0x1B) để không thoát fullscreen / start menu
+            if (vk == VK_ESCAPE) {
                 return (IntPtr)1;
             }
-            // 4. Block Ctrl + Esc (mở Start Menu)
-            if (vk == VK_ESCAPE && (Control.ModifierKeys & Keys.Control) != 0) {
-                return (IntPtr)1;
+
+            // 5. Kiểm tra khi giữ phím CTRL:
+            // Chỉ cho phép:
+            // - Ctrl + C (0x43)
+            // - Ctrl + V (0x56)
+            // - Ctrl + A (0x41)
+            // - Ctrl + X (0x58)
+            // - Ctrl + Z (0x5A)
+            // - Ctrl + Q (0x51 - Thoát khẩn cấp Pomodoro)
+            bool ctrlDown = (GetAsyncKeyState(0x11) & 0x8000) != 0 ||
+                            (GetAsyncKeyState(0xA2) & 0x8000) != 0 ||
+                            (GetAsyncKeyState(0xA3) & 0x8000) != 0;
+
+            if (ctrlDown) {
+                // Cho phép chính phím Ctrl để kích hoạt tổ hợp
+                if (vk == 0x11 || vk == 0xA2 || vk == 0xA3) {
+                    return CallNextHookEx(_hookID, nCode, wParam, lParam);
+                }
+
+                // Kiểm tra ký tự đi kèm Ctrl:
+                bool isAllowedCtrlCombo = (vk == 0x43 || vk == 0x56 || vk == 0x41 || 
+                                           vk == 0x58 || vk == 0x5A || vk == 0x51);
+                if (!isAllowedCtrlCombo) {
+                    return (IntPtr)1; // Chặn triệt để mọi Ctrl khác (Ctrl+W, Ctrl+R, Ctrl+N, Ctrl+P, Ctrl+Shift+Esc...)
+                }
             }
         }
         return CallNextHookEx(_hookID, nCode, wParam, lParam);

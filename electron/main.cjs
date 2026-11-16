@@ -144,13 +144,57 @@ async function createWindow() {
     icon: iconPath,
     backgroundColor: "#fff5f8",
     show: false,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       nodeIntegration: false,
       contextIsolation: true,
       spellcheck: false,
       plugins: true
+    }
+  });
+
+  // Triệt tiêu hoàn toàn menu bar native để người dùng bấm Alt không bao giờ hiện bộ công cụ thoát ra
+  Menu.setApplicationMenu(null);
+  mainWindow.setMenu(null);
+  mainWindow.setMenuBarVisibility(false);
+
+  // Chặn toàn bộ phím chức năng khi ở chế độ Kiosk Pomodoro (ngoại trừ PrtSc và Ctrl C, V, A, X, Z, Q)
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    if (!isKioskActive) return;
+
+    if (input.key === "PrintScreen") return;
+
+    const isCtrl = input.control || input.meta;
+    const keyLower = (input.key || "").toLowerCase();
+
+    // Cho phép phím soạn thảo và phím thoát khẩn cấp Pomodoro (Ctrl + Q)
+    if (isCtrl && (keyLower === "c" || keyLower === "v" || keyLower === "a" || keyLower === "x" || keyLower === "z" || keyLower === "q")) {
+      return;
+    }
+
+    // Chặn triệt để phím Alt (Alt đơn, Alt+Tab, Alt+F4...)
+    if (input.key === "Alt" || input.alt) {
+      event.preventDefault();
+      return;
+    }
+
+    // Chặn toàn bộ phím F1 - F12
+    if (/^F\d+$/i.test(input.key)) {
+      event.preventDefault();
+      return;
+    }
+
+    // Chặn phím Escape
+    if (input.key === "Escape") {
+      event.preventDefault();
+      return;
+    }
+
+    // Chặn mọi tổ hợp Ctrl khác (Ctrl+W, Ctrl+R, Ctrl+N, Ctrl+P, Ctrl+Shift+I...)
+    if (isCtrl) {
+      event.preventDefault();
+      return;
     }
   });
 
@@ -161,44 +205,6 @@ async function createWindow() {
     }
     return { action: "deny" };
   });
-
-  // Application Menu
-  const menuTemplate = [
-    {
-      label: "3TG Study",
-      submenu: [
-        { label: "Trang chủ", accelerator: "CmdOrCtrl+H", click: () => mainWindow.loadURL(appUrl) },
-        { label: "Tải lại trang", accelerator: "CmdOrCtrl+R", click: () => mainWindow.reload() },
-        { type: "separator" },
-        { label: "Ẩn cửa sổ", accelerator: "CmdOrCtrl+W", role: "minimize" },
-        { label: "Thoát ứng dụng", accelerator: "Alt+F4", role: "quit" }
-      ]
-    },
-    {
-      label: "Giao diện",
-      submenu: [
-        { label: "Thu nhỏ", role: "zoomOut" },
-        { label: "Phóng to", role: "zoomIn" },
-        { label: "Kích thước chuẩn (100%)", role: "resetZoom" },
-        { type: "separator" },
-        { label: "Toàn màn hình", role: "togglefullscreen" }
-      ]
-    },
-    {
-      label: "Công cụ",
-      submenu: [
-        { label: "Công cụ nhà phát triển (DevTools)", accelerator: "F12", click: () => mainWindow.webContents.toggleDevTools() },
-        { type: "separator" },
-        {
-          label: "Về 3TG Study",
-          click: () => {
-            shell.openExternal("https://github.com/Anniehatani/appstudyAI");
-          }
-        }
-      ]
-    }
-  ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
 
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
@@ -253,6 +259,12 @@ ipcMain.handle("window:set-kiosk", (event, flag) => {
   if (!mainWindow || mainWindow.isDestroyed()) return false;
   isKioskActive = Boolean(flag);
   if (isKioskActive) {
+    Menu.setApplicationMenu(null);
+    try {
+      mainWindow.setMenu(null);
+      mainWindow.setMenuBarVisibility(false);
+      mainWindow.autoHideMenuBar = false;
+    } catch {}
     startKioskGuard();
     try { mainWindow.setKiosk(true); } catch {}
     mainWindow.setFullScreen(true);
