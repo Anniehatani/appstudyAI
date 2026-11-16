@@ -12237,18 +12237,19 @@ body.pomodoro-kiosk-mode .page-view-enter {
 .pomo-topbar-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 .pomo-room-badge {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: rgba(255, 75, 130, 0.1);
   color: var(--theme-accent, #ff4b82);
   font-weight: 900;
-  font-size: 12.5px;
-  padding: 5px 12px;
+  font-size: 11.5px;
+  padding: 4px 10px;
   border-radius: 20px;
+  white-space: nowrap;
 }
 .pomodoro-active-room.break-phase .pomo-room-badge {
   background: rgba(34, 197, 94, 0.15);
@@ -12259,22 +12260,23 @@ body.pomodoro-kiosk-mode .page-view-enter {
 .pomo-top-clock-widget {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--bg-page, #f8fafc);
   border: 1.5px solid var(--border-light, #e2e8f0);
   border-radius: 20px;
-  padding: 4px 14px;
+  padding: 3px 12px;
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
 }
 .widget-phase-label {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.5px;
   color: var(--ink-500, #64748b);
 }
 .widget-time-digits {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
   color: var(--ink-900, #0f172a);
   font-variant-numeric: tabular-nums;
@@ -12283,7 +12285,7 @@ body.pomodoro-kiosk-mode .page-view-enter {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--ink-700);
   padding: 2px 4px;
   border-radius: 4px;
@@ -12308,8 +12310,58 @@ body.pomodoro-kiosk-mode .page-view-enter {
   background: #22c55e;
 }
 
+/* BẠN HỌC TRỰC TUYẾN - STATIC VỚI DẤU TÍCH XANH LÁ HOẠT ĐỘNG (KHÔNG GÂY XAO NHÃNG) */
+.pomo-topbar-peers-static {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  border-radius: 999px;
+  padding: 4px 11px;
+  user-select: none;
+  cursor: default;
+  white-space: nowrap;
+}
+.pomo-active-green-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+.pomo-active-green-badge::after {
+  content: "";
+  position: absolute;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.35);
+  animation: pomoGreenPulse 2s infinite ease-out;
+  pointer-events: none;
+  z-index: -1;
+}
+@keyframes pomoGreenPulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+.pomo-peers-static-text {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #15803d;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+[data-theme="dark"] .pomo-topbar-peers-static {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+[data-theme="dark"] .pomo-peers-static-text {
+  color: #4ade80;
+}
+
 .pomo-topbar-peers {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ink-500, #64748b);
 }
@@ -12318,72 +12370,68 @@ body.pomodoro-kiosk-mode .page-view-enter {
   align-items: center;
   gap: 10px;
 }
-.pomo-sound-controls {
-  display: flex;
-  background: var(--bg-page, #f1f5f9);
-  padding: 3px;
-  border-radius: 12px;
-  gap: 3px;
-}
-.pomo-sound-btn {
-  background: none;
-  border: none;
-  padding: 5px 9px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink-600);
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.15s ease;
-}
-.pomo-sound-btn:hover {
-  background: rgba(0,0,0,0.05);
-}
-.pomo-sound-btn.active {
-  background: var(--card-bg, #ffffff);
-  color: var(--theme-accent, #ff4b82);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-  font-weight: 800;
-}
 .btn-pomo-exit-btn {
   background: #f1f5f9;
   color: #dc2626;
   border: 1.5px solid #fecaca;
   font-weight: 800;
   font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
   cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 .btn-pomo-exit-btn:hover {
   background: #fee2e2;
+  border-color: #f87171;
+  transform: translateY(-1px);
 }
 
 /* ========================================================
-   TOPBAR YOUTUBE-STYLE MUSIC PLAYER & PLAYLIST DROPDOWN
+   TOPBAR TRUE-CENTER FLOATING MUSIC PLAYER DOCK (ĐẶC SẮC)
    ======================================================== */
 .pomo-topbar-center-player {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  max-width: 440px;
-  margin: 0 auto;
+  padding: 5px 18px 4px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1.5px solid rgba(139, 92, 246, 0.28);
+  border-radius: 999px;
+  box-shadow: 0 4px 20px -2px rgba(124, 58, 237, 0.14), 0 1px 3px rgba(0, 0, 0, 0.05);
   gap: 3px;
   user-select: none;
+  z-index: 20;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+.pomo-topbar-center-player:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 6px 24px -2px rgba(124, 58, 237, 0.22);
+}
+[data-theme="dark"] .pomo-topbar-center-player {
+  background: rgba(22, 27, 46, 0.94);
+  border-color: rgba(139, 92, 246, 0.38);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
 .pomo-music-controls-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
 }
 .pomo-music-ctrl-btn {
   background: rgba(139, 92, 246, 0.08);
   border: 1px solid rgba(139, 92, 246, 0.22);
   cursor: pointer;
-  font-size: 13px;
   color: #7c3aed;
   width: 28px;
   height: 28px;
@@ -12399,8 +12447,8 @@ body.pomodoro-kiosk-mode .page-view-enter {
   background: rgba(139, 92, 246, 0.22);
   color: #6d28d9;
   border-color: #8b5cf6;
-  transform: scale(1.14);
-  box-shadow: 0 3px 8px rgba(124, 58, 237, 0.2);
+  transform: scale(1.15);
+  box-shadow: 0 3px 8px rgba(124, 58, 237, 0.25);
 }
 .pomo-music-ctrl-btn:active {
   transform: scale(0.92);
@@ -12409,11 +12457,10 @@ body.pomodoro-kiosk-mode .page-view-enter {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
   color: #ffffff;
-  font-size: 13px;
   border: none;
-  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.38);
+  box-shadow: 0 0 12px rgba(147, 51, 234, 0.45), 0 2px 6px rgba(0, 0, 0, 0.12);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -12422,37 +12469,76 @@ body.pomodoro-kiosk-mode .page-view-enter {
   user-select: none;
 }
 .pomo-music-play-btn:hover {
-  transform: scale(1.15);
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.55);
+  transform: scale(1.16);
+  box-shadow: 0 0 18px rgba(147, 51, 234, 0.65), 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 .pomo-music-play-btn:active {
   transform: scale(0.92);
 }
+
 .pomo-music-title-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  max-width: 100%;
+  gap: 7px;
+  max-width: 340px;
   overflow: hidden;
 }
+.pomo-center-soundwave {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 11px;
+  width: 11px;
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+.pomo-center-soundwave.playing {
+  opacity: 1;
+}
+.pomo-center-soundwave span {
+  width: 2px;
+  background: #7c3aed;
+  border-radius: 1px;
+  height: 30%;
+  transition: height 0.2s ease;
+}
+.pomo-center-soundwave.playing span {
+  animation: pomoWave 0.8s ease-in-out infinite alternate;
+}
+.pomo-center-soundwave.playing span:nth-child(1) { height: 40%; animation-delay: 0.1s; }
+.pomo-center-soundwave.playing span:nth-child(2) { height: 100%; animation-delay: 0.3s; }
+.pomo-center-soundwave.playing span:nth-child(3) { height: 60%; animation-delay: 0.2s; }
+
 .pomo-music-title {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 800;
-  color: #5b21b6;
+  color: #4c1d95;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 320px;
+  max-width: 200px;
   letter-spacing: -0.2px;
 }
-.pomo-music-time-inline {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #8b5cf6;
-  opacity: 0.9;
+.pomo-player-time-badge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #7c3aed;
+  background: rgba(139, 92, 246, 0.1);
+  padding: 1px 7px;
+  border-radius: 999px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+[data-theme="dark"] .pomo-music-title {
+  color: #ddd6fe;
+}
+[data-theme="dark"] .pomo-player-time-badge {
+  background: rgba(139, 92, 246, 0.22);
+  color: #c4b5fd;
+}
+[data-theme="dark"] .pomo-center-soundwave span {
+  background: #a78bfa;
 }
 [data-theme="dark"] .pomo-music-ctrl-btn {
   background: rgba(139, 92, 246, 0.2);

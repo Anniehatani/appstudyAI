@@ -266,8 +266,14 @@ export class PomodoroMusicEngine {
   updatePlayStateInDom(isPlaying) {
     const playBtn = document.getElementById("pomo-music-play-btn");
     if (playBtn) {
-      playBtn.innerHTML = isPlaying ? "⏸" : "▶";
+      playBtn.innerHTML = isPlaying 
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>' 
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
       playBtn.title = isPlaying ? "Tạm dừng nhạc" : "Phát nhạc";
+    }
+    const centerEq = document.getElementById("pomo-center-eq");
+    if (centerEq) {
+      centerEq.classList.toggle("playing", Boolean(isPlaying));
     }
     const currentTrack = this.getCurrentTrack();
     const dropdownItems = document.querySelectorAll(".pomo-playlist-track-row");
@@ -1698,35 +1704,45 @@ function renderPomodoroActiveRoom() {
             </div>
           </div>
 
-          <!-- CHỈ HIỂN THỊ SỐ NGƯỜI ĐANG HỌC - NHẤP VÀO SỔ RA DANH SÁCH -->
-          <div class="pomo-topbar-peers" onclick="window.openPomodoroLearnersList()" style="cursor:pointer;" title="Nhấp để xem danh sách bạn học đang trong phòng 👥">
-            <span class="pomo-live-dot"></span>
-            <span>Đang có ${pomodoroState.peersCount} bạn cùng học tập trung ▾</span>
+          <!-- CHỈ VIẾT VẬY THÔI KÈM TÍCH XANH LÁ HOẠT ĐỘNG - KHÔNG CHO NHẤP XEM HỒ SƠ ĐỂ TRÁNH XAO NHÃNG -->
+          <div class="pomo-topbar-peers-static">
+            <span class="pomo-active-green-badge">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" style="display:block;">
+                <circle cx="8" cy="8" r="7.5" fill="#22c55e" stroke="#16a34a" stroke-width="1"/>
+                <path d="M4.5 8L7 10.5L11.5 5.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="pomo-peers-static-text">Đang có ${Math.max(1, pomodoroState.peersCount)} bạn cùng học tập trung</span>
           </div>
         </div>
 
-        <!-- 2. CENTER: YOUTUBE-STYLE MUSIC PLAYER CONTROLS & SONG TITLE (AS DRAWN BY USER) -->
+        <!-- 2. CENTER: FLOATING GLASS DOCK - YOUTUBE-STYLE MUSIC PLAYER -->
         <div class="pomo-topbar-center-player">
-          <!-- Controls row: Prev, Play/Pause, Next -->
+          <!-- Controls row: Prev, Play/Pause, Next with SVG icons & glowing hover -->
           <div class="pomo-music-controls-row">
             <button type="button" class="pomo-music-ctrl-btn" onclick="window.pomodoroAudio.prev()" title="Bài trước (Prev)">
-              ⏮
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
             </button>
             <button type="button" class="pomo-music-play-btn" id="pomo-music-play-btn" onclick="window.pomodoroAudio.togglePlay()" title="${pomodoroAudio.isPlaying ? 'Tạm dừng nhạc' : 'Phát nhạc'}">
-              ${pomodoroAudio.isPlaying ? '⏸' : '▶'}
+              ${pomodoroAudio.isPlaying 
+                ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>' 
+                : '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'}
             </button>
             <button type="button" class="pomo-music-ctrl-btn" onclick="window.pomodoroAudio.next()" title="Bài tiếp theo (Next)">
-              ⏭
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
             </button>
           </div>
 
-          <!-- Title row: Tên bài hát (clean, centered under controls) -->
+          <!-- Title row: Equalizer wave + Song title + Time pill badge -->
           <div class="pomo-music-title-wrap">
+            <div class="pomo-center-soundwave ${pomodoroAudio.isPlaying ? 'playing' : ''}" id="pomo-center-eq" title="Đang phát nhạc">
+              <span></span><span></span><span></span>
+            </div>
             <span class="pomo-music-title" id="pomo-current-music-title" title="${safeEsc(currentTrack.title)} - ${safeEsc(currentTrack.artist)}">
               ${currentTrack.icon} ${safeEsc(currentTrack.title)}
             </span>
-            <span class="pomo-music-time-inline">
-              (<span id="pomo-audio-time-current">00:00</span> / <span id="pomo-audio-time-duration">--:--</span>)
+            <span class="pomo-player-time-badge">
+              <span id="pomo-audio-time-current">00:00</span> / <span id="pomo-audio-time-duration">--:--</span>
             </span>
           </div>
         </div>
