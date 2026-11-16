@@ -12236,7 +12236,8 @@ body.pomodoro-kiosk-mode .page-view-enter {
 
 /* TOPBAR */
 .pomo-room-topbar {
-  height: 66px;
+  height: 70px;
+  min-height: 70px;
   padding: 0 24px;
   display: flex;
   align-items: center;
@@ -12414,16 +12415,18 @@ body.pomodoro-kiosk-mode .page-view-enter {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 5px 18px 4px;
-  background: rgba(255, 255, 255, 0.94);
+  padding: 3px 16px 3px;
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1.5px solid rgba(139, 92, 246, 0.28);
   border-radius: 999px;
-  box-shadow: 0 4px 20px -2px rgba(124, 58, 237, 0.14), 0 1px 3px rgba(0, 0, 0, 0.05);
-  gap: 3px;
+  box-shadow: 0 4px 18px -2px rgba(124, 58, 237, 0.14), 0 1px 3px rgba(0, 0, 0, 0.05);
+  gap: 2px;
   user-select: none;
   z-index: 20;
+  max-height: 52px;
+  box-sizing: border-box;
   transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .pomo-topbar-center-player:hover {
@@ -12440,21 +12443,22 @@ body.pomodoro-kiosk-mode .page-view-enter {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
 }
 .pomo-music-ctrl-btn {
   background: rgba(139, 92, 246, 0.08);
   border: 1px solid rgba(139, 92, 246, 0.22);
   cursor: pointer;
   color: #7c3aed;
-  width: 28px;
-  height: 28px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
   transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   user-select: none;
+  padding: 0;
   box-shadow: 0 1px 3px rgba(124, 58, 237, 0.08);
 }
 .pomo-music-ctrl-btn:hover {
@@ -12468,23 +12472,24 @@ body.pomodoro-kiosk-mode .page-view-enter {
   transform: scale(0.92);
 }
 .pomo-music-play-btn {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
   color: #ffffff;
   border: none;
-  box-shadow: 0 0 12px rgba(147, 51, 234, 0.45), 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0 10px rgba(147, 51, 234, 0.45), 0 2px 5px rgba(0, 0, 0, 0.12);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
   user-select: none;
+  padding: 0;
 }
 .pomo-music-play-btn:hover {
   transform: scale(1.16);
-  box-shadow: 0 0 18px rgba(147, 51, 234, 0.65), 0 4px 12px rgba(124, 58, 237, 0.3);
+  box-shadow: 0 0 16px rgba(147, 51, 234, 0.65), 0 3px 10px rgba(124, 58, 237, 0.3);
 }
 .pomo-music-play-btn:active {
   transform: scale(0.92);
@@ -12494,9 +12499,11 @@ body.pomodoro-kiosk-mode .page-view-enter {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  max-width: 340px;
+  gap: 6px;
+  max-width: 320px;
   overflow: hidden;
+  font-size: 11px;
+  line-height: 1.2;
 }
 .pomo-center-soundwave {
   display: inline-flex;
@@ -13496,6 +13503,31 @@ body.pomo-is-resizing * {
   color: #ffffff;
   transform: translateX(3px);
 }
+.pomo-ai-reopen-pill {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  z-index: 30;
+  background: var(--card-bg, #ffffff);
+  border: 1.5px solid var(--theme-accent, #ff4b82);
+  box-shadow: 0 4px 14px rgba(255, 75, 130, 0.18);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--theme-accent, #ff4b82);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  animation: popIn 0.2s ease;
+}
+.pomo-ai-reopen-pill:hover {
+  background: var(--theme-accent, #ff4b82);
+  color: #ffffff;
+  transform: translateX(-3px);
+}
 
 /* RICH NOTE PAPER VIEW TRONG PHÒNG POMODORO */
 .pomo-doc-note-container {
@@ -14431,7 +14463,8 @@ body.pomo-is-resizing * {
 [data-theme="dark"] .pomo-note-body-content {
   color: #cbd5e1;
 }
-[data-theme="dark"] .pomo-sidebar-reopen-pill {
+[data-theme="dark"] .pomo-sidebar-reopen-pill,
+[data-theme="dark"] .pomo-ai-reopen-pill {
   background: #181c2b;
   border-color: var(--theme-accent, #ff4b82);
   color: #ff85aa;

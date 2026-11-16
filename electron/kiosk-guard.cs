@@ -13,6 +13,7 @@ public class KioskGuard {
 
     private const int SW_HIDE = 0;
     private const int SW_SHOW = 5;
+    private const int SW_RESTORE = 9;
 
     [StructLayout(LayoutKind.Sequential)]
     private struct KBDLLHOOKSTRUCT {
@@ -65,18 +66,35 @@ public class KioskGuard {
     public static void ShowTaskbar() {
         try {
             IntPtr tray = FindWindow("Shell_TrayWnd", null);
-            if (tray != IntPtr.Zero) ShowWindow(tray, SW_SHOW);
+            if (tray != IntPtr.Zero) {
+                ShowWindow(tray, SW_SHOW);
+                ShowWindow(tray, SW_RESTORE);
+            }
 
             IntPtr secTray = FindWindow("Shell_SecondaryTrayWnd", null);
-            if (secTray != IntPtr.Zero) ShowWindow(secTray, SW_SHOW);
+            if (secTray != IntPtr.Zero) {
+                ShowWindow(secTray, SW_SHOW);
+                ShowWindow(secTray, SW_RESTORE);
+            }
 
             IntPtr startBtn = FindWindow("Button", "Start");
-            if (startBtn != IntPtr.Zero) ShowWindow(startBtn, SW_SHOW);
+            if (startBtn != IntPtr.Zero) {
+                ShowWindow(startBtn, SW_SHOW);
+                ShowWindow(startBtn, SW_RESTORE);
+            }
         } catch {}
     }
 
     [STAThread]
     public static void Main(string[] args) {
+        if (args != null && args.Length > 0) {
+            string cmd = args[0].ToLowerInvariant();
+            if (cmd == "--restore" || cmd == "--show" || cmd == "-r" || cmd == "restore" || cmd == "show") {
+                ShowTaskbar();
+                return;
+            }
+        }
+
         _hookID = SetHook(_proc);
         HideTaskbar();
 
@@ -92,6 +110,7 @@ public class KioskGuard {
             } catch {}
             ShowTaskbar();
             if (_hookID != IntPtr.Zero) UnhookWindowsHookEx(_hookID);
+            Application.Exit();
             Environment.Exit(0);
         });
         stdinThread.IsBackground = true;

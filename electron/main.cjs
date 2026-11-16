@@ -8,6 +8,26 @@ let mainWindow = null;
 let embeddedServerInstance = null;
 let kioskGuardProc = null;
 
+function restoreWindowsTaskbar() {
+  if (process.platform !== "win32") return;
+  const candidates = [
+    path.join(__dirname, "kiosk_guard.exe"),
+    path.join(__dirname, "../build/study_kiosk.exe"),
+    path.join(process.resourcesPath || "", "app.asar.unpacked/build/study_kiosk.exe"),
+    path.join(process.resourcesPath || "", "build/study_kiosk.exe")
+  ];
+  const targetExe = candidates.find(p => fs.existsSync(p));
+  if (targetExe) {
+    try {
+      const { spawnSync } = require("child_process");
+      spawnSync(targetExe, ["--restore"], { windowsHide: true, timeout: 3000 });
+      console.log("[KioskGuard] Đã khôi phục thanh Taskbar Windows hoàn tất");
+    } catch (e) {
+      console.warn("[TaskbarRestore Error]", e.message);
+    }
+  }
+}
+
 function startKioskGuard() {
   if (process.platform !== "win32") return;
   if (kioskGuardProc && !kioskGuardProc.killed) return;
@@ -59,11 +79,21 @@ function stopKioskGuard() {
   if (kioskGuardProc) {
     try {
       kioskGuardProc.stdin?.write("STOP\n");
-      kioskGuardProc.kill();
-      console.log("[KioskGuard] Đã giải phóng Hook bàn phím");
     } catch {}
-    kioskGuardProc = null;
+    try {
+      kioskGuardProc.stdin?.end();
+    } catch {}
+    setTimeout(() => {
+      try {
+        if (kioskGuardProc && !kioskGuardProc.killed) {
+          kioskGuardProc.kill();
+        }
+      } catch {}
+      kioskGuardProc = null;
+    }, 100);
   }
+  // Luôn khôi phục thanh Taskbar Windows ngay lập tức và vô điều kiện
+  restoreWindowsTaskbar();
 }
 
 // Set Application User Model ID for Windows Taskbar & Notifications

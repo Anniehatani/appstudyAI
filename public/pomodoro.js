@@ -352,7 +352,7 @@ export const pomodoroState = {
   
   // AI CONTEXT READING TOGGLE & RESIZABLE DOCK
   aiReadScreenContext: true,
-  aiDockOpen: true,
+  aiDockOpen: typeof localStorage !== "undefined" && localStorage.getItem("pomo_ai_dock_open") !== null ? localStorage.getItem("pomo_ai_dock_open") !== "false" : true,
   aiDockWidth: typeof localStorage !== "undefined" ? Math.max(260, Math.min(680, parseInt(localStorage.getItem("pomo_ai_w") || "360", 10))) : 360,
 
   history: [],
@@ -1516,12 +1516,40 @@ export function togglePomoSidebar() {
   setTimeout(() => initPomoResizers(), 40);
 }
 
-export function togglePomoAiDock() {
+export function togglePomoAiDock(event) {
+  if (event) {
+    try {
+      event.preventDefault();
+      event.stopPropagation();
+    } catch {}
+  }
   pomodoroState.aiDockOpen = !pomodoroState.aiDockOpen;
+  try {
+    localStorage.setItem("pomo_ai_dock_open", String(pomodoroState.aiDockOpen));
+  } catch {}
+
   const dock = document.getElementById("pomo-ai-dock");
-  if (dock) dock.classList.toggle("collapsed", !pomodoroState.aiDockOpen);
-  const toggleBtn = dock ? dock.querySelector(".btn-dock-toggle") : null;
-  if (toggleBtn) toggleBtn.innerHTML = pomodoroState.aiDockOpen ? '➔' : '◀';
+  const rightResizer = document.getElementById("pomo-right-resizer");
+  const reopenPill = document.getElementById("pomo-ai-reopen-pill");
+
+  if (dock) {
+    dock.classList.toggle("collapsed", !pomodoroState.aiDockOpen);
+    dock.classList.toggle("open", pomodoroState.aiDockOpen);
+    const toggleBtn = dock.querySelector(".btn-dock-toggle");
+    if (toggleBtn) {
+      toggleBtn.innerHTML = pomodoroState.aiDockOpen ? '➔' : '◀';
+      toggleBtn.title = pomodoroState.aiDockOpen ? "Thu gọn Cố vấn AI" : "Mở rộng Cố vấn AI";
+    }
+  }
+
+  if (rightResizer) {
+    rightResizer.style.display = pomodoroState.aiDockOpen ? "" : "none";
+  }
+
+  if (reopenPill) {
+    reopenPill.style.display = pomodoroState.aiDockOpen ? "none" : "flex";
+  }
+
   setTimeout(() => initPomoResizers(), 40);
 }
 
@@ -2241,6 +2269,12 @@ function renderPomodoroActiveRoom() {
             </button>
           ` : ""}
 
+          ${!pomodoroState.aiDockOpen ? `
+            <button type="button" class="pomo-ai-reopen-pill" id="pomo-ai-reopen-pill" onclick="window.togglePomoAiDock(event)" title="Mở lại Cố vấn Bot 3TG AI">
+              ❮ ✨ Cố vấn AI
+            </button>
+          ` : ""}
+
           ${activeDoc ? `
             <!-- KHI ĐANG MỞ FILE TÀI LIỆU: TRÌNH ĐỌC TRUNG TÂM -->
             <div class="pomo-doc-full-viewer">
@@ -2312,12 +2346,12 @@ function renderPomodoroActiveRoom() {
         </section>
 
         <!-- RESIZER CỘT PHẢI (KÉO CHỈNH ĐỘ RỘNG TAB CỐ VẤN AI) -->
-        <div class="pomo-resizer right-resizer" id="pomo-right-resizer" title="Kéo ngang để chỉnh độ rộng Cố vấn AI"></div>
+        <div class="pomo-resizer right-resizer" id="pomo-right-resizer" style="display: ${pomodoroState.aiDockOpen ? '' : 'none'};" title="Kéo ngang để chỉnh độ rộng Cố vấn AI"></div>
 
         <!-- ==================== BÊN PHẢI: TAB CỐ VẤN BOT 3TG AI ĐỌC NGỮ CẢNH ==================== -->
-        <aside class="pomo-ai-dock ${pomodoroState.aiDockOpen ? 'open' : 'collapsed'}" id="pomo-ai-dock" onclick="if(this.classList.contains('collapsed')) window.togglePomoAiDock()">
+        <aside class="pomo-ai-dock ${pomodoroState.aiDockOpen ? 'open' : 'collapsed'}" id="pomo-ai-dock">
           <!-- Handle hiển thị khi dock thu gọn: Click vào là mở ra -->
-          <div class="pomo-ai-collapsed-handle" title="Bấm để mở lại Cố vấn Bot 3TG AI">
+          <div class="pomo-ai-collapsed-handle" onclick="window.togglePomoAiDock(event)" title="Bấm để mở lại Cố vấn Bot 3TG AI">
             <span class="collapsed-handle-icon">✨</span>
             <span class="collapsed-handle-text">CỐ VẤN BOT 3TG AI</span>
             <span class="collapsed-handle-arrow">◀</span>
@@ -2329,7 +2363,7 @@ function renderPomodoroActiveRoom() {
               <span class="ai-dock-sparkle">✨</span>
               <strong>Cố vấn Bot 3TG AI</strong>
             </div>
-            <button type="button" class="btn-dock-toggle" onclick="window.togglePomoAiDock()" title="Thu nhỏ / Mở rộng Tab AI">
+            <button type="button" class="btn-dock-toggle" onclick="window.togglePomoAiDock(event)" title="Thu nhỏ / Mở rộng Tab AI">
               ${pomodoroState.aiDockOpen ? '➔' : '◀'}
             </button>
           </div>
