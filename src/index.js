@@ -3564,42 +3564,118 @@ async function getPomodoroHistory(user, env) {
   };
 }
 
+async function pomodoroHeartbeat(request, user, env) {
+  const body = await readJson(request).catch(() => ({}));
+  const cycle = Math.max(1, Number(body.cycle || 1));
+  const mode = String(body.mode || "focus");
+  const docName = String(body.docName || "").slice(0, 100);
+
+  try {
+    await env.DB.prepare(
+      "INSERT INTO pomodoro_active_learners (user_id, cycle_number, mode, doc_name, started_at, last_heartbeat) " +
+      "VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+      "ON CONFLICT(user_id) DO UPDATE SET " +
+      "cycle_number = excluded.cycle_number, " +
+      "mode = excluded.mode, " +
+      "doc_name = excluded.doc_name, " +
+      "last_heartbeat = CURRENT_TIMESTAMP"
+    ).bind(user.userId, cycle, mode, docName).run();
+  } catch (err) {
+    console.warn("[Pomodoro Heartbeat Error]", err.message);
+  }
+  return { ok: true };
+}
+
+async function pomodoroLeave(user, env) {
+  try {
+    await env.DB.prepare("DELETE FROM pomodoro_active_learners WHERE user_id = ?").bind(user.userId).run();
+  } catch {}
+  return { ok: true };
+}
+
 async function getPomodoroPeers(user, env) {
   try {
-    // Lấy danh sách bạn học thực tế từ database profiles (Realtime DB, không fake avatar/nhóm)
-    const peersQuery = await env.DB.prepare(
-      "SELECT p.user_id, COALESCE(p.full_name, 'Học viên 3TG') AS full_name, " +
-      "p.avatar_url, p.avatar_decoration, p.status_icon, p.bio " +
-      "FROM profiles p " +
-      "WHERE p.user_id != ? AND p.full_name IS NOT NULL AND p.full_name != '' " +
-      "ORDER BY p.id DESC LIMIT 8"
-    ).bind(user.userId).all();
+    // 1. Dọn dẹp các phiên học treo quá 5 phút không có tín hiệu nhịp tim
+    try {
+      await env.DB.prepare("DELETE FROM pomodoro_active_learners WHERE last_heartbeat < datetime('now', '-5 minutes')").run();
+    } catch {}
 
-    const totalCountQuery = await env.DB.prepare(
-      "SELECT COUNT(*) AS total FROM profiles WHERE full_name IS NOT NULL AND full_name != ''"
-    ).first();
+    // 2. Chỉ truy vấn những người DANG THỰC SỰ TRONG PHÒNG POMODORO (đã nhấn Bắt đầu ca học)
+    const activeQuery = await env.DB.prepare(
+      "SELECT l.user_id, l.cycle_number, l.mode, l.doc_name, l.started_at, l.last_heartbeat, " +
+      "COALESCE(p.full_name, 'Học viên 3TG') AS full_name, " +
+      "p.avatar_url, p.avatar_decoration, p.status_icon, p.school, p.major, p.bio " +
+      "FROM pomodoro_active_learners l " +
+      "JOIN profiles p ON p.user_id = l.user_id " +
+      "ORDER BY l.last_heartbeat DESC LIMIT 20"
+    ).all().catch(() => ({ results: [] }));
 
-    const peersList = (peersQuery.results || []).map(p => ({
-      userId: p.user_id,
-      name: p.full_name,
-      avatarUrl: p.avatar_url,
-      avatarDecoration: p.avatar_decoration,
-      statusIcon: p.status_icon,
-      bio: p.bio || ""
+    let activeLearners = (activeQuery.results || []).map(r => ({
+      userId: r.user_id,
+      name: r.full_name,
+      avatarUrl: r.avatar_url,
+      avatarDecoration: r.avatar_decoration,
+      statusIcon: r.status_icon,
+      school: r.school || "",
+      major: r.major || "",
+      bio: r.bio || "",
+      cycle: r.cycle_number || 1,
+      mode: r.mode || "focus",
+      docName: r.doc_name || "",
+      isMe: r.user_id === user.userId,
+      isLive: true
     }));
 
-    const totalLearners = Math.max(peersList.length + 1, Number(totalCountQuery?.total || (peersList.length + 1)));
+    // 3. Nếu chưa có ai đang học trực tiếp, nạp thêm các bạn vừa hoàn thành ca Pomodoro hôm nay
+    if (activeLearners.length === 0) {
+      const recentSessions = await env.DB.prepare(
+        "SELECT s.user_id, s.cycles, s.focus_minutes, s.doc_name, s.completed_at, " +
+        "COALESCE(p.full_name, 'Học viên 3TG') AS full_name, " +
+        "p.avatar_url, p.avatar_decoration, p.status_icon, p.school, p.major, p.bio " +
+        "FROM user_pomodoro_sessions s " +
+        "JOIN profiles p ON p.user_id = s.user_id " +
+        "WHERE s.completed_at >= datetime('now', '-6 hours') " +
+        "GROUP BY s.user_id " +
+        "ORDER BY s.completed_at DESC LIMIT 5"
+      ).all().catch(() => ({ results: [] }));
+
+      activeLearners = (recentSessions.results || []).map(r => ({
+        userId: r.user_id,
+        name: r.full_name,
+        avatarUrl: r.avatar_url,
+        avatarDecoration: r.avatar_decoration,
+        statusIcon: r.status_icon,
+        school: r.school || "",
+        major: r.major || "",
+        bio: r.bio || "",
+        cycle: r.cycles || 1,
+        mode: "break",
+        docName: r.doc_name || "",
+        isMe: r.user_id === user.userId,
+        isLive: false
+      }));
+    }
+
+    const totalLearners = activeLearners.length;
+    let statusText = "Chưa có bạn nào trong phòng. Bạn hãy là người đầu tiên vào học nhé! 🚀";
+    if (totalLearners === 1) {
+      statusText = activeLearners[0].isMe 
+        ? "Bạn đang là chiến thần tập trung trong phòng! 🔥"
+        : "Đang có 1 bạn đang trong phòng Pomodoro";
+    } else if (totalLearners > 1) {
+      statusText = `Đang có ${totalLearners} bạn đang cùng ngồi học`;
+    }
 
     return {
       peersCount: totalLearners,
-      peers: peersList,
-      statusText: `Đang có ${totalLearners} bạn cùng trực tuyến học tập`
+      peers: activeLearners,
+      statusText: statusText
     };
   } catch (err) {
     return {
-      peersCount: 5,
+      peersCount: 0,
       peers: [],
-      statusText: "Đang có 5 bạn cùng trực tuyến học tập"
+      statusText: "Chưa có bạn nào trong phòng. Bạn hãy là người đầu tiên vào học nhé! 🚀"
     };
   }
 }
@@ -3707,6 +3783,8 @@ async function routeApi(request, env) {
   if (path === "/api/pomodoro/complete" && method === "POST") return respond(await completePomodoroSession(request, user, env));
   if (path === "/api/pomodoro/history" && method === "GET") return respond(await getPomodoroHistory(user, env));
   if (path === "/api/pomodoro/peers" && method === "GET") return respond(await getPomodoroPeers(user, env));
+  if (path === "/api/pomodoro/heartbeat" && method === "POST") return respond(await pomodoroHeartbeat(request, user, env));
+  if (path === "/api/pomodoro/leave" && method === "POST") return respond(await pomodoroLeave(user, env));
 
   if (path === "/api/messages/conversations" && method === "GET") return respond(await getConversations(user, env));
   const messageMatch = path.match(/^\/api\/messages\/([0-9a-f-]{36})$/i);

@@ -1,10 +1,51 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, screen } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const { spawn, execFile } = require("child_process");
 const { startEmbeddedServer } = require("./embedded-server.cjs");
 
 let mainWindow = null;
 let embeddedServerInstance = null;
+let kioskGuardProc = null;
+
+function startKioskGuard() {
+  if (process.platform !== "win32") return;
+  if (kioskGuardProc && !kioskGuardProc.killed) return;
+
+  const candidates = [
+    path.join(__dirname, "../build/kiosk-guard.exe"),
+    path.join(process.resourcesPath || "", "app.asar.unpacked/build/kiosk-guard.exe"),
+    path.join(process.resourcesPath || "", "build/kiosk-guard.exe")
+  ];
+
+  const guardPath = candidates.find(p => fs.existsSync(p));
+  if (!guardPath) {
+    console.warn("[KioskGuard] Không tìm thấy tệp kiosk-guard.exe tại các vị trí:", candidates);
+    return;
+  }
+
+  try {
+    kioskGuardProc = spawn(guardPath, [], {
+      stdio: ["pipe", "ignore", "ignore"],
+      windowsHide: true
+    });
+    kioskGuardProc.on("error", (e) => console.warn("[KioskGuard Error]", e.message));
+    console.log("[KioskGuard] Đã kích hoạt Hook bàn phím khóa cứng phím Windows & Alt+Tab (PID:", kioskGuardProc.pid, ")");
+  } catch (err) {
+    console.warn("[KioskGuard Exception]", err.message);
+  }
+}
+
+function stopKioskGuard() {
+  if (kioskGuardProc) {
+    try {
+      kioskGuardProc.stdin?.write("STOP\n");
+      kioskGuardProc.kill();
+      console.log("[KioskGuard] Đã giải phóng Hook bàn phím");
+    } catch {}
+    kioskGuardProc = null;
+  }
+}
 
 // Set Application User Model ID for Windows Taskbar & Notifications
 if (process.platform === "win32") {
@@ -129,6 +170,9 @@ async function createWindow() {
       clearTimeout(kioskBlurTimer);
       kioskBlurTimer = setTimeout(() => {
         if (isKioskActive && mainWindow && !mainWindow.isDestroyed()) {
+          try {
+            execFile("powershell", ["-NoProfile", "-NonInteractive", "-Command", "(New-Object -ComObject WScript.Shell).SendKeys('{ESC}')"]);
+          } catch {}
           mainWindow.setAlwaysOnTop(true, "screen-saver");
           mainWindow.focus();
           mainWindow.moveTop();
@@ -138,6 +182,7 @@ async function createWindow() {
   });
 
   mainWindow.on("closed", () => {
+    stopKioskGuard();
     mainWindow = null;
   });
 }
@@ -171,12 +216,14 @@ ipcMain.handle("window:set-kiosk", (event, flag) => {
   if (!mainWindow || mainWindow.isDestroyed()) return false;
   isKioskActive = Boolean(flag);
   if (isKioskActive) {
+    startKioskGuard();
     mainWindow.setKiosk(true);
     mainWindow.setFullScreen(true);
     mainWindow.setAlwaysOnTop(true, "screen-saver");
     mainWindow.setSkipTaskbar(true);
     mainWindow.focus();
   } else {
+    stopKioskGuard();
     mainWindow.setAlwaysOnTop(false);
     mainWindow.setKiosk(false);
     mainWindow.setFullScreen(false);
@@ -297,6 +344,7 @@ if (!gotTheLock) {
   app.whenReady().then(createWindow);
 
   app.on("window-all-closed", () => {
+    stopKioskGuard();
     if (embeddedServerInstance) {
       try {
         embeddedServerInstance.close();
@@ -305,6 +353,10 @@ if (!gotTheLock) {
     if (process.platform !== "darwin") {
       app.quit();
     }
+  });
+
+  app.on("will-quit", () => {
+    stopKioskGuard();
   });
 
   app.on("activate", () => {

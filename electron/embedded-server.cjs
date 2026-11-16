@@ -351,6 +351,14 @@ async function startEmbeddedServer(rootPath, port = 8787) {
               doc_name TEXT DEFAULT NULL,
               completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+            CREATE TABLE IF NOT EXISTS pomodoro_active_learners (
+              user_id TEXT PRIMARY KEY,
+              cycle_number INTEGER NOT NULL DEFAULT 1,
+              mode TEXT NOT NULL DEFAULT 'focus',
+              doc_name TEXT DEFAULT NULL,
+              started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              last_heartbeat TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
           `);
           const colsToAdd = [
             "ALTER TABLE profiles ADD COLUMN avatar_decoration TEXT DEFAULT NULL;",

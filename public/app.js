@@ -1,5 +1,6 @@
 import { renderThoBayMau, generateThoBayMauSvg, THO_STATES, THO_METADATA } from "./tho-bay-mau.js";
-import { renderPomodoro, loadPomodoroData, pomodoroState, openPomodoroExitConfirm } from "./pomodoro.js";
+import { renderPomodoro, loadPomodoroData, pomodoroState, openPomodoroExitConfirm, openPomodoroLearnersList } from "./pomodoro.js";
+window.openPomodoroLearnersList = openPomodoroLearnersList;
 window.renderThoBayMau = renderThoBayMau;
 window.generateThoBayMauSvg = generateThoBayMauSvg;
 window.THO_STATES = THO_STATES;

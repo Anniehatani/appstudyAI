@@ -12,11 +12,12 @@
     "dev:web": "wrangler dev",
     "deploy": "wrangler deploy",
     "build:icon": "python scripts/convert_icon.py",
+    "build:kiosk": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe /nologo /target:winexe /out:build/kiosk-guard.exe electron/kiosk-guard.cs",
     "electron": "electron .",
     "electron:dev": "electron .",
     "electron:pack": "electron-builder --dir",
-    "electron:dist": "electron-builder --win",
-    "electron:build": "npm run build:icon && electron-builder --win"
+    "electron:dist": "npm run build:kiosk && electron-builder --win",
+    "electron:build": "npm run build:icon && npm run build:kiosk && electron-builder --win"
   },
   "devDependencies": {
     "electron": "^45.0.0",
@@ -34,6 +35,7 @@
     "asarUnpack": [
       "build/local_replica.sqlite",
       "build/icon.ico",
+      "build/kiosk-guard.exe",
       "package.json",
       "src/**/*"
     ],

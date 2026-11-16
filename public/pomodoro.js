@@ -776,10 +776,11 @@ export const pomodoroState = {
   totalFocusMinutes: 0,
   totalCycles: 0,
   todayCycles: 0,
-  peersCount: 5,
+  peersCount: 0,
   peers: [],
-  groupName: "hú",
-  peerStatusText: "Đang có 5 bạn cùng trực tuyến học tập",
+  peerStatusText: "Chưa có ai trong phòng. Bạn hãy là người đầu tiên vào học nhé! 🚀",
+  heartbeatTimerId: null,
+  showLearnersModal: false,
   quotesTimer: null,
   currentQuote: "Học đi không là sau này đi bốc vác đấy! ✍️",
   aiChatHistory: [
@@ -889,6 +890,11 @@ export function startPomodoroSession() {
 
   enterPomodoroKiosk();
 
+  // Kích hoạt nhịp tim trực tuyến báo danh đang học trong phòng Pomodoro
+  sendPomodoroHeartbeat();
+  if (pomodoroState.heartbeatTimerId) clearInterval(pomodoroState.heartbeatTimerId);
+  pomodoroState.heartbeatTimerId = setInterval(sendPomodoroHeartbeat, 25000);
+
   // Start sound if selected
   const soundSelect = document.getElementById("pomo-ambient-select");
   const selectedChannel = soundSelect ? soundSelect.value : (pomodoroAudio.activeChannel !== "none" ? pomodoroAudio.activeChannel : "lofi");
@@ -986,6 +992,11 @@ export function closePomodoroExitConfirm() {
 export function abandonPomodoroSession() {
   if (pomodoroState.timerId) clearInterval(pomodoroState.timerId);
   if (pomodoroState.quotesTimer) clearInterval(pomodoroState.quotesTimer);
+  if (pomodoroState.heartbeatTimerId) {
+    clearInterval(pomodoroState.heartbeatTimerId);
+    pomodoroState.heartbeatTimerId = null;
+  }
+  callApi("/api/pomodoro/leave", { method: "POST" }).catch(() => {});
   pomodoroAudio.stopAll();
 
   pomodoroState.active = false;
@@ -1031,9 +1042,9 @@ export async function loadPomodoroData() {
     ]);
 
     if (peersRes) {
-      pomodoroState.peersCount = peersRes.peersCount || peersRes.groupPeers || 5;
+      pomodoroState.peersCount = peersRes.peersCount != null ? peersRes.peersCount : 0;
       pomodoroState.peers = peersRes.peers || [];
-      pomodoroState.peerStatusText = peersRes.statusText || `Đang có ${pomodoroState.peersCount} bạn cùng trực tuyến học tập`;
+      pomodoroState.peerStatusText = peersRes.statusText || "";
     }
 
     if (histRes) {
@@ -1045,6 +1056,116 @@ export async function loadPomodoroData() {
   } catch (err) {
     console.warn("[Pomodoro] Load data error:", err);
   }
+}
+
+export async function sendPomodoroHeartbeat() {
+  if (!pomodoroState.active) return;
+  const activeDoc = pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
+  try {
+    await callApi("/api/pomodoro/heartbeat", {
+      method: "POST",
+      body: {
+        cycle: pomodoroState.completedCycles + 1,
+        mode: pomodoroState.mode,
+        docName: activeDoc ? activeDoc.name : ""
+      }
+    });
+  } catch {}
+}
+
+export async function openPomodoroLearnersList() {
+  try {
+    const peersRes = await callApi("/api/pomodoro/peers").catch(() => null);
+    if (peersRes) {
+      pomodoroState.peersCount = peersRes.peersCount != null ? peersRes.peersCount : 0;
+      pomodoroState.peers = peersRes.peers || [];
+      pomodoroState.peerStatusText = peersRes.statusText || "";
+    }
+  } catch {}
+  pomodoroState.showLearnersModal = true;
+  if (window.render) window.render();
+}
+
+export function closePomodoroLearnersList() {
+  pomodoroState.showLearnersModal = false;
+  if (window.render) window.render();
+}
+
+export function renderPomodoroLearnersModal() {
+  return `
+    <div class="pomo-modal-backdrop" id="pomo-learners-modal" style="display: ${pomodoroState.showLearnersModal ? 'flex' : 'none'};" onclick="if(event.target === this) window.closePomodoroLearnersList()">
+      <div class="pomo-learners-card" onclick="event.stopPropagation()">
+        <div class="pomo-learners-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="pomo-live-dot" style="width:10px; height:10px;"></span>
+            <h3 class="pomo-learners-title">Bạn Học Đang Trong Phòng Pomodoro</h3>
+            <span class="pomo-learners-count-pill">${pomodoroState.peersCount} người</span>
+          </div>
+          <button type="button" class="pomo-modal-close-x" onclick="window.closePomodoroLearnersList()" title="Đóng">✕</button>
+        </div>
+
+        <div class="pomo-learners-body">
+          ${pomodoroState.peers && pomodoroState.peers.length > 0 ? `
+            <div class="pomo-learners-grid">
+              ${pomodoroState.peers.map(p => {
+                const initial = (p.name || 'H').charAt(0).toUpperCase();
+                return `
+                  <div class="pomo-learner-row ${p.isMe ? 'is-me' : ''}">
+                    <div class="pomo-learner-avatar-wrap" onclick="if(window.openUserProfileModal) window.openUserProfileModal('${safeEsc(p.userId)}')" style="cursor:pointer;" title="Xem hồ sơ">
+                      ${p.avatarUrl && !p.avatarUrl.startsWith('mascot:') ? `
+                        <img src="${safeEsc(p.avatarUrl)}" class="pomo-learner-avatar-img" alt="${safeEsc(p.name)}">
+                      ` : `
+                        <div class="pomo-learner-avatar-initial">${safeEsc(initial)}</div>
+                      `}
+                      ${p.avatarDecoration ? `<span class="pomo-learner-deco-badge">✨</span>` : ''}
+                    </div>
+
+                    <div class="pomo-learner-info" onclick="if(window.openUserProfileModal) window.openUserProfileModal('${safeEsc(p.userId)}')" style="cursor:pointer;">
+                      <div class="pomo-learner-name-line">
+                        <span class="pomo-learner-name">${safeEsc(p.name)}</span>
+                        ${p.isMe ? `<span class="pomo-learner-me-tag">Bạn</span>` : ''}
+                      </div>
+                      <div class="pomo-learner-sub">
+                        ${p.school ? safeEsc(p.school) : 'Học viên 3TG'} ${p.major ? '• ' + safeEsc(p.major) : ''}
+                      </div>
+                      <div class="pomo-learner-state-line">
+                        <span class="pomo-learner-status-pill ${p.isLive ? 'live' : 'done'}">
+                          ${p.isLive ? `🔴 Đang tập trung ca #${p.cycle}` : `⚪ Vừa hoàn thành ca hôm nay`}
+                        </span>
+                        ${p.docName ? `<span class="pomo-learner-doc-tag" title="${safeEsc(p.docName)}">📖 ${safeEsc(p.docName)}</span>` : ''}
+                      </div>
+                    </div>
+
+                    <div class="pomo-learner-actions">
+                      <button type="button" class="btn-duo btn-duo-white" style="padding:6px 12px; font-size:12px;" onclick="if(window.openUserProfileModal) window.openUserProfileModal('${safeEsc(p.userId)}')" title="Xem hồ sơ & kết bạn">
+                        👤 Hồ sơ
+                      </button>
+                      ${!p.isMe ? `
+                        <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 12px; font-size:12px;" onclick="if(window.openDirectChat) { window.closePomodoroLearnersList(); window.openDirectChat('${safeEsc(p.userId)}', '${safeEsc(p.name)}'); }" title="Nhắn tin trò chuyện">
+                          💬 Nhắn
+                        </button>
+                      ` : ''}
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          ` : `
+            <div class="pomo-learners-empty">
+              <div style="font-size:36px; margin-bottom:8px;">🛋️</div>
+              <p style="font-weight:700; color:var(--ink-700); margin:0;">Phòng học hiện đang vắng người.</p>
+              <p style="font-size:13px; color:var(--ink-400); margin:4px 0 0;">Bạn hãy bắt đầu ca học để trở thành người tiên phong dẫn đầu nhé! 🔥</p>
+            </div>
+          `}
+        </div>
+
+        <div class="pomo-learners-footer">
+          <span style="font-size:12px; color:var(--ink-400);">💡 Nhấp vào bạn học để xem hồ sơ hoặc kết bạn</span>
+          <button type="button" class="btn-duo btn-duo-white" style="padding:6px 16px; font-size:12px;" onclick="window.closePomodoroLearnersList()">Đóng</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // ========================================================
@@ -1736,15 +1857,15 @@ function renderPomodoroLobby() {
             Cùng bạn bè ôn thi cuối kỳ, tập trung tuyệt đối không lướt điện thoại! Chu kỳ 25 phút học / 5 phút nghỉ, âm thanh Lofi & Cafe chill kích thích não bộ và nhận thưởng +50 XP & 30 💎 mỗi ca.
           </p>
 
-          <!-- PEER STATUS BANNER -->
-          <div class="pomodoro-peers-banner">
+          <!-- PEER STATUS BANNER (NHẤP ĐỂ SỔ RA DANH SÁCH BẠN HỌC) -->
+          <div class="pomodoro-peers-banner" onclick="window.openPomodoroLearnersList()" style="cursor:pointer;" title="Nhấp để xem danh sách bạn học đang trong phòng 👥">
             <span class="pomodoro-live-dot"></span>
             <span class="pomodoro-peers-text">${safeEsc(pomodoroState.peerStatusText)}</span>
             <div class="pomodoro-peer-avatars">
               ${(pomodoroState.peers || []).slice(0, 5).map(p => {
                 const initial = (p.name || 'H').charAt(0).toUpperCase();
                 return `
-                  <div class="peer-avatar-click-wrap" onclick="if(window.openUserProfileModal) window.openUserProfileModal('${safeEsc(p.userId)}')" title="Nhấp để xem hồ sơ & kết bạn với ${safeEsc(p.name)} 👤">
+                  <div class="peer-avatar-click-wrap" title="${safeEsc(p.name)}">
                     ${p.avatarUrl && !p.avatarUrl.startsWith('mascot:') ? `
                       <img src="${safeEsc(p.avatarUrl)}" class="peer-avatar-img" alt="${safeEsc(p.name)}">
                     ` : `
@@ -1754,6 +1875,7 @@ function renderPomodoroLobby() {
                 `;
               }).join("")}
               ${pomodoroState.peersCount > 5 ? `<span class="peer-avatar-plus">+${pomodoroState.peersCount - 5}</span>` : ''}
+              <span style="font-size:12px; margin-left:6px; color:#ff4b82; font-weight:800;">▾ Xem</span>
             </div>
           </div>
         </div>
@@ -1949,6 +2071,9 @@ function renderPomodoroLobby() {
           <div class="pomo-history-empty">Chưa có phiên học nào. Hãy bắt đầu ca đầu tiên để gặt hái thành tích nhé! 🌸</div>
         `}
       </div>
+
+      <!-- MODAL: DANH SÁCH BẠN HỌC ĐANG TRONG PHÒNG -->
+      ${renderPomodoroLearnersModal()}
     </div>
   `;
 }
@@ -1982,10 +2107,10 @@ function renderPomodoroActiveRoom() {
             </div>
           </div>
 
-          <!-- CHỈ HIỂN THỊ SỐ NGƯỜI ĐANG HỌC - KHÔNG HIỂN THỊ AVATAR / PROFILE ĐỂ TRÁNH SAO NHÃNG -->
-          <div class="pomo-topbar-peers">
+          <!-- CHỈ HIỂN THỊ SỐ NGƯỜI ĐANG HỌC - NHẤP VÀO SỔ RA DANH SÁCH -->
+          <div class="pomo-topbar-peers" onclick="window.openPomodoroLearnersList()" style="cursor:pointer;" title="Nhấp để xem danh sách bạn học đang trong phòng 👥">
             <span class="pomo-live-dot"></span>
-            <span>Đang có ${pomodoroState.peersCount} bạn cùng học tập trung</span>
+            <span>Đang có ${pomodoroState.peersCount} bạn cùng học tập trung ▾</span>
           </div>
         </div>
 
@@ -2235,6 +2360,9 @@ function renderPomodoroActiveRoom() {
           </div>
         </div>
       </div>
+
+      <!-- MODAL: DANH SÁCH BẠN HỌC ĐANG TRONG PHÒNG -->
+      ${renderPomodoroLearnersModal()}
     </div>
   `;
 }
@@ -2349,6 +2477,11 @@ window.addNoteToDocs = addNoteToDocs;
 window.setActiveDoc = setActiveDoc;
 window.removeDoc = removeDoc;
 window.closeActiveDoc = closeActiveDoc;
+
+window.openPomodoroLearnersList = openPomodoroLearnersList;
+window.closePomodoroLearnersList = closePomodoroLearnersList;
+window.sendPomodoroHeartbeat = sendPomodoroHeartbeat;
+window.renderPomodoroLearnersModal = renderPomodoroLearnersModal;
 
 window.renderPomodoro = renderPomodoro;
 window.loadPomodoroData = loadPomodoroData;
