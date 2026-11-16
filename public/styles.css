@@ -183,13 +183,13 @@ button:focus-visible, input:focus-visible {
   top: 0;
   left: 0;
   bottom: 0;
-  width: 270px;
-  max-width: 270px;
+  width: 300px;
+  max-width: 300px;
   background: #ffffff;
   border-right: 2px solid var(--lumi-pink-border);
   display: flex;
   flex-direction: column;
-  padding: 20px 14px 16px;
+  padding: 22px 16px 18px;
   z-index: 50;
   box-shadow: 2px 0 16px rgba(255, 75, 130, 0.04);
   overflow-x: hidden !important;
@@ -235,9 +235,9 @@ button:focus-visible, input:focus-visible {
 
 .brand-logo-img {
   width: 100%;
-  max-width: 180px;
+  max-width: 195px;
   height: auto;
-  max-height: 58px;
+  max-height: 64px;
   object-fit: contain;
   filter: drop-shadow(0 4px 10px rgba(225, 29, 72, 0.16));
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -265,11 +265,11 @@ button:focus-visible, input:focus-visible {
 }
 
 .sidebar-label {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 900;
   letter-spacing: 1.6px;
   color: var(--ink-300);
-  padding: 8px 12px 4px;
+  padding: 10px 14px 4px;
   text-transform: uppercase;
 }
 
@@ -286,11 +286,11 @@ button:focus-visible, input:focus-visible {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 12px 16px;
-  height: 52px;
-  border-radius: 16px;
+  padding: 12px 18px;
+  height: 54px;
+  border-radius: 18px;
   color: var(--ink-700);
-  font-size: 15px;
+  font-size: 15.5px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -531,7 +531,7 @@ button:focus-visible, input:focus-visible {
    WORKSPACE & TOPBAR
    ======================================================== */
 .workspace {
-  margin-left: 270px;
+  margin-left: 300px;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -2547,9 +2547,9 @@ button:focus-visible, input:focus-visible {
 .fb-cover-banner {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 4.8;
-  min-height: 180px;
-  max-height: 230px;
+  height: 360px;
+  min-height: 300px;
+  max-height: 440px;
   background: linear-gradient(135deg, var(--lumi-pink, #ff758c) 0%, var(--lumi-pink-dark, #ff4b82) 50%, #7f7fd5 100%);
   background-size: cover;
   background-position: center;
@@ -2559,9 +2559,9 @@ button:focus-visible, input:focus-visible {
 
 @media (max-width: 768px) {
   .fb-cover-banner {
-    aspect-ratio: 16 / 5.2;
-    min-height: 130px;
-    max-height: 165px;
+    height: 220px;
+    min-height: 190px;
+    max-height: 250px;
   }
 }
 
@@ -4197,8 +4197,8 @@ button:focus-visible, input:focus-visible {
 }
 
 .user-profile-cover {
-  height: 160px;
-  min-height: 160px;
+  height: 240px;
+  min-height: 220px;
   flex-shrink: 0;
   background: linear-gradient(135deg, var(--lumi-pink, #ff71a2), var(--lumi-pink-dark, #ff4b82), #a855f7);
   position: relative;
