@@ -2244,7 +2244,7 @@ function renderCourses() {
   }).join("");
 
   return `
-    <div>
+    <div class="courses-page" style="width:100%;">
       <div class="banner-with-mascot">
         <div>
           <h1 class="page-title" style="margin-bottom:6px;">Khám phá 10 Môn học</h1>
@@ -6477,7 +6477,7 @@ function renderShop() {
   const userName = state.profile?.full_name || state.profile?.username || "3TG";
 
   return `
-    <div>
+    <div class="shop-page" style="width:100%;">
       <div class="banner-with-mascot" style="margin-bottom:20px; padding:18px 24px;">
         <div>
           <h1 class="page-title" style="margin-bottom:4px; font-size:24px;">Tiệm Tạp Hóa 3TG 🏪</h1>
@@ -7056,7 +7056,7 @@ function renderAchievements() {
   }).join("");
 
   return `
-    <div>
+    <div class="achievements-page" style="width:100%;">
       <div class="banner-with-mascot" style="margin-bottom:20px;">
         <div>
           <h1 class="page-title" style="margin-bottom:6px;">Nhiệm Vụ & Thành Tích 🎖️</h1>
@@ -7232,7 +7232,7 @@ function renderReview() {
     }
 
     return `
-      <div style="max-width:720px; margin:20px auto 40px; display:flex; flex-direction:column; gap:16px;">
+      <div class="review-practice-wrap" style="width:100%; max-width:960px; margin:20px auto 40px; display:flex; flex-direction:column; gap:16px;">
         <!-- Thanh tiến độ & Dừng làm -->
         <div style="display:flex; justify-content:space-between; align-items:center; gap:14px;">
           <button type="button" class="btn-duo btn-duo-white" style="padding:8px 16px; font-size:13.5px;" onclick="stopReview()">
@@ -7335,7 +7335,7 @@ function renderReview() {
   }).join("");
 
   return `
-    <div style="max-width:820px; margin:0 auto 40px;">
+    <div class="review-page" style="width:100%; margin:0 0 40px;">
       <!-- Hero Banner -->
       <div class="banner-with-mascot" style="margin-bottom:16px;">
         <div>
