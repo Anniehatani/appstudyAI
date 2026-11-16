@@ -83,7 +83,7 @@ function createR2BucketAdapter(config) {
   }
 
   return {
-    async get(key) {
+    async get(key, options) {
       return new Promise((resolve) => {
         try {
           const now = new Date();
@@ -93,8 +93,27 @@ function createR2BucketAdapter(config) {
           const service = "s3";
           const canonicalUri = `/${bucket}/${encodeURI(key)}`;
           const payloadHash = hash("");
-          const canonicalHeaders = `host:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
-          const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+
+          let rangeVal = null;
+          if (options && options.range) {
+            if (typeof options.range === "string") {
+              rangeVal = options.range;
+            } else if (typeof options.range.offset === "number") {
+              const start = options.range.offset;
+              const end = options.range.length ? (start + options.range.length - 1) : "";
+              rangeVal = `bytes=${start}-${end}`;
+            }
+          }
+
+          let canonicalHeaders = `host:${host}\n`;
+          let signedHeaders = "host";
+          if (rangeVal) {
+            canonicalHeaders += `range:${rangeVal}\n`;
+            signedHeaders += ";range";
+          }
+          canonicalHeaders += `x-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
+          signedHeaders += ";x-amz-content-sha256;x-amz-date";
+
           const canonicalRequest = `GET\n${canonicalUri}\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
           const algorithm = "AWS4-HMAC-SHA256";
           const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
@@ -108,18 +127,21 @@ function createR2BucketAdapter(config) {
 
           const authHeader = `${algorithm} Credential=${accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
+          const reqHeaders = {
+            "host": host,
+            "x-amz-date": amzDate,
+            "x-amz-content-sha256": payloadHash,
+            "Authorization": authHeader
+          };
+          if (rangeVal) reqHeaders["range"] = rangeVal;
+
           const req = https.request({
             hostname: host,
             path: canonicalUri,
             method: "GET",
-            headers: {
-              "host": host,
-              "x-amz-date": amzDate,
-              "x-amz-content-sha256": payloadHash,
-              "Authorization": authHeader
-            }
+            headers: reqHeaders
           }, (res) => {
-            if (res.statusCode !== 200) {
+            if (res.statusCode !== 200 && res.statusCode !== 206) {
               resolve(null);
               return;
             }
@@ -128,11 +150,21 @@ function createR2BucketAdapter(config) {
             res.on("end", () => {
               const buf = Buffer.concat(chunks);
               const contentType = res.headers["content-type"] || "application/octet-stream";
+              const contentRange = res.headers["content-range"];
+              const contentLength = res.headers["content-length"];
+              const acceptRanges = res.headers["accept-ranges"] || "bytes";
+
               resolve({
                 body: buf,
+                status: res.statusCode,
                 httpEtag: res.headers["etag"] || "",
+                size: buf.length,
+                range: contentRange,
                 writeHttpMetadata(headers) {
                   headers.set("content-type", contentType);
+                  if (contentRange) headers.set("content-range", contentRange);
+                  if (acceptRanges) headers.set("accept-ranges", acceptRanges);
+                  if (contentLength) headers.set("content-length", contentLength);
                 }
               });
             });

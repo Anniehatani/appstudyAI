@@ -18,11 +18,8 @@
 
 import { renderThoBayMau, THO_STATES } from "./tho-bay-mau.js";
 
-// Safe API caller helper
+// Safe API caller helper (Guaranteed no window.api error)
 async function callApi(path, options = {}) {
-  if (typeof window.api === "function") {
-    return window.api(path, options);
-  }
   const config = Object.assign({ method: "GET", credentials: "same-origin" }, options);
   config.headers = Object.assign({}, config.headers || {});
   if (config.body && !(config.body instanceof FormData) && typeof config.body !== "string") {
@@ -42,714 +39,277 @@ function safeEsc(value) {
   });
 }
 
+function formatAudioTime(seconds) {
+  if (isNaN(seconds) || seconds < 0) return "00:00";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 // ========================================================
-// 1. PROCEDURAL WEB AUDIO API SYNTHESIZER (100% OFFLINE)
+// 1. CLOUDFLARE R2 STREAMING MUSIC ENGINE ("YOUTUBE-STYLE BUFFER")
 // ========================================================
-export class PomodoroAudioEngine {
+export const POMODORO_PLAYLIST = [
+  { id: "capzlock", title: "CapzLock Has To Be", artist: "Instrumental Loop Beat", tag: "Lofi Beat", icon: "🎧", file: "CapzLock Has To Be [Instrumental loop].mp3", sizeMb: 6.67 },
+  { id: "lil-uzi", title: "The Way Life Goes", artist: "Lil Uzi Vert - Instrumental Chill", tag: "Lofi Hip-Hop", icon: "🎵", file: "Lil Uzi Vert - The Way Life Goes - instrumental.mp3", sizeMb: 6.20 },
+  { id: "alpha-brain", title: "Alpha Brainwave Focus", artist: "Sóng Não Alpha Kích Thích Tư Duy", tag: "Sóng Não Focus", icon: "🧠", file: "Alpha Brain Music.mp3", sizeMb: 86.58 },
+  { id: "lofi-rain", title: "Lofi & Tiếng Mưa Rơi", artist: "Lofi Beats x Rain Chill Ambient", tag: "Lofi & Tiếng Mưa", icon: "🌧️", file: "lofi and rain.mp3", sizeMb: 197.32 },
+  { id: "rain-piano", title: "Rain & Piano", artist: "Dương Cầm Dưới Mưa Đêm", tag: "Piano & Mưa", icon: "🎹", file: "rain and piano.mp3", sizeMb: 57.59 },
+  { id: "pure-rain", title: "Pure Rain Ambient", artist: "Tiếng Mưa Rào Rì Rầm Thư Giãn Não Bộ", tag: "Tiếng Mưa", icon: "☔", file: "rain.mp3", sizeMb: 58.49 },
+  { id: "writing-asmr", title: "Writing ASMR Focus", artist: "Tiếng Bút Dạ & Giấy Tập Trung Cao Độ", tag: "ASMR Bút Viết", icon: "📖", file: "Writing sound.mp3", sizeMb: 115.20 },
+  { id: "nature-sound", title: "Nature Forest Sounds", artist: "Âm Thanh Suối Rừng & Gió Cây Tự Nhiên", tag: "Thiên Nhiên", icon: "🌲", file: "nature sound.mp3", sizeMb: 57.14 },
+  { id: "dark-fantasy", title: "Dark Fantasy Ambient", artist: "Deep Focus Cinematic Background", tag: "Deep Focus", icon: "🌌", file: "Dark fantasy.mp3", sizeMb: 115.44 },
+  { id: "killswitch", title: "Killswitch Lullaby x Wind", artist: "Flawed Mangoes - Gió Rì Rào Chill", tag: "Ambient Chill", icon: "🍃", file: "flawed mangoes - killswitch lullaby x Wind.mp3", sizeMb: 4.12 },
+  { id: "ibiza", title: "I Took A Pill In Ibiza", artist: "Instrumental Acoustic Lofi", tag: "Acoustic Chill", icon: "🎸", file: "i took a pill in ibiza - instrumental.mp3", sizeMb: 4.06 },
+  { id: "hopecore", title: "There Is Hopecore", artist: "Truyền Cảm Hứng & Động Lực Vượt Khó", tag: "Hopecore", icon: "✨", file: "there is hopecore.mp3", sizeMb: 35.84 },
+  { id: "ngay-mai", title: "Rồi Ngày Mai Sẽ Khác...", artist: "Acoustic V-Chill Hoài Niệm", tag: "V-Chill", icon: "☕", file: "Rồi ngày mai sẽ khác... .mp3", sizeMb: 24.43 },
+  { id: "are-you-lost", title: "Are You Lost", artist: "Chill Out Lofi Dream", tag: "Lofi Chill", icon: "☁️", file: "Are You lost.mp3", sizeMb: 2.51 },
+  { id: "rough-days", title: "Rough Days", artist: "Vượt Qua Những Ngày Giông Bão", tag: "Lofi Chill", icon: "💧", file: "Rough Days.mp3", sizeMb: 1.84 },
+  { id: "tourist", title: "Tourist", artist: "Bước Đi Thong Thả Giữa Thành Phố", tag: "Chillout", icon: "🌿", file: "Tourist.mp3", sizeMb: 1.42 },
+  { id: "yinyun", title: "氤氲之森 (Rừng Mù Sương)", artist: "Yinyun Forest Oriental Ambient", tag: "Oriental Ambient", icon: "🎍", file: "氤氲之森.mp3", sizeMb: 2.62 }
+];
+
+export class PomodoroMusicEngine {
   constructor() {
-    this.ctx = null;
-    this.masterGain = null;
-    this.activeChannel = "none"; // "lofi" | "rain" | "cafe" | "book" | "none"
-    this.volume = 0.42; // Safe, pleasant background listening volume
-    this.nodes = [];
-    this.intervalIds = [];
-    this.timeoutIds = [];
+    this.playlist = [...POMODORO_PLAYLIST];
+    this.currentIndex = 0;
+    this.isPlaying = false;
+    this.volume = 0.65;
+    this.audio = null;
+    this.activeChannel = "lofi";
+    this.isScrubbing = false;
+    this.initAudio();
   }
 
-  init() {
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      this.ctx = new AudioCtx();
-      this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-      this.masterGain.connect(this.ctx.destination);
-    }
-    if (this.ctx && this.ctx.state === "suspended") {
-      this.ctx.resume().catch(() => {});
+  initAudio() {
+    if (typeof window === "undefined") return;
+    if (!this.audio) {
+      this.audio = new Audio();
+      this.audio.preload = "auto";
+      this.audio.volume = this.volume;
+
+      this.audio.addEventListener("progress", () => this.updateBufferProgress());
+      this.audio.addEventListener("timeupdate", () => this.updateTimeProgress());
+      this.audio.addEventListener("play", () => {
+        this.isPlaying = true;
+        this.updatePlayStateInDom(true);
+      });
+      this.audio.addEventListener("pause", () => {
+        this.isPlaying = false;
+        this.updatePlayStateInDom(false);
+      });
+      this.audio.addEventListener("ended", () => {
+        this.next();
+      });
+      this.audio.addEventListener("error", (e) => {
+        console.warn("[Pomodoro Audio] Lỗi nạp nhạc:", e);
+      });
     }
   }
 
-  setVolume(vol) {
-    this.volume = Math.max(0, Math.min(1, Number(vol) || 0));
-    if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setTargetAtTime(this.volume, this.ctx.currentTime, 0.05);
+  getCurrentTrack() {
+    return this.playlist[this.currentIndex] || this.playlist[0];
+  }
+
+  getTrackUrl(track) {
+    if (!track) return "";
+    return `/media/pomodoro_music/${encodeURIComponent(track.file)}`;
+  }
+
+  async playTrack(index, autoPlay = true) {
+    this.initAudio();
+    if (index >= 0 && index < this.playlist.length) {
+      this.currentIndex = index;
     }
+    const track = this.getCurrentTrack();
+    if (!track) return;
+
+    const url = this.getTrackUrl(track);
+    const targetSrc = window.location.origin + url;
+    if (this.audio.src !== targetSrc && !this.audio.src.endsWith(url)) {
+      this.audio.src = url;
+      this.audio.load();
+    }
+
+    this.updateTrackMetaInDom();
+
+    if (autoPlay) {
+      try {
+        await this.audio.play();
+        this.isPlaying = true;
+      } catch (err) {
+        console.warn("[Pomodoro Audio] AutoPlay bị chặn hoặc chờ tương tác:", err.message);
+        this.isPlaying = false;
+      }
+    }
+    this.updatePlayStateInDom(this.isPlaying);
+  }
+
+  togglePlay() {
+    this.initAudio();
+    if (!this.audio.src || this.audio.src === "") {
+      this.playTrack(this.currentIndex, true);
+      return;
+    }
+    if (this.audio.paused) {
+      this.audio.play().then(() => {
+        this.isPlaying = true;
+        this.updatePlayStateInDom(true);
+      }).catch(() => {});
+    } else {
+      this.audio.pause();
+      this.isPlaying = false;
+      this.updatePlayStateInDom(false);
+    }
+  }
+
+  next() {
+    const nextIdx = (this.currentIndex + 1) % this.playlist.length;
+    this.playTrack(nextIdx, true);
+  }
+
+  prev() {
+    if (this.audio && this.audio.currentTime > 3) {
+      this.audio.currentTime = 0;
+      return;
+    }
+    const prevIdx = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
+    this.playTrack(prevIdx, true);
+  }
+
+  seek(seconds) {
+    if (!this.audio || !this.audio.duration) return;
+    const clamped = Math.max(0, Math.min(seconds, this.audio.duration));
+    this.audio.currentTime = clamped;
+  }
+
+  setVolume(val) {
+    this.volume = Math.max(0, Math.min(1, Number(val) || 0));
+    if (this.audio) this.audio.volume = this.volume;
+    const valText = document.querySelector(".volume-value-text");
+    if (valText) valText.textContent = `${Math.round(this.volume * 100)}%`;
+    const rangeSliders = document.querySelectorAll(".pomo-volume-range");
+    rangeSliders.forEach(s => { s.value = this.volume; });
   }
 
   stopAll() {
-    this.intervalIds.forEach(id => clearInterval(id));
-    this.intervalIds = [];
-    this.timeoutIds.forEach(id => clearTimeout(id));
-    this.timeoutIds = [];
-    for (const node of this.nodes) {
-      try {
-        if (node.stop) node.stop();
-        if (node.disconnect) node.disconnect();
-      } catch {}
+    if (this.audio) {
+      this.audio.pause();
+      this.audio.currentTime = 0;
     }
-    this.nodes = [];
-    this.activeChannel = "none";
+    this.isPlaying = false;
+    this.updatePlayStateInDom(false);
   }
 
   playChannel(channelName) {
-    this.init();
-    this.stopAll();
     this.activeChannel = channelName;
-
-    if (!this.ctx || channelName === "none") return;
-
-    if (channelName === "lofi") {
-      this.startLofiBeats();
-    } else if (channelName === "rain") {
-      this.startRainSound();
+    if (channelName === "none") {
+      this.stopAll();
+      return;
+    }
+    let targetIdx = 0;
+    if (channelName === "rain") {
+      targetIdx = this.playlist.findIndex(t => t.id === "pure-rain" || t.id === "lofi-rain");
     } else if (channelName === "cafe") {
-      this.startCafeAmbiance();
+      targetIdx = this.playlist.findIndex(t => t.id === "ngay-mai" || t.id === "ibiza");
     } else if (channelName === "book") {
-      this.startBookFlipAmbiance();
+      targetIdx = this.playlist.findIndex(t => t.id === "writing-asmr");
+    } else if (channelName === "brain") {
+      targetIdx = this.playlist.findIndex(t => t.id === "alpha-brain" || t.id === "hopecore");
+    } else {
+      targetIdx = this.playlist.findIndex(t => t.id === "capzlock" || t.id === "lil-uzi");
     }
+    if (targetIdx === -1) targetIdx = 0;
+    this.playTrack(targetIdx, true);
   }
 
-  // --- Rain Generator (Deep Multi-layered Pink/Brown Noise + Gentle Droplets & Distant Thunder) ---
-  startRainSound() {
-    const now = this.ctx.currentTime;
-    const bufferSize = this.ctx.sampleRate * 8;
-    const noiseBuffer = this.ctx.createBuffer(2, bufferSize, this.ctx.sampleRate);
-    const left = noiseBuffer.getChannelData(0);
-    const right = noiseBuffer.getChannelData(1);
-
-    let b0L = 0, b1L = 0, b2L = 0, b3L = 0, b4L = 0, b5L = 0, b6L = 0;
-    let b0R = 0, b1R = 0, b2R = 0, b3R = 0, b4R = 0, b5R = 0, b6R = 0;
-
-    for (let i = 0; i < bufferSize; i++) {
-      const whiteL = Math.random() * 2 - 1;
-      b0L = 0.99886 * b0L + whiteL * 0.0555179;
-      b1L = 0.99332 * b1L + whiteL * 0.0750759;
-      b2L = 0.96900 * b2L + whiteL * 0.1538520;
-      b3L = 0.86650 * b3L + whiteL * 0.3104856;
-      b4L = 0.55000 * b4L + whiteL * 0.5329522;
-      b5L = -0.7616 * b5L - whiteL * 0.0168980;
-      left[i] = (b0L + b1L + b2L + b3L + b4L + b5L + b6L + whiteL * 0.5362) * 0.045;
-      b6L = whiteL * 0.115926;
-
-      const whiteR = Math.random() * 2 - 1;
-      b0R = 0.99886 * b0R + whiteR * 0.0555179;
-      b1R = 0.99332 * b1R + whiteR * 0.0750759;
-      b2R = 0.96900 * b2R + whiteR * 0.1538520;
-      b3R = 0.86650 * b3R + whiteR * 0.3104856;
-      b4R = 0.55000 * b4R + whiteR * 0.5329522;
-      b5R = -0.7616 * b5R - whiteR * 0.0168980;
-      right[i] = (b0R + b1R + b2R + b3R + b4R + b5R + b6R + whiteR * 0.5362) * 0.045;
-      b6R = whiteR * 0.115926;
-    }
-
-    const rainSrc = this.ctx.createBufferSource();
-    rainSrc.buffer = noiseBuffer;
-    rainSrc.loop = true;
-
-    const filter1 = this.ctx.createBiquadFilter();
-    filter1.type = "lowpass";
-    filter1.frequency.setValueAtTime(680, now);
-
-    const filter2 = this.ctx.createBiquadFilter();
-    filter2.type = "highpass";
-    filter2.frequency.setValueAtTime(110, now);
-
-    // Natural slow swell LFO
-    const lfo = this.ctx.createOscillator();
-    lfo.frequency.setValueAtTime(0.04, now);
-    const lfoGain = this.ctx.createGain();
-    lfoGain.gain.setValueAtTime(160, now);
-    lfo.connect(filter1.frequency);
-
-    // Smooth 0.8s fade in - never shocks the user's ears
-    const rainGain = this.ctx.createGain();
-    rainGain.gain.setValueAtTime(0.001, now);
-    rainGain.gain.linearRampToValueAtTime(0.22, now + 0.8);
-
-    rainSrc.connect(filter1);
-    filter1.connect(filter2);
-    filter2.connect(rainGain);
-    rainGain.connect(this.masterGain);
-
-    rainSrc.start(now);
-    lfo.start(now);
-    this.nodes.push(rainSrc, filter1, filter2, lfo, lfoGain, rainGain);
-
-    // Natural random water droplet clicks (Poisson distribution)
-    const playDroplet = () => {
-      if (this.activeChannel !== "rain" || !this.ctx) return;
-      const t = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const g = this.ctx.createGain();
-      const baseFreq = 1900 + Math.random() * 1400;
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(baseFreq, t);
-      osc.frequency.exponentialRampToValueAtTime(650, t + 0.035);
-
-      const dropVol = 0.02 + Math.random() * 0.03;
-      g.gain.setValueAtTime(dropVol, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
-
-      osc.connect(g);
-      g.connect(this.masterGain);
-      osc.start(t);
-      osc.stop(t + 0.045);
-
-      const nextDelay = 400 + Math.random() * 1000;
-      const tid = setTimeout(playDroplet, nextDelay);
-      this.timeoutIds.push(tid);
-    };
-    playDroplet();
-
-    // Occasional gentle distant thunder rumble
-    const playDistantThunder = () => {
-      if (this.activeChannel !== "rain" || !this.ctx) return;
-      const t = this.ctx.currentTime;
-      const tDur = 4.0;
-      const tBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * tDur), this.ctx.sampleRate);
-      const td = tBuf.getChannelData(0);
-      let last = 0;
-      for (let i = 0; i < td.length; i++) {
-        const white = Math.random() * 2 - 1;
-        last = (last + (0.04 * white)) / 1.04;
-        const progress = i / td.length;
-        const env = Math.sin(progress * Math.PI) ** 1.8;
-        td[i] = last * env * 2.2;
+  updateBufferProgress() {
+    if (!this.audio || !this.audio.duration) return;
+    const buf = this.audio.buffered;
+    if (!buf || buf.length === 0) return;
+    let end = 0;
+    for (let i = 0; i < buf.length; i++) {
+      if (buf.start(i) <= this.audio.currentTime && this.audio.currentTime <= buf.end(i)) {
+        end = buf.end(i);
+        break;
       }
-      const tSrc = this.ctx.createBufferSource();
-      tSrc.buffer = tBuf;
-      const tFlt = this.ctx.createBiquadFilter();
-      tFlt.type = "lowpass";
-      tFlt.frequency.setValueAtTime(70, t);
-      const tG = this.ctx.createGain();
-      tG.gain.setValueAtTime(0.24, t);
-      tSrc.connect(tFlt);
-      tFlt.connect(tG);
-      tG.connect(this.masterGain);
-      tSrc.start(t);
-
-      const nextThunder = 50000 + Math.random() * 40000;
-      const thunderId = setTimeout(playDistantThunder, nextThunder);
-      this.timeoutIds.push(thunderId);
-    };
-    const firstThunderId = setTimeout(playDistantThunder, 24000);
-    this.timeoutIds.push(firstThunderId);
+      if (buf.end(i) > end) end = buf.end(i);
+    }
+    const pct = Math.min(100, Math.max(0, (end / this.audio.duration) * 100));
+    const bufEl = document.getElementById("pomo-audio-buffer-bar");
+    if (bufEl) bufEl.style.width = pct + "%";
   }
 
-  // --- Lofi Beats Generator (Authentic Groovy Boom-Bap Drums, Warm Rhodes Chords, Tape Flutter) ---
-  startLofiBeats() {
-    const now = this.ctx.currentTime;
+  updateTimeProgress() {
+    if (!this.audio || !this.audio.duration || this.isScrubbing) return;
+    const cur = this.audio.currentTime;
+    const dur = this.audio.duration;
+    const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
 
-    // 1. Subtle Vinyl Crackle & Tape Flutter Bed (soft & smooth)
-    const bufLen = this.ctx.sampleRate * 4;
-    const crackleBuf = this.ctx.createBuffer(2, bufLen, this.ctx.sampleRate);
-    const cLeft = crackleBuf.getChannelData(0);
-    const cRight = crackleBuf.getChannelData(1);
-    for (let i = 0; i < bufLen; i++) {
-      if (Math.random() < 0.0006) {
-        cLeft[i] = (Math.random() * 2 - 1) * 0.08;
-        cRight[i] = (Math.random() * 2 - 1) * 0.08;
-      } else {
-        cLeft[i] = (Math.random() * 2 - 1) * 0.005;
-        cRight[i] = (Math.random() * 2 - 1) * 0.005;
-      }
-    }
-    const crackle = this.ctx.createBufferSource();
-    crackle.buffer = crackleBuf;
-    crackle.loop = true;
+    const playedEl = document.getElementById("pomo-audio-played-bar");
+    const thumbEl = document.getElementById("pomo-audio-scrub-thumb");
+    const curEl = document.getElementById("pomo-audio-time-current");
+    const durEl = document.getElementById("pomo-audio-time-duration");
 
-    const crackleFilter = this.ctx.createBiquadFilter();
-    crackleFilter.type = "bandpass";
-    crackleFilter.frequency.setValueAtTime(1400, now);
-    crackleFilter.Q.setValueAtTime(0.9, now);
-
-    const crackleGain = this.ctx.createGain();
-    crackleGain.gain.setValueAtTime(0.001, now);
-    crackleGain.gain.linearRampToValueAtTime(0.12, now + 0.8);
-
-    crackle.connect(crackleFilter);
-    crackleFilter.connect(crackleGain);
-    crackleGain.connect(this.masterGain);
-    crackle.start(now);
-    this.nodes.push(crackle, crackleFilter, crackleGain);
-
-    // 2. Rich 16-Bar Jazz Progression
-    const progression = [
-      [174.61, 261.63, 329.63, 392.00, 440.00], // Fmaj9
-      [164.81, 246.94, 329.63, 392.00, 440.00], // Em7(b13)
-      [146.83, 220.00, 261.63, 329.63, 349.23], // Dm9
-      [130.81, 220.00, 261.63, 329.63, 392.00], // Am7/C
-      [116.54, 233.08, 293.66, 349.23, 440.00], // Bbmaj7
-      [110.00, 220.00, 261.63, 329.63, 392.00, 493.88], // Am9
-      [98.00, 196.00, 261.63, 293.66, 349.23],  // Gm9
-      [130.81, 196.00, 261.63, 349.23, 440.00], // C13sus4
-      [146.83, 220.00, 261.63, 329.63, 349.23], // Dm9
-      [98.00, 196.00, 246.94, 329.63, 349.23, 440.00], // G13
-      [130.81, 196.00, 246.94, 293.66, 329.63, 392.00], // Cmaj9
-      [110.00, 220.00, 277.18, 329.63, 370.00, 415.30], // A7alt
-      [146.83, 220.00, 261.63, 329.63, 349.23], // Dm9
-      [98.00, 196.00, 261.63, 293.66, 349.23, 392.00], // G9sus4
-      [130.81, 196.00, 246.94, 329.63, 392.00], // Cmaj9
-      [130.81, 196.00, 246.94, 329.63]          // Cmaj7
-    ];
-
-    let chordStep = 0;
-    const bpm = 68;
-    const beatSec = 60 / bpm; // ~0.882s
-    const barSec = beatSec * 4;
-
-    // Rhodes E-Piano with warm decay
-    const playWarmRhodes = (freqs) => {
-      if (!this.ctx || this.activeChannel !== "lofi") return;
-      const t = this.ctx.currentTime;
-      freqs.forEach((freq, idx) => {
-        const strumOffset = idx * 0.022;
-        const startTime = t + strumOffset;
-
-        const osc1 = this.ctx.createOscillator();
-        const osc2 = this.ctx.createOscillator();
-        const noteGain = this.ctx.createGain();
-        const flt = this.ctx.createBiquadFilter();
-
-        osc1.type = "sine";
-        osc1.frequency.setValueAtTime(freq, startTime);
-
-        osc2.type = "triangle";
-        osc2.frequency.setValueAtTime(freq * 1.002, startTime);
-
-        flt.type = "lowpass";
-        flt.frequency.setValueAtTime(850, startTime);
-        flt.frequency.exponentialRampToValueAtTime(450, startTime + barSec * 0.85);
-
-        // Gentle volume velocity
-        const velocity = (0.042 / (idx + 1)) * (0.8 + Math.random() * 0.3);
-        noteGain.gain.setValueAtTime(0.0001, startTime);
-        noteGain.gain.exponentialRampToValueAtTime(velocity, startTime + 0.08);
-        noteGain.gain.exponentialRampToValueAtTime(0.0001, startTime + barSec * 0.95);
-
-        osc1.connect(flt);
-        osc2.connect(flt);
-        flt.connect(noteGain);
-        noteGain.connect(this.masterGain);
-
-        osc1.start(startTime);
-        osc2.start(startTime);
-        osc1.stop(startTime + barSec);
-        osc2.stop(startTime + barSec);
-      });
-    };
-
-    // PUNCHY, AUDIBLE BOOM-BAP DRUM SYNTHESIS
-    const playLofiDrum = (type) => {
-      if (!this.ctx || this.activeChannel !== "lofi") return;
-      const t = this.ctx.currentTime;
-
-      if (type === "kick") {
-        // 1. Low Punch Sine Sweep (160Hz -> 48Hz)
-        const osc = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        osc.frequency.setValueAtTime(160, t);
-        osc.frequency.exponentialRampToValueAtTime(48, t + 0.18);
-        g.gain.setValueAtTime(0.38, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
-        osc.connect(g);
-        g.connect(this.masterGain);
-        osc.start(t);
-        osc.stop(t + 0.25);
-
-        // 2. Click Transient (Makes kick clearly audible on laptops & phones)
-        const clickBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.015), this.ctx.sampleRate);
-        const cd = clickBuf.getChannelData(0);
-        for (let i = 0; i < cd.length; i++) cd[i] = (Math.random() * 2 - 1) * Math.exp(-i / 100);
-        const clickSrc = this.ctx.createBufferSource();
-        clickSrc.buffer = clickBuf;
-        const clickG = this.ctx.createGain();
-        clickG.gain.setValueAtTime(0.16, t);
-        clickG.gain.exponentialRampToValueAtTime(0.001, t + 0.014);
-        clickSrc.connect(clickG);
-        clickG.connect(this.masterGain);
-        clickSrc.start(t);
-
-      } else if (type === "snare") {
-        // Snare Tone Body (210Hz)
-        const tone = this.ctx.createOscillator();
-        const tg = this.ctx.createGain();
-        tone.frequency.setValueAtTime(210, t);
-        tone.frequency.exponentialRampToValueAtTime(120, t + 0.08);
-        tg.gain.setValueAtTime(0.24, t);
-        tg.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
-        tone.connect(tg);
-        tg.connect(this.masterGain);
-        tone.start(t);
-        tone.stop(t + 0.1);
-
-        // Snappy Rimshot Noise Wire
-        const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.14), this.ctx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 500);
-        const src = this.ctx.createBufferSource();
-        src.buffer = buf;
-        const flt = this.ctx.createBiquadFilter();
-        flt.type = "bandpass";
-        flt.frequency.setValueAtTime(2200, t);
-        flt.Q.setValueAtTime(1.8, t);
-        const g = this.ctx.createGain();
-        g.gain.setValueAtTime(0.26, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
-        src.connect(flt);
-        flt.connect(g);
-        g.connect(this.masterGain);
-        src.start(t);
-
-      } else if (type === "hihat") {
-        const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * 0.045), this.ctx.sampleRate);
-        const d = buf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 220);
-        const src = this.ctx.createBufferSource();
-        src.buffer = buf;
-        const flt = this.ctx.createBiquadFilter();
-        flt.type = "highpass";
-        flt.frequency.setValueAtTime(7000, t);
-        const g = this.ctx.createGain();
-        g.gain.setValueAtTime(0.11 + Math.random() * 0.04, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-        src.connect(flt);
-        flt.connect(g);
-        g.connect(this.masterGain);
-        src.start(t);
-      }
-    };
-
-    // Play initial chords and opening kick immediately!
-    playWarmRhodes(progression[0]);
-    playLofiDrum("kick");
-    playLofiDrum("hihat");
-
-    // 16th-note groovy rhythmic sequencer (4 beats = 16 sub-steps)
-    const stepSec = beatSec / 4; // ~0.22s
-    let stepCount = 0;
-
-    const drumInterval = setInterval(() => {
-      if (this.activeChannel !== "lofi") {
-        clearInterval(drumInterval);
-        return;
-      }
-      stepCount++;
-      const barStep = stepCount % 16; // 0 to 15 within measure
-
-      // Every new bar (step 0), change chords
-      if (barStep === 0) {
-        chordStep = (chordStep + 1) % progression.length;
-        playWarmRhodes(progression[chordStep]);
-      }
-
-      // Classic Lofi Boom-Bap Pattern:
-      // Beat 1 (step 0): Kick + Hihat
-      if (barStep === 0) {
-        playLofiDrum("kick");
-        playLofiDrum("hihat");
-      }
-      // Beat 1 swing upbeat (step 2)
-      else if (barStep === 2) {
-        playLofiDrum("hihat");
-      }
-      // Beat 2 (step 4): Snare + Hihat
-      else if (barStep === 4) {
-        playLofiDrum("snare");
-        playLofiDrum("hihat");
-      }
-      // Beat 2 swing upbeat (step 6)
-      else if (barStep === 6) {
-        playLofiDrum("hihat");
-      }
-      // Beat 2.75: Ghost Kick bounce!
-      else if (barStep === 7 && Math.random() < 0.7) {
-        playLofiDrum("kick");
-      }
-      // Beat 3 (step 8): Kick + Hihat
-      else if (barStep === 8) {
-        playLofiDrum("kick");
-        playLofiDrum("hihat");
-      }
-      // Beat 3 swing upbeat (step 10)
-      else if (barStep === 10) {
-        playLofiDrum("hihat");
-      }
-      // Beat 4 (step 12): Snare + Hihat
-      else if (barStep === 12) {
-        playLofiDrum("snare");
-        playLofiDrum("hihat");
-      }
-      // Beat 4 swing upbeat (step 14)
-      else if (barStep === 14) {
-        playLofiDrum("hihat");
-      }
-    }, stepSec * 1000);
-
-    this.intervalIds.push(drumInterval);
+    if (playedEl) playedEl.style.width = pct + "%";
+    if (thumbEl) thumbEl.style.left = pct + "%";
+    if (curEl) curEl.textContent = formatAudioTime(cur);
+    if (durEl) durEl.textContent = formatAudioTime(dur);
   }
 
-  // --- OUTDOOR SIDEWALK CAFE AMBIANCE (Pleasant White/Pink Noise Breeze & Lively "Tiếng Tí Tách") ---
-  startCafeAmbiance() {
-    const now = this.ctx.currentTime;
-
-    // 1. Outdoor sidewalk breeze / white-pink noise background bed
-    const bufLen = this.ctx.sampleRate * 6;
-    const buf = this.ctx.createBuffer(2, bufLen, this.ctx.sampleRate);
-    const dL = buf.getChannelData(0);
-    const dR = buf.getChannelData(1);
-    for (let i = 0; i < bufLen; i++) {
-      dL[i] = (Math.random() * 2 - 1) * 0.04;
-      dR[i] = (Math.random() * 2 - 1) * 0.04;
+  updatePlayStateInDom(isPlaying) {
+    const playBtn = document.getElementById("pomo-music-play-btn");
+    if (playBtn) {
+      playBtn.innerHTML = isPlaying ? "⏸" : "▶";
+      playBtn.title = isPlaying ? "Tạm dừng nhạc" : "Phát nhạc";
     }
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buf;
-    noise.loop = true;
-
-    // Outdoor acoustic filter
-    const outdoorFlt = this.ctx.createBiquadFilter();
-    outdoorFlt.type = "lowpass";
-    outdoorFlt.frequency.setValueAtTime(620, now);
-
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.19, now + 0.8);
-
-    noise.connect(outdoorFlt);
-    outdoorFlt.connect(gain);
-    gain.connect(this.masterGain);
-
-    noise.start(now);
-    this.nodes.push(noise, outdoorFlt, gain);
-
-    // 2. "Tiếng Tí Tách" (Ice Cubes clinking, Ceramic Saucers, Cutlery taps every 4-8s)
-    const playTiTachSound = () => {
-      if (this.activeChannel !== "cafe" || !this.ctx) return;
-      const t = this.ctx.currentTime;
-      const type = Math.floor(Math.random() * 3);
-
-      if (type === 0) {
-        // Ice cubes in glass clinking (delicate double ping: 3400Hz - 4200Hz)
-        [0, 0.09].forEach((offset, idx) => {
-          const osc = this.ctx.createOscillator();
-          const cg = this.ctx.createGain();
-          osc.type = "sine";
-          osc.frequency.setValueAtTime(3600 + idx * 400 + Math.random() * 200, t + offset);
-          cg.gain.setValueAtTime(0.18, t + offset);
-          cg.gain.exponentialRampToValueAtTime(0.0001, t + offset + 0.12);
-          osc.connect(cg);
-          cg.connect(this.masterGain);
-          osc.start(t + offset);
-          osc.stop(t + offset + 0.14);
-        });
-      } else if (type === 1) {
-        // Ceramic coffee cup & saucer clink (2200Hz - 2800Hz)
-        const osc = this.ctx.createOscillator();
-        const cg = this.ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(2400 + Math.random() * 400, t);
-        cg.gain.setValueAtTime(0.24, t);
-        cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
-        osc.connect(cg);
-        cg.connect(this.masterGain);
-        osc.start(t);
-        osc.stop(t + 0.24);
-      } else {
-        // Spoon stirring in glass mug (3 micro taps)
-        [0, 0.11, 0.22].forEach((offset, idx) => {
-          const osc = this.ctx.createOscillator();
-          const cg = this.ctx.createGain();
-          osc.type = "sine";
-          osc.frequency.setValueAtTime(3100 + idx * 250, t + offset);
-          cg.gain.setValueAtTime(0.12, t + offset);
-          cg.gain.exponentialRampToValueAtTime(0.0001, t + offset + 0.08);
-          osc.connect(cg);
-          cg.connect(this.masterGain);
-          osc.start(t + offset);
-          osc.stop(t + offset + 0.09);
-        });
-      }
-
-      // Schedule next "tí tách" at natural cafe intervals (4s - 8s)
-      const nextDelay = 4200 + Math.random() * 4200;
-      const tid = setTimeout(playTiTachSound, nextDelay);
-      this.timeoutIds.push(tid);
-    };
-
-    // Play initial cafe clink right upon click
-    playTiTachSound();
-
-    // Occasional gentle barista steam wand (every 30s - 55s)
-    const playSteam = () => {
-      if (this.activeChannel !== "cafe" || !this.ctx) return;
-      const t = this.ctx.currentTime;
-      const dur = 2.0;
-      const buf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * dur), this.ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) {
-        const prog = i / d.length;
-        d[i] = (Math.random() * 2 - 1) * Math.sin(prog * Math.PI) * 0.12;
-      }
-      const src = this.ctx.createBufferSource();
-      src.buffer = buf;
-      const flt = this.ctx.createBiquadFilter();
-      flt.type = "lowpass";
-      flt.frequency.setValueAtTime(1800, t);
-      const g = this.ctx.createGain();
-      g.gain.setValueAtTime(0.16, t);
-      src.connect(flt);
-      flt.connect(g);
-      g.connect(this.masterGain);
-      src.start(t);
-
-      const nextSteam = 30000 + Math.random() * 25000;
-      const tid = setTimeout(playSteam, nextSteam);
-      this.timeoutIds.push(tid);
-    };
-    const sId = setTimeout(playSteam, 14000);
-    this.timeoutIds.push(sId);
-  }
-
-  // --- CRISP AUDIBLE BOOK & LIBRARY SOUNDS (Audible Page Rustles, Double Flips & Pencil Notes) ---
-  startBookFlipAmbiance() {
-    const now = this.ctx.currentTime;
-
-    // 1. Gentle library room acoustic presence
-    const bufLen = this.ctx.sampleRate * 4;
-    const buf = this.ctx.createBuffer(2, bufLen, this.ctx.sampleRate);
-    const dL = buf.getChannelData(0);
-    const dR = buf.getChannelData(1);
-    for (let i = 0; i < bufLen; i++) {
-      dL[i] = (Math.random() * 2 - 1) * 0.035;
-      dR[i] = (Math.random() * 2 - 1) * 0.035;
-    }
-    const roomTone = this.ctx.createBufferSource();
-    roomTone.buffer = buf;
-    roomTone.loop = true;
-
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(700, now);
-
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(0.24, now + 0.6);
-
-    roomTone.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
-    roomTone.start(now);
-    this.nodes.push(roomTone, filter, gain);
-
-    // 2. CLEAR, SATISFYING STUDY SOUND EFFECTS (Every 6-10s)
-    const playBookEffect = () => {
-      if (this.activeChannel !== "book" || !this.ctx) return;
-      const t = this.ctx.currentTime;
-      const actionType = Math.floor(Math.random() * 3);
-
-      if (actionType === 0) {
-        // Crisp dual-friction paper turn (sliding and settling over 0.38s)
-        const dur = 0.38;
-        const fBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * dur), this.ctx.sampleRate);
-        const fd = fBuf.getChannelData(0);
-        for (let i = 0; i < fd.length; i++) {
-          const progress = i / fd.length;
-          const envelope = Math.sin(progress * Math.PI) ** 1.6;
-          fd[i] = (Math.random() * 2 - 1) * envelope * 0.75;
-        }
-        const pageSrc = this.ctx.createBufferSource();
-        pageSrc.buffer = fBuf;
-        const pFlt = this.ctx.createBiquadFilter();
-        pFlt.type = "bandpass";
-        pFlt.frequency.setValueAtTime(1600, t);
-        pFlt.Q.setValueAtTime(1.6, t);
-        const pGain = this.ctx.createGain();
-        pGain.gain.setValueAtTime(0.85, t);
-        pageSrc.connect(pFlt);
-        pFlt.connect(pGain);
-        pGain.connect(this.masterGain);
-        pageSrc.start(t);
-
-      } else if (actionType === 1) {
-        // Quick crisp page flip
-        const dur = 0.22;
-        const fBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * dur), this.ctx.sampleRate);
-        const fd = fBuf.getChannelData(0);
-        for (let i = 0; i < fd.length; i++) {
-          const progress = i / fd.length;
-          fd[i] = (Math.random() * 2 - 1) * Math.sin(progress * Math.PI) * 0.8;
-        }
-        const pageSrc = this.ctx.createBufferSource();
-        pageSrc.buffer = fBuf;
-        const pFlt = this.ctx.createBiquadFilter();
-        pFlt.type = "highpass";
-        pFlt.frequency.setValueAtTime(1400, t);
-        const pGain = this.ctx.createGain();
-        pGain.gain.setValueAtTime(0.72, t);
-        pageSrc.connect(pFlt);
-        pFlt.connect(pGain);
-        pGain.connect(this.masterGain);
-        pageSrc.start(t);
-
-      } else {
-        // Sột soạt bút chì ghi chú trên giấy học bài
-        [0, 0.12, 0.24, 0.36].forEach((offset) => {
-          const sDur = 0.07;
-          const sBuf = this.ctx.createBuffer(1, Math.floor(this.ctx.sampleRate * sDur), this.ctx.sampleRate);
-          const sd = sBuf.getChannelData(0);
-          for (let i = 0; i < sd.length; i++) {
-            sd[i] = (Math.random() * 2 - 1) * (1 - i / sd.length) * 0.45;
-          }
-          const sSrc = this.ctx.createBufferSource();
-          sSrc.buffer = sBuf;
-          const sFlt = this.ctx.createBiquadFilter();
-          sFlt.type = "bandpass";
-          sFlt.frequency.setValueAtTime(2600, t + offset);
-          sFlt.Q.setValueAtTime(2.0, t + offset);
-          const sG = this.ctx.createGain();
-          sG.gain.setValueAtTime(0.42, t + offset);
-          sSrc.connect(sFlt);
-          sFlt.connect(sG);
-          sG.connect(this.masterGain);
-          sSrc.start(t + offset);
-        });
-      }
-
-      // Schedule next audible page turn (6 to 10 seconds)
-      const nextDelay = 6000 + Math.random() * 4000;
-      const tid = setTimeout(playBookEffect, nextDelay);
-      this.timeoutIds.push(tid);
-    };
-
-    // Play immediate crisp page turn so user instantly hears it!
-    playBookEffect();
-  }
-
-  // --- Pleasant Completion Bell Chime (Zen Bell) ---
-  playCompletionBell() {
-    this.init();
-    if (!this.ctx) return;
-    const now = this.ctx.currentTime;
-    const freqs = [587.33, 880.0, 1174.66]; // D5, A5, D6 harmonic chime
-    freqs.forEach((freq, idx) => {
-      const osc = this.ctx.createOscillator();
-      const g = this.ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, now + idx * 0.05);
-
-      g.gain.setValueAtTime(0.2 / (idx + 1), now + idx * 0.05);
-      g.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
-
-      osc.connect(g);
-      g.connect(this.ctx.destination);
-      osc.start(now + idx * 0.05);
-      osc.stop(now + 3.0);
+    const currentTrack = this.getCurrentTrack();
+    const dropdownItems = document.querySelectorAll(".pomo-playlist-track-row");
+    dropdownItems.forEach((row) => {
+      const rowId = row.getAttribute("data-track-id");
+      const isCurrent = currentTrack && rowId === currentTrack.id;
+      row.classList.toggle("active-track", isCurrent);
+      const waveEl = row.querySelector(".pomo-soundwave");
+      if (waveEl) waveEl.style.display = (isCurrent && isPlaying) ? "inline-flex" : "none";
+      const iconBtn = row.querySelector(".pomo-track-play-icon");
+      if (iconBtn) iconBtn.textContent = (isCurrent && isPlaying) ? "⏸" : "▶";
     });
+  }
+
+  updateTrackMetaInDom() {
+    const track = this.getCurrentTrack();
+    if (!track) return;
+    const titleEl = document.getElementById("pomo-current-music-title");
+    if (titleEl) {
+      titleEl.innerHTML = `${track.icon} ${safeEsc(track.title)}`;
+      titleEl.title = `${track.title} - ${track.artist}`;
+    }
+  }
+
+  playCompletionBell() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      const freqs = [587.33, 880.0, 1174.66]; // D5, A5, D6 harmonic chime
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+        g.gain.setValueAtTime(0.25 / (idx + 1), now + idx * 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 2.8);
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(now + idx * 0.05);
+        osc.stop(now + 3.0);
+      });
+    } catch {}
   }
 }
 
-export const pomodoroAudio = new PomodoroAudioEngine();
+export const pomodoroAudio = new PomodoroMusicEngine();
 
 // ========================================================
 // 2. POMODORO STATE & QUOTES
@@ -790,6 +350,9 @@ export const pomodoroState = {
   isAskingAi: false,
   showExitModal: false,
   showCelebrationModal: false,
+  showPlaylistDropdown: false,
+  playlistSearch: "",
+  playlistCategory: "all",
   lastRewardXp: 0,
   lastRewardGems: 0
 };
@@ -941,6 +504,7 @@ async function handleFocusCycleCompleted() {
   pomodoroState.lastRewardGems = gemsAwarded;
 
   const activeDoc = pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
+  const currentTrack = pomodoroAudio.getCurrentTrack();
 
   try {
     const res = await callApi("/api/pomodoro/complete", {
@@ -1967,47 +1531,60 @@ function renderPomodoroLobby() {
 
         <!-- RIGHT: AMBIENCE & BIG START BUTTON -->
         <div class="pomodoro-setup-card">
-          <h2 class="setup-card-title">🎵 Chọn âm thanh kích thích não bộ</h2>
-          <p class="setup-card-desc">Âm thanh phòng học tự nhiên giúp tăng 40% khả năng tập trung (100% Offline).</p>
+          <h2 class="setup-card-title">🎵 Âm thanh kích thích não bộ (Cloudflare R2)</h2>
+          <p class="setup-card-desc">17 bài nhạc độc quyền chất lượng cao tải mượt mà dạng stream từng đoạn như YouTube.</p>
 
           <div class="ambience-chips-grid">
             <label class="ambience-chip-label">
               <input type="radio" name="pomo-ambience" value="lofi" ${pomodoroAudio.activeChannel === 'lofi' || pomodoroAudio.activeChannel === 'none' ? 'checked' : ''} onchange="window.pomodoroAudio.playChannel('lofi')">
               <div class="ambience-chip-card">
-                <span class="chip-icon">🎵</span>
+                <span class="chip-icon">🎧</span>
                 <strong>Lofi Beats</strong>
-                <small>Piano & Vinyl chill</small>
+                <small>CapzLock & The Way Life Goes</small>
               </div>
             </label>
             <label class="ambience-chip-label">
               <input type="radio" name="pomo-ambience" value="rain" ${pomodoroAudio.activeChannel === 'rain' ? 'checked' : ''} onchange="window.pomodoroAudio.playChannel('rain')">
               <div class="ambience-chip-card">
                 <span class="chip-icon">🌧️</span>
-                <strong>Mưa rơi</strong>
-                <small>Tiếng mưa rơi êm dịu</small>
+                <strong>Mưa rơi & Piano</strong>
+                <small>Rain & Piano, Pure Rain Ambient</small>
               </div>
             </label>
             <label class="ambience-chip-label">
-              <input type="radio" name="pomo-ambience" value="cafe" ${pomodoroAudio.activeChannel === 'cafe' ? 'checked' : ''} onchange="window.pomodoroAudio.playChannel('cafe')">
+              <input type="radio" name="pomo-ambience" value="brain" ${pomodoroAudio.activeChannel === 'brain' ? 'checked' : ''} onchange="window.pomodoroAudio.playChannel('brain')">
               <div class="ambience-chip-card">
-                <span class="chip-icon">☕</span>
-                <strong>Quán Cafe</strong>
-                <small>Chạm cốc & trò chuyện</small>
+                <span class="chip-icon">🧠</span>
+                <strong>Sóng Não Alpha</strong>
+                <small>Alpha Brain Focus & Hopecore</small>
               </div>
             </label>
             <label class="ambience-chip-label">
               <input type="radio" name="pomo-ambience" value="book" ${pomodoroAudio.activeChannel === 'book' ? 'checked' : ''} onchange="window.pomodoroAudio.playChannel('book')">
               <div class="ambience-chip-card">
                 <span class="chip-icon">📖</span>
-                <strong>Lật sách</strong>
-                <small>Tiếng lật sách sột soạt</small>
+                <strong>ASMR Bút Viết</strong>
+                <small>Writing Sound & Rừng Thiên Nhiên</small>
               </div>
             </label>
           </div>
 
-          <div class="volume-slider-row">
+          <!-- Starting Track Selector -->
+          <div class="lobby-track-picker-row" style="margin-top: 14px; display:flex; align-items:center; gap:10px;">
+            <span style="font-weight:800; font-size:12px; color:var(--ink-700);">Bài bắt đầu:</span>
+            <select class="pomo-lobby-select" onchange="window.pomodoroAudio.playTrack(parseInt(this.value, 10), true)" style="flex:1; padding:7px 12px; border-radius:12px; border:1.5px solid var(--border-light, #e2e8f0); font-weight:700; font-size:12px; background:var(--bg-page, #f8fafc); color:var(--ink-800);">
+              ${pomodoroAudio.playlist.map((t, idx) => `
+                <option value="${idx}" ${pomodoroAudio.currentIndex === idx ? 'selected' : ''}>
+                  ${t.icon} ${t.title} (${t.tag})
+                </option>
+              `).join("")}
+            </select>
+          </div>
+
+          <div class="volume-slider-row" style="margin-top: 12px;">
             <span>🔊 Âm lượng:</span>
-            <input type="range" min="0" max="1" step="0.05" value="${pomodoroAudio.volume}" oninput="window.pomodoroAudio.setVolume(this.value)">
+            <input type="range" class="pomo-volume-range" min="0" max="1" step="0.05" value="${pomodoroAudio.volume}" oninput="window.pomodoroAudio.setVolume(this.value)">
+            <span class="volume-value-text">${Math.round(pomodoroAudio.volume * 100)}%</span>
           </div>
 
           <!-- BIG START BUTTON -->
@@ -2114,21 +1691,60 @@ function renderPomodoroActiveRoom() {
           </div>
         </div>
 
-        <div class="pomo-topbar-right">
-          <!-- 4 CHILL AUDIO CHANNELS -->
-          <div class="pomo-sound-controls">
-            <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'lofi' ? 'active' : ''}" title="Lofi Beats" onclick="window.pomodoroAudio.playChannel('lofi'); window.render();">🎵 Lofi</button>
-            <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'rain' ? 'active' : ''}" title="Tiếng mưa" onclick="window.pomodoroAudio.playChannel('rain'); window.render();">🌧️ Mưa</button>
-            <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'cafe' ? 'active' : ''}" title="Quán Cafe" onclick="window.pomodoroAudio.playChannel('cafe'); window.render();">☕ Cafe</button>
-            <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'book' ? 'active' : ''}" title="Lật sách" onclick="window.pomodoroAudio.playChannel('book'); window.render();">📖 Sách</button>
-            <button type="button" class="pomo-sound-btn ${pomodoroAudio.activeChannel === 'none' ? 'active' : ''}" title="Tắt âm" onclick="window.pomodoroAudio.stopAll(); window.render();">🔇 Tắt</button>
+        <!-- 2. CENTER: YOUTUBE-STYLE MUSIC PLAYER WITH BUFFER BAR -->
+        <div class="pomo-topbar-center-player">
+          <!-- Controls row: Prev, Play/Pause, Next -->
+          <div class="pomo-music-controls-row">
+            <button type="button" class="pomo-music-ctrl-btn" onclick="window.pomodoroAudio.prev()" title="Bài trước (Prev)">
+              ⏮
+            </button>
+            <button type="button" class="pomo-music-play-btn" id="pomo-music-play-btn" onclick="window.pomodoroAudio.togglePlay()" title="${pomodoroAudio.isPlaying ? 'Tạm dừng nhạc' : 'Phát nhạc'}">
+              ${pomodoroAudio.isPlaying ? '⏸' : '▶'}
+            </button>
+            <button type="button" class="pomo-music-ctrl-btn" onclick="window.pomodoroAudio.next()" title="Bài tiếp theo (Next)">
+              ⏭
+            </button>
           </div>
+
+          <!-- Title row -->
+          <div class="pomo-music-title-wrap">
+            <span class="pomo-music-title" id="pomo-current-music-title" title="${safeEsc(currentTrack.title)} - ${safeEsc(currentTrack.artist)}">
+              ${currentTrack.icon} ${safeEsc(currentTrack.title)}
+            </span>
+          </div>
+
+          <!-- YouTube-style Seekbar with progressive buffer bar -->
+          <div class="pomo-music-seekbar-row">
+            <span class="pomo-music-time" id="pomo-audio-time-current">00:00</span>
+            <div class="pomo-youtube-seekbar-wrap" id="pomo-audio-seekbar-wrap" onclick="window.handlePomoAudioSeek(event)">
+              <div class="pomo-seekbar-bg">
+                <!-- Chunks load progressively like YouTube -->
+                <div class="pomo-audio-buffer-bar" id="pomo-audio-buffer-bar" style="width: 0%;"></div>
+                <!-- Played progress -->
+                <div class="pomo-audio-played-bar" id="pomo-audio-played-bar" style="width: 0%;"></div>
+              </div>
+              <!-- Draggable scrub thumb -->
+              <div class="pomo-audio-scrub-thumb" id="pomo-audio-scrub-thumb" style="left: 0%;"></div>
+            </div>
+            <span class="pomo-music-time" id="pomo-audio-time-duration">--:--</span>
+          </div>
+        </div>
+
+        <!-- 3. RIGHT: PLAYLIST DROPDOWN BUTTON & EXIT -->
+        <div class="pomo-topbar-right">
+          <!-- PLAYLIST DROPDOWN TRIGGER BUTTON -->
+          <button type="button" class="btn-duo btn-pomo-playlist-toggle ${pomodoroState.showPlaylistDropdown ? 'active' : ''}" id="pomo-playlist-btn" onclick="window.togglePomodoroPlaylist(event)" title="Mở danh sách 17 bài nhạc Pomodoro">
+            🎵 Danh sách nhạc ⇩
+          </button>
 
           <!-- EMERGENCY EXIT BUTTON (Ctrl + Q) -->
           <button type="button" class="btn-duo btn-pomo-exit-btn" onclick="window.openPomodoroExitConfirm()" title="Nhấn Ctrl + Q để thoát">
             🚪 Thoát (Ctrl + Q)
           </button>
         </div>
+
+        <!-- 4. FLOATING PLAYLIST POPOVER (17 TRACKS) -->
+        ${renderPomodoroPlaylistPopover()}
       </header>
 
       <!-- 3-PANE WORKSPACE: LEFT (DOC TABS) | CENTER (DOCUMENT VIEWER / FULL CLOCK) | RIGHT (AI ASSISTANT TAB) -->
@@ -2381,7 +1997,13 @@ function renderDocContent(doc) {
   if (doc.type === "pdf") {
     return `
       <div class="pomo-doc-pdf-wrap">
-        <iframe src="${doc.content}" class="pomo-pdf-iframe" title="${safeEsc(doc.name)}"></iframe>
+        <object data="${doc.content}" type="application/pdf" class="pomo-pdf-iframe">
+          <iframe src="${doc.content}" class="pomo-pdf-iframe" title="${safeEsc(doc.name)}">
+            <div class="pomo-doc-empty">
+              Trình duyệt không hỗ trợ xem trực tiếp PDF này. Bạn có thể nhấn vào "Tóm tắt tài liệu" bên phải để Cố vấn AI đọc nội dung cho bạn.
+            </div>
+          </iframe>
+        </object>
       </div>
     `;
   }
@@ -2453,6 +2075,179 @@ function renderDocContent(doc) {
   `;
 }
 
+
+// ========================================================
+// 9. PLAYLIST POPOVER & AUDIO INTERACTION HELPERS
+// ========================================================
+export function renderPomodoroPlaylistPopover() {
+  const currentTrack = pomodoroAudio.getCurrentTrack();
+  const search = (pomodoroState.playlistSearch || "").trim().toLowerCase();
+  const cat = pomodoroState.playlistCategory || "all";
+
+  const categories = [
+    { key: "all", label: `Tất cả (${POMODORO_PLAYLIST.length})` },
+    { key: "lofi", label: "Lofi Beat" },
+    { key: "rain", label: "Tiếng Mưa" },
+    { key: "brain", label: "Sóng Não" },
+    { key: "asmr", label: "ASMR" },
+    { key: "ambient", label: "Ambient" }
+  ];
+
+  const filtered = pomodoroAudio.playlist.filter(t => {
+    if (cat !== "all") {
+      if (cat === "lofi" && !t.tag.toLowerCase().includes("lofi")) return false;
+      if (cat === "rain" && !t.tag.toLowerCase().includes("mưa")) return false;
+      if (cat === "brain" && !t.tag.toLowerCase().includes("não")) return false;
+      if (cat === "asmr" && !t.tag.toLowerCase().includes("asmr")) return false;
+      if (cat === "ambient" && !t.tag.toLowerCase().includes("ambient") && !t.tag.toLowerCase().includes("chill")) return false;
+    }
+    if (search) {
+      const matchTitle = t.title.toLowerCase().includes(search);
+      const matchArtist = t.artist.toLowerCase().includes(search);
+      const matchTag = t.tag.toLowerCase().includes(search);
+      return matchTitle || matchArtist || matchTag;
+    }
+    return true;
+  });
+
+  return `
+    <div class="pomo-playlist-popover ${pomodoroState.showPlaylistDropdown ? 'active' : ''}" id="pomo-playlist-popover" onclick="event.stopPropagation()">
+      <div class="pomo-playlist-header">
+        <div class="pomo-playlist-header-title">
+          <span class="pomo-playlist-header-icon">🎧</span>
+          <strong>Nhạc Pomodoro (Cloudflare R2)</strong>
+        </div>
+        <button type="button" class="pomo-playlist-close-x" onclick="window.closePomodoroPlaylist()" title="Đóng">✕</button>
+      </div>
+
+      <!-- Search bar -->
+      <div class="pomo-playlist-search-wrap">
+        <input type="text" class="pomo-playlist-search-input" placeholder="🔍 Tìm kiếm bài hát, thể loại..." value="${safeEsc(pomodoroState.playlistSearch || '')}" oninput="window.setPomodoroPlaylistSearch(this.value)">
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="pomo-playlist-cat-chips">
+        ${categories.map(c => `
+          <button type="button" class="pomo-cat-chip ${cat === c.key ? 'active' : ''}" onclick="window.setPomodoroPlaylistCategory('${c.key}')">
+            ${c.label}
+          </button>
+        `).join("")}
+      </div>
+
+      <!-- Tracks List -->
+      <div class="pomo-playlist-tracks-list">
+        ${filtered.length > 0 ? filtered.map((track) => {
+          const globalIdx = pomodoroAudio.playlist.findIndex(t => t.id === track.id);
+          const isCurrent = currentTrack && currentTrack.id === track.id;
+          const isPlayingThis = isCurrent && pomodoroAudio.isPlaying;
+          return `
+            <div class="pomo-playlist-track-row ${isCurrent ? 'active-track' : ''}" data-track-id="${track.id}" onclick="window.pomodoroAudio.playTrack(${globalIdx}, true)">
+              <div class="track-row-left">
+                <span class="track-row-icon">${track.icon}</span>
+                <div class="track-row-info">
+                  <div class="track-row-name-wrap">
+                    <strong class="track-row-title">${safeEsc(track.title)}</strong>
+                    ${isCurrent ? `
+                      <span class="pomo-soundwave" style="${isPlayingThis ? 'display:inline-flex;' : 'display:none;'}">
+                        <span></span><span></span><span></span>
+                      </span>
+                    ` : ""}
+                  </div>
+                  <span class="track-row-artist">${safeEsc(track.artist)}</span>
+                </div>
+              </div>
+              <div class="track-row-right">
+                <span class="track-row-tag">${safeEsc(track.tag)}</span>
+                <span class="track-row-size">${track.sizeMb} MB</span>
+                <button type="button" class="pomo-track-play-btn" title="${isPlayingThis ? 'Tạm dừng' : 'Phát'}" onclick="event.stopPropagation(); ${isCurrent ? 'window.pomodoroAudio.togglePlay()' : `window.pomodoroAudio.playTrack(${globalIdx}, true)`}">
+                  <span class="pomo-track-play-icon">${isPlayingThis ? '⏸' : '▶'}</span>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("") : `
+          <div class="pomo-playlist-empty">Không tìm thấy bài hát nào phù hợp 🔍</div>
+        `}
+      </div>
+
+      <!-- Footer: Volume Slider -->
+      <div class="pomo-playlist-footer">
+        <div class="pomo-footer-volume-row">
+          <span class="volume-icon" onclick="window.pomodoroAudio.setVolume(pomodoroAudio.volume > 0 ? 0 : 0.65)" style="cursor:pointer;" title="Bật/Tắt âm">
+            ${pomodoroAudio.volume === 0 ? '🔇' : (pomodoroAudio.volume < 0.5 ? '🔉' : '🔊')}
+          </span>
+          <input type="range" class="pomo-volume-range" min="0" max="1" step="0.05" value="${pomodoroAudio.volume}" oninput="window.pomodoroAudio.setVolume(this.value)" title="Điều chỉnh âm lượng">
+          <span class="volume-value-text">${Math.round(pomodoroAudio.volume * 100)}%</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export function togglePomodoroPlaylist(e) {
+  if (e) e.stopPropagation();
+  pomodoroState.showPlaylistDropdown = !pomodoroState.showPlaylistDropdown;
+  const popover = document.getElementById("pomo-playlist-popover");
+  const btn = document.getElementById("pomo-playlist-btn");
+  if (popover) popover.classList.toggle("active", pomodoroState.showPlaylistDropdown);
+  if (btn) btn.classList.toggle("active", pomodoroState.showPlaylistDropdown);
+}
+
+export function closePomodoroPlaylist() {
+  pomodoroState.showPlaylistDropdown = false;
+  const popover = document.getElementById("pomo-playlist-popover");
+  const btn = document.getElementById("pomo-playlist-btn");
+  if (popover) popover.classList.remove("active");
+  if (btn) btn.classList.remove("active");
+}
+
+export function handlePomoAudioSeek(e) {
+  const bar = document.getElementById("pomo-audio-seekbar-wrap");
+  if (!bar || !pomodoroAudio.audio || !pomodoroAudio.audio.duration) return;
+  const rect = bar.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const pct = Math.max(0, Math.min(1, clickX / rect.width));
+  pomodoroAudio.seek(pct * pomodoroAudio.audio.duration);
+  pomodoroAudio.updateTimeProgress();
+}
+
+export function setPomodoroPlaylistSearch(q) {
+  pomodoroState.playlistSearch = q || "";
+  const popover = document.getElementById("pomo-playlist-popover");
+  if (popover) {
+    const parent = popover.parentElement;
+    if (parent) {
+      popover.outerHTML = renderPomodoroPlaylistPopover();
+      const newSearch = document.querySelector(".pomo-playlist-search-input");
+      if (newSearch) {
+        newSearch.focus();
+        newSearch.setSelectionRange(newSearch.value.length, newSearch.value.length);
+      }
+    }
+  }
+}
+
+export function setPomodoroPlaylistCategory(cat) {
+  pomodoroState.playlistCategory = cat || "all";
+  const popover = document.getElementById("pomo-playlist-popover");
+  if (popover) {
+    popover.outerHTML = renderPomodoroPlaylistPopover();
+  }
+}
+
+// Click outside popover to close
+if (typeof document !== "undefined") {
+  document.addEventListener("click", (e) => {
+    if (pomodoroState.showPlaylistDropdown) {
+      const popover = document.getElementById("pomo-playlist-popover");
+      const btn = document.getElementById("pomo-playlist-btn");
+      if (popover && !popover.contains(e.target) && btn && !btn.contains(e.target)) {
+        closePomodoroPlaylist();
+      }
+    }
+  });
+}
+
 // Window global bridges
 window.pomodoroAudio = pomodoroAudio;
 window.pomodoroState = pomodoroState;
@@ -2488,3 +2283,8 @@ window.loadPomodoroData = loadPomodoroData;
 window.formatPomodoroAiText = formatPomodoroAiText;
 window.renderMathFormula = renderMathFormula;
 window.formatOfficeTextToHtml = formatOfficeTextToHtml;
+window.togglePomodoroPlaylist = togglePomodoroPlaylist;
+window.closePomodoroPlaylist = closePomodoroPlaylist;
+window.handlePomoAudioSeek = handlePomoAudioSeek;
+window.setPomodoroPlaylistSearch = setPomodoroPlaylistSearch;
+window.setPomodoroPlaylistCategory = setPomodoroPlaylistCategory;

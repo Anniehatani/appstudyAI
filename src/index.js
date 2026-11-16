@@ -1164,7 +1164,7 @@ async function equipDecoration(request, user, env) {
   return { ok: true, profile: user.profile, message: itemCode ? "Đã trang bị thành công! ✨" : "Đã tháo trang bị." };
 }
 
-async function serveMedia(path, env) {
+async function serveMedia(path, env, request) {
   if (!env.AVATARS) return new Response("Not found", { status: 404 });
   let key;
   try {
@@ -1172,15 +1172,28 @@ async function serveMedia(path, env) {
   } catch {
     return new Response("Not found", { status: 404 });
   }
-  if ((!key.startsWith("avatars/") && !key.startsWith("hinhnen/") && !key.startsWith("chat_files/")) || key.includes("..") || key.includes("\\")) {
+  if ((!key.startsWith("avatars/") && !key.startsWith("hinhnen/") && !key.startsWith("chat_files/") && !key.startsWith("pomodoro_music/")) || key.includes("..") || key.includes("\\")) {
     return new Response("Not found", { status: 404 });
   }
-  const object = await env.AVATARS.get(key);
+
+  const rangeHeader = request && request.headers ? request.headers.get("range") : null;
+  let object;
+  if (rangeHeader) {
+    try {
+      object = await env.AVATARS.get(key, { range: rangeHeader });
+    } catch {
+      object = await env.AVATARS.get(key);
+    }
+  } else {
+    object = await env.AVATARS.get(key);
+  }
+
   if (!object) return new Response("Not found", { status: 404 });
   const headers = new Headers();
   object.writeHttpMetadata(headers);
-  headers.set("etag", object.httpEtag);
+  headers.set("etag", object.httpEtag || '""');
   headers.set("cache-control", "public, max-age=31536000, immutable");
+  headers.set("accept-ranges", "bytes");
   headers.set("x-content-type-options", "nosniff");
   if (!headers.get("content-type") || headers.get("content-type") === "application/octet-stream") {
     const lk = key.toLowerCase();
@@ -1198,7 +1211,33 @@ async function serveMedia(path, env) {
     else if (lk.endsWith(".pdf")) headers.set("content-type", "application/pdf");
     else if (lk.endsWith(".zip")) headers.set("content-type", "application/zip");
   }
-  return new Response(object.body, { headers: headers });
+
+  // Handle 206 Partial Content for range streaming (like YouTube progressive buffer)
+  let status = 200;
+  if (object.status === 206 || headers.has("content-range")) {
+    status = 206;
+  } else if (rangeHeader && object.range && object.size) {
+    status = 206;
+    headers.set("content-range", `bytes ${object.range.offset}-${object.range.offset + object.range.length - 1}/${object.size}`);
+    headers.set("content-length", String(object.range.length));
+  } else if (rangeHeader && object.body && Buffer.isBuffer(object.body)) {
+    // Fallback in-memory byte slice for partial content
+    const match = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+    if (match) {
+      const total = object.body.length;
+      const start = parseInt(match[1], 10);
+      const end = match[2] ? parseInt(match[2], 10) : total - 1;
+      if (start < total) {
+        status = 206;
+        const slice = object.body.subarray(start, end + 1);
+        headers.set("content-range", `bytes ${start}-${end}/${total}`);
+        headers.set("content-length", String(slice.length));
+        return new Response(slice, { status, headers });
+      }
+    }
+  }
+
+  return new Response(object.body, { status, headers });
 }
 
 async function reviewList(user, env) {
@@ -3680,6 +3719,35 @@ async function getPomodoroPeers(user, env) {
   }
 }
 
+const POMODORO_MUSIC_TRACKS = [
+  { id: "capzlock", title: "CapzLock Has To Be", artist: "Instrumental Loop Beat", tag: "Lofi Beat", icon: "🎧", file: "CapzLock Has To Be [Instrumental loop].mp3", sizeMb: 6.67 },
+  { id: "lil-uzi", title: "The Way Life Goes", artist: "Lil Uzi Vert - Instrumental Chill", tag: "Lofi Hip-Hop", icon: "🎵", file: "Lil Uzi Vert - The Way Life Goes - instrumental.mp3", sizeMb: 6.20 },
+  { id: "alpha-brain", title: "Alpha Brainwave Focus", artist: "Sóng Não Alpha Kích Thích Tư Duy", tag: "Sóng Não Focus", icon: "🧠", file: "Alpha Brain Music.mp3", sizeMb: 86.58 },
+  { id: "lofi-rain", title: "Lofi & Tiếng Mưa Rơi", artist: "Lofi Beats x Rain Chill Ambient", tag: "Lofi & Tiếng Mưa", icon: "🌧️", file: "lofi and rain.mp3", sizeMb: 197.32 },
+  { id: "rain-piano", title: "Rain & Piano", artist: "Dương Cầm Dưới Mưa Đêm", tag: "Piano & Mưa", icon: "🎹", file: "rain and piano.mp3", sizeMb: 57.59 },
+  { id: "pure-rain", title: "Pure Rain Ambient", artist: "Tiếng Mưa Rào Rì Rầm Thư Giãn", tag: "Tiếng Mưa", icon: "☔", file: "rain.mp3", sizeMb: 58.49 },
+  { id: "writing-asmr", title: "Writing ASMR Focus", artist: "Tiếng Bút Dạ & Giấy Tập Trung Cao Độ", tag: "ASMR Bút Viết", icon: "📖", file: "Writing sound.mp3", sizeMb: 115.20 },
+  { id: "nature-sound", title: "Nature Forest Sounds", artist: "Âm Thanh Suối Rừng & Gió Cây Tự Nhiên", tag: "Thiên Nhiên", icon: "🌲", file: "nature sound.mp3", sizeMb: 57.14 },
+  { id: "dark-fantasy", title: "Dark Fantasy Ambient", artist: "Deep Focus Cinematic Background", tag: "Deep Focus", icon: "🌌", file: "Dark fantasy.mp3", sizeMb: 115.44 },
+  { id: "killswitch", title: "Killswitch Lullaby x Wind", artist: "Flawed Mangoes - Gió Rì Rào Chill", tag: "Ambient Chill", icon: "🍃", file: "flawed mangoes - killswitch lullaby x Wind.mp3", sizeMb: 4.12 },
+  { id: "ibiza", title: "I Took A Pill In Ibiza", artist: "Instrumental Acoustic Lofi", tag: "Acoustic Chill", icon: "🎸", file: "i took a pill in ibiza - instrumental.mp3", sizeMb: 4.06 },
+  { id: "hopecore", title: "There Is Hopecore", artist: "Truyền Cảm Hứng & Động Lực Vượt Khó", tag: "Hopecore", icon: "✨", file: "there is hopecore.mp3", sizeMb: 35.84 },
+  { id: "ngay-mai", title: "Rồi Ngày Mai Sẽ Khác...", artist: "Acoustic V-Chill Hoài Niệm", tag: "V-Chill", icon: "☕", file: "Rồi ngày mai sẽ khác... .mp3", sizeMb: 24.43 },
+  { id: "are-you-lost", title: "Are You Lost", artist: "Chill Out Lofi Dream", tag: "Lofi Chill", icon: "☁️", file: "Are You lost.mp3", sizeMb: 2.51 },
+  { id: "rough-days", title: "Rough Days", artist: "Vượt Qua Những Ngày Giông Bão", tag: "Lofi Chill", icon: "💧", file: "Rough Days.mp3", sizeMb: 1.84 },
+  { id: "tourist", title: "Tourist", artist: "Bước Đi Thong Thả Giữa Thành Phố", tag: "Chillout", icon: "🌿", file: "Tourist.mp3", sizeMb: 1.42 },
+  { id: "yinyun", title: "氤氲之森 (Rừng Mù Sương)", artist: "Yinyun Forest Oriental Ambient", tag: "Oriental Ambient", icon: "🎍", file: "氤氲之森.mp3", sizeMb: 2.62 }
+];
+
+function getPomodoroPlaylist() {
+  return {
+    playlist: POMODORO_MUSIC_TRACKS.map(t => ({
+      ...t,
+      url: `/media/pomodoro_music/${encodeURIComponent(t.file)}`
+    }))
+  };
+}
+
 async function routeApi(request, env) {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -3696,6 +3764,7 @@ async function routeApi(request, env) {
   }
   if (method === "GET" && path === "/api/health") return respond({ ok: true });
   if (method === "GET" && path === "/api/subjects") return respond({ subjects: await apiSubjects(env) });
+  if (method === "GET" && path === "/api/pomodoro/playlist") return respond(getPomodoroPlaylist());
   if (path === "/api/session" && method === "POST") return createSession(request, env);
   if (path === "/api/session" && method === "GET") {
     const user = await sessionUser(request, env);
@@ -3847,7 +3916,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     try {
-      if (url.pathname.startsWith("/media/")) return await serveMedia(url.pathname, env);
+      if (url.pathname.startsWith("/media/")) return await serveMedia(url.pathname, env, request);
       if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
       const scopedEnv = {
         ...env,
