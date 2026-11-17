@@ -46,7 +46,10 @@
       "build/**/*",
       "package.json",
       "wrangler.jsonc",
-      ".dev.vars"
+      "!**/.dev.vars",
+      "!**/.env*",
+      "!**/*.key",
+      "!**/*.pem"
     ],
     "win": {
       "icon": "build/icon.ico",

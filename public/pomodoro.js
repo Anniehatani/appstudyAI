@@ -4,7 +4,7 @@
  * - Chu kỳ chuẩn 25m Focus / 5m Break
  * - Thưởng +50 XP và 30 💎 mỗi ca 25 phút hoàn thành
  * - Tích lũy theo ca (1 ca = 1x, 2 ca = 2x, v.v.)
- * - Chế độ Safe Exam Browser / Fullscreen & DND Mode chống phân tâm
+ * - Chế độ Siêu Tập Trung / Fullscreen & DND Kiosk Mode chống xao nhãng
  * - Phím tắt thoát khẩn cấp: Ctrl + Q (hủy ca dở dang nếu chưa hết 25p)
  * - 4 Kênh âm thanh chill 100% Offline (Lofi beat, Mưa rơi, Quán cafe, Tiếng lật sách) + Chuông báo (Zen Bell)
  * - Mascot Thỏ Bảy Màu động (Cắm cúi viết bài cực hài hước / Nghỉ ngơi trà sữa boba)
@@ -406,7 +406,7 @@ function getRandomQuote(mode) {
 }
 
 // ========================================================
-// 3. FULLSCREEN & SAFE EXAM BROWSER KIOSK HANDLING
+// 3. FULLSCREEN & FOCUS KIOSK MODE CHỐNG XAO NHÃNG
 // ========================================================
 export async function enterPomodoroKiosk() {
   window._isPomodoroActive = true;
@@ -1955,7 +1955,7 @@ function renderPomodoroLobby() {
           <div class="rule-icon">⏱️</div>
           <div class="rule-content">
             <strong>25 Phút Siêu Tập Trung</strong>
-            <span>Khóa toàn màn hình & tắt thông báo tin nhắn (như Safe Exam Browser) để chống sao nhãng.</span>
+            <span>Khóa toàn màn hình & chặn phím thoát (Chế độ Kiosk Siêu Tập Trung) để chống sao nhãng.</span>
           </div>
         </div>
         <div class="rule-box">

@@ -1,5 +1,8 @@
 import { loginIUPortal, layBangDiemVaHoSoIU, processAcademicTranscript, generateAcademicAdvisorPlan, mergeAndDeduplicateActiveCourses } from "./academic_service.js";
 import { BOT_ID, BOT_NAME, BOT_AVATAR, BOT_DECORATION, handleBot3TgCommand } from "./bot3tg.js";
+import { hashPassword, verifyPassword, checkRateLimit, resetRateLimit } from "./modules/crypto.js";
+import { verifyAndCompletePomodoro } from "./modules/pomodoro_validator.js";
+import { recordOutboxMutation, replayOutboxToD1, getOutboxStatus } from "./modules/sync_outbox.js";
 
 const COOKIE_NAME = "lumi_session";
 const COOKIE_AGE = 60 * 60 * 24 * 365;
@@ -98,6 +101,10 @@ async function executeFallbackDb(fallbackDb, sql, params, cacheKey, isCatalog) {
       return resultObj;
     } else {
       const runRes = await stmt.run();
+      // Ghi nhận mutation ngoại tuyến vào outbox để đối soát đồng bộ lên D1 khi mạng phục hồi
+      if (!isCatalog && fallbackDb) {
+        recordOutboxMutation(fallbackDb, sql, params).catch(() => {});
+      }
       return { results: [], meta: runRes.meta || { changes: 1, source: "local_replica" } };
     }
   } catch (err) {
@@ -1323,16 +1330,14 @@ async function deleteNote(noteId, user, env) {
   return { ok: true };
 }
 
-async function hashPassword(password) {
-  const enc = new TextEncoder();
-  const data = enc.encode(String(password) + "_lumi_salt_duo");
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hash)).map(function (b) {
-    return b.toString(16).padStart(2, "0");
-  }).join("");
-}
-
 async function registerAccount(request, env) {
+  const clientIp = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "client";
+  const rateLimitKey = `register_${clientIp}`;
+  const rateCheck = checkRateLimit(rateLimitKey, 10, 60 * 60 * 1000);
+  if (!rateCheck.allowed) {
+    throw new HttpError(429, `Thao tác đăng ký quá thường xuyên. Vui lòng thử lại sau ${rateCheck.retryAfter} giây.`);
+  }
+
   const body = await readJson(request);
   const username = String(body.username || "").trim().toLowerCase();
   const password = String(body.password || "");
@@ -1418,6 +1423,15 @@ async function loginAccount(request, env) {
   if (!username || !password) {
     throw new HttpError(400, "Vui lòng nhập tên đăng nhập và mật khẩu.");
   }
+
+  // Rate Limiter bảo vệ chống Brute-force (tối đa 5 lần sai trong 15 phút)
+  const clientIp = request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || "client";
+  const rateLimitKey = `login_${clientIp}_${username}`;
+  const rateCheck = checkRateLimit(rateLimitKey, 5, 15 * 60 * 1000);
+  if (!rateCheck.allowed) {
+    throw new HttpError(429, `Bạn đã nhập sai quá 5 lần. Vui lòng chờ ${rateCheck.retryAfter} giây trước khi thử lại.`);
+  }
+
   const account = await env.DB.prepare(
     "SELECT id, user_id, username, encrypted_password FROM accounts WHERE username = ? LIMIT 1"
   ).bind(username).first();
@@ -1425,9 +1439,27 @@ async function loginAccount(request, env) {
   if (!account) {
     throw new HttpError(401, "Tên đăng nhập hoặc mật khẩu không chính xác.");
   }
-  const hash = await hashPassword(password);
-  if (account.encrypted_password !== hash) {
+
+  // Xác minh mật khẩu chuẩn PBKDF2 hoặc Legacy SHA-256 an toàn
+  const verification = await verifyPassword(password, account.encrypted_password);
+  if (!verification.valid) {
     throw new HttpError(401, "Tên đăng nhập hoặc mật khẩu không chính xác.");
+  }
+
+  // Đăng nhập thành công: Reset bộ đếm rate limit
+  resetRateLimit(rateLimitKey);
+
+  // Nếu tài khoản cũ đang dùng hash Legacy SHA-256, tự động nâng cấp sang PBKDF2-HMAC-SHA256 ngay
+  if (verification.needsUpgrade) {
+    try {
+      const upgradedHash = await hashPassword(password);
+      await env.DB.prepare("UPDATE accounts SET encrypted_password = ? WHERE id = ?")
+        .bind(upgradedHash, account.id)
+        .run();
+      console.log(`[Security] Đã tự động nâng cấp thuật toán băm mật khẩu sang PBKDF2 cho tài khoản: ${username}`);
+    } catch (err) {
+      console.warn("[Password Upgrade Warning]", err.message);
+    }
   }
 
   const profile = await env.DB.prepare(
@@ -3513,65 +3545,33 @@ async function createSession(request, env) {
 // 🎧 PHÒNG HỌC ẢO POMODORO & LOFI CÙNG THỎ BẢY MÀU
 // ========================================================
 async function completePomodoroSession(request, user, env) {
-  const body = await readJson(request);
-  const cycles = Math.max(1, Math.min(20, Number(body.cycles) || 1));
-  const focusMinutes = Math.max(1, Number(body.focusMinutes) || (cycles * 25));
+  const body = await readJson(request).catch(() => ({}));
+  const clientCycles = Number(body.cycles) || 1;
   const docName = body.docName ? String(body.docName).trim().slice(0, 150) : null;
 
-  const xpReward = cycles * 50;
-  const gemsReward = cycles * 30;
-  const sessionId = "pomo_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-  const nowIso = new Date().toISOString();
-  const today = vietDate();
-
-  // Lưu phiên vào bảng user_pomodoro_sessions
-  await env.DB.prepare(
-    "INSERT INTO user_pomodoro_sessions (user_id, cycles, focus_minutes, xp_reward, gems_reward, doc_name, completed_at) " +
-    "VALUES (?, ?, ?, ?, ?, ?, ?)"
-  ).bind(user.userId, cycles, focusMinutes, xpReward, gemsReward, docName, nowIso).run();
-
-  // Cộng thưởng XP và Đá quý vào user_stats
-  const stats = await env.DB.prepare("SELECT * FROM user_stats WHERE user_id = ? LIMIT 1").bind(user.userId).first();
-  let totalXp = (stats?.total_xp || 0) + xpReward;
-  let gems = (stats?.gems || 0) + gemsReward;
-  let streak = stats?.current_streak || 0;
-  let longestStreak = stats?.longest_streak || 0;
-  let lastActive = stats?.last_active_date;
-
-  if (lastActive !== today) {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    if (lastActive === yesterday) {
-      streak += 1;
-    } else if (!lastActive) {
-      streak = 1;
-    } else {
-      streak = 1;
-    }
-    if (streak > longestStreak) longestStreak = streak;
-    lastActive = today;
+  // Xác minh tính toàn vẹn phiên học thực tế tại máy chủ
+  const result = await verifyAndCompletePomodoro(env, user.userId, clientCycles, docName);
+  if (!result.success) {
+    throw new HttpError(result.status || 400, result.message || "Xác minh phiên học không thành công.");
   }
-
-  await env.DB.prepare(
-    "UPDATE user_stats SET total_xp = ?, gems = ?, current_streak = ?, longest_streak = ?, last_active_date = ? WHERE user_id = ?"
-  ).bind(totalXp, gems, streak, longestStreak, lastActive, user.userId).run();
 
   // Tích lũy vào Bảng xếp hạng tuần
   const weekStart = mondayDate(vietDate());
   await env.DB.prepare(
     "INSERT INTO weekly_leaderboards (user_id, week_start_date, weekly_xp) VALUES (?, ?, ?) " +
     "ON CONFLICT(user_id, week_start_date) DO UPDATE SET weekly_xp = weekly_xp + ?"
-  ).bind(user.userId, weekStart, xpReward, xpReward).run().catch(() => {});
+  ).bind(user.userId, weekStart, result.xpReward, result.xpReward).run().catch(() => {});
 
   return {
     ok: true,
-    cycles,
-    focusMinutes,
-    xpEarned: xpReward,
-    gemsEarned: gemsReward,
-    totalXp,
-    gems,
-    streak,
-    completedAt: nowIso
+    cycles: result.cycles,
+    focusMinutes: result.focusMinutes,
+    xpEarned: result.xpReward,
+    gemsEarned: result.gemsReward,
+    totalXp: result.totalXp,
+    gems: result.gems,
+    streak: result.streak,
+    completedAt: new Date().toISOString()
   };
 }
 
@@ -3848,6 +3848,15 @@ async function routeApi(request, env) {
   if (path === "/api/chat/notifications" && method === "GET") return respond(await getChatNotifications(user, env));
   if (path === "/api/profile/status-icon" && method === "POST") return respond(await updateProfileStatusIcon(request, user, env));
   if (path === "/api/user/heartbeat" && method === "POST") return respond(await handleHeartbeat(request, user, env));
+
+  if (path === "/api/sync/outbox-status" && method === "GET") {
+    const status = await getOutboxStatus(env.DB?.__fallbackDb || env.DB);
+    return respond({ ok: true, outbox: status });
+  }
+  if (path === "/api/sync/replay" && method === "POST") {
+    const res = await replayOutboxToD1(env, env.DB?.__fallbackDb || env.DB);
+    return respond({ ok: true, ...res });
+  }
 
   if (path === "/api/pomodoro/complete" && method === "POST") return respond(await completePomodoroSession(request, user, env));
   if (path === "/api/pomodoro/history" && method === "GET") return respond(await getPomodoroHistory(user, env));

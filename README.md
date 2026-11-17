@@ -167,7 +167,7 @@ Hệ thống kết nối liên hoàn hai chiều độc đáo giữa **Trợ lý
 ---
 
 ### 4. Phòng học ảo Pomodoro & Lofi Room (Study With Me)
-Không gian tự học tập trung cao độ mô phỏng phòng thi an toàn (Safe Exam Browser / Kiosk Mode):
+Không gian tự học tập trung cao độ (Chế độ Siêu Tập Trung Zen Focus / Kiosk Mode chống xao nhãng):
 - **Chu kỳ chuẩn khoa học:** 25 phút Siêu Tập Trung (Focus Phase) luân phiên với 5 phút Giải Lao (Break Phase).
 - **Cơ chế thưởng theo ca:** Mỗi ca 25 phút hoàn thành xuất sắc cộng ngay **+50 XP** và **+30 💎 Đá quý**. Tích lũy tuyến tính theo số ca học (1 ca = 1x, 2 ca = 2x, v.v.).
 - **Chế độ Kiosk chống trốn học:** Tự động mở toàn màn hình, ẩn thanh tác vụ, chặn các phím tắt hệ thống nguy hiểm (`Alt + Tab`, `Win Key`, `F11`). Thoát khẩn cấp có xác nhận bằng `Ctrl + Q`.
@@ -257,7 +257,7 @@ flowchart TD
     subgraph ServerLayer ["2. Lớp Máy chủ Nội bộ & Điều phối (Embedded Server)"]
         EmbedServer["Node.js Embedded Server (127.0.0.1:8787)"]
         WorkerEngine["Cloudflare Worker Engine (src/index.js)"]
-        KioskGuard["Kiosk & Security Guard (Safe Exam Browser Mode)"]
+        KioskGuard["Kiosk & Security Guard (Focus Kiosk Mode chống xao nhãng)"]
     end
 
     subgraph DataLayer ["3. Lớp Dữ liệu Kép (Dual-Engine Data Layer)"]
@@ -355,9 +355,11 @@ Hệ thống sử dụng cơ sở dữ liệu quan hệ **Cloudflare D1** làm n
 | `messenger_conversations` | Danh sách các phòng chat nhóm và hội thoại cá nhân |
 | `messenger_messages` | Toàn bộ tin nhắn trao đổi, biểu cảm cảm xúc và lệnh của Bot |
 
-### Cơ chế tự phục hồi lỗi & Đồng bộ:
-- Khi có mạng Internet: Mọi thao tác ghi (hoàn thành ca học, mua theme, đổi mạng xã hội) được đồng bộ tức thì lên Cloudflare D1 qua REST API.
-- Khi mất mạng hoặc xảy ra lỗi kết nối: Hệ thống tự động kích hoạt **Local Fallback Engine**, lưu tạm vào bản sao lưu `build/local_replica.sqlite` và tự động đồng bộ bù ngay khi có kết nối trở lại.
+### Cơ chế Local Fallback & Transactional Outbox Replay:
+- **Khi có mạng Internet:** Mọi thao tác ghi (hoàn thành bài học, tích lũy streak, ghi chú, mua vật phẩm) được thực thi trực tiếp lên Cloudflare D1 qua REST API.
+- **Khi mất mạng hoặc vượt hạn ngạch (Local Offline Fallback):** Hệ thống chuyển mạch sang bản sao cục bộ `build/local_replica.sqlite` để người học không bị gián đoạn. Mọi thao tác sửa đổi ngoại tuyến được ghi nhận vào bảng `sync_outbox` (kèm ID duy nhất, câu lệnh SQL, tham số và trạng thái `pending`).
+- **Phục hồi & Replay đối soát:** Khi kết nối mạng phục hồi, tiến trình `replayOutboxToD1` sẽ đọc hàng đợi `sync_outbox` theo thứ tự FIFO và gửi bù lên Cloudflare D1 với cơ chế retry backoff, đảm bảo tính toàn vẹn dữ liệu và tránh xung đột.
+- **Bảo mật bản đóng gói Desktop:** Bản cài đặt ứng dụng Electron tuyệt đối không đóng gói các tệp chứa khóa bí mật (`.dev.vars`, `.env`), thông tin xác thực quản trị được quản lý an toàn trên Cloudflare Worker backend.
 
 ---
 

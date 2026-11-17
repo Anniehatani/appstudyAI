@@ -37,11 +37,16 @@ const DEFAULT_CONFIG = {
 
 function loadEnvVars(rootPath) {
   const env = Object.assign({}, DEFAULT_CONFIG);
+
+  // Bảo mật: Tuyệt đối không đọc hoặc tìm kiếm file secret trong bản cài đóng gói (Production app.asar)
+  const isPackaged = rootPath.includes(".asar") || (process.resourcesPath && !process.resourcesPath.includes("node_modules"));
+  if (isPackaged) {
+    return env;
+  }
+
   const possiblePaths = [
     path.join(rootPath, ".dev.vars"),
-    path.join(rootPath, ".env"),
-    path.join(process.resourcesPath || rootPath, ".dev.vars"),
-    path.join(process.resourcesPath || rootPath, "app/.dev.vars")
+    path.join(rootPath, ".env")
   ];
 
   for (const envPath of possiblePaths) {
@@ -527,6 +532,17 @@ async function startEmbeddedServer(rootPath, port = 8787) {
               created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
               updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+            CREATE TABLE IF NOT EXISTS sync_outbox (
+              id TEXT PRIMARY KEY,
+              sql TEXT NOT NULL,
+              params TEXT NOT NULL,
+              status TEXT NOT NULL DEFAULT 'pending',
+              retry_count INTEGER NOT NULL DEFAULT 0,
+              last_error TEXT DEFAULT NULL,
+              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              synced_at TEXT DEFAULT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_sync_outbox_status ON sync_outbox(status);
           `);
           const colsToAdd = [
             "ALTER TABLE lessons ADD COLUMN content TEXT DEFAULT NULL;",
