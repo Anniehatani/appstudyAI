@@ -542,14 +542,16 @@ button:focus-visible, input:focus-visible {
   position: sticky;
   top: 0;
   height: 74px;
-  background: rgba(255, 255, 255, 0.94);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-bottom: 2px solid var(--lumi-pink-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 36px;
   z-index: 40;
+  transform: translateZ(0);
 }
 
 .topbar-left {
@@ -14672,7 +14674,73 @@ body.pomo-is-resizing * {
   color: #f8fafc;
 }
 
+/* ==========================================================================
+   TỐI ƯU HÓA HIỆU NĂNG CHO MÁY YẾU & LAPTOP TIẾT KIỆM ĐIỆN (LOW-SPEC HARDWARE)
+   ========================================================================== */
 
+/* 1. Tối ưu render ảo hóa phần tử ngoài màn hình bằng content-visibility */
+.messenger-messages-stream .messenger-message {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 85px;
+}
 
+.courses-grid > .course-card,
+.courses-grid > div {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 320px;
+}
 
+.notes-grid > div,
+.notes-list > div {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 260px;
+}
+
+.shop-grid > div {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 240px;
+}
+
+.rankings-table tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 54px;
+}
+
+.pomo-playlist-item {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 68px;
+}
+
+.review-questions-list > div {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 160px;
+}
+
+/* 2. Ép tạo Hardware Composite Layers độc lập để thanh cố định không trigger repaint khi cuộn trang */
+.sidebar,
+.topbar,
+.pomo-room-topbar,
+.pomo-room-actions-bar {
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* 3. Tối ưu hóa render hình ảnh & icon mượt mà không chặn UI thread */
+img,
+svg,
+canvas {
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* 4. Tối ưu hóa GPU cho các hiệu ứng chuyển động khi máy yếu bật reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 

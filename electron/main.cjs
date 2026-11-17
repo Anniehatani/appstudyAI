@@ -4,6 +4,22 @@ const fs = require("fs");
 const { spawn, execFile } = require("child_process");
 const { startEmbeddedServer } = require("./embedded-server.cjs");
 
+// ========================================================
+// TỐI ƯU HIỆU NĂNG TOÀN DIỆN CHO MÁY YẾU (LOW-END PC / CẤU HÌNH THẤP)
+// ========================================================
+// 1. Ép tăng tốc phần cứng GPU & Zero-Copy rasterization để giảm tải CPU 2-core/4-core
+app.commandLine.appendSwitch("enable-gpu-rasterization");
+app.commandLine.appendSwitch("enable-zero-copy");
+app.commandLine.appendSwitch("ignore-gpu-blocklist");
+app.commandLine.appendSwitch("disable-software-rasterizer");
+
+// 2. Giới hạn dung lượng V8 Heap (RAM) ở mức 512MB để không chiếm dụng RAM hệ thống
+app.commandLine.appendSwitch("js-flags", "--max-old-space-size=512 --expose-gc");
+
+// 3. Tắt các module ngầm tốn tài nguyên của Chromium
+app.commandLine.appendSwitch("disable-features", "Translate,CalculateNativeWinOcclusion,InterestFeedContentSuggestions,MediaRouter");
+app.commandLine.appendSwitch("renderer-process-limit", "4");
+
 let mainWindow = null;
 let embeddedServerInstance = null;
 let kioskGuardProc = null;
@@ -11,8 +27,8 @@ let kioskGuardProc = null;
 function restoreWindowsTaskbar() {
   if (process.platform !== "win32") return;
   const candidates = [
-    path.join(__dirname, "pomo_guard.exe"),
     path.join(__dirname, "../build/pomo_guard.exe"),
+    path.join(__dirname, "pomo_guard.exe"),
     path.join(__dirname, "kiosk_guard.exe"),
     path.join(__dirname, "../build/study_kiosk.exe"),
     path.join(process.resourcesPath || "", "app.asar.unpacked/build/pomo_guard.exe"),
@@ -37,8 +53,8 @@ function startKioskGuard() {
   if (kioskGuardProc && !kioskGuardProc.killed) return;
 
   const candidates = [
-    path.join(__dirname, "pomo_guard.exe"),
     path.join(__dirname, "../build/pomo_guard.exe"),
+    path.join(__dirname, "pomo_guard.exe"),
     path.join(__dirname, "kiosk_guard.exe"),
     path.join(__dirname, "../build/study_kiosk.exe"),
     path.join(process.resourcesPath || "", "app.asar.unpacked/build/pomo_guard.exe"),
@@ -50,7 +66,7 @@ function startKioskGuard() {
   let guardPath = candidates.find(p => fs.existsSync(p));
   if (!guardPath) {
     const csFile = path.join(__dirname, "kiosk-guard.cs");
-    const targetExe = path.join(__dirname, "pomo_guard.exe");
+    const targetExe = path.join(__dirname, "../build/pomo_guard.exe");
     const cscCandidates = [
       "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
       "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe"
@@ -164,7 +180,9 @@ async function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       spellcheck: false,
-      plugins: true
+      plugins: false,
+      backgroundThrottling: true,
+      v8CacheOptions: "code"
     }
   });
 

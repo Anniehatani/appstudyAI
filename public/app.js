@@ -2569,6 +2569,7 @@ export function startGlobalNotificationPoller() {
   if (globalNotificationTimer) clearInterval(globalNotificationTimer);
 
   const poll = async () => {
+    if (document.visibilityState !== "visible") return;
     if (!state.user && !state.profile) return;
     try {
       const res = await api("/api/chat/notifications");
@@ -2948,10 +2949,11 @@ function formatBytes(bytes) {
 if (!window._heartbeatStarted) {
   window._heartbeatStarted = true;
   setInterval(() => {
+    if (document.visibilityState !== "visible") return;
     if (state && state.user) {
       api("/api/user/heartbeat", { method: "POST" }).catch(() => {});
     }
-  }, 40000);
+  }, 45000);
 }
 
 window.openMessenger = async function(type = 'direct', id = null, isFullscreen = false) {
@@ -3477,6 +3479,7 @@ function reconcileMessengerThread(messages, isGroup) {
 function startMessengerPolling() {
   if (messengerPollInterval) clearInterval(messengerPollInterval);
   messengerPollInterval = setInterval(async () => {
+    if (document.visibilityState !== "visible") return;
     if (!activeMessenger || !activeMessenger.id) return;
     const thread = document.getElementById("messenger-thread");
     if (!thread) {

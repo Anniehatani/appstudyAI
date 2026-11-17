@@ -421,6 +421,19 @@ async function startEmbeddedServer(rootPath, port = 8787) {
         const { DatabaseSync } = require("node:sqlite");
         const sqliteDb = new DatabaseSync(sPath);
         try {
+          // Tối ưu hiệu năng I/O SQLite cực đại cho máy yếu (WAL, Memory temp store, 16MB cache, 64MB mmap)
+          sqliteDb.exec(`
+            PRAGMA journal_mode = WAL;
+            PRAGMA synchronous = NORMAL;
+            PRAGMA temp_store = MEMORY;
+            PRAGMA cache_size = -16000;
+            PRAGMA mmap_size = 67108864;
+            PRAGMA busy_timeout = 5000;
+          `);
+        } catch (e) {
+          console.warn("[SQLite PRAGMA Warning]", e.message);
+        }
+        try {
           sqliteDb.exec(`
             CREATE TABLE IF NOT EXISTS user_academic_transcripts (
               user_id TEXT PRIMARY KEY,
@@ -534,6 +547,22 @@ async function startEmbeddedServer(rootPath, port = 8787) {
             try { sqliteDb.exec(colSql); } catch {}
           }
         } catch {}
+
+        // Bộ nhớ đệm Prepared Statements tái sử dụng AST để triệt tiêu tải CPU
+        const stmtCache = new Map();
+        function getCachedStmt(sql) {
+          let stmt = stmtCache.get(sql);
+          if (!stmt) {
+            if (stmtCache.size >= 250) {
+              const oldestKey = stmtCache.keys().next().value;
+              stmtCache.delete(oldestKey);
+            }
+            stmt = sqliteDb.prepare(sql);
+            stmtCache.set(sql, stmt);
+          }
+          return stmt;
+        }
+
         envVars.DB = {
           prepare(sql) {
             return {
@@ -541,24 +570,24 @@ async function startEmbeddedServer(rootPath, port = 8787) {
                 const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
                 return {
                   async first(col) {
-                    const stmt = sqliteDb.prepare(sql);
+                    const stmt = getCachedStmt(sql);
                     const row = stmt.get(...flat);
                     if (!row) return null;
                     if (col !== undefined) return row[col];
                     return row;
                   },
                   async all() {
-                    const stmt = sqliteDb.prepare(sql);
+                    const stmt = getCachedStmt(sql);
                     const rows = stmt.all(...flat);
                     return { success: true, results: rows || [], meta: {} };
                   },
                   async run() {
-                    const stmt = sqliteDb.prepare(sql);
+                    const stmt = getCachedStmt(sql);
                     const res = stmt.run(...flat);
                     return { success: true, meta: { changes: res.changes } };
                   },
                   async raw() {
-                    const stmt = sqliteDb.prepare(sql);
+                    const stmt = getCachedStmt(sql);
                     const rows = stmt.all(...flat);
                     return rows.map(r => Object.values(r));
                   }
@@ -625,6 +654,11 @@ async function startEmbeddedServer(rootPath, port = 8787) {
   }
 
   await resolveWorker();
+
+  // Bộ nhớ đệm RAM cho Static Assets (tối đa 32MB) giúp máy yếu không bị khựng đọc ổ cứng
+  const staticAssetCache = new Map();
+  let staticAssetCacheBytes = 0;
+  const MAX_STATIC_CACHE_BYTES = 32 * 1024 * 1024;
 
   return new Promise((resolve, reject) => {
     const server = http.createServer(async (req, res) => {
@@ -704,14 +738,30 @@ async function startEmbeddedServer(rootPath, port = 8787) {
 
       const ext = path.extname(targetFile).toLowerCase();
       const contentType = MIME_TYPES[ext] || "application/octet-stream";
+      const isCodeFile = [".html", ".js", ".css"].includes(ext);
+
+      // Phục vụ siêu tốc từ bộ nhớ đệm RAM (0ms disk I/O) cho các file tĩnh đã nạp
+      const cached = staticAssetCache.get(targetFile);
+      if (cached) {
+        res.writeHead(200, cached.headers);
+        res.end(cached.data);
+        return;
+      }
 
       try {
         const fileData = fs.readFileSync(targetFile);
-        const isCodeFile = [".html", ".js", ".css"].includes(ext);
-        res.writeHead(200, {
+        const headers = {
           "Content-Type": contentType,
-          "Cache-Control": isCodeFile ? "no-cache, no-store, must-revalidate" : "public, max-age=3600"
-        });
+          "Cache-Control": isCodeFile ? "no-cache, no-store, must-revalidate" : "public, max-age=86400"
+        };
+
+        // Cache vào RAM các tài nguyên tĩnh dưới 5MB để loại bỏ giật lag đọc ổ cứng HDD/SSD
+        if (!isCodeFile && fileData.length < 5 * 1024 * 1024 && (staticAssetCacheBytes + fileData.length) <= MAX_STATIC_CACHE_BYTES) {
+          staticAssetCache.set(targetFile, { data: fileData, headers });
+          staticAssetCacheBytes += fileData.length;
+        }
+
+        res.writeHead(200, headers);
         res.end(fileData);
       } catch (err) {
         res.writeHead(404, { "Content-Type": "text/plain" });
