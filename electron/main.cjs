@@ -24,23 +24,28 @@ let mainWindow = null;
 let embeddedServerInstance = null;
 let kioskGuardProc = null;
 
+function getGuardExecutablePath() {
+  if (process.platform !== "win32") return null;
+  const candidates = [];
+  // Khi ứng dụng đã đóng gói thành installer/exe (process.resourcesPath tồn tại):
+  // ƯU TIÊN TUYỆT ĐỐI đường dẫn đã giải nén (unpacked) ngoài ASAR, vì Windows không thể chạy .exe từ trong app.asar
+  if (process.resourcesPath) {
+    candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "build", "focus_guard.exe"));
+    candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "electron", "focus_guard.exe"));
+    candidates.push(path.join(process.resourcesPath, "build", "focus_guard.exe"));
+    candidates.push(path.join(process.resourcesPath, "focus_guard.exe"));
+  }
+  // Nếu đang chạy trong môi trường phát triển (npm run dev / source tree):
+  if (!app.isPackaged) {
+    candidates.push(path.join(__dirname, "..", "build", "focus_guard.exe"));
+    candidates.push(path.join(__dirname, "focus_guard.exe"));
+  }
+  return candidates.find(p => fs.existsSync(p)) || null;
+}
+
 function restoreWindowsTaskbar() {
   if (process.platform !== "win32") return;
-  const candidates = [
-    path.join(__dirname, "../build/focus_guard.exe"),
-    path.join(__dirname, "focus_guard.exe"),
-    path.join(__dirname, "../build/pomo_guard.exe"),
-    path.join(__dirname, "pomo_guard.exe"),
-    path.join(__dirname, "kiosk_guard.exe"),
-    path.join(__dirname, "../build/study_kiosk.exe"),
-    path.join(process.resourcesPath || "", "app.asar.unpacked/build/focus_guard.exe"),
-    path.join(process.resourcesPath || "", "build/focus_guard.exe"),
-    path.join(process.resourcesPath || "", "app.asar.unpacked/build/pomo_guard.exe"),
-    path.join(process.resourcesPath || "", "build/pomo_guard.exe"),
-    path.join(process.resourcesPath || "", "app.asar.unpacked/build/study_kiosk.exe"),
-    path.join(process.resourcesPath || "", "build/study_kiosk.exe")
-  ];
-  const targetExe = candidates.find(p => fs.existsSync(p));
+  const targetExe = getGuardExecutablePath();
   if (targetExe) {
     try {
       const { spawnSync } = require("child_process");
@@ -56,22 +61,7 @@ function startKioskGuard() {
   if (process.platform !== "win32") return;
   if (kioskGuardProc && !kioskGuardProc.killed) return;
 
-  const candidates = [
-    path.join(__dirname, "../build/focus_guard.exe"),
-    path.join(__dirname, "focus_guard.exe"),
-    path.join(__dirname, "../build/pomo_guard.exe"),
-    path.join(__dirname, "pomo_guard.exe"),
-    path.join(__dirname, "kiosk_guard.exe"),
-    path.join(__dirname, "../build/study_kiosk.exe"),
-    path.join(process.resourcesPath || "", "app.asar.unpacked/build/focus_guard.exe"),
-    path.join(process.resourcesPath || "", "build/focus_guard.exe"),
-    path.join(process.resourcesPath || "", "app.asar.unpacked/build/pomo_guard.exe"),
-    path.join(process.resourcesPath || "", "build/pomo_guard.exe"),
-    path.join(process.resourcesPath || "", "app.asar.unpacked/build/study_kiosk.exe"),
-    path.join(process.resourcesPath || "", "build/study_kiosk.exe")
-  ];
-
-  let guardPath = candidates.find(p => fs.existsSync(p));
+  let guardPath = getGuardExecutablePath();
   if (!guardPath) {
     const csFile = path.join(__dirname, "kiosk-guard.cs");
     const targetExe = path.join(__dirname, "../build/focus_guard.exe");
@@ -97,7 +87,7 @@ function startKioskGuard() {
   }
 
   if (!guardPath) {
-    console.warn("[KioskGuard] Không tìm thấy tệp bảo vệ tại các vị trí:", candidates);
+    console.warn("[KioskGuard] Không tìm thấy tệp bảo vệ focus_guard.exe tại các vị trí kiểm tra");
     return;
   }
 
@@ -188,6 +178,24 @@ async function createWindow() {
   Menu.setApplicationMenu(null);
   mainWindow.setMenu(null);
   mainWindow.setMenuBarVisibility(false);
+
+  // Đảm bảo phiên luôn trống khi mở app: Xóa cookie phiên lưu tạm để người dùng đăng nhập tài khoản riêng của họ
+  try {
+    const { session } = require("electron");
+    session.defaultSession.clearStorageData({ storages: ["cookies"] });
+  } catch {}
+
+  // Giữ cửa sổ luôn ở trên cùng và lấy lại tiêu điểm ngay lập tức nếu có tác vụ hệ thống muốn can thiệp khi Kiosk đang kích hoạt
+  mainWindow.on("blur", () => {
+    if (isKioskActive && mainWindow && !mainWindow.isDestroyed()) {
+      setTimeout(() => {
+        if (isKioskActive && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.focus();
+          mainWindow.setAlwaysOnTop(true, "screen-saver");
+        }
+      }, 50);
+    }
+  });
 
   // Hiển thị ngay splash screen siêu tốc trong 0.1s đầu tiên để người dùng không cảm giác bị delay
   const splashHtml = `<!DOCTYPE html>

@@ -10783,23 +10783,17 @@ document.getElementById("mobile-overlay")?.addEventListener("click", closeMobile
 
 async function initialize() {
   try {
-    showAppLoader("Đang chuẩn bị kho bài học 3TG… 🌸", "Thỏ Bảy Màu đang kiểm tra phiên học và đồng bộ…");
+    showAppLoader("Đang chuẩn bị kho bài học 3TG… 🌸", "Thỏ Bảy Màu đang tải lộ trình học tập…");
     setAppLoaderProgress(25);
 
-    const sessionRes = await api("/api/session").catch(() => null);
-    setAppLoaderProgress(55);
-    if (sessionRes && sessionRes.profile) {
-      state.profile = sessionRes.profile;
-      state.account = sessionRes.account;
-      await loadAuthenticatedData();
-    } else {
+    // Luôn khởi động ứng dụng ở trạng thái sạch (trống phiên đăng nhập) để bảo vệ quyền riêng tư và người dùng tự đăng nhập
+    state.profile = null;
+    state.account = null;
 
-      const subRes = await api("/api/subjects").catch(() => ({ subjects: [] }));
-      state.subjects = subRes.subjects || [];
-      state.profile = null;
-      render();
-    }
+    const subRes = await api("/api/subjects").catch(() => ({ subjects: [] }));
+    state.subjects = subRes.subjects || [];
     setAppLoaderProgress(100);
+    render();
   } catch (err) {
     state.apiError = err.message;
     view.innerHTML = `<div class="empty-state">Lỗi kết nối: ${esc(err.message)}</div>`;

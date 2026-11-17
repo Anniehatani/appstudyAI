@@ -52,16 +52,38 @@ public class KioskGuard {
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern IntPtr GetModuleHandle(string lpModuleName);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
+
     public static void HideTaskbar() {
         try {
             IntPtr tray = FindWindow("Shell_TrayWnd", null);
-            if (tray != IntPtr.Zero) ShowWindow(tray, SW_HIDE);
+            if (tray != IntPtr.Zero) {
+                ShowWindow(tray, SW_HIDE);
+                EnableWindow(tray, false);
+            }
 
             IntPtr secTray = FindWindow("Shell_SecondaryTrayWnd", null);
-            if (secTray != IntPtr.Zero) ShowWindow(secTray, SW_HIDE);
+            if (secTray != IntPtr.Zero) {
+                ShowWindow(secTray, SW_HIDE);
+                EnableWindow(secTray, false);
+            }
 
             IntPtr startBtn = FindWindow("Button", "Start");
-            if (startBtn != IntPtr.Zero) ShowWindow(startBtn, SW_HIDE);
+            if (startBtn != IntPtr.Zero) {
+                ShowWindow(startBtn, SW_HIDE);
+                EnableWindow(startBtn, false);
+            }
+
+            // Windows 11 Start Menu & Search Core Windows
+            IntPtr startMenu = FindWindow("Windows.UI.Core.CoreWindow", "Start");
+            if (startMenu != IntPtr.Zero) ShowWindow(startMenu, SW_HIDE);
+
+            IntPtr searchFlyout = FindWindow("Windows.UI.Core.CoreWindow", "Search");
+            if (searchFlyout != IntPtr.Zero) ShowWindow(searchFlyout, SW_HIDE);
+
+            IntPtr taskView = FindWindow("MultitaskingViewFrame", null);
+            if (taskView != IntPtr.Zero) ShowWindow(taskView, SW_HIDE);
         } catch {}
     }
 
@@ -69,18 +91,21 @@ public class KioskGuard {
         try {
             IntPtr tray = FindWindow("Shell_TrayWnd", null);
             if (tray != IntPtr.Zero) {
+                EnableWindow(tray, true);
                 ShowWindow(tray, SW_SHOW);
                 ShowWindow(tray, SW_RESTORE);
             }
 
             IntPtr secTray = FindWindow("Shell_SecondaryTrayWnd", null);
             if (secTray != IntPtr.Zero) {
+                EnableWindow(secTray, true);
                 ShowWindow(secTray, SW_SHOW);
                 ShowWindow(secTray, SW_RESTORE);
             }
 
             IntPtr startBtn = FindWindow("Button", "Start");
             if (startBtn != IntPtr.Zero) {
+                EnableWindow(startBtn, true);
                 ShowWindow(startBtn, SW_SHOW);
                 ShowWindow(startBtn, SW_RESTORE);
             }

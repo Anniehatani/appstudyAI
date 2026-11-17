@@ -37,6 +37,7 @@
       "build/local_replica.sqlite",
       "build/icon.ico",
       "build/focus_guard.exe",
+      "electron/focus_guard.exe",
       "package.json",
       "src/**/*"
     ],
@@ -54,7 +55,7 @@
     ],
     "portable": {
       "unpackDirName": "3tg_study_portable",
-      "artifactName": "${productName} V${version}.${ext}"
+      "artifactName": "${productName} V29.9.07.${ext}"
     },
     "win": {
       "icon": "build/icon.ico",
@@ -74,7 +75,7 @@
       ]
     },
     "nsis": {
-      "artifactName": "${productName} Setup V${version}.${ext}",
+      "artifactName": "${productName} Setup V29.9.07.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
