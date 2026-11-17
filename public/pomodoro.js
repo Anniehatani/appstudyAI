@@ -1660,6 +1660,7 @@ export function initPomoResizers() {
     leftResizer._bound = true;
     const onStart = (e) => {
       e.preventDefault();
+      closePomodoroPlaylist();
       leftResizer.classList.add("is-dragging");
       document.body.classList.add("pomo-is-resizing");
       const startX = e.clientX || (e.touches && e.touches[0].clientX);
@@ -1699,6 +1700,7 @@ export function initPomoResizers() {
     rightResizer._bound = true;
     const onStart = (e) => {
       e.preventDefault();
+      closePomodoroPlaylist();
       rightResizer.classList.add("is-dragging");
       document.body.classList.add("pomo-is-resizing");
       const startX = e.clientX || (e.touches && e.touches[0].clientX);

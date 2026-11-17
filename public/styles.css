@@ -12245,7 +12245,7 @@ body.pomodoro-kiosk-mode .page-view-enter {
   border-bottom: 1px solid var(--border-light, #e2e8f0);
   background: var(--card-bg, #ffffff);
   box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-  z-index: 10;
+  z-index: 1000;
   flex-shrink: 0;
   position: relative;
 }
@@ -12384,6 +12384,8 @@ body.pomodoro-kiosk-mode .page-view-enter {
   display: flex;
   align-items: center;
   gap: 10px;
+  position: relative;
+  z-index: 1001;
 }
 .btn-pomo-exit-btn {
   background: #f1f5f9;
@@ -12708,6 +12710,7 @@ body.pomodoro-kiosk-mode .page-view-enter {
   position: relative;
   display: inline-flex;
   align-items: center;
+  z-index: 1002;
 }
 
 .pomo-playlist-popover {
@@ -12723,7 +12726,7 @@ body.pomodoro-kiosk-mode .page-view-enter {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(124, 58, 237, 0.12);
   display: none;
   flex-direction: column;
-  z-index: 9999;
+  z-index: 99999;
   overflow: hidden;
   animation: pomoSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -13085,6 +13088,7 @@ body.pomodoro-kiosk-mode .page-view-enter {
   max-height: calc(100vh - 60px) !important;
   overflow: hidden !important;
   position: relative;
+  z-index: 1;
   box-sizing: border-box;
 }
 
@@ -13632,6 +13636,10 @@ body.pomodoro-kiosk-mode .page-view-enter {
   user-select: none;
   touch-action: none;
   transition: background 0.15s ease;
+}
+body:has(.pomo-playlist-popover.active) .pomo-resizer,
+.pomodoro-active-room:has(.pomo-playlist-popover.active) .pomo-resizer {
+  pointer-events: none !important;
 }
 .pomo-resizer::after {
   content: "";
