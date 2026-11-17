@@ -438,142 +438,151 @@ async function startEmbeddedServer(rootPath, port = 8787) {
         } catch (e) {
           console.warn("[SQLite PRAGMA Warning]", e.message);
         }
+        let schemaVer = 0;
         try {
-          sqliteDb.exec(`
-            CREATE TABLE IF NOT EXISTS user_academic_transcripts (
-              user_id TEXT PRIMARY KEY,
-              student_code TEXT,
-              full_name TEXT,
-              major TEXT,
-              class_name TEXT,
-              gpa_10 REAL,
-              gpa_4 REAL,
-              total_credits INTEGER,
-              raw_data TEXT,
-              ai_analysis TEXT,
-              target_gpa REAL,
-              last_synced_at TEXT,
-              created_at TEXT
-            );
-            CREATE TABLE IF NOT EXISTS chat_groups (
-              id TEXT PRIMARY KEY,
-              name TEXT NOT NULL,
-              avatar_url TEXT DEFAULT NULL,
-              created_by TEXT NOT NULL,
-              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-            CREATE TABLE IF NOT EXISTS chat_group_members (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              group_id TEXT NOT NULL,
-              user_id TEXT NOT NULL,
-              role TEXT NOT NULL DEFAULT 'member',
-              joined_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              UNIQUE(group_id, user_id)
-            );
-            CREATE TABLE IF NOT EXISTS chat_group_messages (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              group_id TEXT NOT NULL,
-              sender_id TEXT NOT NULL,
-              message TEXT NOT NULL,
-              media_url TEXT DEFAULT NULL,
-              media_type TEXT DEFAULT NULL,
-              media_name TEXT DEFAULT NULL,
-              media_size INTEGER DEFAULT 0,
-              reply_to_id INTEGER DEFAULT NULL,
-              reply_to_name TEXT DEFAULT NULL,
-              reply_to_text TEXT DEFAULT NULL,
-              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-            CREATE TABLE IF NOT EXISTS direct_messages (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              sender_id TEXT NOT NULL,
-              receiver_id TEXT NOT NULL,
-              message TEXT NOT NULL,
-              is_read INTEGER NOT NULL DEFAULT 0,
-              media_url TEXT DEFAULT NULL,
-              media_type TEXT DEFAULT NULL,
-              media_name TEXT DEFAULT NULL,
-              media_size INTEGER DEFAULT 0,
-              reply_to_id INTEGER DEFAULT NULL,
-              reply_to_name TEXT DEFAULT NULL,
-              reply_to_text TEXT DEFAULT NULL,
-              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-            CREATE TABLE IF NOT EXISTS friendships (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              user_id TEXT NOT NULL,
-              friend_id TEXT NOT NULL,
-              status TEXT NOT NULL DEFAULT 'accepted',
-              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              UNIQUE(user_id, friend_id)
-            );
-            CREATE TABLE IF NOT EXISTS user_pomodoro_sessions (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL,
-              cycles INTEGER NOT NULL DEFAULT 1,
-              focus_minutes INTEGER NOT NULL DEFAULT 25,
-              xp_reward INTEGER NOT NULL DEFAULT 50,
-              gems_reward INTEGER NOT NULL DEFAULT 30,
-              doc_name TEXT DEFAULT NULL,
-              completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-            CREATE TABLE IF NOT EXISTS pomodoro_active_learners (
-              user_id TEXT PRIMARY KEY,
-              cycle_number INTEGER NOT NULL DEFAULT 1,
-              mode TEXT NOT NULL DEFAULT 'focus',
-              doc_name TEXT DEFAULT NULL,
-              started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              last_heartbeat TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-            CREATE TABLE IF NOT EXISTS ai_conversations (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL,
-              title TEXT,
-              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-            );
-            CREATE TABLE IF NOT EXISTS sync_outbox (
-              id TEXT PRIMARY KEY,
-              sql TEXT NOT NULL,
-              params TEXT NOT NULL,
-              status TEXT NOT NULL DEFAULT 'pending',
-              retry_count INTEGER NOT NULL DEFAULT 0,
-              last_error TEXT DEFAULT NULL,
-              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-              synced_at TEXT DEFAULT NULL
-            );
-            CREATE INDEX IF NOT EXISTS idx_sync_outbox_status ON sync_outbox(status);
-          `);
-          const colsToAdd = [
-            "ALTER TABLE lessons ADD COLUMN content TEXT DEFAULT NULL;",
-            "ALTER TABLE lessons ADD COLUMN video_url TEXT DEFAULT NULL;",
-            "ALTER TABLE ai_messages ADD COLUMN conversation_id TEXT DEFAULT NULL;",
-            "ALTER TABLE ai_messages ADD COLUMN sender TEXT DEFAULT 'user';",
-            "ALTER TABLE profiles ADD COLUMN avatar_decoration TEXT DEFAULT NULL;",
-            "ALTER TABLE profiles ADD COLUMN profile_effect TEXT DEFAULT NULL;",
-            "ALTER TABLE profiles ADD COLUMN profile_theme TEXT DEFAULT NULL;",
-            "ALTER TABLE profiles ADD COLUMN last_active_at TEXT DEFAULT NULL;",
-            "ALTER TABLE profiles ADD COLUMN social_links TEXT DEFAULT '{}';",
-            "ALTER TABLE profiles ADD COLUMN status_icon TEXT DEFAULT NULL;",
-            "ALTER TABLE chat_group_messages ADD COLUMN media_url TEXT DEFAULT NULL;",
-            "ALTER TABLE chat_group_messages ADD COLUMN media_type TEXT DEFAULT NULL;",
-            "ALTER TABLE chat_group_messages ADD COLUMN media_name TEXT DEFAULT NULL;",
-            "ALTER TABLE chat_group_messages ADD COLUMN media_size INTEGER DEFAULT 0;",
-            "ALTER TABLE chat_group_messages ADD COLUMN reply_to_id INTEGER DEFAULT NULL;",
-            "ALTER TABLE chat_group_messages ADD COLUMN reply_to_name TEXT DEFAULT NULL;",
-            "ALTER TABLE chat_group_messages ADD COLUMN reply_to_text TEXT DEFAULT NULL;",
-            "ALTER TABLE direct_messages ADD COLUMN media_url TEXT DEFAULT NULL;",
-            "ALTER TABLE direct_messages ADD COLUMN media_type TEXT DEFAULT NULL;",
-            "ALTER TABLE direct_messages ADD COLUMN media_name TEXT DEFAULT NULL;",
-            "ALTER TABLE direct_messages ADD COLUMN media_size INTEGER DEFAULT 0;",
-            "ALTER TABLE direct_messages ADD COLUMN reply_to_id INTEGER DEFAULT NULL;",
-            "ALTER TABLE direct_messages ADD COLUMN reply_to_name TEXT DEFAULT NULL;",
-            "ALTER TABLE direct_messages ADD COLUMN reply_to_text TEXT DEFAULT NULL;"
-          ];
-          for (const colSql of colsToAdd) {
-            try { sqliteDb.exec(colSql); } catch {}
-          }
+          const vRow = sqliteDb.prepare("PRAGMA user_version").get();
+          schemaVer = vRow ? (vRow.user_version || 0) : 0;
         } catch {}
+
+        if (schemaVer < 5) {
+          try {
+            sqliteDb.exec(`
+              CREATE TABLE IF NOT EXISTS user_academic_transcripts (
+                user_id TEXT PRIMARY KEY,
+                student_code TEXT,
+                full_name TEXT,
+                major TEXT,
+                class_name TEXT,
+                gpa_10 REAL,
+                gpa_4 REAL,
+                total_credits INTEGER,
+                raw_data TEXT,
+                ai_analysis TEXT,
+                target_gpa REAL,
+                last_synced_at TEXT,
+                created_at TEXT
+              );
+              CREATE TABLE IF NOT EXISTS chat_groups (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                avatar_url TEXT DEFAULT NULL,
+                created_by TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE TABLE IF NOT EXISTS chat_group_members (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                group_id TEXT NOT NULL,
+                user_id TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'member',
+                joined_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(group_id, user_id)
+              );
+              CREATE TABLE IF NOT EXISTS chat_group_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                group_id TEXT NOT NULL,
+                sender_id TEXT NOT NULL,
+                message TEXT NOT NULL,
+                media_url TEXT DEFAULT NULL,
+                media_type TEXT DEFAULT NULL,
+                media_name TEXT DEFAULT NULL,
+                media_size INTEGER DEFAULT 0,
+                reply_to_id INTEGER DEFAULT NULL,
+                reply_to_name TEXT DEFAULT NULL,
+                reply_to_text TEXT DEFAULT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE TABLE IF NOT EXISTS direct_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sender_id TEXT NOT NULL,
+                receiver_id TEXT NOT NULL,
+                message TEXT NOT NULL,
+                is_read INTEGER NOT NULL DEFAULT 0,
+                media_url TEXT DEFAULT NULL,
+                media_type TEXT DEFAULT NULL,
+                media_name TEXT DEFAULT NULL,
+                media_size INTEGER DEFAULT 0,
+                reply_to_id INTEGER DEFAULT NULL,
+                reply_to_name TEXT DEFAULT NULL,
+                reply_to_text TEXT DEFAULT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE TABLE IF NOT EXISTS friendships (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                friend_id TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'accepted',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, friend_id)
+              );
+              CREATE TABLE IF NOT EXISTS user_pomodoro_sessions (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                cycles INTEGER NOT NULL DEFAULT 1,
+                focus_minutes INTEGER NOT NULL DEFAULT 25,
+                xp_reward INTEGER NOT NULL DEFAULT 50,
+                gems_reward INTEGER NOT NULL DEFAULT 30,
+                doc_name TEXT DEFAULT NULL,
+                completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE TABLE IF NOT EXISTS pomodoro_active_learners (
+                user_id TEXT PRIMARY KEY,
+                cycle_number INTEGER NOT NULL DEFAULT 1,
+                mode TEXT NOT NULL DEFAULT 'focus',
+                doc_name TEXT DEFAULT NULL,
+                started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_heartbeat TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE TABLE IF NOT EXISTS ai_conversations (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                title TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+              CREATE TABLE IF NOT EXISTS sync_outbox (
+                id TEXT PRIMARY KEY,
+                sql TEXT NOT NULL,
+                params TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                retry_count INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT DEFAULT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                synced_at TEXT DEFAULT NULL
+              );
+              CREATE INDEX IF NOT EXISTS idx_sync_outbox_status ON sync_outbox(status);
+            `);
+            const colsToAdd = [
+              "ALTER TABLE lessons ADD COLUMN content TEXT DEFAULT NULL;",
+              "ALTER TABLE lessons ADD COLUMN video_url TEXT DEFAULT NULL;",
+              "ALTER TABLE ai_messages ADD COLUMN conversation_id TEXT DEFAULT NULL;",
+              "ALTER TABLE ai_messages ADD COLUMN sender TEXT DEFAULT 'user';",
+              "ALTER TABLE profiles ADD COLUMN avatar_decoration TEXT DEFAULT NULL;",
+              "ALTER TABLE profiles ADD COLUMN profile_effect TEXT DEFAULT NULL;",
+              "ALTER TABLE profiles ADD COLUMN profile_theme TEXT DEFAULT NULL;",
+              "ALTER TABLE profiles ADD COLUMN last_active_at TEXT DEFAULT NULL;",
+              "ALTER TABLE profiles ADD COLUMN social_links TEXT DEFAULT '{}';",
+              "ALTER TABLE profiles ADD COLUMN status_icon TEXT DEFAULT NULL;",
+              "ALTER TABLE chat_group_messages ADD COLUMN media_url TEXT DEFAULT NULL;",
+              "ALTER TABLE chat_group_messages ADD COLUMN media_type TEXT DEFAULT NULL;",
+              "ALTER TABLE chat_group_messages ADD COLUMN media_name TEXT DEFAULT NULL;",
+              "ALTER TABLE chat_group_messages ADD COLUMN media_size INTEGER DEFAULT 0;",
+              "ALTER TABLE chat_group_messages ADD COLUMN reply_to_id INTEGER DEFAULT NULL;",
+              "ALTER TABLE chat_group_messages ADD COLUMN reply_to_name TEXT DEFAULT NULL;",
+              "ALTER TABLE chat_group_messages ADD COLUMN reply_to_text TEXT DEFAULT NULL;",
+              "ALTER TABLE direct_messages ADD COLUMN media_url TEXT DEFAULT NULL;",
+              "ALTER TABLE direct_messages ADD COLUMN media_type TEXT DEFAULT NULL;",
+              "ALTER TABLE direct_messages ADD COLUMN media_name TEXT DEFAULT NULL;",
+              "ALTER TABLE direct_messages ADD COLUMN media_size INTEGER DEFAULT 0;",
+              "ALTER TABLE direct_messages ADD COLUMN reply_to_id INTEGER DEFAULT NULL;",
+              "ALTER TABLE direct_messages ADD COLUMN reply_to_name TEXT DEFAULT NULL;",
+              "ALTER TABLE direct_messages ADD COLUMN reply_to_text TEXT DEFAULT NULL;"
+            ];
+            for (const colSql of colsToAdd) {
+              try { sqliteDb.exec(colSql); } catch {}
+            }
+            try { sqliteDb.exec("PRAGMA user_version = 5;"); } catch {}
+          } catch {}
+        }
 
         // Bộ nhớ đệm Prepared Statements tái sử dụng AST để triệt tiêu tải CPU
         const stmtCache = new Map();

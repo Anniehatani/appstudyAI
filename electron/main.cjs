@@ -148,23 +148,13 @@ async function createWindow() {
   const iconPath = getIconPath();
   const rootPath = app.isPackaged ? app.getAppPath() : path.join(__dirname, "..");
 
-  // Start standalone internal embedded server (zero external dependency)
-  let appUrl = "http://127.0.0.1:8787";
-  try {
-    const sInfo = await startEmbeddedServer(rootPath, 8787);
-    embeddedServerInstance = sInfo.server;
-    appUrl = sInfo.url;
-    currentAppUrl = sInfo.url;
-  } catch (err) {
-    console.error("[Electron] Không thể chạy embedded server:", err);
-  }
-
   // Tối ưu kích thước thích ứng chuẩn mọi tỷ lệ DPI Scaling (100%, 125%, 150%)
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: workW, height: workH } = primaryDisplay.workAreaSize;
   const initialWidth = Math.min(1280, Math.max(900, workW - 40));
   const initialHeight = Math.min(820, Math.max(540, workH - 40));
 
+  // KHỞI TẠO CỬA SỔ MAINWINDOW NGAY LẬP TỨC (PARALLEL NON-BLOCKING)
   mainWindow = new BrowserWindow({
     width: initialWidth,
     height: initialHeight,
@@ -190,6 +180,83 @@ async function createWindow() {
   Menu.setApplicationMenu(null);
   mainWindow.setMenu(null);
   mainWindow.setMenuBarVisibility(false);
+
+  // Hiển thị ngay splash screen siêu tốc trong 0.1s đầu tiên để người dùng không cảm giác bị delay
+  const splashHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0; height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #fff5f8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none; -webkit-user-select: none;
+    }
+    .card {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 32px 48px; border-radius: 28px; background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 12px 36px rgba(255, 94, 142, 0.14);
+      border: 1px solid rgba(255, 182, 193, 0.45);
+    }
+    .mascot {
+      width: 80px; height: 80px; border-radius: 22px; background: #fff0f5;
+      display: flex; align-items: center; justify-content: center; font-size: 42px;
+      margin-bottom: 16px; box-shadow: 0 6px 18px rgba(255, 94, 142, 0.15);
+      animation: pulse 1.2s ease-in-out infinite alternate;
+    }
+    .title { font-size: 20px; font-weight: 800; color: #ff3b7a; letter-spacing: -0.2px; }
+    .status { margin-top: 6px; font-size: 13px; color: #888; font-weight: 500; }
+    .progress-bar {
+      margin-top: 18px; width: 140px; height: 5px; background: rgba(255, 105, 180, 0.15);
+      border-radius: 10px; overflow: hidden; position: relative;
+    }
+    .progress-fill {
+      width: 45%; height: 100%; background: linear-gradient(90deg, #ff6b9d, #ff3b7a);
+      border-radius: 10px; animation: slide 1.1s ease-in-out infinite alternate;
+    }
+    @keyframes pulse { from { transform: scale(0.96); } to { transform: scale(1.04); } }
+    @keyframes slide { from { transform: translateX(0%); } to { transform: translateX(130%); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="mascot">🐰</div>
+    <div class="title">3TG — Học Vui Mỗi Ngày</div>
+    <div class="status">Đang mở không gian học tập...</div>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+  </div>
+</body>
+</html>`;
+
+  mainWindow.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(splashHtml));
+  mainWindow.once("ready-to-show", () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.show();
+  });
+  // Fast display fallback: đảm bảo cửa sổ luôn hiện lên ngay lập tức trong 200ms
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+      mainWindow.show();
+    }
+  }, 200);
+
+  // Kích hoạt embedded server song song trên luồng nền
+  const serverPromise = startEmbeddedServer(rootPath, 8787).then(sInfo => {
+    embeddedServerInstance = sInfo.server;
+    currentAppUrl = sInfo.url;
+    return sInfo.url;
+  }).catch(err => {
+    console.error("[Electron] Không thể chạy embedded server:", err);
+    return "http://127.0.0.1:8787";
+  });
+
+  // Khi server sẵn sàng (thường chỉ mất ~150-250ms), chuyển tiếp vào ứng dụng
+  serverPromise.then(url => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadURL(url);
+    }
+  });
 
   // Chặn toàn bộ phím chức năng khi ở chế độ Kiosk Pomodoro (ngoại trừ PrtSc và Ctrl C, V, A, X, Z, Q)
   mainWindow.webContents.on("before-input-event", (event, input) => {
@@ -245,19 +312,6 @@ async function createWindow() {
     }
     return { action: "deny" };
   });
-
-  mainWindow.once("ready-to-show", () => {
-    mainWindow.show();
-  });
-
-  // Fast display fallback: hiển thị cửa sổ ngay lập tức, không chờ đợi
-  setTimeout(() => {
-    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
-      mainWindow.show();
-    }
-  }, 800);
-
-  mainWindow.loadURL(appUrl);
 
   // Ngăn chặn thoát bằng vuốt trackpad (3 ngón vuốt Task View, Show Desktop) hoặc click ra ngoài khi đang Pomodoro Kiosk
   mainWindow.on("blur", () => {
