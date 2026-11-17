@@ -12704,16 +12704,23 @@ body.pomodoro-kiosk-mode .page-view-enter {
   color: #ffffff;
 }
 
+.pomo-playlist-anchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 .pomo-playlist-popover {
   position: absolute;
-  top: 68px;
-  right: 24px;
-  width: 380px;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 440px;
+  max-width: min(440px, calc(100vw - 32px));
   max-height: 520px;
   background: var(--card-bg, #ffffff);
   border: 1.5px solid var(--border-light, #e2e8f0);
   border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.14), 0 4px 12px rgba(255, 75, 130, 0.08);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(124, 58, 237, 0.12);
   display: none;
   flex-direction: column;
   z-index: 9999;
@@ -12735,16 +12742,23 @@ body.pomodoro-kiosk-mode .page-view-enter {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-light, #e2e8f0);
   background: var(--bg-page, #f8fafc);
+  flex-shrink: 0;
 }
 .pomo-playlist-header-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 13.5px;
+  font-weight: 800;
   color: var(--ink-800, #1e293b);
 }
 .pomo-playlist-header-icon {
   font-size: 16px;
+  width: 22px;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .pomo-playlist-close-x {
   background: none;
@@ -12754,6 +12768,7 @@ body.pomodoro-kiosk-mode .page-view-enter {
   cursor: pointer;
   padding: 4px;
   border-radius: 6px;
+  transition: all 0.15s ease;
 }
 .pomo-playlist-close-x:hover {
   background: rgba(0, 0, 0, 0.06);
@@ -12762,6 +12777,7 @@ body.pomodoro-kiosk-mode .page-view-enter {
 
 .pomo-playlist-search-wrap {
   padding: 10px 14px 6px;
+  flex-shrink: 0;
 }
 .pomo-playlist-search-input {
   width: 100%;
@@ -12788,6 +12804,14 @@ body.pomodoro-kiosk-mode .page-view-enter {
   gap: 6px;
   padding: 4px 14px 10px;
   overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.pomo-playlist-cat-chips::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 .pomo-cat-chip {
   background: var(--bg-page, #f1f5f9);
@@ -12800,6 +12824,7 @@ body.pomodoro-kiosk-mode .page-view-enter {
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 .pomo-cat-chip:hover {
   background: rgba(139, 92, 246, 0.1);
@@ -12814,8 +12839,28 @@ body.pomodoro-kiosk-mode .page-view-enter {
 .pomo-playlist-tracks-list {
   flex: 1;
   overflow-y: auto;
-  max-height: 290px;
-  padding: 4px 8px;
+  max-height: 330px;
+  padding: 6px 10px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.25) transparent;
+}
+.pomo-playlist-tracks-list::-webkit-scrollbar {
+  width: 5px;
+}
+.pomo-playlist-tracks-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pomo-playlist-tracks-list::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.25);
+  border-radius: 999px;
+}
+.pomo-playlist-tracks-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
+.pomo-playlist-tracks-list::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 .pomo-playlist-track-row {
   display: flex;
@@ -12825,8 +12870,9 @@ body.pomodoro-kiosk-mode .page-view-enter {
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s ease;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   border: 1px solid transparent;
+  gap: 10px;
 }
 .pomo-playlist-track-row:hover {
   background: var(--bg-page, #f8fafc);
@@ -12839,30 +12885,43 @@ body.pomodoro-kiosk-mode .page-view-enter {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+  flex: 1;
   overflow: hidden;
 }
 .track-row-icon {
   font-size: 16px;
+  width: 24px;
+  min-width: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   flex-shrink: 0;
 }
 .track-row-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  flex: 1;
   overflow: hidden;
+  gap: 2px;
 }
 .track-row-name-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 .track-row-title {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 800;
   color: var(--ink-800, #1e293b);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 190px;
+  min-width: 0;
+  flex: 1;
 }
 .pomo-playlist-track-row.active-track .track-row-title {
   color: #7c3aed;
@@ -12873,12 +12932,12 @@ body.pomodoro-kiosk-mode .page-view-enter {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 190px;
+  min-width: 0;
 }
 .track-row-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
 .track-row-tag {
@@ -12886,14 +12945,20 @@ body.pomodoro-kiosk-mode .page-view-enter {
   font-weight: 700;
   color: #7c3aed;
   background: rgba(139, 92, 246, 0.08);
-  padding: 2px 7px;
+  padding: 2.5px 8px;
   border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .track-row-size {
   font-size: 9.5px;
   color: var(--ink-400, #94a3b8);
-  min-width: 42px;
+  min-width: 44px;
   text-align: right;
+  flex-shrink: 0;
 }
 .pomo-track-play-btn {
   background: none;
@@ -12904,6 +12969,7 @@ body.pomodoro-kiosk-mode .page-view-enter {
   color: var(--ink-600);
   border-radius: 6px;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 .pomo-track-play-btn:hover {
   background: rgba(139, 92, 246, 0.15);
@@ -12920,6 +12986,9 @@ body.pomodoro-kiosk-mode .page-view-enter {
   padding: 10px 16px;
   border-top: 1px solid var(--border-light, #e2e8f0);
   background: var(--bg-page, #f8fafc);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
 }
 .pomo-footer-volume-row {
   display: flex;
@@ -12946,6 +13015,7 @@ body.pomodoro-kiosk-mode .page-view-enter {
   gap: 2px;
   height: 12px;
   width: 14px;
+  flex-shrink: 0;
 }
 .pomo-soundwave span {
   width: 2.5px;
@@ -12984,8 +13054,9 @@ body.pomodoro-kiosk-mode .page-view-enter {
   color: #94a3b8;
 }
 [data-theme="dark"] .pomo-cat-chip.active {
-  background: #ff4b82;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
   color: #ffffff;
+  border-color: #7c3aed;
 }
 [data-theme="dark"] .pomo-playlist-track-row:hover {
   background: #1f2438;
@@ -12994,8 +13065,8 @@ body.pomodoro-kiosk-mode .page-view-enter {
   color: #f1f5f9;
 }
 [data-theme="dark"] .track-row-tag {
-  background: #111420;
-  color: #94a3b8;
+  background: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
 }
 [data-theme="dark"] .pomo-playlist-footer {
   background: #111420;

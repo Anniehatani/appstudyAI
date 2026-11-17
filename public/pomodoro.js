@@ -2215,11 +2215,14 @@ function renderPomodoroActiveRoom() {
 
         <!-- 3. RIGHT: PLAYLIST DROPDOWN BUTTON & EXIT -->
         <div class="pomo-topbar-right">
-          <!-- PLAYLIST DROPDOWN TRIGGER BUTTON (PURPLE CAPSULE PILL AS DRAWN BY USER) -->
-          <button type="button" class="btn-pomo-playlist-pill ${pomodoroState.showPlaylistDropdown ? 'active' : ''}" id="pomo-playlist-btn" onclick="window.togglePomodoroPlaylist(event)" title="Mở danh sách 17 bài nhạc Pomodoro">
-            <span>Danh sách nhạc</span>
-            <span class="pill-arrow">▾</span>
-          </button>
+          <!-- PLAYLIST DROPDOWN TRIGGER BUTTON & ANCHOR (PURPLE CAPSULE PILL AS DRAWN BY USER) -->
+          <div class="pomo-playlist-anchor">
+            <button type="button" class="btn-pomo-playlist-pill ${pomodoroState.showPlaylistDropdown ? 'active' : ''}" id="pomo-playlist-btn" onclick="window.togglePomodoroPlaylist(event)" title="Mở danh sách 17 bài nhạc Pomodoro">
+              <span>Danh sách nhạc</span>
+              <span class="pill-arrow">▾</span>
+            </button>
+            ${renderPomodoroPlaylistPopover()}
+          </div>
 
           <!-- EMERGENCY EXIT BUTTON (Ctrl + Q) -->
           <button type="button" class="btn-duo btn-pomo-exit-btn" onclick="window.openPomodoroExitConfirm()" title="Nhấn Ctrl + Q để thoát">
@@ -2240,9 +2243,6 @@ function renderPomodoroActiveRoom() {
           <div class="pomo-audio-scrub-thumb" id="pomo-audio-scrub-thumb" style="left: 0%;"></div>
           <div class="pomo-timeline-time-tooltip" id="pomo-timeline-tooltip">00:00</div>
         </div>
-
-        <!-- 5. FLOATING PLAYLIST POPOVER (17 TRACKS) -->
-        ${renderPomodoroPlaylistPopover()}
       </header>
 
       <!-- 3-PANE WORKSPACE: LEFT (DOC TABS) | CENTER (DOCUMENT VIEWER / FULL CLOCK) | RIGHT (AI ASSISTANT TAB) -->
