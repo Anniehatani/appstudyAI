@@ -17,6 +17,7 @@
  */
 
 import { renderThoBayMau, THO_STATES } from "./tho-bay-mau.js";
+import { syncPomodoroCalculatorVisibility } from "./pomodoro-calculator.js";
 
 // Safe API caller helper (Guaranteed no window.api error)
 async function callApi(path, options = {}) {
@@ -1909,6 +1910,8 @@ function updatePomodoroModalsInDom() {
 
 // Master Router
 export function renderPomodoro() {
+  // Đồng bộ cửa sổ máy tính fx-580 sau khi phòng học được render lại
+  setTimeout(syncPomodoroCalculatorVisibility, 0);
   if (pomodoroState.active) {
     return renderPomodoroActiveRoom();
   }
@@ -2239,8 +2242,14 @@ function renderPomodoroActiveRoom() {
           </div>
         </div>
 
-        <!-- 3. RIGHT: PLAYLIST DROPDOWN BUTTON & EXIT -->
+        <!-- 3. RIGHT: SCIENTIFIC CALCULATOR, PLAYLIST DROPDOWN BUTTON & EXIT -->
         <div class="pomo-topbar-right">
+          <!-- FLOATING SCIENTIFIC CALCULATOR (CASIO FX-580 STYLE) -->
+          <button type="button" class="btn-pomo-calc-pill" id="pomo-calc-toggle-btn" onclick="window.togglePomodoroCalculator()" title="Máy tính khoa học fx-580: kéo thả, thu nhỏ, phóng to, đóng">
+            <span class="calc-pill-icon">🧮</span>
+            <span class="calc-pill-label">Máy tính</span>
+          </button>
+
           <!-- PLAYLIST DROPDOWN TRIGGER BUTTON & ANCHOR (PURPLE CAPSULE PILL AS DRAWN BY USER) -->
           <div class="pomo-playlist-anchor">
             <button type="button" class="btn-pomo-playlist-pill ${pomodoroState.showPlaylistDropdown ? 'active' : ''}" id="pomo-playlist-btn" onclick="window.togglePomodoroPlaylist(event)" title="Mở danh sách 17 bài nhạc Pomodoro">

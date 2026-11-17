@@ -173,6 +173,7 @@ Không gian tự học tập trung cao độ (Chế độ Siêu Tập Trung Zen 
 - **Chế độ Kiosk chống trốn học:** Tự động mở toàn màn hình, ẩn thanh tác vụ, chặn các phím tắt hệ thống nguy hiểm (`Alt + Tab`, `Win Key`, `F11`). Thoát khẩn cấp có xác nhận bằng `Ctrl + Q`.
 - **Khóa thêm tệp khi đang học:** Tuyệt đối không cho phép mở cửa sổ File Explorer của hệ điều hành trong khi đang trong ca 25 phút để triệt tiêu mọi cám dỗ trốn học. Mọi tài liệu được nạp sẵn tại Sảnh chờ trước khi bắt đầu.
 - **Mascot Thỏ Bảy Màu Chế độ Zen:** Khi không mở tài liệu, màn hình trung tâm hiển thị Mascot Thỏ Bảy Màu phóng to cực đại (size 340) ngồi cắm cúi viết bài với bong bóng thoại meme hài hước cùng vòng tròn tiến độ Pomodoro SVG sinh động.
+- **🧮 Máy tính khoa học FX-580 nổi ngay trong phòng học:** Bấm nút **Máy tính** trên thanh công cụ để mở cửa sổ Casio fx-580 ngay trên phòng Pomodoro mà không cần rời màn hình. Hỗ trợ đầy đủ `sin/cos/tan` (kèm nghịch đảo qua SHIFT), `log/ln/10ˣ/eˣ`, căn bậc 2/3, lũy thừa, giai thừa, `nCr/nPr`, phần trăm, `mod`, hằng số `π/e`, biến nhớ `M`, `Ans` và chế độ góc `DEG/RAD`. Cửa sổ **kéo thả tự do, đổi kích thước, thu nhỏ thành thanh tiêu đề, phóng to toàn phòng hoặc tắt hẳn**; tự động ghi nhớ vị trí, kích thước, biến nhớ và lịch sử phép tính.
 - **Hệ thống 4 kênh âm thanh Chill 100% Offline (Web Audio API Synthesizer):**
   - 🎵 **Lofi Beats:** Tiến trình hòa thanh 16 hợp âm Jazz ấm áp kết hợp nhịp trống Boom-Bap đầy đặn (kick click transient 160Hz $\to$ 48Hz, rimshot/snare đanh gọn, swung hi-hats và tiếng nổ lách tách của đĩa than Vinyl).
   - 🌧️ **Tiếng Mưa (Rain Ambiance):** Bộ lọc Pink & Brown noise đa tầng với chu kỳ lượn sóng tự nhiên, kết hợp giọt nước tí tách ngẫu nhiên và tiếng sấm rền xa xa êm dịu.
@@ -320,6 +321,7 @@ app study 2/
 │   ├── index.html                 # Trang HTML chính của ứng dụng
 │   ├── app.js                     # Điều phối ứng dụng, định tuyến, shop, profile, ghi chú, chat
 │   ├── pomodoro.js                # Trình điều khiển Phòng Pomodoro, Lofi Synth, Trình đọc file & Bot AI
+│   ├── pomodoro-calculator.js     # Máy tính khoa học FX-580 nổi trong phòng Pomodoro (parser an toàn, kéo thả/thu nhỏ)
 │   ├── tho-bay-mau.js             # Động cơ diễn hoạt Mascot Thỏ Bảy Màu (SVG Animation)
 │   └── styles.css                 # Toàn bộ mã kiểu dáng CSS3, Dark Mode, Themes, Math & Layout
 │

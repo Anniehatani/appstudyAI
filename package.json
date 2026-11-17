@@ -1,6 +1,6 @@
 {
   "name": "3tg-study",
-  "version": "9.9.9",
+  "version": "29.9.07",
   "description": "3TG — Web và App học tập thông minh phong cách Duolingo cùng Mascot Thỏ Bảy Màu",
   "private": true,
   "type": "module",
@@ -53,7 +53,8 @@
       "!**/*.pem"
     ],
     "portable": {
-      "unpackDirName": "3tg_study_portable"
+      "unpackDirName": "3tg_study_portable",
+      "artifactName": "${productName} V${version}.${ext}"
     },
     "win": {
       "icon": "build/icon.ico",
@@ -73,6 +74,7 @@
       ]
     },
     "nsis": {
+      "artifactName": "${productName} Setup V${version}.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
