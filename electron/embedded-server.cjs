@@ -520,8 +520,19 @@ async function startEmbeddedServer(rootPath, port = 8787) {
               started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
               last_heartbeat TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
+            CREATE TABLE IF NOT EXISTS ai_conversations (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              title TEXT,
+              created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
           `);
           const colsToAdd = [
+            "ALTER TABLE lessons ADD COLUMN content TEXT DEFAULT NULL;",
+            "ALTER TABLE lessons ADD COLUMN video_url TEXT DEFAULT NULL;",
+            "ALTER TABLE ai_messages ADD COLUMN conversation_id TEXT DEFAULT NULL;",
+            "ALTER TABLE ai_messages ADD COLUMN sender TEXT DEFAULT 'user';",
             "ALTER TABLE profiles ADD COLUMN avatar_decoration TEXT DEFAULT NULL;",
             "ALTER TABLE profiles ADD COLUMN profile_effect TEXT DEFAULT NULL;",
             "ALTER TABLE profiles ADD COLUMN profile_theme TEXT DEFAULT NULL;",
