@@ -60,36 +60,15 @@ public class KioskGuard {
             IntPtr tray = FindWindow("Shell_TrayWnd", null);
             if (tray != IntPtr.Zero) {
                 ShowWindow(tray, SW_HIDE);
-                EnableWindow(tray, false);
             }
 
             IntPtr secTray = FindWindow("Shell_SecondaryTrayWnd", null);
             if (secTray != IntPtr.Zero) {
                 ShowWindow(secTray, SW_HIDE);
-                EnableWindow(secTray, false);
             }
-
-            IntPtr startBtn = FindWindow("Button", "Start");
-            if (startBtn != IntPtr.Zero) {
-                ShowWindow(startBtn, SW_HIDE);
-                EnableWindow(startBtn, false);
-            }
-
-            // Windows 11 Start Menu & Search Core Windows
-            IntPtr startMenu = FindWindow("Windows.UI.Core.CoreWindow", "Start");
-            if (startMenu != IntPtr.Zero) ShowWindow(startMenu, SW_HIDE);
-
-            IntPtr startIsland = FindWindow("XamlExplorerHostIslandWindow", null);
-            if (startIsland != IntPtr.Zero) ShowWindow(startIsland, SW_HIDE);
-
-            IntPtr searchFlyout = FindWindow("Windows.UI.Core.CoreWindow", "Search");
-            if (searchFlyout != IntPtr.Zero) ShowWindow(searchFlyout, SW_HIDE);
 
             IntPtr taskView = FindWindow("MultitaskingViewFrame", null);
             if (taskView != IntPtr.Zero) ShowWindow(taskView, SW_HIDE);
-
-            IntPtr overflowIsland = FindWindow("TopLevelWindowForOverflowXamlIsland", null);
-            if (overflowIsland != IntPtr.Zero) ShowWindow(overflowIsland, SW_HIDE);
         } catch {}
     }
 
@@ -109,12 +88,31 @@ public class KioskGuard {
                 ShowWindow(secTray, SW_RESTORE);
             }
 
+            IntPtr island = FindWindow("XamlExplorerHostIslandWindow", null);
+            if (island != IntPtr.Zero) {
+                EnableWindow(island, true);
+                ShowWindow(island, SW_SHOW);
+            }
+
             IntPtr startBtn = FindWindow("Button", "Start");
             if (startBtn != IntPtr.Zero) {
                 EnableWindow(startBtn, true);
                 ShowWindow(startBtn, SW_SHOW);
                 ShowWindow(startBtn, SW_RESTORE);
             }
+
+            IntPtr startMenu = FindWindow("Windows.UI.Core.CoreWindow", "Start");
+            if (startMenu != IntPtr.Zero) {
+                EnableWindow(startMenu, true);
+                ShowWindow(startMenu, SW_SHOW);
+            }
+
+            // Khởi động lại nhẹ nhàng tiến trình StartMenuExperienceHost để nút Windows phản hồi ngay lập tức
+            try {
+                foreach (var p in Process.GetProcessesByName("StartMenuExperienceHost")) {
+                    p.Kill();
+                }
+            } catch {}
         } catch {}
     }
 
