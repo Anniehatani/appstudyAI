@@ -1775,8 +1775,16 @@ export async function askPomodoroAi(customPrompt = null) {
 3. Giải thích súc tích, dễ nhớ cho sinh viên ôn thi.`;
 
   try {
+    const userId = (window.state && window.state.profile && (window.state.profile.user_id || window.state.profile.id)) || "";
+    const customHeaders = {};
+    if (typeof window.computeAiClientSignature === "function" && userId) {
+      try {
+        customHeaders["x-3tg-client-sig"] = await window.computeAiClientSignature(userId);
+      } catch {}
+    }
     const res = await callApi("/api/chat", {
       method: "POST",
+      headers: customHeaders,
       body: {
         message: prompt + contextDoc + formattingSystemRule
       }

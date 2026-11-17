@@ -7897,6 +7897,26 @@ document.addEventListener("click", function(e) {
 // CHAT / LUMI AI
 // ========================================================
 function renderChat() {
+  if (!state.profile) {
+    return `
+      <div class="chat-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:520px; text-align:center; padding:40px 20px;">
+        <div style="font-size:72px; margin-bottom:16px;">🐰🔒</div>
+        <h2 style="font-size:24px; font-weight:800; color:var(--lumi-pink); margin-bottom:10px;">Chỉ học viên đăng nhập mới được dùng Trợ giảng 3TG AI</h2>
+        <p style="color:var(--ink-500); font-size:14.5px; max-width:480px; line-height:1.6; margin-bottom:24px;">
+          Để bảo vệ tài nguyên học tập và chống lạm dụng API, hệ thống AI chỉ mở cho tài khoản học viên đã đăng nhập. Hãy đăng nhập để nhận hỗ trợ giải bài tập chi tiết, công thức toán học và lưu trữ sổ tay nhé!
+        </p>
+        <div style="display:flex; gap:12px;">
+          <button type="button" class="btn-duo btn-duo-pink" onclick="switchAuthTab('login'); render();" style="padding:12px 28px; font-size:15px;">
+            🔑 Đăng nhập ngay
+          </button>
+          <button type="button" class="btn-duo btn-duo-white" onclick="switchAuthTab('register'); render();" style="padding:12px 28px; font-size:15px;">
+            ✨ Tạo tài khoản mới
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
   const isFreeMode = state.chatSubjectId === "free";
   const currentSub = isFreeMode ? null : (state.subjects.find(s => Number(s.id) === Number(state.chatSubjectId || state.currentSubjectId)) || state.subjects[0]);
   const currentSubjectLabel = isFreeMode ? "AI tự do · mọi môn" : (currentSub?.subject_name || "Chọn môn học");
@@ -7940,6 +7960,12 @@ function renderChat() {
         </div>
 
         <div class="chat-header-actions" style="display:flex; align-items:center; gap:10px;">
+          <!-- HẠN NGẠCH CÂU HỎI HÀNG NGÀY ĐỂ BẢO VỆ TÀI NGUYÊN HỆ THỐNG -->
+          <div class="ai-quota-badge" style="display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:rgba(255,107,157,0.1); border:1px solid rgba(255,107,157,0.25); border-radius:20px; font-size:12.5px; color:var(--lumi-pink); font-weight:700;" title="Hạn ngạch câu hỏi AI trong ngày để chống lạm dụng">
+            <span>⚡ Hạn ngạch:</span>
+            <span>${state.aiRemainingToday !== undefined ? state.aiRemainingToday : '60'}/60 câu hôm nay</span>
+          </div>
+
           <!-- CUSTOM ANIMATED DROPDOWN CHO LỊCH SỬ CHAT AI -->
           <div class="lumi-dropdown-wrapper" id="chat-convo-dropdown-wrap">
             <button type="button" class="lumi-dropdown-btn ${state.isChatConvoDropdownOpen ? 'active' : ''}" onclick="toggleChatConvoDropdown(event)" style="min-width:180px; max-width:240px;">
@@ -8268,8 +8294,29 @@ window.removeChatAttachment = function(index) {
   render();
 };
 
+// ========================================================
+// BẢO VỆ CHỮ KÝ CLIENT & HẠN NGẠCH 3TG AI CHỐNG LỢI DỤNG
+// ========================================================
+export async function computeAiClientSignature(userId) {
+  const timestamp = Date.now();
+  const secret = "3tg_ai_leech_shield_2026_salt_pink";
+  const raw = `${timestamp}:${userId || ""}:${secret}`;
+  const enc = new TextEncoder();
+  const digest = await crypto.subtle.digest("SHA-256", enc.encode(raw));
+  const hex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return `${timestamp}:${hex}`;
+}
+window.computeAiClientSignature = computeAiClientSignature;
+
 window.handleSendChat = async function(e) {
   e.preventDefault();
+  if (!state.profile) {
+    showToast("Vui lòng đăng nhập để trò chuyện cùng Trợ giảng 3TG AI nhé! 🌸", true);
+    state.authTab = "login";
+    render();
+    return;
+  }
+
   const input = document.getElementById("chat-input");
   const btn = document.getElementById("chat-submit-btn");
   const msg = input ? input.value.trim() : String(state.chatDraft || "").trim();
@@ -8297,8 +8344,14 @@ window.handleSendChat = async function(e) {
   try {
     const freeMode = state.chatSubjectId === "free";
     const subId = freeMode ? null : (state.chatSubjectId || state.currentSubjectId);
+    const userId = state.profile.user_id || state.profile.id || "";
+    const clientSig = await computeAiClientSignature(userId);
+
     const res = await api("/api/chat", {
       method: "POST",
+      headers: {
+        "x-3tg-client-sig": clientSig
+      },
       body: {
         message: prompt,
         subjectId: subId,
@@ -8310,13 +8363,19 @@ window.handleSendChat = async function(e) {
         conversationId: state.chatConversationId
       }
     });
+
     if (res.conversationId) state.chatConversationId = res.conversationId;
+    if (typeof res.remainingToday === "number") {
+      state.aiRemainingToday = res.remainingToday;
+      state.aiDailyQuota = res.dailyQuota || 60;
+    }
+
     await streamAiResponse(res.reply, assistantMsgIndex);
     await loadChatConversations();
   } catch (err) {
     state.chatMessages[assistantMsgIndex] = {
       role: "assistant",
-      content: "Xin lỗi, 3TG AI chưa kết nối được với AI lúc này: " + err.message,
+      content: "Xin lỗi, 3TG AI chưa kết nối được: " + err.message,
       isStreaming: false
     };
     const targetBubble = document.getElementById("chat-bubble-" + assistantMsgIndex);
@@ -8329,12 +8388,27 @@ window.handleSendChat = async function(e) {
       inputEl.disabled = false;
       inputEl.focus();
     }
-    if (btnEl) {
-      btnEl.disabled = false;
-      btnEl.innerHTML = "Gửi ➔";
-    }
     const attachInput = document.querySelector(".chat-attach-btn input");
     if (attachInput) attachInput.disabled = state.chatPendingFiles.length > 0;
+
+    // Cooldown 3s đếm ngược chống spam/burst request
+    if (btnEl) {
+      btnEl.disabled = true;
+      let cd = 3;
+      btnEl.innerHTML = `Chờ (${cd}s)…`;
+      const cdTimer = setInterval(() => {
+        cd--;
+        if (cd <= 0) {
+          clearInterval(cdTimer);
+          if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = "Gửi ➔";
+          }
+        } else {
+          if (btnEl) btnEl.innerHTML = `Chờ (${cd}s)…`;
+        }
+      }, 1000);
+    }
     updateShell();
   }
 };
@@ -10491,6 +10565,12 @@ document.addEventListener("click", function (e) {
 
   const lessonBtn = e.target.closest("[data-lesson]");
   if (lessonBtn && !lessonBtn.disabled) {
+    if (!state.profile) {
+      showToast("Vui lòng đăng nhập để bắt đầu bài học và tích lũy XP nhé! 🌸", true);
+      state.authTab = "login";
+      render();
+      return;
+    }
     const lessonId = lessonBtn.dataset.lesson;
     openLesson(lessonId);
     return;
@@ -10499,6 +10579,18 @@ document.addEventListener("click", function (e) {
 
 async function navigateToPage(targetPage) {
   if (state.page === "notes" && targetPage !== "notes") state.editingNoteIds.clear();
+
+  // Yêu cầu bắt buộc đăng nhập để sử dụng các chức năng (AI, Pomodoro, Messenger, Sổ tay...)
+  if (!state.profile && targetPage !== "home" && targetPage !== "courses") {
+    showToast("Vui lòng đăng nhập để mở khóa tính năng này và lưu tiến trình học tập nhé! 🌸", true);
+    state.authTab = "login";
+    state.page = "home";
+    closeMobileMenu();
+    updateShell();
+    render();
+    return;
+  }
+
   state.page = targetPage;
   closeMobileMenu();
   updateShell();

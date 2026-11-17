@@ -550,6 +550,13 @@ async function startEmbeddedServer(rootPath, port = 8787) {
                 synced_at TEXT DEFAULT NULL
               );
               CREATE INDEX IF NOT EXISTS idx_sync_outbox_status ON sync_outbox(status);
+              CREATE TABLE IF NOT EXISTS user_ai_usage (
+                user_id TEXT NOT NULL,
+                date TEXT NOT NULL,
+                count INTEGER NOT NULL DEFAULT 0,
+                last_req_ms INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (user_id, date)
+              );
             `);
             const colsToAdd = [
               "ALTER TABLE lessons ADD COLUMN content TEXT DEFAULT NULL;",
@@ -599,37 +606,40 @@ async function startEmbeddedServer(rootPath, port = 8787) {
           return stmt;
         }
 
+        function createD1PreparedStatement(sql, boundParams = []) {
+          return {
+            bind(...params) {
+              const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+              return createD1PreparedStatement(sql, flat);
+            },
+            async first(col) {
+              const stmt = getCachedStmt(sql);
+              const row = stmt.get(...boundParams);
+              if (!row) return null;
+              if (col !== undefined) return row[col];
+              return row;
+            },
+            async all() {
+              const stmt = getCachedStmt(sql);
+              const rows = stmt.all(...boundParams);
+              return { success: true, results: rows || [], meta: {} };
+            },
+            async run() {
+              const stmt = getCachedStmt(sql);
+              const res = stmt.run(...boundParams);
+              return { success: true, meta: { changes: res.changes } };
+            },
+            async raw() {
+              const stmt = getCachedStmt(sql);
+              const rows = stmt.all(...boundParams);
+              return rows.map(r => Object.values(r));
+            }
+          };
+        }
+
         envVars.DB = {
           prepare(sql) {
-            return {
-              bind(...params) {
-                const flat = params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
-                return {
-                  async first(col) {
-                    const stmt = getCachedStmt(sql);
-                    const row = stmt.get(...flat);
-                    if (!row) return null;
-                    if (col !== undefined) return row[col];
-                    return row;
-                  },
-                  async all() {
-                    const stmt = getCachedStmt(sql);
-                    const rows = stmt.all(...flat);
-                    return { success: true, results: rows || [], meta: {} };
-                  },
-                  async run() {
-                    const stmt = getCachedStmt(sql);
-                    const res = stmt.run(...flat);
-                    return { success: true, meta: { changes: res.changes } };
-                  },
-                  async raw() {
-                    const stmt = getCachedStmt(sql);
-                    const rows = stmt.all(...flat);
-                    return rows.map(r => Object.values(r));
-                  }
-                };
-              }
-            };
+            return createD1PreparedStatement(sql, []);
           },
           async batch(statements) {
             const results = [];

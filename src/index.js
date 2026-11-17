@@ -3,6 +3,7 @@ import { BOT_ID, BOT_NAME, BOT_AVATAR, BOT_DECORATION, handleBot3TgCommand } fro
 import { hashPassword, verifyPassword, checkRateLimit, resetRateLimit } from "./modules/crypto.js";
 import { verifyAndCompletePomodoro } from "./modules/pomodoro_validator.js";
 import { recordOutboxMutation, replayOutboxToD1, getOutboxStatus } from "./modules/sync_outbox.js";
+import { AI_LIMITS, verifyClientSignature, checkAiUsageLimit, recordAiUsage, sanitizeAiInput, buildGuardedSystemPrompt } from "./modules/ai_guard.js";
 
 const COOKIE_NAME = "lumi_session";
 const COOKIE_AGE = 60 * 60 * 24 * 365;
@@ -2964,11 +2965,26 @@ async function addGroupMembers(request, groupId, currentUser, env) {
 }
 
 async function askAI(request, user, env) {
+  // 1. Xác thực chữ ký Client (Chống tool/script cào hoặc gọi API ngoài ứng dụng)
+  const sigCheck = await verifyClientSignature(request, user.userId);
+  if (!sigCheck.ok) {
+    throw new HttpError(403, sigCheck.error);
+  }
+
+  // 2. Kiểm tra Cooldown 3s, Burst limit 8 câu/phút và Hạn ngạch 60 câu/ngày
+  const limitCheck = await checkAiUsageLimit(env.DB, user.userId);
+  if (!limitCheck.allowed) {
+    throw new HttpError(limitCheck.status || 429, limitCheck.error);
+  }
+
   const contentLength = Number(request.headers.get("content-length")) || 0;
-  if (contentLength > 24 * 1024 * 1024) throw new HttpError(413, "Tổng dung lượng tin nhắn và tệp không được vượt 24 MB.");
+  if (contentLength > 12 * 1024 * 1024) throw new HttpError(413, "Tổng dung lượng tin nhắn và tệp không được vượt 12 MB.");
   const body = await readJson(request);
-  let message = String(body.message || "").trim().slice(0, 1800);
-  const attachments = Array.isArray(body.attachments) ? body.attachments.slice(0, 5) : [];
+
+  // 3. Khử trùng câu hỏi và lịch sử (Chống Prompt-stuffing)
+  const { message: cleanMessage, history: cleanHistory } = sanitizeAiInput(body);
+  let message = cleanMessage;
+  const attachments = Array.isArray(body.attachments) ? body.attachments.slice(0, AI_LIMITS.MAX_ATTACHMENT_IMAGES) : [];
   if (!message && !attachments.length) throw new HttpError(400, "Viết câu hỏi hoặc chọn tệp trước khi gửi nhé.");
   if (!message) message = "Hãy đọc các tệp đính kèm, tóm tắt ý chính và giúp mình học nội dung quan trọng.";
   let attachmentTextSize = 0;
@@ -2980,9 +2996,11 @@ async function askAI(request, user, env) {
     const name = String(item && item.name || "Tệp đính kèm").slice(0, 160);
     attachmentNames.push(name);
     if (item && typeof item.text === "string") {
-      const text = item.text.slice(0, 52000);
+      const text = item.text.slice(0, AI_LIMITS.MAX_ATTACHMENT_DOC_CHARS);
       attachmentTextSize += text.length;
-      if (attachmentTextSize > 52000) throw new HttpError(413, "Văn bản trích từ tài liệu vượt giới hạn 52.000 ký tự.");
+      if (attachmentTextSize > AI_LIMITS.MAX_ATTACHMENT_DOC_CHARS) {
+        throw new HttpError(413, `Văn bản trích từ tài liệu vượt giới hạn ${AI_LIMITS.MAX_ATTACHMENT_DOC_CHARS} ký tự.`);
+      }
       documentParts.push({ name: name, text: text });
       continue;
     }
@@ -2992,7 +3010,9 @@ async function askAI(request, user, env) {
       throw new HttpError(400, "Ảnh đính kèm chưa đúng định dạng hỗ trợ.");
     }
     attachmentImageSize += Math.floor(data.length * 3 / 4);
-    if (attachmentImageSize > 16 * 1024 * 1024) throw new HttpError(413, "Tổng dung lượng ảnh đính kèm không được vượt 16 MB.");
+    if (attachmentImageSize > AI_LIMITS.MAX_ATTACHMENT_IMG_BYTES) {
+      throw new HttpError(413, "Tổng dung lượng ảnh đính kèm không được vượt 6 MB.");
+    }
     imageParts.push({ type: "image_url", image_url: { url: "data:" + type + ";base64," + data } });
   }
   let conversationId = String(body.conversationId || "").trim().slice(0, 80);
@@ -3031,19 +3051,10 @@ async function askAI(request, user, env) {
       context = await courseSnippets(env, courseTitle, message);
     }
   }
-  const systemText = "Bạn là 3TG AI, trợ giảng học tập thân thiện và thông minh bằng tiếng Việt của 3TG Study. " +
-    "Giải thích rõ ràng, gần gũi, theo từng bước khi phù hợp. Không bịa thông tin về tài liệu môn học. " +
-    "Nếu câu hỏi cần dữ liệu mà phần ngữ cảnh không có, hãy nói rõ điều đó rồi giải thích phần kiến thức chung với nhãn phân biệt. " +
-    "Khuyến khích người học tự suy nghĩ và không tiết lộ đáp án trắc nghiệm nếu họ chưa hỏi.";
-  const contextText = freeMode
-    ? "Chế độ AI tự do: có thể hỗ trợ nhiều môn và kiến thức đời sống. Phân biệt rõ kiến thức chung với thông tin có trong tệp người học gửi."
-    : "Môn đang học: " + (courseTitle || "chưa chọn") + ".\n" +
-      (context ? "Trích đoạn liên quan từ dữ liệu môn học:\n" + context :
-        "Không tìm thấy hoặc chưa chọn trích đoạn tài liệu phù hợp; đừng nói rằng bạn đã đọc tài liệu của môn.");
-  const history = Array.isArray(body.history) ? body.history.slice(-8).map(function (item) {
-    const role = item && (item.role === "assistant" || item.role === "user") ? item.role : "";
-    return role && item.content ? { role: role, content: String(item.content).slice(0, 1500) } : null;
-  }).filter(Boolean) : [];
+
+  // 4. Áp dụng System Prompt chứa Guardrail bảo vệ phạm vi học tập
+  const systemText = buildGuardedSystemPrompt(courseTitle, context, freeMode);
+  const history = cleanHistory;
   const documentsText = documentParts.map(file => "\n\n--- Tệp: " + file.name + " ---\n" + file.text).join("");
   const userPrompt = message + documentsText;
   const userContent = imageParts.length
@@ -3057,12 +3068,12 @@ async function askAI(request, user, env) {
       body: JSON.stringify({
         model: model,
         messages: [
-          { role: "system", content: systemText + "\n\n" + contextText },
+          { role: "system", content: systemText },
           ...history,
           { role: "user", content: userContent }
         ],
         temperature: 0.55,
-        max_tokens: 1500
+        max_tokens: AI_LIMITS.MAX_TOKENS_OUTPUT
       }),
       signal: AbortSignal.timeout(90000)
     });
@@ -3087,6 +3098,10 @@ async function askAI(request, user, env) {
     ? String(result.choices[0].message.content || "")
     : "";
   if (!reply) throw new HttpError(502, "3TG AI chưa nhận được câu trả lời. Thử hỏi lại nhé.");
+
+  // 5. Ghi nhận lượt sử dụng hợp lệ vào DB để trừ hạn ngạch
+  await recordAiUsage(env.DB, user.userId);
+
   const now = new Date().toISOString();
   const isNewConversation = !body.conversationId;
   const storedMessage = message + (attachmentNames.length ? "\n\n[Tệp đính kèm: " + attachmentNames.join(", ") + "]" : "");
@@ -3103,7 +3118,12 @@ async function askAI(request, user, env) {
     env.DB.prepare("INSERT INTO ai_messages (conversation_id, sender, content, created_at) VALUES (?, 'assistant', ?, ?)").bind(conversationId, reply, now)
   );
   await env.DB.batch(operations);
-  return { reply: reply, conversationId: conversationId };
+  return {
+    reply: reply,
+    conversationId: conversationId,
+    remainingToday: Math.max(0, limitCheck.remainingToday - 1),
+    dailyQuota: limitCheck.dailyQuota
+  };
 }
 
 async function listAiConversations(user, env) {
