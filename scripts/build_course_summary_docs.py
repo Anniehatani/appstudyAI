@@ -1436,8 +1436,18 @@ def build_presentation():
     r_f11.font.bold = True
     r_f11.font.color.rgb = PINK_NEON
 
-    prs.save(PPTX_PATH)
-    print(f"-> ĐÃ TÁI TẠO XONG SLIDE PPTX ĐẸP MẮT (11 SLIDES KHÁC BIỆT 100%) TẠI: {PPTX_PATH}")
+    target_paths = [
+        os.path.join(OUTPUT_DIR, "Slide_Thuyet_Trinh_Tong_Ket_Mon_Hoc_TONE_PINK_MoiNhat.pptx"),
+        os.path.join(OUTPUT_DIR, "Slide_Thuyet_Trinh_Tong_Ket_Mon_Hoc_TONE_PINK.pptx")
+    ]
+    for p in target_paths:
+        try:
+            prs.save(p)
+            print(f"-> ĐÃ TÁI TẠO XONG SLIDE PPTX ĐẸP MẮT (11 SLIDES KHÁC BIỆT 100%) TẠI: {p}")
+        except PermissionError:
+            print(f"[CẢNH BÁO] Không thể ghi đè {p} vì PowerPoint đang mở file này. Vui lòng đóng PowerPoint để ghi đè!")
+        except Exception as e:
+            print(f"[LỖI] Lưu {p}: {e}")
 
 if __name__ == "__main__":
     build_docx_report()

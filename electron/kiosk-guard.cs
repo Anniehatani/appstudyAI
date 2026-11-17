@@ -79,11 +79,17 @@ public class KioskGuard {
             IntPtr startMenu = FindWindow("Windows.UI.Core.CoreWindow", "Start");
             if (startMenu != IntPtr.Zero) ShowWindow(startMenu, SW_HIDE);
 
+            IntPtr startIsland = FindWindow("XamlExplorerHostIslandWindow", null);
+            if (startIsland != IntPtr.Zero) ShowWindow(startIsland, SW_HIDE);
+
             IntPtr searchFlyout = FindWindow("Windows.UI.Core.CoreWindow", "Search");
             if (searchFlyout != IntPtr.Zero) ShowWindow(searchFlyout, SW_HIDE);
 
             IntPtr taskView = FindWindow("MultitaskingViewFrame", null);
             if (taskView != IntPtr.Zero) ShowWindow(taskView, SW_HIDE);
+
+            IntPtr overflowIsland = FindWindow("TopLevelWindowForOverflowXamlIsland", null);
+            if (overflowIsland != IntPtr.Zero) ShowWindow(overflowIsland, SW_HIDE);
         } catch {}
     }
 

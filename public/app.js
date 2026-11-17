@@ -720,11 +720,21 @@ function updateShell() {
     weekNode.innerHTML = renderWeek(state.overview.week, state.overview.today);
   }
 
-  // Theme Sync
+  // Theme Sync: Luôn ưu tiên theme của người dùng hoặc Tone Pink Sakura signature mặc định
   try {
     const activePreview = document.getElementById("theme-preview-floating-bar");
     if (!activePreview) {
-      const activeTh = state.profile?.profile_theme || localStorage.getItem("3tg_color_theme") || "theme_sakura_pink";
+      let activeTh = "theme_sakura_pink";
+      if (state.profile) {
+        if (state.profile.profile_theme) {
+          activeTh = state.profile.profile_theme;
+        } else {
+          activeTh = "theme_sakura_pink";
+          try { localStorage.setItem("3tg_color_theme", "theme_sakura_pink"); } catch {}
+        }
+      } else {
+        activeTh = "theme_sakura_pink";
+      }
       applyColorTheme(activeTh, false, false);
     }
   } catch {}
@@ -10789,6 +10799,7 @@ async function initialize() {
     // Luôn khởi động ứng dụng ở trạng thái sạch (trống phiên đăng nhập) để bảo vệ quyền riêng tư và người dùng tự đăng nhập
     state.profile = null;
     state.account = null;
+    applyColorTheme("theme_sakura_pink", true, false);
 
     const subRes = await api("/api/subjects").catch(() => ({ subjects: [] }));
     state.subjects = subRes.subjects || [];

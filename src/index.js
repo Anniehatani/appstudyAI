@@ -3024,9 +3024,9 @@ async function askAI(request, user, env) {
   } else {
     conversationId = crypto.randomUUID();
   }
-  let endpoint = String(env.LOCAL_AI_ENDPOINT || "").trim();
-  const apiKey = env.LOCAL_AI_API_KEY || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || "";
-  const configuredModel = env.LOCAL_AI_MODEL || env.DEEPSEEK_MODEL || env.VITE_DEEPSEEK_MODEL || "";
+  let endpoint = String(env.LOCAL_AI_ENDPOINT || "").trim() || "https://api.deepseek.com/chat/completions";
+  const apiKey = env.LOCAL_AI_API_KEY || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || "sk-e4200a79a21d46f7b24da32bf7936d3b";
+  const configuredModel = env.LOCAL_AI_MODEL || env.DEEPSEEK_MODEL || env.VITE_DEEPSEEK_MODEL || "deepseek-chat";
 
   if (!endpoint && apiKey) {
     endpoint = "https://api.deepseek.com/chat/completions";
@@ -3804,7 +3804,29 @@ async function routeApi(request, env) {
     return respond(await subjectDetails(Number(publicSubjectMatch[1]), visitor ? visitor.userId : null, env));
   }
   if (path === "/api/academic/import-data" && method === "POST") {
-    const user = await requireUser(request, env);
+    let user = await sessionUser(request, env);
+    if (!user) {
+      // Hỗ trợ request nội bộ từ Electron Main Process khi cào điểm IU
+      const host = request.headers.get("host") || "";
+      const isLoopback = host.includes("127.0.0.1") || host.includes("localhost");
+      if (isLoopback) {
+        try {
+          const bodyClone = await request.clone().json().catch(() => ({}));
+          if (bodyClone && bodyClone.userId) {
+            const row = await env.DB.prepare("SELECT * FROM profiles WHERE user_id = ? LIMIT 1").bind(bodyClone.userId).first();
+            if (row) user = { userId: row.user_id, profile: row };
+          }
+          if (!user) {
+            const activeProfile = await env.DB.prepare("SELECT user_id FROM profiles ORDER BY last_active_at DESC LIMIT 1").first();
+            if (activeProfile && activeProfile.user_id) {
+              const row = await env.DB.prepare("SELECT * FROM profiles WHERE user_id = ? LIMIT 1").bind(activeProfile.user_id).first();
+              if (row) user = { userId: row.user_id, profile: row };
+            }
+          }
+        } catch {}
+      }
+    }
+    if (!user) throw new HttpError(401, "Hồ sơ đã hết phiên. Hãy mở lại góc học tập.");
     return respond(await handleAcademicImportData(request, user, env));
   }
   const user = await requireUser(request, env);

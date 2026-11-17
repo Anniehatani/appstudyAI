@@ -524,11 +524,25 @@ ipcMain.handle("academic:open-iu-login", async () => {
 
     const payloadToImport = (academicData && academicData.data) ? academicData.data : academicData;
 
+    // Lấy cookie phiên đăng nhập từ mainWindow để fetch nội bộ không bị 401
+    let cookieHeader = "";
+    try {
+      if (mainWindow && mainWindow.webContents && mainWindow.webContents.session) {
+        const cookies = await mainWindow.webContents.session.cookies.get({ url: currentAppUrl || "http://127.0.0.1:8787" });
+        if (cookies && cookies.length > 0) {
+          cookieHeader = cookies.map(c => `${c.name}=${c.value}`).join("; ");
+        }
+      }
+    } catch {}
+
     // Gửi sang backend /api/academic/import-data để tính GPA, chuẩn hoá môn và lưu vào DB
     const postUrl = `${currentAppUrl || "http://127.0.0.1:8787"}/api/academic/import-data`;
+    const postHeaders = { "Content-Type": "application/json" };
+    if (cookieHeader) postHeaders["Cookie"] = cookieHeader;
+
     const postRes = await fetch(postUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: postHeaders,
       body: JSON.stringify({
         rawData: payloadToImport,
         cookie: jar.cookie,
