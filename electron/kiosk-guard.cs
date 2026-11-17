@@ -15,6 +15,8 @@ public class KioskGuard {
     private const int SW_SHOW = 5;
     private const int SW_RESTORE = 9;
 
+    private static volatile bool _stopping = false;
+
     [StructLayout(LayoutKind.Sequential)]
     private struct KBDLLHOOKSTRUCT {
         public uint vkCode;
@@ -99,15 +101,34 @@ public class KioskGuard {
         HideTaskbar();
 
         AppDomain.CurrentDomain.ProcessExit += (s, e) => {
+            _stopping = true;
             ShowTaskbar();
             if (_hookID != IntPtr.Zero) UnhookWindowsHookEx(_hookID);
         };
+
+        // Watchdog thread: liên tục khóa thanh taskbar và dập tắt Task View (3 ngón vuốt trackpad)
+        System.Threading.Thread watchdogThread = new System.Threading.Thread(() => {
+            while (!_stopping) {
+                try {
+                    HideTaskbar();
+
+                    IntPtr taskView = FindWindow("MultitaskingViewFrame", null);
+                    if (taskView != IntPtr.Zero) {
+                        ShowWindow(taskView, SW_HIDE);
+                    }
+                } catch {}
+                System.Threading.Thread.Sleep(80);
+            }
+        });
+        watchdogThread.IsBackground = true;
+        watchdogThread.Start();
 
         // Background thread to listen for parent exit or STOP on stdin
         System.Threading.Thread stdinThread = new System.Threading.Thread(() => {
             try {
                 Console.ReadLine();
             } catch {}
+            _stopping = true;
             ShowTaskbar();
             if (_hookID != IntPtr.Zero) UnhookWindowsHookEx(_hookID);
             Application.Exit();
@@ -118,6 +139,7 @@ public class KioskGuard {
 
         Application.Run();
 
+        _stopping = true;
         ShowTaskbar();
         if (_hookID != IntPtr.Zero) UnhookWindowsHookEx(_hookID);
     }
@@ -141,6 +163,7 @@ public class KioskGuard {
             }
 
             // 1. Chặn phím Windows (LWIN, RWIN) & Context Menu (APPS) tuyệt đối
+            // Ngăn chặn Start Menu, Cortana, Windows Search, Task View (Win+Tab), Win+D (vuốt trackpad)
             if (vk == VK_LWIN || vk == VK_RWIN || vk == VK_APPS) {
                 return (IntPtr)1;
             }

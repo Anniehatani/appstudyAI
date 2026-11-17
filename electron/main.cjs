@@ -11,8 +11,12 @@ let kioskGuardProc = null;
 function restoreWindowsTaskbar() {
   if (process.platform !== "win32") return;
   const candidates = [
+    path.join(__dirname, "pomo_guard.exe"),
+    path.join(__dirname, "../build/pomo_guard.exe"),
     path.join(__dirname, "kiosk_guard.exe"),
     path.join(__dirname, "../build/study_kiosk.exe"),
+    path.join(process.resourcesPath || "", "app.asar.unpacked/build/pomo_guard.exe"),
+    path.join(process.resourcesPath || "", "build/pomo_guard.exe"),
     path.join(process.resourcesPath || "", "app.asar.unpacked/build/study_kiosk.exe"),
     path.join(process.resourcesPath || "", "build/study_kiosk.exe")
   ];
@@ -33,8 +37,12 @@ function startKioskGuard() {
   if (kioskGuardProc && !kioskGuardProc.killed) return;
 
   const candidates = [
+    path.join(__dirname, "pomo_guard.exe"),
+    path.join(__dirname, "../build/pomo_guard.exe"),
     path.join(__dirname, "kiosk_guard.exe"),
     path.join(__dirname, "../build/study_kiosk.exe"),
+    path.join(process.resourcesPath || "", "app.asar.unpacked/build/pomo_guard.exe"),
+    path.join(process.resourcesPath || "", "build/pomo_guard.exe"),
     path.join(process.resourcesPath || "", "app.asar.unpacked/build/study_kiosk.exe"),
     path.join(process.resourcesPath || "", "build/study_kiosk.exe")
   ];
@@ -42,15 +50,21 @@ function startKioskGuard() {
   let guardPath = candidates.find(p => fs.existsSync(p));
   if (!guardPath) {
     const csFile = path.join(__dirname, "kiosk-guard.cs");
-    const targetExe = path.join(__dirname, "kiosk_guard.exe");
-    const cscPath = "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe";
-    if (fs.existsSync(csFile) && fs.existsSync(cscPath)) {
+    const targetExe = path.join(__dirname, "pomo_guard.exe");
+    const cscCandidates = [
+      "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
+      "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe"
+    ];
+    const cscPath = cscCandidates.find(p => fs.existsSync(p));
+    if (fs.existsSync(csFile) && cscPath) {
       try {
         const { spawnSync } = require("child_process");
-        const res = spawnSync(cscPath, ["/target:winexe", `/out:${targetExe}`, csFile]);
+        const res = spawnSync(cscPath, ["/target:winexe", `/out:${targetExe}`, csFile], { windowsHide: true });
         if (res.status === 0 && fs.existsSync(targetExe)) {
           guardPath = targetExe;
-          console.log("[KioskGuard] Tự động biên dịch kiosk_guard.exe thành công!");
+          console.log("[KioskGuard] Tự động biên dịch pomo_guard.exe thành công!");
+        } else {
+          console.warn("[KioskGuard Compile Failed]", res.stderr ? res.stderr.toString() : res.status);
         }
       } catch (err) {
         console.warn("[KioskGuard Compile Error]", err.message);
@@ -59,7 +73,7 @@ function startKioskGuard() {
   }
 
   if (!guardPath) {
-    console.warn("[KioskGuard] Không tìm thấy tệp kiosk_guard.exe tại các vị trí:", candidates);
+    console.warn("[KioskGuard] Không tìm thấy tệp bảo vệ tại các vị trí:", candidates);
     return;
   }
 
@@ -69,7 +83,7 @@ function startKioskGuard() {
       windowsHide: true
     });
     kioskGuardProc.on("error", (e) => console.warn("[KioskGuard Error]", e.message));
-    console.log("[KioskGuard] Đã kích hoạt Hook bàn phím khóa cứng phím Windows & Alt+Tab (PID:", kioskGuardProc.pid, ")");
+    console.log("[KioskGuard] Đã kích hoạt Hook bàn phím & Watchdog khóa cứng Windows (PID:", kioskGuardProc.pid, ")");
   } catch (err) {
     console.warn("[KioskGuard Exception]", err.message);
   }
@@ -219,9 +233,33 @@ async function createWindow() {
 
   mainWindow.loadURL(appUrl);
 
-  // Chế độ chụp màn hình PrtSc / Snipping Tool: tạm thời không gửi ESC và không cướp lại focus khi mất focus
+  // Ngăn chặn thoát bằng vuốt trackpad (3 ngón vuốt Task View, Show Desktop) hoặc click ra ngoài khi đang Pomodoro Kiosk
   mainWindow.on("blur", () => {
-    // Tạm thời vô hiệu hóa auto-refocus để cho phép công cụ chụp ảnh màn hình (PrtSc, Snipping Tool, Lightshot...) hiển thị
+    if (isKioskActive && mainWindow && !mainWindow.isDestroyed()) {
+      setTimeout(() => {
+        if (isKioskActive && mainWindow && !mainWindow.isDestroyed()) {
+          try {
+            mainWindow.show();
+            mainWindow.restore();
+            mainWindow.setFullScreen(true);
+            mainWindow.setAlwaysOnTop(true, "screen-saver");
+            mainWindow.focus();
+          } catch {}
+        }
+      }, 50);
+    }
+  });
+
+  mainWindow.on("minimize", (e) => {
+    if (isKioskActive && mainWindow && !mainWindow.isDestroyed()) {
+      e.preventDefault();
+      try {
+        mainWindow.restore();
+        mainWindow.setFullScreen(true);
+        mainWindow.setAlwaysOnTop(true, "screen-saver");
+        mainWindow.focus();
+      } catch {}
+    }
   });
 
   mainWindow.on("closed", () => {
@@ -266,13 +304,22 @@ ipcMain.handle("window:set-kiosk", (event, flag) => {
       mainWindow.autoHideMenuBar = false;
     } catch {}
     startKioskGuard();
-    try { mainWindow.setKiosk(true); } catch {}
+    try {
+      mainWindow.setAlwaysOnTop(true, "screen-saver");
+      mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+      mainWindow.setKiosk(true);
+    } catch {}
     mainWindow.setFullScreen(true);
     mainWindow.focus();
   } else {
     stopKioskGuard();
-    try { mainWindow.setKiosk(false); } catch {}
+    try {
+      mainWindow.setAlwaysOnTop(false);
+      mainWindow.setVisibleOnAllWorkspaces(false);
+      mainWindow.setKiosk(false);
+    } catch {}
     mainWindow.setFullScreen(false);
+    restoreWindowsTaskbar();
   }
   return isKioskActive;
 });
