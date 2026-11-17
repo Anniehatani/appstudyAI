@@ -24,8 +24,7 @@ export const BOT_DECORATION = 'deco_pink_cherry';
 function loadMediaJson(filename, fallbackList = []) {
   const possiblePaths = [
     path.resolve(__dirname, 'data/media', filename),
-    path.resolve(__dirname, '../botdiscord-main/botdiscord-main/data/media', filename),
-    path.resolve(__dirname, '../../botdiscord-main/botdiscord-main/data/media', filename)
+    path.resolve(__dirname, '../src/data/media', filename)
   ];
   for (const p of possiblePaths) {
     try {
