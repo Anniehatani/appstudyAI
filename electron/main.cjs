@@ -27,10 +27,14 @@ let kioskGuardProc = null;
 function restoreWindowsTaskbar() {
   if (process.platform !== "win32") return;
   const candidates = [
+    path.join(__dirname, "../build/focus_guard.exe"),
+    path.join(__dirname, "focus_guard.exe"),
     path.join(__dirname, "../build/pomo_guard.exe"),
     path.join(__dirname, "pomo_guard.exe"),
     path.join(__dirname, "kiosk_guard.exe"),
     path.join(__dirname, "../build/study_kiosk.exe"),
+    path.join(process.resourcesPath || "", "app.asar.unpacked/build/focus_guard.exe"),
+    path.join(process.resourcesPath || "", "build/focus_guard.exe"),
     path.join(process.resourcesPath || "", "app.asar.unpacked/build/pomo_guard.exe"),
     path.join(process.resourcesPath || "", "build/pomo_guard.exe"),
     path.join(process.resourcesPath || "", "app.asar.unpacked/build/study_kiosk.exe"),
@@ -53,10 +57,14 @@ function startKioskGuard() {
   if (kioskGuardProc && !kioskGuardProc.killed) return;
 
   const candidates = [
+    path.join(__dirname, "../build/focus_guard.exe"),
+    path.join(__dirname, "focus_guard.exe"),
     path.join(__dirname, "../build/pomo_guard.exe"),
     path.join(__dirname, "pomo_guard.exe"),
     path.join(__dirname, "kiosk_guard.exe"),
     path.join(__dirname, "../build/study_kiosk.exe"),
+    path.join(process.resourcesPath || "", "app.asar.unpacked/build/focus_guard.exe"),
+    path.join(process.resourcesPath || "", "build/focus_guard.exe"),
     path.join(process.resourcesPath || "", "app.asar.unpacked/build/pomo_guard.exe"),
     path.join(process.resourcesPath || "", "build/pomo_guard.exe"),
     path.join(process.resourcesPath || "", "app.asar.unpacked/build/study_kiosk.exe"),
@@ -66,7 +74,7 @@ function startKioskGuard() {
   let guardPath = candidates.find(p => fs.existsSync(p));
   if (!guardPath) {
     const csFile = path.join(__dirname, "kiosk-guard.cs");
-    const targetExe = path.join(__dirname, "../build/pomo_guard.exe");
+    const targetExe = path.join(__dirname, "../build/focus_guard.exe");
     const cscCandidates = [
       "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
       "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe"
@@ -78,7 +86,7 @@ function startKioskGuard() {
         const res = spawnSync(cscPath, ["/target:winexe", `/out:${targetExe}`, csFile], { windowsHide: true });
         if (res.status === 0 && fs.existsSync(targetExe)) {
           guardPath = targetExe;
-          console.log("[KioskGuard] Tự động biên dịch pomo_guard.exe thành công!");
+          console.log("[KioskGuard] Tự động biên dịch focus_guard.exe thành công!");
         } else {
           console.warn("[KioskGuard Compile Failed]", res.stderr ? res.stderr.toString() : res.status);
         }
