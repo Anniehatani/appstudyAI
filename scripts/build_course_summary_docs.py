@@ -1,34 +1,53 @@
 # -*- coding: utf-8 -*-
 """
-Script tạo Báo cáo Word (DOCX) và Slide Thuyết trình (PPTX) Tổng kết Môn học Công nghệ phần mềm
-Đề tài: Ứng dụng Học Tập Thông Minh 3TG Study (3TG Study AI)
+Script tái tạo Slide PPTX và Báo cáo DOCX Tổng kết Môn học Công nghệ phần mềm
+Đổi mới 100% cấu trúc slide: Mỗi slide là một layout kiến trúc riêng biệt,
+loại bỏ hoàn toàn sự trùng lặp 2x2 grid, nâng cấp thẩm mỹ TONE PINK cao cấp.
 Nhóm thực hiện: TONE PINK (Lê Văn An - Lead, Nguyễn Như Quỳnh, Nguyễn Tú)
 Giảng viên hướng dẫn: ThS. Vân Anh
 """
 import os
-import datetime
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.shapes import MSO_SHAPE
+
+OUTPUT_DIR = r"c:\Users\LeVanAn\Documents\ChatGPT\app study 2\tổng kết dự án"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+PPTX_PATH = os.path.join(OUTPUT_DIR, "Slide_Thuyet_Trinh_Tong_Ket_Mon_Hoc_TONE_PINK.pptx")
+
+# ==========================================
+# COLOR PALETTE (TONE PINK DESIGN SYSTEM)
+# ==========================================
+DARK_BG      = RGBColor(15, 23, 42)      # #0F172A Deep Navy
+DARKER_BG    = RGBColor(11, 15, 25)      # #0B0F19 Near Black
+CARD_DARK    = RGBColor(30, 41, 59)      # #1E293B Slate Navy
+WHITE        = RGBColor(255, 255, 255)  # #FFFFFF Pure White
+PINK_PRIMARY = RGBColor(232, 62, 140)    # #E83E8C Vibrant Pink
+PINK_NEON    = RGBColor(255, 46, 147)    # #FF2E93 Neon Pink
+PINK_SOFT    = RGBColor(255, 240, 245)   # #FFF0F5 Light Pink
+PINK_MUTED   = RGBColor(255, 228, 238)   # #FFE4EE
+SLATE_50     = RGBColor(248, 250, 252)   # #F8FAFC
+SLATE_100    = RGBColor(241, 245, 249)   # #F1F5F9
+SLATE_200    = RGBColor(226, 232, 240)   # #E2E8F0 Border
+SLATE_600    = RGBColor(71, 85, 105)     # #475569
+SLATE_700    = RGBColor(51, 65, 85)      # #334155
+SLATE_900    = RGBColor(15, 23, 42)      # #0F172A Dark Text
+EMERALD      = RGBColor(16, 185, 129)    # #10B981 Green
+AMBER        = RGBColor(245, 158, 11)    # #F59E0B Gold
+INDIGO       = RGBColor(99, 102, 241)    # #6366F1 Purple-Indigo
+
+
 from docx import Document
-from docx.shared import Inches, Pt, RGBColor
+from docx.shared import Inches as DocxInches, Pt as DocxPt, RGBColor as DocxRGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 
-from pptx import Presentation
-from pptx.util import Inches as PptxInches, Pt as PptxPt
-from pptx.dml.color import RGBColor as PptxRGBColor
-from pptx.enum.text import PP_ALIGN
-from pptx.enum.shapes import MSO_SHAPE
-
-OUTPUT_DIR = r"c:\Users\LeVanAn\Documents\ChatGPT\app study 2\tổng kết dự án"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
 DOCX_PATH = os.path.join(OUTPUT_DIR, "Bao_Cao_Tong_Ket_Mon_Hoc_TONE_PINK.docx")
-PPTX_PATH = os.path.join(OUTPUT_DIR, "Slide_Thuyet_Trinh_Tong_Ket_Mon_Hoc_TONE_PINK.pptx")
 
-# ==========================================
-# HELPER FUNCTIONS FOR DOCX
-# ==========================================
 def set_cell_background(cell, fill_hex):
     tcPr = cell._element.get_or_add_tcPr()
     shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
@@ -48,51 +67,51 @@ def add_header_styled(doc, text, level=1):
     h = doc.add_paragraph()
     h.paragraph_format.keep_with_next = True
     if level == 1:
-        h.paragraph_format.space_before = Pt(16)
-        h.paragraph_format.space_after = Pt(6)
+        h.paragraph_format.space_before = DocxPt(16)
+        h.paragraph_format.space_after = DocxPt(6)
         r = h.add_run(text)
         r.font.name = "Arial"
-        r.font.size = Pt(14)
+        r.font.size = DocxPt(14)
         r.font.bold = True
-        r.font.color.rgb = RGBColor(232, 62, 140) # Pink
+        r.font.color.rgb = DocxRGBColor(232, 62, 140) # Pink
     elif level == 2:
-        h.paragraph_format.space_before = Pt(12)
-        h.paragraph_format.space_after = Pt(4)
+        h.paragraph_format.space_before = DocxPt(12)
+        h.paragraph_format.space_after = DocxPt(4)
         r = h.add_run(text)
         r.font.name = "Arial"
-        r.font.size = Pt(12)
+        r.font.size = DocxPt(12)
         r.font.bold = True
-        r.font.color.rgb = RGBColor(26, 31, 44) # Dark
+        r.font.color.rgb = DocxRGBColor(26, 31, 44) # Dark
     elif level == 3:
-        h.paragraph_format.space_before = Pt(8)
-        h.paragraph_format.space_after = Pt(3)
+        h.paragraph_format.space_before = DocxPt(8)
+        h.paragraph_format.space_after = DocxPt(3)
         r = h.add_run(text)
         r.font.name = "Arial"
-        r.font.size = Pt(11)
+        r.font.size = DocxPt(11)
         r.font.bold = True
         r.font.italic = True
-        r.font.color.rgb = RGBColor(100, 116, 139) # Gray
+        r.font.color.rgb = DocxRGBColor(100, 116, 139) # Gray
     return h
 
 def add_callout(doc, title, text, bg_hex="FFF0F5", border_hex="E83E8C"):
     tbl = doc.add_table(rows=1, cols=1)
     tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
     cell = tbl.cell(0, 0)
-    cell.width = Inches(6.8)
+    cell.width = DocxInches(6.8)
     set_cell_background(cell, bg_hex)
     set_cell_margins(cell, top=140, bottom=140, left=180, right=180)
     p = cell.paragraphs[0]
-    p.paragraph_format.space_after = Pt(0)
+    p.paragraph_format.space_after = DocxPt(0)
     r_t = p.add_run(title + "\n")
     r_t.font.name = "Arial"
     r_t.font.bold = True
-    r_t.font.size = Pt(10.5)
-    r_t.font.color.rgb = RGBColor(232, 62, 140) if border_hex == "E83E8C" else RGBColor(26, 31, 44)
+    r_t.font.size = DocxPt(10.5)
+    r_t.font.color.rgb = DocxRGBColor(232, 62, 140) if border_hex == "E83E8C" else DocxRGBColor(26, 31, 44)
     r_c = p.add_run(text)
     r_c.font.name = "Arial"
-    r_c.font.size = Pt(10)
-    r_c.font.color.rgb = RGBColor(26, 31, 44)
-    doc.add_paragraph().paragraph_format.space_after = Pt(6)
+    r_c.font.size = DocxPt(10)
+    r_c.font.color.rgb = DocxRGBColor(26, 31, 44)
+    doc.add_paragraph().paragraph_format.space_after = DocxPt(6)
 
 def add_styled_table(doc, headers, data, col_widths=None):
     tbl = doc.add_table(rows=len(data) + 1, cols=len(headers))
@@ -109,8 +128,8 @@ def add_styled_table(doc, headers, data, col_widths=None):
         for run in p.runs:
             run.font.name = "Arial"
             run.font.bold = True
-            run.font.size = Pt(9.5)
-            run.font.color.rgb = RGBColor(255, 255, 255)
+            run.font.size = DocxPt(9.5)
+            run.font.color.rgb = DocxRGBColor(255, 255, 255)
             
     # Data rows
     for r_idx, row_data in enumerate(data):
@@ -127,15 +146,15 @@ def add_styled_table(doc, headers, data, col_widths=None):
                 p.alignment = WD_ALIGN_PARAGRAPH.LEFT
             for run in p.runs:
                 run.font.name = "Arial"
-                run.font.size = Pt(9)
-                run.font.color.rgb = RGBColor(26, 31, 44)
+                run.font.size = DocxPt(9)
+                run.font.color.rgb = DocxRGBColor(26, 31, 44)
                 
     if col_widths:
         for row in tbl.rows:
             for idx, width in enumerate(col_widths):
-                row.cells[idx].width = Inches(width)
+                row.cells[idx].width = DocxInches(width)
                 
-    doc.add_paragraph().paragraph_format.space_after = Pt(8)
+    doc.add_paragraph().paragraph_format.space_after = DocxPt(8)
 
 # ==========================================
 # 1. BUILD COMPREHENSIVE DOCX
@@ -144,42 +163,42 @@ def build_docx_report():
     print("-> Bắt đầu tạo Báo cáo Word Tổng kết Môn học...")
     doc = Document()
     for s in doc.sections:
-        s.top_margin = Inches(0.8)
-        s.bottom_margin = Inches(0.8)
-        s.left_margin = Inches(0.8)
-        s.right_margin = Inches(0.8)
+        s.top_margin = DocxInches(0.8)
+        s.bottom_margin = DocxInches(0.8)
+        s.left_margin = DocxInches(0.8)
+        s.right_margin = DocxInches(0.8)
         
-    COLOR_PINK = RGBColor(232, 62, 140)
-    COLOR_DARK = RGBColor(26, 31, 44)
-    COLOR_GRAY = RGBColor(100, 116, 139)
+    COLOR_PINK = DocxRGBColor(232, 62, 140)
+    COLOR_DARK = DocxRGBColor(26, 31, 44)
+    COLOR_GRAY = DocxRGBColor(100, 116, 139)
     
     # Title & Metadata
     p_title = doc.add_paragraph()
     p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_title.paragraph_format.space_before = Pt(16)
-    p_title.paragraph_format.space_after = Pt(4)
+    p_title.paragraph_format.space_before = DocxPt(16)
+    p_title.paragraph_format.space_after = DocxPt(4)
     r_sub = p_title.add_run("BÁO CÁO TỔNG KẾT MÔN HỌC CÔNG NGHỆ PHẦN MỀM\n")
     r_sub.font.name = "Arial"
-    r_sub.font.size = Pt(13)
+    r_sub.font.size = DocxPt(13)
     r_sub.font.bold = True
     r_sub.font.color.rgb = COLOR_GRAY
     
     r_main = p_title.add_run("TỔNG HỢP KIẾN THỨC MÔN HỌC, ĐỐI CHIẾU THỰC TIỄN ÁP DỤNG\nTRONG ĐỒ ÁN 3TG STUDY & BẢN TỰ ĐÁNH GIÁ KẾT QUẢ")
     r_main.font.name = "Arial"
-    r_main.font.size = Pt(17)
+    r_main.font.size = DocxPt(17)
     r_main.font.bold = True
     r_main.font.color.rgb = COLOR_PINK
     
     p_meta = doc.add_paragraph()
     p_meta.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_meta.paragraph_format.space_after = Pt(14)
+    p_meta.paragraph_format.space_after = DocxPt(14)
     r_meta = p_meta.add_run(
         "Giảng viên hướng dẫn: ThS. Vân Anh\n"
         "Nhóm thực hiện: TONE PINK (Lê Văn An - Lead, Nguyễn Như Quỳnh, Nguyễn Tú)\n"
         "Đề tài cuối kỳ: Hệ sinh thái học tập thông minh 3TG Study (3TG Study AI) | Phiên bản hoàn thiện: v9.9.9"
     )
     r_meta.font.name = "Arial"
-    r_meta.font.size = Pt(10.5)
+    r_meta.font.size = DocxPt(10.5)
     r_meta.font.italic = True
     r_meta.font.color.rgb = COLOR_DARK
     
@@ -415,360 +434,1012 @@ def build_docx_report():
 # ==========================================
 # 2. BUILD COMPREHENSIVE PPTX (EXACTLY 11 SLIDES)
 # ==========================================
-def build_pptx_slides():
-    print("-> Bắt đầu tạo Slide Thuyết trình PowerPoint (11 Slides)...")
+def add_header(slide, tag_text, title_text, dark_mode=False):
+    """Tạo Header đồng bộ nhưng cực kỳ tinh tế với Badge tag & Tiêu đề chính"""
+    # Tag Badge
+    badge = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(0.4), Inches(3.2), Inches(0.36))
+    badge.fill.solid()
+    badge.fill.fore_color.rgb = PINK_PRIMARY if dark_mode else PINK_SOFT
+    badge.line.fill.background()
+    p_b = badge.text_frame.paragraphs[0]
+    p_b.alignment = PP_ALIGN.CENTER
+    r_b = p_b.add_run()
+    r_b.text = tag_text
+    r_b.font.bold = True
+    r_b.font.size = Pt(10.5)
+    r_b.font.color.rgb = WHITE if dark_mode else PINK_PRIMARY
+
+    # Main Title
+    tx = slide.shapes.add_textbox(Inches(0.8), Inches(0.78), Inches(11.7), Inches(0.65))
+    tf = tx.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    r = p.add_run()
+    r.text = title_text
+    r.font.bold = True
+    r.font.size = Pt(22)
+    r.font.color.rgb = WHITE if dark_mode else SLATE_900
+
+    # Thin Pink Accent Line
+    line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(1.42), Inches(11.733), Inches(0.03))
+    line.fill.solid()
+    line.fill.fore_color.rgb = PINK_PRIMARY
+    line.line.fill.background()
+
+def build_presentation():
     prs = Presentation()
-    prs.slide_width = PptxInches(13.333)
-    prs.slide_height = PptxInches(7.5)
+    prs.slide_width = Inches(13.333)
+    prs.slide_height = Inches(7.5)
     blank_layout = prs.slide_layouts[6]
+
+    # ==========================================
+    # SLIDE 1: HERO COVER (Sleek Dark Cyber & Tone Pink)
+    # ==========================================
+    s1 = prs.slides.add_slide(blank_layout)
+    bg1 = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
+    bg1.fill.solid()
+    bg1.fill.fore_color.rgb = DARKER_BG
+    bg1.line.fill.background()
+
+    # Top Pink Glow Bar
+    glow = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(0.2))
+    glow.fill.solid()
+    glow.fill.fore_color.rgb = PINK_NEON
+    glow.line.fill.background()
+
+    # University & Department Tag
+    uni_pill = s1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.2), Inches(0.9), Inches(4.5), Inches(0.42))
+    uni_pill.fill.solid()
+    uni_pill.fill.fore_color.rgb = CARD_DARK
+    uni_pill.line.color.rgb = PINK_PRIMARY
+    uni_pill.line.width = Pt(1.5)
+    p_uni = uni_pill.text_frame.paragraphs[0]
+    p_uni.alignment = PP_ALIGN.CENTER
+    r_uni = p_uni.add_run()
+    r_uni.text = "🌸 KHOA CÔNG NGHỆ THÔNG TIN • ĐỒ ÁN MÔN HỌC"
+    r_uni.font.bold = True
+    r_uni.font.size = Pt(11)
+    r_uni.font.color.rgb = PINK_NEON
+
+    # Big Title Box
+    tx1 = s1.shapes.add_textbox(Inches(1.2), Inches(1.45), Inches(10.9), Inches(2.2))
+    tf1 = tx1.text_frame
+    tf1.word_wrap = True
     
-    PINK_COLOR = PptxRGBColor(232, 62, 140)
-    DARK_COLOR = PptxRGBColor(26, 31, 44)
-    LIGHT_PINK = PptxRGBColor(255, 240, 245)
-    WHITE_COLOR = PptxRGBColor(255, 255, 255)
-    GRAY_COLOR = PptxRGBColor(100, 116, 139)
-    CARD_BG = PptxRGBColor(250, 250, 252)
-    BORDER_COLOR = PptxRGBColor(226, 232, 240)
-    
-    # Content of EXACTLY 11 SLIDES
-    slides_content = [
-        # SLIDE 1: Cover
-        {
-            "type": "cover",
-            "title": "BÁO CÁO TỔNG KẾT MÔN HỌC CÔNG NGHỆ PHẦN MỀM",
-            "subtitle": "HỆ SINH THÁI HỌC TẬP THÔNG MINH 3TG STUDY (3TG STUDY AI)",
-            "meta": "Giảng viên hướng dẫn: ThS. Vân Anh\nNhóm thực hiện: TONE PINK (Lê Văn An - Lead, Nguyễn Như Quỳnh, Nguyễn Tú)"
-        },
-        # SLIDE 2: Executive Summary & Project Intro
-        {
-            "type": "grid_2x2",
-            "title": "TỔNG QUAN ĐỀ TÀI & NỘI DUNG BÁO CÁO TỔNG KẾT",
-            "items": [
-                ("🎯 Mục Tiêu Báo Cáo Môn Học", "Tổng hợp toàn diện kiến thức lý thuyết CNPM đã học; Trình bày các nội dung nhóm đã áp dụng vào đồ án cuối kỳ; Tự đánh giá kết quả đạt được sau môn học."),
-                ("📱 Đề Tài: 3TG Study (3TG Study AI)", "Nền tảng học tập thông minh kết hợp Gamification Duolingo, Trợ lý DeepSeek AI giải bài tập, Mạng xã hội sinh viên và Phòng Pomodoro Zen Kiosk."),
-                ("👥 Nhóm Thực Hiện: TONE PINK", "Lê Văn An (Nhóm trưởng, Kiến trúc, Backend, AI & Bảo mật Lead), Nguyễn Như Quỳnh (Frontend, UI/UX, Themes & Slide Lead), Nguyễn Tú (Database, Gamification & QA Lead)."),
-                ("🚀 Quy Trình Thực Hiện Dự Án", "Áp dụng nghiêm ngặt khung làm việc Agile / Scrum qua 5 Sprint liên tục, kiểm soát mã nguồn 100% bằng Git/GitHub và phát hành bản cài Desktop hoàn chỉnh.")
-            ]
-        },
-        # SLIDE 3: Theory Summary 1 (SDLC & Requirements)
-        {
-            "type": "grid_2x2",
-            "title": "LÝ THUYẾT CNPM (P1): QUY TRÌNH SDLC & KỸ NGHỆ YÊU CẦU",
-            "items": [
-                ("🔄 Vòng Đời Phần Mềm & Mô Hình SDLC", "So sánh Waterfall tuần tự và Agile/Scrum linh hoạt. Khung làm việc Scrum: 3 vai trò (PO, SM, Dev), 4 sự kiện (Planning, Daily, Review, Retro) và 3 tạo tác (Product Backlog, Sprint Backlog, Increment)."),
-                ("📋 Phân Loại Yêu Cầu Phần Mềm", "Yêu cầu chức năng (FR - tính năng, dịch vụ cụ thể) và Yêu cầu phi chức năng (NFR - hiệu năng, độ tin cậy, bảo mật, tính khả dụng)."),
-                ("📝 Kỹ Thuật User Story & INVEST", "Đặc tả theo mẫu chuẩn: 'As a... I want to... So that...'. Đảm bảo tiêu chuẩn INVEST và Tiêu chuẩn nghiệm thu (Acceptance Criteria) với cấu trúc Given-When-Then."),
-                ("📐 Mô Hình Hóa Hệ Thống (UML)", "Biểu đồ Use Case Diagram phân rã chức năng tác nhân, Activity Diagram mô tả quy trình nghiệp vụ và Sequence Diagram mô hình hóa luồng thông điệp tương tác.")
-            ]
-        },
-        # SLIDE 4: Theory Summary 2 (Architecture, Testing & DevOps)
-        {
-            "type": "grid_2x2",
-            "title": "LÝ THUYẾT CNPM (P2): KIẾN TRÚC, KIỂM THỬ & BẢO MẬT",
-            "items": [
-                ("🏗️ Kiến Trúc Hệ Thống & CSDL 3NF", "Kiến trúc phân tầng (Layered 3-Tier), Serverless Edge Computing; Chuẩn hóa CSDL quan hệ 1NF, 2NF, 3NF nhằm loại bỏ dị thường và bảo vệ toàn vẹn dữ liệu."),
-                ("🧪 Kim Tự Tháp Kiểm Thử (Testing)", "Unit Testing kiểm thử logic hàm, Integration Testing kiểm tra giao tiếp giữa các module, và E2E Testing kiểm thử toàn bộ trải nghiệm người dùng thực tế."),
-                ("🛡️ An Toàn Bảo Mật Theo Chuẩn OWASP", "Ngăn chặn SQL Injection bằng Prepared Statements, mã hóa và băm mật khẩu bằng PBKDF2/Argon2 kèm Salt ngẫu nhiên, Rate Limiting chống Brute-force."),
-                ("⚡ Đóng Gói Desktop & Quản Trị Git", "Đóng gói Desktop đa nền tảng bằng Electron ASAR; Quản lý mã nguồn phân tán Git Feature Branching, Conventional Commits và quy trình CI/CD tích hợp.")
-            ]
-        },
-        # SLIDE 5: Practice Sprint 1 & 2
-        {
-            "type": "grid_2x2",
-            "title": "ÁP DỤNG THỰC TẾ: SPRINT 1 & 2 (NỀN TẢNG & GAMIFICATION)",
-            "items": [
-                ("🌐 Sprint 1: Hạ Tầng Serverless Cloudflare", "Triển khai Worker + D1 Database + R2 Object Storage. Chuẩn hóa CSDL 3NF với 10 môn học, 106 chương, 4.000 bài học và 29.000 câu hỏi trắc nghiệm."),
-                ("🎮 Sprint 1: Vòng Lặp Gamification Duolingo", "Lộ trình học uốn lượn, hệ thống Trái tim năng lượng, Kim cương thưởng, Chuỗi ngày Streak, Đóng băng Streak và Mascot Thỏ Bảy Màu động viên học tập."),
-                ("🎓 Sprint 2: Tích Hợp Cổng Trường IU CMCU", "Cơ chế đăng nhập 1-Click cổng trường qua Microsoft 365, bóc tách tự động bảng điểm toà khoá và lịch học 6 tuần; Thuật toán tính GPA chuẩn thang 10 & 4."),
-                ("💎 Sprint 2: Trợ Lý AI & Cửa Hàng Shop VIP", "Trợ lý 3TG AI phân tích học bạ đề xuất Target GPA; Shop vật phẩm phong cách Nitro với Mascot, Khung Avatar động, Ảnh nền R2 và Dark Mode.")
-            ]
-        },
-        # SLIDE 6: Practice Sprint 3 & 4
-        {
-            "type": "grid_2x2",
-            "title": "ÁP DỤNG THỰC TẾ: SPRINT 3 & 4 (TRÍ TUỆ NHÂN TẠO & MẠNG XÃ HỘI)",
-            "items": [
-                ("🤖 Sprint 3: DeepSeek AI Vision RAG", "Tích hợp mô hình AI giải đáp thắc mắc chuyên sâu, nhận diện và phân tích đề bài trực tiếp qua ảnh chụp bài tập; Sổ tay ghi chú thông minh Smart Notes Markdown."),
-                ("💻 Sprint 3: Đóng Gói Desktop Electron v9.9.9", "Xuất bản bộ cài đặt Windows Setup 9.9.9.exe và Portable. Tối ưu ASAR và Single Instance Lock, rút ngắn thời gian khởi động app từ 15s xuống 1 - 2s."),
-                ("💬 Sprint 4: Mạng Xã Hội 3TG Messenger", "Giao diện chat toàn màn hình, hỗ trợ nhắn tin 1-1 và tạo nhóm học tập phân quyền Admin/Member; Đồng bộ thời gian thực mượt mà."),
-                ("⚡ Sprint 4: Optimistic UI & Bot 3TG Native", "Áp dụng cơ chế Optimistic UI phản hồi tin nhắn tức thì 0ms; Chuyển đổi Trợ lý Bot 3TG thành module Native siêu nhẹ chạy trực tiếp trong Node runtime.")
-            ]
-        },
-        # SLIDE 7: Practice Sprint 5
-        {
-            "type": "grid_2x2",
-            "title": "ÁP DỤNG THỰC TẾ: SPRINT 5 (BẢO MẬT OWASP, THEMES & POMODORO)",
-            "items": [
-                ("🔒 Nâng Cấp Bảo Mật Chuẩn OWASP", "Cách ly tuyệt đối .dev.vars khỏi file cài đặt; Mã hóa PBKDF2-HMAC-SHA256 với Salt 16B và 100k vòng; Rate Limiting 5 lần/15ph chống dò mật khẩu."),
-                ("🛡️ 6 Lớp AI Anti-Abuse Shield", "HMAC Client Signature Token, Bộ đếm ngược Cooldown 3s, Quota giới hạn 60 câu/ngày, bảo vệ API AI không bị khai thác làm dịch vụ free trái phép."),
-                ("📦 Transactional Outbox Replay Queue", "Hàng đợi sync_outbox lưu trữ thao tác khi mất mạng hoặc nghẽn quota D1, tự động đối soát và phát lại theo thứ tự FIFO khi trực tuyến."),
-                ("⏱️ Phòng Pomodoro Zen Kiosk & 6 Theme", "Focus Kiosk Mode khóa màn hình và phím xao nhãng; Server xác thực giờ học thực tế chống gian lận (+50 XP, 30 Gems); Hệ thống 6 Theme Duolingo phủ sóng 100%.")
-            ]
-        },
-        # SLIDE 8: Matrix Table
-        {
-            "type": "matrix",
-            "title": "ĐỐI CHIẾU LÝ THUYẾT CNPM VÀ THỰC TIỄN ÁP DỤNG TRONG 3TG",
-            "rows": [
-                ("Quy trình SDLC", "Agile / Scrum, 5 Sprints liên tục", "Hoàn thành 100% mục tiêu, báo cáo từng Sprint, GitHub tracking"),
-                ("Kỹ nghệ yêu cầu", "User Stories INVEST, Acceptance Criteria", "Đặc tả chi tiết luồng học, cào điểm, chat AI, pomodoro kiosk"),
-                ("Kiến trúc & CSDL", "Serverless Edge, 3NF, Outbox Pattern", "Cloudflare Worker + D1 + R2; sync_outbox; CSDL 29.000 câu trắc nghiệm"),
-                ("UI/UX & HCI", "10 Heuristics Nielsen, Gamification", "Cây học tập Duolingo, Mascot Thỏ Bảy Màu, 6 Theme rực rỡ, 0ms chat"),
-                ("Kiểm thử & QA", "Test Pyramid, Black-box & White-box", "Xây dựng 85+ ca kiểm thử chi tiết, nghiệm thu E2E toàn diện"),
-                ("Bảo mật & DevOps", "OWASP, PBKDF2, AI Shield, Electron", "PBKDF2 100k vòng, HMAC Token, Kiosk Mode, Setup 9.9.9.exe 1s")
-            ]
-        },
-        # SLIDE 9: Git Commits Evidence
-        {
-            "type": "grid_2x2",
-            "title": "MINH CHỨNG QUY TRÌNH PHẦN MỀM: GIT COMMITS & PHÁT HÀNH",
-            "items": [
-                ("🌿 Quy Chuẩn Git Workflow", "Phân nhánh làm việc Feature Branching, kiểm soát xung đột mã nguồn chặt chẽ và tuân thủ định dạng Conventional Commits (feat, fix, perf, docs, chore)."),
-                ("📜 Lịch Sử Commit Tiêu Biểu", "Commit 5ede215 (Bảo vệ API D1/DeepSeek); Commit 4bf8ddc (AI Anti-Abuse Shield & Mandatory Auth); Commit 3126c36 (Bảo mật PBKDF2 & Outbox Replay)."),
-                ("📊 Quản Lý Đầu Việc GitHub Issues", "Hơn 30+ GitHub Issues được khởi tạo và đóng hoàn thiện xuyên suốt các Sprint (#SP1-01 -> #SP1-05, #SP4-01 -> #SP4-06, Sprint 5 Issues)."),
-                ("📦 Xuất Bản Sản Phẩm Hoàn Chỉnh", "Bộ cài đặt Desktop Windows chính thức '3TG Học Vui Mỗi Ngày Setup 9.9.9.exe' và bản Portable mở tức thì trong 1 giây nhờ tối ưu hóa Cold-start song song.")
-            ]
-        },
-        # SLIDE 10: Self Evaluation & Challenges
-        {
-            "type": "grid_2x2",
-            "title": "TỰ ĐÁNH GIÁ KẾT QUẢ ĐẠT ĐƯỢC & THÁCH THỨC VƯỢT QUA",
-            "items": [
-                ("🌟 Kết Quả Sản Phẩm & Năng Lực Nhóm", "Sản phẩm đạt độ hoàn thiện cao, dữ liệu thật 29.000 câu hỏi, hiệu năng 60 FPS mượt mà. Cả 3 thành viên trưởng thành vượt bậc về tư duy kỹ thuật và làm việc nhóm."),
-                ("🛡️ Vượt Qua Thử Thách Bảo Mật Khắc Nghiệt", "Giải quyết rào cản push protection của GitHub, bảo vệ API token, ngăn chặn triệt để nguy cơ trích xuất bí mật từ bản cài Electron."),
-                ("☁️ Giải Quyết Xung Đột Dữ Liệu Ngoại Tuyến", "Xây dựng thành công cơ chế Transactional Outbox Replay, bảo đảm tính toàn vẹn dữ liệu giữa SQLite Local và Cloudflare D1 khi mất mạng."),
-                ("💡 Bài Học Kinh Nghiệm Quý Báu", "Quy trình Agile/Scrum là kim chỉ nam giúp kiểm soát rủi ro; Tư duy bảo mật ngay từ đầu (Security by Design) giúp tiết kiệm 80% chi phí khắc phục lỗi sau này.")
-            ]
-        },
-        # SLIDE 11: Conclusion & Thanks
-        {
-            "type": "conclusion",
-            "title": "KẾT LUẬN, ĐỊNH HƯỚNG TƯƠNG LAI & LỜI CẢM ƠN",
-            "subtitle": "ĐỒ ÁN 3TG STUDY HOÀN THÀNH XUẤT SẮC 100% MỤC TIÊU MÔN HỌC",
-            "roadmap": "🚀 Định hướng phát triển: Mở rộng phiên bản Mobile đa nền tảng (React Native), xây dựng mô hình AI Gia sư cá nhân hóa (Adaptive AI Tutor) theo tiến độ học bạ.",
-            "meta": "Nhóm TONE PINK xin chân thành cảm ơn sự hướng dẫn tận tình, tâm huyết của Giảng viên ThS. Vân Anh! 🌸✨"
-        }
+    p_t1 = tf1.paragraphs[0]
+    r_t1 = p_t1.add_run()
+    r_t1.text = "CÔNG NGHỆ PHẦN MỀM"
+    r_t1.font.bold = True
+    r_t1.font.size = Pt(36)
+    r_t1.font.color.rgb = WHITE
+
+    p_t2 = tf1.add_paragraph()
+    p_t2.space_before = Pt(8)
+    r_t2 = p_t2.add_run()
+    r_t2.text = "BÁO CÁO TỔNG KẾT & HIỆN THỰC HÓA ĐỒ ÁN CUỐI KỲ"
+    r_t2.font.bold = True
+    r_t2.font.size = Pt(22)
+    r_t2.font.color.rgb = PINK_PRIMARY
+
+    p_t3 = tf1.add_paragraph()
+    p_t3.space_before = Pt(6)
+    r_t3 = p_t3.add_run()
+    r_t3.text = "Hệ sinh thái học tập thông minh 3TG Study — Học Vui Mỗi Ngày (Study With Me & Smart AI)"
+    r_t3.font.size = Pt(14)
+    r_t3.font.color.rgb = SLATE_200
+
+    # 3 Member Profile Cards
+    members = [
+        ("Lê Văn An (Lead)", "Nhóm trưởng • Kiến trúc hệ thống\nBackend, AI Vision & Security Lead", "@Anniehatani"),
+        ("Nguyễn Như Quỳnh", "Frontend Lead • Themes & UI/UX\nMascot Thỏ Bảy Màu & Slide Design", "@nguyennhuuquynhh07-07"),
+        ("Nguyễn Tú", "Database Lead • CSDL chuẩn 3NF\nGamification Logic, Kiosk & QA Lead", "@tus-sud")
     ]
-    
-    for s_idx, s_data in enumerate(slides_content):
-        slide = prs.slides.add_slide(blank_layout)
-        
-        # Base White Background
-        bg_shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, PptxInches(0), PptxInches(0), PptxInches(13.333), PptxInches(7.5))
-        bg_shape.fill.solid()
-        bg_shape.fill.fore_color.rgb = WHITE_COLOR
-        bg_shape.line.fill.background()
-        
-        if s_data["type"] == "cover":
-            # Pink Accent Bar
-            accent = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, PptxInches(0), PptxInches(0), PptxInches(13.333), PptxInches(0.4))
-            accent.fill.solid()
-            accent.fill.fore_color.rgb = PINK_COLOR
-            accent.line.fill.background()
-            
-            # Card Box
-            card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, PptxInches(1.2), PptxInches(1.2), PptxInches(10.933), PptxInches(5.2))
-            card.fill.solid()
-            card.fill.fore_color.rgb = LIGHT_PINK
-            card.line.color.rgb = PINK_COLOR
-            card.line.width = PptxPt(3)
-            
-            tx_box = slide.shapes.add_textbox(PptxInches(1.5), PptxInches(1.6), PptxInches(10.333), PptxInches(4.4))
-            tf = tx_box.text_frame
-            tf.word_wrap = True
-            
-            p1 = tf.paragraphs[0]
-            p1.alignment = PP_ALIGN.CENTER
-            r1 = p1.add_run()
-            r1.text = s_data["title"]
-            r1.font.bold = True
-            r1.font.size = PptxPt(32)
-            r1.font.color.rgb = PINK_COLOR
-            
-            p2 = tf.add_paragraph()
-            p2.alignment = PP_ALIGN.CENTER
-            p2.space_before = PptxPt(16)
-            r2 = p2.add_run()
-            r2.text = s_data["subtitle"]
-            r2.font.bold = True
-            r2.font.size = PptxPt(20)
-            r2.font.color.rgb = DARK_COLOR
-            
-            p3 = tf.add_paragraph()
-            p3.alignment = PP_ALIGN.CENTER
-            p3.space_before = PptxPt(24)
-            r3 = p3.add_run()
-            r3.text = s_data["meta"]
-            r3.font.size = PptxPt(14)
-            r3.font.italic = True
-            r3.font.color.rgb = GRAY_COLOR
-            
-        elif s_data["type"] == "grid_2x2":
-            # Header Pink Banner
-            banner = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, PptxInches(0), PptxInches(0), PptxInches(13.333), PptxInches(1.1))
-            banner.fill.solid()
-            banner.fill.fore_color.rgb = PINK_COLOR
-            banner.line.fill.background()
-            
-            tx_title = slide.shapes.add_textbox(PptxInches(0.8), PptxInches(0.18), PptxInches(11.733), PptxInches(0.75))
-            tf_t = tx_title.text_frame
-            p_t = tf_t.paragraphs[0]
-            r_t = p_t.add_run()
-            r_t.text = f"{s_idx + 1}. {s_data['title']}"
-            r_t.font.bold = True
-            r_t.font.size = PptxPt(23)
-            r_t.font.color.rgb = WHITE_COLOR
-            
-            # 4 Cards Grid (2x2)
-            coords = [
-                (PptxInches(0.8), PptxInches(1.5), PptxInches(5.6), PptxInches(2.6)),
-                (PptxInches(6.8), PptxInches(1.5), PptxInches(5.6), PptxInches(2.6)),
-                (PptxInches(0.8), PptxInches(4.4), PptxInches(5.6), PptxInches(2.6)),
-                (PptxInches(6.8), PptxInches(4.4), PptxInches(5.6), PptxInches(2.6))
-            ]
-            
-            for idx, (item_title, item_desc) in enumerate(s_data["items"]):
-                x, y, w, h = coords[idx]
-                card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h)
-                card.fill.solid()
-                card.fill.fore_color.rgb = CARD_BG
-                card.line.color.rgb = BORDER_COLOR
-                card.line.width = PptxPt(1.5)
-                
-                # Header Accent in Card
-                card_bar = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, PptxInches(0.55))
-                card_bar.fill.solid()
-                card_bar.fill.fore_color.rgb = LIGHT_PINK
-                card_bar.line.fill.background()
-                
-                tx_c = slide.shapes.add_textbox(x + PptxInches(0.2), y + PptxInches(0.08), w - PptxInches(0.4), PptxInches(0.4))
-                tf_c = tx_c.text_frame
-                tf_c.word_wrap = True
-                p_c = tf_c.paragraphs[0]
-                r_ct = p_c.add_run()
-                r_ct.text = item_title
-                r_ct.font.bold = True
-                r_ct.font.size = PptxPt(14)
-                r_ct.font.color.rgb = PINK_COLOR
-                
-                tx_d = slide.shapes.add_textbox(x + PptxInches(0.25), y + PptxInches(0.65), w - PptxInches(0.5), h - PptxInches(0.75))
-                tf_d = tx_d.text_frame
-                tf_d.word_wrap = True
-                p_d = tf_d.paragraphs[0]
-                r_cd = p_d.add_run()
-                r_cd.text = item_desc
-                r_cd.font.size = PptxPt(12)
-                r_cd.font.color.rgb = DARK_COLOR
-                
-        elif s_data["type"] == "matrix":
-            # Header Pink Banner
-            banner = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, PptxInches(0), PptxInches(0), PptxInches(13.333), PptxInches(1.1))
-            banner.fill.solid()
-            banner.fill.fore_color.rgb = PINK_COLOR
-            banner.line.fill.background()
-            
-            tx_title = slide.shapes.add_textbox(PptxInches(0.8), PptxInches(0.18), PptxInches(11.733), PptxInches(0.75))
-            tf_t = tx_title.text_frame
-            p_t = tf_t.paragraphs[0]
-            r_t = p_t.add_run()
-            r_t.text = f"{s_idx + 1}. {s_data['title']}"
-            r_t.font.bold = True
-            r_t.font.size = PptxPt(23)
-            r_t.font.color.rgb = WHITE_COLOR
-            
-            # Table
-            rows_cnt = len(s_data["rows"]) + 1
-            tbl_shape = slide.shapes.add_table(rows_cnt, 3, PptxInches(0.8), PptxInches(1.5), PptxInches(11.733), PptxInches(5.4))
-            tbl = tbl_shape.table
-            tbl.columns[0].width = PptxInches(2.5)
-            tbl.columns[1].width = PptxInches(4.2)
-            tbl.columns[2].width = PptxInches(5.033)
-            
-            headers = ["Lĩnh Vực Lý Thuyết CNPM", "Nguyên Lý Được Giảng Dạy", "Hiện Thực Hoá Thực Tế Trong 3TG Study"]
-            for c_i, h_text in enumerate(headers):
-                cell = tbl.cell(0, c_i)
-                cell.fill.solid()
-                cell.fill.fore_color.rgb = PINK_COLOR
-                p = cell.text_frame.paragraphs[0]
-                p.alignment = PP_ALIGN.CENTER
-                r = p.add_run()
-                r.text = h_text
+    card_w = Inches(3.45)
+    card_h = Inches(1.85)
+    for i, (m_name, m_role, m_git) in enumerate(members):
+        x = Inches(1.2 + i * 3.74)
+        y = Inches(3.9)
+        m_card = s1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, card_w, card_h)
+        m_card.fill.solid()
+        m_card.fill.fore_color.rgb = CARD_DARK
+        m_card.line.color.rgb = PINK_PRIMARY if i == 0 else SLATE_600
+        m_card.line.width = Pt(1.5)
+
+        tx_m = s1.shapes.add_textbox(x + Inches(0.2), y + Inches(0.15), card_w - Inches(0.4), card_h - Inches(0.3))
+        tf_m = tx_m.text_frame
+        tf_m.word_wrap = True
+
+        p1 = tf_m.paragraphs[0]
+        r1 = p1.add_run()
+        r1.text = m_name
+        r1.font.bold = True
+        r1.font.size = Pt(14)
+        r1.font.color.rgb = PINK_NEON if i == 0 else WHITE
+
+        p2 = tf_m.add_paragraph()
+        p2.space_before = Pt(4)
+        r2 = p2.add_run()
+        r2.text = m_role
+        r2.font.size = Pt(10.5)
+        r2.font.color.rgb = SLATE_200
+
+        p3 = tf_m.add_paragraph()
+        p3.space_before = Pt(6)
+        r3 = p3.add_run()
+        r3.text = f"GitHub: {m_git}"
+        r3.font.size = Pt(10)
+        r3.font.bold = True
+        r3.font.color.rgb = EMERALD
+
+    # Footer Metadata Pill
+    foot = s1.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.2), Inches(6.1), Inches(10.933), Inches(0.65))
+    foot.fill.solid()
+    foot.fill.fore_color.rgb = RGBColor(20, 27, 45)
+    foot.line.color.rgb = PINK_PRIMARY
+    foot.line.width = Pt(1)
+    p_f = foot.text_frame.paragraphs[0]
+    p_f.alignment = PP_ALIGN.CENTER
+    r_f = p_f.add_run()
+    r_f.text = "🎓 Giảng viên hướng dẫn: ThS. VÂN ANH  |  Nhóm thực hiện: TONE PINK  |  Phiên bản hoàn thiện: v9.9.9 Final Release"
+    r_f.font.size = Pt(12)
+    r_f.font.bold = True
+    r_f.font.color.rgb = WHITE
+
+    # ==========================================
+    # SLIDE 2: EXECUTIVE SUMMARY & STAT METRICS (Left Metrics Column + Right 3 Ecosystem Cards)
+    # ==========================================
+    s2 = prs.slides.add_slide(blank_layout)
+    add_header(s2, "PHẦN I • TỔNG QUAN", "TỔNG QUAN ĐỀ TÀI & CÁC CHỈ SỐ HOÀN THIỆN ĐỒ ÁN")
+
+    # Left Column: Big Metrics Display Card
+    left_card = s2.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.6), Inches(3.8), Inches(5.3))
+    left_card.fill.solid()
+    left_card.fill.fore_color.rgb = PINK_SOFT
+    left_card.line.color.rgb = PINK_PRIMARY
+    left_card.line.width = Pt(2)
+
+    stats = [
+        ("29,000+", "Câu hỏi trắc nghiệm thực tế"),
+        ("4,000+", "Bài học (10 Môn Đại cương & CN)"),
+        ("5 Sprints", "Quy trình Agile/Scrum 100%"),
+        ("< 1 Giây", "Cold-start mở app Desktop Windows")
+    ]
+    for idx, (num, desc) in enumerate(stats):
+        box_y = Inches(1.8 + idx * 1.25)
+        s_box = s2.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.05), box_y, Inches(3.3), Inches(1.1))
+        s_box.fill.solid()
+        s_box.fill.fore_color.rgb = WHITE
+        s_box.line.color.rgb = SLATE_200
+        s_box.line.width = Pt(1)
+
+        tx_s = s2.shapes.add_textbox(Inches(1.1), box_y + Inches(0.08), Inches(3.2), Inches(0.95))
+        tf_s = tx_s.text_frame
+        tf_s.word_wrap = True
+        p_n = tf_s.paragraphs[0]
+        p_n.alignment = PP_ALIGN.CENTER
+        r_n = p_n.add_run()
+        r_n.text = num
+        r_n.font.bold = True
+        r_n.font.size = Pt(20)
+        r_n.font.color.rgb = PINK_PRIMARY
+
+        p_d = tf_s.add_paragraph()
+        p_d.alignment = PP_ALIGN.CENTER
+        r_d = p_d.add_run()
+        r_d.text = desc
+        r_d.font.size = Pt(10)
+        r_d.font.color.rgb = SLATE_700
+
+    # Right Column: 3 Horizontal Feature Stream Cards
+    features = [
+        ("🎮 Vòng lặp Gamification Cốt lõi phong cách Duolingo", 
+         "Cây bài học uốn lượn, năng lượng Trái tim, Kim cương tích lũy, Chuỗi ngày Streak, Cửa hàng vật phẩm và Mascot Thỏ Bảy Màu hoạt hình tương tác kích thích động lực học tập."),
+        ("🤖 Trí tuệ Nhân tạo DeepSeek AI & Sổ tay Thông minh (Smart Notes)", 
+         "Giải bài tập chuyên sâu, nhận diện và bóc tách đề bài qua ảnh chụp (Vision RAG), định dạng công thức toán học và trình biên tập ghi chú phong phú đa phương tiện."),
+        ("🏫 Kết nối Cổng trường IU CMCU & Mạng xã hội 3TG Messenger", 
+         "Đăng nhập 1-Click tài khoản Microsoft 365, bóc tách bảng điểm toàn khóa và tính GPA thang 10 & 4; Không gian chat thời gian thực Optimistic UI 0ms delay và Bot 3TG trợ lý.")
+    ]
+    for idx, (f_title, f_desc) in enumerate(features):
+        fy = Inches(1.6 + idx * 1.8)
+        f_card = s2.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(4.85), fy, Inches(7.68), Inches(1.65))
+        f_card.fill.solid()
+        f_card.fill.fore_color.rgb = SLATE_50
+        f_card.line.color.rgb = SLATE_200
+        f_card.line.width = Pt(1.5)
+
+        # Left Pink Accent Bar
+        p_bar = s2.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(4.85), fy, Inches(0.18), Inches(1.65))
+        p_bar.fill.solid()
+        p_bar.fill.fore_color.rgb = PINK_PRIMARY
+        p_bar.line.fill.background()
+
+        tx_f = s2.shapes.add_textbox(Inches(5.2), fy + Inches(0.15), Inches(7.1), Inches(1.35))
+        tf_f = tx_f.text_frame
+        tf_f.word_wrap = True
+
+        p1 = tf_f.paragraphs[0]
+        r1 = p1.add_run()
+        r1.text = f_title
+        r1.font.bold = True
+        r1.font.size = Pt(13.5)
+        r1.font.color.rgb = SLATE_900
+
+        p2 = tf_f.add_paragraph()
+        p2.space_before = Pt(6)
+        r2 = p2.add_run()
+        r2.text = f_desc
+        r2.font.size = Pt(11)
+        r2.font.color.rgb = SLATE_600
+
+    # ==========================================
+    # SLIDE 3: SDLC PROCESS & AGILE/SCRUM (Horizontal 4-Step Chevron Flow + Waterfall vs Agile Cards)
+    # ==========================================
+    s3 = prs.slides.add_slide(blank_layout)
+    add_header(s3, "PHẦN II • LÝ THUYẾT CNPM", "QUY TRÌNH PHÁT TRIỂN PHẦN MỀM SDLC & KHUNG LÀM VIỆC AGILE / SCRUM")
+
+    # Top Half: 4-Step Horizontal Agile Flow Pipeline
+    steps = [
+        ("BƯỚC 1: PRODUCT BACKLOG", "Khảo sát bài toán học tập, thu thập yêu cầu người dùng, viết User Stories theo chuẩn INVEST và định nghĩa Acceptance Criteria (BDD)."),
+        ("BƯỚC 2: SPRINT PLANNING", "Ước lượng độ phức tạp (Story Points), chọn lọc đầu việc vào Sprint Backlog, phân bổ trách nhiệm minh bạch cho 3 thành viên."),
+        ("BƯỚC 3: SPRINT EXECUTION", "Lập trình Feature Branching trên Git, họp ngắn giải quyết vướng mắc kỹ thuật, liên tục tích hợp và kiểm thử đơn vị độc lập."),
+        ("BƯỚC 4: REVIEW & RETRO", "Trình diễn Product Increment chạy được 100%, đối chiếu Định nghĩa Hoàn thành (DoD), rút kinh nghiệm cải tiến quy trình Sprint kế.")
+    ]
+    step_w = Inches(2.78)
+    for i, (s_title, s_desc) in enumerate(steps):
+        sx = Inches(0.8 + i * 2.98)
+        s_box = s3.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, sx, Inches(1.6), step_w, Inches(2.35))
+        s_box.fill.solid()
+        s_box.fill.fore_color.rgb = SLATE_50
+        s_box.line.color.rgb = PINK_PRIMARY if i == 3 else SLATE_200
+        s_box.line.width = Pt(1.5)
+
+        # Header Pill in step
+        s_hdr = s3.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, sx, Inches(1.6), step_w, Inches(0.48))
+        s_hdr.fill.solid()
+        s_hdr.fill.fore_color.rgb = PINK_PRIMARY if i % 2 == 1 else RGBColor(26, 31, 44)
+        s_hdr.line.fill.background()
+
+        p_h = s_hdr.text_frame.paragraphs[0]
+        p_h.alignment = PP_ALIGN.CENTER
+        r_h = p_h.add_run()
+        r_h.text = s_title
+        r_h.font.bold = True
+        r_h.font.size = Pt(9.5)
+        r_h.font.color.rgb = WHITE
+
+        tx_b = s3.shapes.add_textbox(sx + Inches(0.12), Inches(2.15), step_w - Inches(0.24), Inches(1.75))
+        tf_b = tx_b.text_frame
+        tf_b.word_wrap = True
+        p_c = tf_b.paragraphs[0]
+        r_c = p_c.add_run()
+        r_c.text = s_desc
+        r_c.font.size = Pt(10)
+        r_c.font.color.rgb = SLATE_700
+
+    # Bottom Half: Waterfall vs Agile Comparative Cards
+    wf_card = s3.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(4.2), Inches(5.7), Inches(2.7))
+    wf_card.fill.solid()
+    wf_card.fill.fore_color.rgb = SLATE_50
+    wf_card.line.color.rgb = SLATE_200
+    wf_card.line.width = Pt(1.5)
+
+    tx_wf = s3.shapes.add_textbox(Inches(1.0), Inches(4.3), Inches(5.3), Inches(2.5))
+    tf_wf = tx_wf.text_frame
+    tf_wf.word_wrap = True
+    p_w1 = tf_wf.paragraphs[0]
+    r_w1 = p_w1.add_run()
+    r_w1.text = "⚠️ Mô hình Thác nước Truyền thống (Waterfall)"
+    r_w1.font.bold = True
+    r_w1.font.size = Pt(13)
+    r_w1.font.color.rgb = SLATE_900
+
+    p_w2 = tf_wf.add_paragraph()
+    p_w2.space_before = Pt(6)
+    r_w2 = p_w2.add_run()
+    r_w2.text = "• Tiếp cận tuyến tính tuần tự: Yêu cầu ➔ Thiết kế ➔ Cài đặt ➔ Kiểm thử ➔ Triển khai.\n" \
+                "• Nhược điểm chí mạng: Kém linh hoạt; Không có sản phẩm chạy được cho đến cuối dự án; Chi phí sửa lỗi cực lớn nếu sai sót phát sinh từ giai đoạn đầu."
+    r_w2.font.size = Pt(10.5)
+    r_w2.font.color.rgb = SLATE_600
+
+    ag_card = s3.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.8), Inches(4.2), Inches(5.733), Inches(2.7))
+    ag_card.fill.solid()
+    ag_card.fill.fore_color.rgb = PINK_SOFT
+    ag_card.line.color.rgb = PINK_PRIMARY
+    ag_card.line.width = Pt(2)
+
+    tx_ag = s3.shapes.add_textbox(Inches(7.0), Inches(4.3), Inches(5.3), Inches(2.5))
+    tf_ag = tx_ag.text_frame
+    tf_ag.word_wrap = True
+    p_a1 = tf_ag.paragraphs[0]
+    r_a1 = p_a1.add_run()
+    r_a1.text = "🚀 Mô hình Linh hoạt Agile / Scrum (Được áp dụng)"
+    r_a1.font.bold = True
+    r_a1.font.size = Pt(13)
+    r_a1.font.color.rgb = PINK_PRIMARY
+
+    p_a2 = tf_ag.add_paragraph()
+    p_a2.space_before = Pt(6)
+    r_a2 = p_a2.add_run()
+    r_a2.text = "• Phát triển tăng trưởng theo các chu kỳ Sprint ngắn hạn (1-2 tuần/Sprint).\n" \
+                "• Bàn giao Increment chạy thực tế sau mỗi chu kỳ; Thích ứng linh hoạt với thay đổi.\n" \
+                "• Phối hợp liên tục giữa 3 vai trò: Product Owner, Scrum Master & Development Team."
+    r_a2.font.size = Pt(10.5)
+    r_a2.font.color.rgb = SLATE_900
+
+    # ==========================================
+    # SLIDE 4: ARCHITECTURE & 3NF DATABASE (3 Vertical Column Architectural Blueprint)
+    # ==========================================
+    s4 = prs.slides.add_slide(blank_layout)
+    add_header(s4, "PHẦN II • LÝ THUYẾT CNPM", "KỸ NGHỆ YÊU CẦU, KIẾN TRÚC PHẦN MỀM & CSDL CHUẨN HÓA 3NF")
+
+    cols = [
+        ("📋 1. KỸ NGHỆ YÊU CẦU", [
+            ("Phân loại Yêu cầu:", "Yêu cầu Chức năng (FR) & Yêu cầu Phi chức năng (NFR: hiệu năng < 200ms, bảo mật, khả dụng 99.9%)."),
+            ("User Story INVEST:", "Độc lập (Independent), Thương lượng (Negotiable), Giá trị (Valuable), Ước lượng (Estimable), Nhỏ (Small), Kiểm thử được (Testable)."),
+            ("Mô hình hóa UML:", "Use Case Diagram, Activity Diagram & Sequence Diagram mô hình hóa luồng thông điệp hệ thống.")
+        ], SLATE_50, SLATE_200),
+        ("🏗️ 2. KIẾN TRÚC 3 TẦNG & EDGE", [
+            ("Presentation Layer:", "Ứng dụng Desktop Electron Windows & Web Client HTML5/CSS3/ES Modules mượt mà 60 FPS."),
+            ("Business Logic Layer:", "Cloudflare Workers chạy phân tán tại biên mạng (Edge Computing) xử lý REST API tức thì."),
+            ("Data Access Layer:", "Cloudflare D1 Distributed SQL + R2 Object Storage lưu trữ ảnh/âm thanh và SQLite Local.")
+        ], PINK_SOFT, PINK_PRIMARY),
+        ("🗄️ 3. CHUẨN HÓA CSDL 3NF", [
+            ("Dạng chuẩn 1 (1NF):", "Mọi thuộc tính đều mang giá trị nguyên tố (Atomic values), không có mảng lặp lại."),
+            ("Dạng chuẩn 2 (2NF):", "Đạt 1NF và mọi thuộc tính không khóa phụ thuộc hàm đầy đủ vào khóa chính (Primary Key)."),
+            ("Dạng chuẩn 3 (3NF):", "Đạt 2NF và loại bỏ hoàn toàn phụ thuộc bắc cầu; bảo vệ toàn vẹn tham chiếu khóa ngoại.")
+        ], SLATE_50, SLATE_200)
+    ]
+    c_w = Inches(3.75)
+    for i, (c_title, c_items, c_bg, c_border) in enumerate(cols):
+        cx = Inches(0.8 + i * 3.99)
+        c_shape = s4.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, Inches(1.6), c_w, Inches(5.3))
+        c_shape.fill.solid()
+        c_shape.fill.fore_color.rgb = c_bg
+        c_shape.line.color.rgb = c_border
+        c_shape.line.width = Pt(1.5)
+
+        # Header Banner inside column
+        c_hdr = s4.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, Inches(1.6), c_w, Inches(0.6))
+        c_hdr.fill.solid()
+        c_hdr.fill.fore_color.rgb = c_border if c_border != SLATE_200 else RGBColor(30, 41, 59)
+        c_hdr.line.fill.background()
+
+        p_ch = c_hdr.text_frame.paragraphs[0]
+        p_ch.alignment = PP_ALIGN.CENTER
+        r_ch = p_ch.add_run()
+        r_ch.text = c_title
+        r_ch.font.bold = True
+        r_ch.font.size = Pt(12)
+        r_ch.font.color.rgb = WHITE
+
+        tx_items = s4.shapes.add_textbox(cx + Inches(0.2), Inches(2.3), c_w - Inches(0.4), Inches(4.5))
+        tf_it = tx_items.text_frame
+        tf_it.word_wrap = True
+
+        for idx, (label, val) in enumerate(c_items):
+            p_lbl = tf_it.paragraphs[0] if idx == 0 else tf_it.add_paragraph()
+            if idx > 0:
+                p_lbl.space_before = Pt(14)
+            r_l = p_lbl.add_run()
+            r_l.text = f"• {label}\n"
+            r_l.font.bold = True
+            r_l.font.size = Pt(11)
+            r_l.font.color.rgb = PINK_PRIMARY if c_border == PINK_PRIMARY else SLATE_900
+
+            r_v = p_lbl.add_run()
+            r_v.text = val
+            r_v.font.size = Pt(10)
+            r_v.font.color.rgb = SLATE_700
+
+    # ==========================================
+    # SLIDE 5: SPRINT 1 & 2 SHOWCASE (Split Screen Dual-Sprint Showcase with Visual Badges)
+    # ==========================================
+    s5 = prs.slides.add_slide(blank_layout)
+    add_header(s5, "PHẦN III • THỰC TIỄN ÁP DỤNG", "SPRINT 1 & 2: HẠ TẦNG SERVERLESS, GAMIFICATION & CỔNG TRƯỜNG IU")
+
+    # Left Half: Sprint 1 Box
+    sp1_box = s5.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.6), Inches(5.7), Inches(5.3))
+    sp1_box.fill.solid()
+    sp1_box.fill.fore_color.rgb = SLATE_50
+    sp1_box.line.color.rgb = SLATE_200
+    sp1_box.line.width = Pt(1.5)
+
+    badge1 = s5.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.0), Inches(1.8), Inches(3.2), Inches(0.4))
+    badge1.fill.solid()
+    badge1.fill.fore_color.rgb = RGBColor(30, 41, 59)
+    badge1.line.fill.background()
+    p_b1 = badge1.text_frame.paragraphs[0]
+    p_b1.alignment = PP_ALIGN.CENTER
+    r_b1 = p_b1.add_run()
+    r_b1.text = "SPRINT 1 • NỀN TẢNG CỐT LÕI"
+    r_b1.font.bold = True
+    r_b1.font.size = Pt(10)
+    r_b1.font.color.rgb = WHITE
+
+    tx_sp1 = s5.shapes.add_textbox(Inches(1.0), Inches(2.3), Inches(5.3), Inches(4.4))
+    tf_sp1 = tx_sp1.text_frame
+    tf_sp1.word_wrap = True
+
+    p = tf_sp1.paragraphs[0]
+    r = p.add_run()
+    r.text = "Kiến Trúc Serverless & Gamification Duolingo\n"
+    r.font.bold = True
+    r.font.size = Pt(14)
+    r.font.color.rgb = SLATE_900
+
+    sp1_bullets = [
+        "🌐 Hạ tầng Cloudflare Serverless: Worker + D1 SQL + R2 Storage tối ưu chi phí và co giãn tức thời.",
+        "📊 CSDL đồ sộ chuẩn 3NF: 10 môn học, 106 chương, 4.000 bài học và 29.000 câu trắc nghiệm thực tế.",
+        "❤️ Vòng lặp Gamification: Năng lượng Trái tim (hồi theo giờ), thưởng Đá quý, Chuỗi ngày Streak liên tục và vật phẩm Freeze.",
+        "🐰 Trợ thủ Mascot Thỏ Bảy Màu: Biểu cảm động tương tác động viên người học vượt qua từng ải bài học.",
+        "📌 Minh chứng: GitHub Issues #SP1-01 -> #SP1-05; Khởi tạo CSDL 29.000 câu hỏi thành công 100%."
+    ]
+    for b in sp1_bullets:
+        p_b = tf_sp1.add_paragraph()
+        p_b.space_before = Pt(8)
+        r_b = p_b.add_run()
+        r_b.text = b
+        r_b.font.size = Pt(10.5)
+        r_b.font.color.rgb = SLATE_700
+
+    # Right Half: Sprint 2 Box
+    sp2_box = s5.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.8), Inches(1.6), Inches(5.733), Inches(5.3))
+    sp2_box.fill.solid()
+    sp2_box.fill.fore_color.rgb = PINK_SOFT
+    sp2_box.line.color.rgb = PINK_PRIMARY
+    sp2_box.line.width = Pt(2)
+
+    badge2 = s5.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.0), Inches(1.8), Inches(3.2), Inches(0.4))
+    badge2.fill.solid()
+    badge2.fill.fore_color.rgb = PINK_PRIMARY
+    badge2.line.fill.background()
+    p_b2 = badge2.text_frame.paragraphs[0]
+    p_b2.alignment = PP_ALIGN.CENTER
+    r_b2 = p_b2.add_run()
+    r_b2.text = "SPRINT 2 • CỔNG TRƯỜNG & AI"
+    r_b2.font.bold = True
+    r_b2.font.size = Pt(10)
+    r_b2.font.color.rgb = WHITE
+
+    tx_sp2 = s5.shapes.add_textbox(Inches(7.0), Inches(2.3), Inches(5.3), Inches(4.4))
+    tf_sp2 = tx_sp2.text_frame
+    tf_sp2.word_wrap = True
+
+    p = tf_sp2.paragraphs[0]
+    r = p.add_run()
+    r.text = "Cổng Trường IU CMCU & Cố Vấn Học Thuật\n"
+    r.font.bold = True
+    r.font.size = Pt(14)
+    r.font.color.rgb = PINK_PRIMARY
+
+    sp2_bullets = [
+        "🎓 1-Click Đăng nhập Cổng IU (iu.cmcu.edu.vn): Tích hợp tài khoản Microsoft 365 cấp bởi nhà trường.",
+        "📈 Bóc tách học thuật tự động: Trích xuất bảng điểm toàn khóa và thời khóa biểu 6 tuần chuẩn xác.",
+        "🧮 Tính GPA & Cố vấn AI: Thuật toán GPA thang 10 & 4, Trợ lý 3TG AI phân tích môn nợ và gợi ý Target GPA.",
+        "💎 Cửa hàng Shop VIP Nitro: 4 Tab vật phẩm (Mascot, Khung Avatar động, Ảnh nền R2) và Chế độ tối Midnight Velvet.",
+        "📌 Minh chứng Git: Commits 6d5eb0b, 5284ed0, 30dc37e, 5eecdc8."
+    ]
+    for b in sp2_bullets:
+        p_b = tf_sp2.add_paragraph()
+        p_b.space_before = Pt(8)
+        r_b = p_b.add_run()
+        r_b.text = b
+        r_b.font.size = Pt(10.5)
+        r_b.font.color.rgb = SLATE_900
+
+    # ==========================================
+    # SLIDE 6: SPRINT 3 & 4 SHOWCASE (Top Full-Width AI Feature + Bottom 2 Split Cards)
+    # ==========================================
+    s6 = prs.slides.add_slide(blank_layout)
+    add_header(s6, "PHẦN III • THỰC TIỄN ÁP DỤNG", "SPRINT 3 & 4: TRÍ TUỆ NHÂN TẠO DEEPSEEK AI, ELECTRON & 3TG MESSENGER")
+
+    # Top Wide Card: Sprint 3 (DeepSeek AI Vision & Electron Packaging)
+    top_card = s6.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.6), Inches(11.733), Inches(2.45))
+    top_card.fill.solid()
+    top_card.fill.fore_color.rgb = PINK_SOFT
+    top_card.line.color.rgb = PINK_PRIMARY
+    top_card.line.width = Pt(1.5)
+
+    badge3 = s6.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.05), Inches(1.8), Inches(4.2), Inches(0.36))
+    badge3.fill.solid()
+    badge3.fill.fore_color.rgb = PINK_PRIMARY
+    badge3.line.fill.background()
+    p_b3 = badge3.text_frame.paragraphs[0]
+    p_b3.alignment = PP_ALIGN.CENTER
+    r_b3 = p_b3.add_run()
+    r_b3.text = "SPRINT 3 • AI VISION RAG & ELECTRON v9.9.9"
+    r_b3.font.bold = True
+    r_b3.font.size = Pt(9.5)
+    r_b3.font.color.rgb = WHITE
+
+    tx_top = s6.shapes.add_textbox(Inches(1.05), Inches(2.22), Inches(11.2), Inches(1.7))
+    tf_top = tx_top.text_frame
+    tf_top.word_wrap = True
+
+    p = tf_top.paragraphs[0]
+    r = p.add_run()
+    r.text = "Trợ Lý Trí Tuệ Nhân Tạo DeepSeek AI Vision & Đóng Gói Desktop Khởi Động 1 Giây"
+    r.font.bold = True
+    r.font.size = Pt(13)
+    r.font.color.rgb = SLATE_900
+
+    p_body = tf_top.add_paragraph()
+    p_body.space_before = Pt(4)
+    r_body = p_body.add_run()
+    r_body.text = "• Tích hợp mô hình AI giải toán và phân tích đề bài trực tiếp qua ảnh chụp (Vision RAG), định dạng KaTeX chuẩn mực.\n" \
+                 "• Sổ tay ghi chú thông minh (Smart Notes): Hỗ trợ Markdown, tải tệp đính kèm và đồng bộ nội dung học tập.\n" \
+                 "• Xuất bản bộ cài đặt Windows Setup 9.9.9.exe & Portable 9.9.9.exe (~111MB), tối ưu ASAR mở app trong 1-2s (Commit 95226db)."
+    r_body.font.size = Pt(10.5)
+    r_body.font.color.rgb = SLATE_700
+
+    # Bottom Left: Sprint 4 Messenger
+    b_left = s6.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(4.3), Inches(5.7), Inches(2.6))
+    b_left.fill.solid()
+    b_left.fill.fore_color.rgb = SLATE_50
+    b_left.line.color.rgb = SLATE_200
+    b_left.line.width = Pt(1.5)
+
+    tx_bl = s6.shapes.add_textbox(Inches(1.0), Inches(4.45), Inches(5.3), Inches(2.3))
+    tf_bl = tx_bl.text_frame
+    tf_bl.word_wrap = True
+    p_bl = tf_bl.paragraphs[0]
+    r_bl = p_bl.add_run()
+    r_bl.text = "💬 Sprint 4: Mạng Xã Hội 3TG Messenger\n"
+    r_bl.font.bold = True
+    r_bl.font.size = Pt(13)
+    r_bl.font.color.rgb = SLATE_900
+
+    p_bl2 = tf_bl.add_paragraph()
+    r_bl2 = p_bl2.add_run()
+    r_bl2.text = (
+        "• Không gian nhắn tin toàn màn hình: Chat 1-1 và tạo nhóm học tập phân quyền Admin/Member chuyên nghiệp.\n"
+        "• Optimistic UI: Phản hồi tin nhắn tức thời 0ms delay, xóa bỏ hoàn toàn cảm giác giật lag khi chat.\n"
+        "• Minh chứng: Issue #SP4-01 -> #SP4-04; Commit fea4193."
+    )
+    r_bl2.font.size = Pt(10)
+    r_bl2.font.color.rgb = SLATE_700
+
+    # Bottom Right: Sprint 4 Bot 3TG Native
+    b_right = s6.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.8), Inches(4.3), Inches(5.733), Inches(2.6))
+    b_right.fill.solid()
+    b_right.fill.fore_color.rgb = SLATE_50
+    b_right.line.color.rgb = SLATE_200
+    b_right.line.width = Pt(1.5)
+
+    tx_br = s6.shapes.add_textbox(Inches(7.0), Inches(4.45), Inches(5.3), Inches(2.3))
+    tf_br = tx_br.text_frame
+    tf_br.word_wrap = True
+    p_br = tf_br.paragraphs[0]
+    r_br = p_br.add_run()
+    r_br.text = "⚡ Sprint 4: Trợ Lý Bot 3TG Native Node\n"
+    r_br.font.bold = True
+    r_br.font.size = Pt(13)
+    r_br.font.color.rgb = SLATE_900
+
+    p_br2 = tf_br.add_paragraph()
+    r_br2 = p_br2.add_run()
+    r_br2.text = (
+        "• Module hóa triệt để: Xóa bỏ thư mục node_modules cồng kềnh, chuyển engine sang module Native cực nhẹ.\n"
+        "• Tiêu thụ xấp xỉ ~0 RAM bổ sung, chạy trực tiếp trong Node runtime của ứng dụng.\n"
+        "• Tự động tham gia nhóm chat và giải đáp câu hỏi học tập (Commit 0846bd2)."
+    )
+    r_br2.font.size = Pt(10)
+    r_br2.font.color.rgb = SLATE_700
+
+    # ==========================================
+    # SLIDE 7: SPRINT 5 SHOWCASE (3 Pillar Security & Zen Kiosk Layout)
+    # ==========================================
+    s7 = prs.slides.add_slide(blank_layout)
+    add_header(s7, "PHẦN III • THỰC TIỄN ÁP DỤNG", "SPRINT 5: NÂNG CẤP BẢO MẬT OWASP, TRANSACTIONAL OUTBOX & POMODORO KIOSK")
+
+    sp5_cols = [
+        ("🛡️ 1. BẢO MẬT OWASP & AI SHIELD", [
+            ("Mã hóa PBKDF2 100k Vòng:", "Salt ngẫu nhiên 16 bytes riêng biệt từng user, so sánh timing-safe chống tấn công phân tích thời gian."),
+            ("Rate Limiting Chống Brute-force:", "Bộ đếm trượt khóa 15 phút khi nhập sai 5 lần (HTTP 429)."),
+            ("AI Anti-Abuse Shield 6 Lớp:", "Bắt buộc đăng nhập, HMAC client signature token, Cooldown 3s đếm ngược, quota 60 câu/ngày ngăn trích xuất API free.")
+        ], SLATE_50, SLATE_200),
+        ("☁️ 2. TRANSACTIONAL OUTBOX REPLAY", [
+            ("Hàng đợi sync_outbox:", "Ghi nhận mọi thao tác ngoại tuyến vào SQLite khi mất mạng hoặc D1 chạm hạn ngạch."),
+            ("Cơ chế Replay FIFO:", "Tiến trình nền tự động đối soát và phát lại dữ liệu lên Cloudflare D1 khi có mạng kèm Exponential Backoff."),
+            ("Toàn vẹn Dữ liệu:", "Đảm bảo tính nhất quán tuyệt đối giữa bản sao máy khách và máy chủ phân tán.")
+        ], SLATE_50, SLATE_200),
+        ("⏱️ 3. POMODORO KIOSK & 6 THEMES", [
+            ("Focus Kiosk Mode:", "Khóa toàn màn hình, ẩn Taskbar, chặn phím xao nhãng (Alt, Win, Esc); phục hồi Taskbar bằng Ctrl+Q."),
+            ("Server-side Verification:", "Server tự tính giờ thực tế (now - started_at), chống can thiệp request khống (+50 XP, 30 Gems)."),
+            ("Hệ thống 6 Theme Duolingo:", "Phủ sóng 100% biến CSS3; Zoom tài liệu 2 ngón trackpad; Tối ưu hóa cực hạn cho máy yếu.")
+        ], PINK_SOFT, PINK_PRIMARY)
+    ]
+    p_w = Inches(3.75)
+    for i, (p_title, p_items, p_bg, p_border) in enumerate(sp5_cols):
+        px = Inches(0.8 + i * 3.99)
+        p_shape = s7.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, px, Inches(1.6), p_w, Inches(5.3))
+        p_shape.fill.solid()
+        p_shape.fill.fore_color.rgb = p_bg
+        p_shape.line.color.rgb = p_border
+        p_shape.line.width = Pt(1.5)
+
+        p_hdr = s7.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, px, Inches(1.6), p_w, Inches(0.6))
+        p_hdr.fill.solid()
+        p_hdr.fill.fore_color.rgb = p_border if p_border != SLATE_200 else RGBColor(30, 41, 59)
+        p_hdr.line.fill.background()
+
+        p_ph = p_hdr.text_frame.paragraphs[0]
+        p_ph.alignment = PP_ALIGN.CENTER
+        r_ph = p_ph.add_run()
+        r_ph.text = p_title
+        r_ph.font.bold = True
+        r_ph.font.size = Pt(11)
+        r_ph.font.color.rgb = WHITE
+
+        tx_it = s7.shapes.add_textbox(px + Inches(0.2), Inches(2.3), p_w - Inches(0.4), Inches(4.5))
+        tf_it = tx_it.text_frame
+        tf_it.word_wrap = True
+
+        for idx, (lbl, desc) in enumerate(p_items):
+            p_l = tf_it.paragraphs[0] if idx == 0 else tf_it.add_paragraph()
+            if idx > 0:
+                p_l.space_before = Pt(14)
+            r_l = p_l.add_run()
+            r_l.text = f"• {lbl}\n"
+            r_l.font.bold = True
+            r_l.font.size = Pt(11)
+            r_l.font.color.rgb = PINK_PRIMARY if p_border == PINK_PRIMARY else SLATE_900
+
+            r_d = p_l.add_run()
+            r_d.text = desc
+            r_d.font.size = Pt(10)
+            r_d.font.color.rgb = SLATE_700
+
+    # ==========================================
+    # SLIDE 8: THEORY VS PRACTICE COMPARATIVE MATRIX (Full Width Sleek Table with Badges)
+    # ==========================================
+    s8 = prs.slides.add_slide(blank_layout)
+    add_header(s8, "PHẦN IV • ĐỐI CHIẾU THỰC TIỄN", "MA TRẬN ĐỐI CHIẾU LÝ THUYẾT CNPM VÀ HIỆN THỰC HÓA TRONG 3TG STUDY")
+
+    matrix_rows = [
+        ("Quy trình phần mềm", "Mô hình Agile / Scrum, 5 Sprints liên tục", "Hoàn thành 100% mục tiêu, bàn giao Product Increment sau mỗi chu kỳ", "5 Báo cáo Sprint"),
+        ("Kỹ nghệ yêu cầu", "User Stories INVEST, BDD Acceptance Criteria", "Đặc tả chi tiết từng luồng nghiệp vụ: trắc nghiệm, cào điểm IU, hỏi AI", "Tài liệu Use Case"),
+        ("Kiến trúc phần mềm", "Serverless Edge, Phân tầng Layered, Outbox Pattern", "Cloudflare Worker + D1 + R2; Hàng đợi sync_outbox đối soát ngoại tuyến", "src/index.js"),
+        ("Thiết kế Cơ sở dữ liệu", "Chuẩn hóa quan hệ 3NF, Toàn vẹn tham chiếu", "14 bảng quan hệ chuẩn 3NF: 10 môn, 106 chương, 29.000 câu trắc nghiệm", "local_replica.sqlite"),
+        ("UI/UX & Gamification", "10 Heuristics Nielsen, Thuyết Tự quyết SDT", "Cây bài Duolingo, Mascot Thỏ Bảy Màu, 6 Theme rực rỡ, chat 0ms", "public/style.css"),
+        ("Kiểm thử chất lượng", "Kim tự tháp kiểm thử, Black-box & White-box", "Xây dựng 85+ ca kiểm thử chi tiết, nghiệm thu E2E toàn diện sản phẩm", "85+ Test Cases DOCX"),
+        ("Bảo mật & DevOps", "OWASP Top 10, PBKDF2 Hashing, ASAR Packaging", "PBKDF2 100k vòng, AI Anti-Abuse HMAC, Kiosk Mode, Setup.exe mở 1s", "Commit 3126c36")
+    ]
+    tbl_shape = s8.shapes.add_table(len(matrix_rows) + 1, 4, Inches(0.8), Inches(1.6), Inches(11.733), Inches(5.3))
+    tbl = tbl_shape.table
+    tbl.columns[0].width = Inches(2.2)
+    tbl.columns[1].width = Inches(3.4)
+    tbl.columns[2].width = Inches(4.333)
+    tbl.columns[3].width = Inches(1.8)
+
+    hdrs = ["LĨNH VỰC CNPM", "NGUYÊN LÝ GIẢNG DẠY", "HIỆN THỰC HÓA TRONG 3TG STUDY", "MINH CHỨNG"]
+    for c_i, h_text in enumerate(hdrs):
+        cell = tbl.cell(0, c_i)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = PINK_PRIMARY
+        p = cell.text_frame.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        r = p.add_run()
+        r.text = h_text
+        r.font.bold = True
+        r.font.size = Pt(11)
+        r.font.color.rgb = WHITE
+
+    for r_i, (c1, c2, c3, c4) in enumerate(matrix_rows):
+        bg = PINK_SOFT if r_i % 2 == 1 else WHITE
+        cells = [tbl.cell(r_i + 1, 0), tbl.cell(r_i + 1, 1), tbl.cell(r_i + 1, 2), tbl.cell(r_i + 1, 3)]
+        for c_idx, val in enumerate([c1, c2, c3, c4]):
+            cell = cells[c_idx]
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = bg
+            p = cell.text_frame.paragraphs[0]
+            r = p.add_run()
+            r.text = val
+            r.font.size = Pt(9.5)
+            r.font.color.rgb = SLATE_900
+            if c_idx == 0:
+                p.alignment = PP_ALIGN.LEFT
                 r.font.bold = True
-                r.font.size = PptxPt(13)
-                r.font.color.rgb = WHITE_COLOR
-                
-            for r_i, (col1, col2, col3) in enumerate(s_data["rows"]):
-                row_cells = [tbl.cell(r_i + 1, 0), tbl.cell(r_i + 1, 1), tbl.cell(r_i + 1, 2)]
-                bg = LIGHT_PINK if r_i % 2 == 1 else WHITE_COLOR
-                for c_i, val in enumerate([col1, col2, col3]):
-                    cell = row_cells[c_i]
-                    cell.fill.solid()
-                    cell.fill.fore_color.rgb = bg
-                    p = cell.text_frame.paragraphs[0]
-                    r = p.add_run()
-                    r.text = val
-                    r.font.size = PptxPt(11)
-                    r.font.color.rgb = DARK_COLOR
-                    if c_i == 0:
-                        r.font.bold = True
-                        r.font.color.rgb = PINK_COLOR
-                        
-        elif s_data["type"] == "conclusion":
-            # Header Accent Bar
-            accent = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, PptxInches(0), PptxInches(0), PptxInches(13.333), PptxInches(0.4))
-            accent.fill.solid()
-            accent.fill.fore_color.rgb = PINK_COLOR
-            accent.line.fill.background()
-            
-            card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, PptxInches(1.2), PptxInches(1.2), PptxInches(10.933), PptxInches(5.4))
-            card.fill.solid()
-            card.fill.fore_color.rgb = LIGHT_PINK
-            card.line.color.rgb = PINK_COLOR
-            card.line.width = PptxPt(3)
-            
-            tx_box = slide.shapes.add_textbox(PptxInches(1.5), PptxInches(1.6), PptxInches(10.333), PptxInches(4.6))
-            tf = tx_box.text_frame
-            tf.word_wrap = True
-            
-            p1 = tf.paragraphs[0]
-            p1.alignment = PP_ALIGN.CENTER
-            r1 = p1.add_run()
-            r1.text = s_data["title"]
-            r1.font.bold = True
-            r1.font.size = PptxPt(28)
-            r1.font.color.rgb = PINK_COLOR
-            
-            p2 = tf.add_paragraph()
-            p2.alignment = PP_ALIGN.CENTER
-            p2.space_before = PptxPt(14)
-            r2 = p2.add_run()
-            r2.text = s_data["subtitle"]
-            r2.font.bold = True
-            r2.font.size = PptxPt(18)
-            r2.font.color.rgb = DARK_COLOR
-            
-            p3 = tf.add_paragraph()
-            p3.alignment = PP_ALIGN.CENTER
-            p3.space_before = PptxPt(18)
-            r3 = p3.add_run()
-            r3.text = s_data["roadmap"]
-            r3.font.size = PptxPt(14)
-            r3.font.color.rgb = DARK_COLOR
-            
-            p4 = tf.add_paragraph()
-            p4.alignment = PP_ALIGN.CENTER
-            p4.space_before = PptxPt(22)
-            r4 = p4.add_run()
-            r4.text = s_data["meta"]
-            r4.font.size = PptxPt(15)
-            r4.font.italic = True
-            r4.font.bold = True
-            r4.font.color.rgb = PINK_COLOR
-            
+                r.font.color.rgb = PINK_PRIMARY
+            elif c_idx == 3:
+                p.alignment = PP_ALIGN.CENTER
+                r.font.bold = True
+                r.font.color.rgb = EMERALD
+
+    # ==========================================
+    # SLIDE 9: GIT COMMITS & RELEASE EVIDENCE (Terminal Dark Log Box + Release Metrics Card)
+    # ==========================================
+    s9 = prs.slides.add_slide(blank_layout)
+    add_header(s9, "PHẦN V • MINH CHỨNG PHẦN MỀM", "QUẢN TRỊ MÃ NGUỒN GIT/GITHUB, LỊCH SỬ COMMITS & PHÁT HÀNH BẢN CÀI")
+
+    # Left: Terminal Dark Git Log Box
+    term_box = s9.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.6), Inches(6.8), Inches(5.3))
+    term_box.fill.solid()
+    term_box.fill.fore_color.rgb = DARK_BG
+    term_box.line.color.rgb = SLATE_600
+    term_box.line.width = Pt(1.5)
+
+    # Terminal Header Bar with Red/Yellow/Green dots
+    term_hdr = s9.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.6), Inches(6.8), Inches(0.45))
+    term_hdr.fill.solid()
+    term_hdr.fill.fore_color.rgb = CARD_DARK
+    term_hdr.line.fill.background()
+
+    p_th = term_hdr.text_frame.paragraphs[0]
+    p_th.alignment = PP_ALIGN.LEFT
+    r_th = p_th.add_run()
+    r_th.text = "  🔴 🟡 🟢  bash - git log --oneline (Repository: Anniehatani/appstudyAI)"
+    r_th.font.bold = True
+    r_th.font.size = Pt(9.5)
+    r_th.font.color.rgb = SLATE_200
+
+    tx_log = s9.shapes.add_textbox(Inches(1.0), Inches(2.15), Inches(6.4), Inches(4.6))
+    tf_log = tx_log.text_frame
+    tf_log.word_wrap = True
+
+    git_commits = [
+        ("5ede215", "fix(embedded-server): secure base64 decoding for credentials"),
+        ("4bf8ddc", "feat(security): mandatory auth gate & AI anti-abuse shield"),
+        ("979db01", "perf(startup): parallel window init for instant cold launch"),
+        ("3126c36", "fix(security & arch): PBKDF2 hashing, sync outbox & kiosk"),
+        ("64cf09e", "fix(db): add missing content/video_url & auto-migrate D1"),
+        ("4c92ab3", "perf: low-end PC optimizations, SQLite WAL & CSS caching"),
+        ("0846bd2", "feat(sprint-4): Bot 3TG full media, optimistic 0ms chat"),
+        ("95226db", "feat(sprint-3): release final v9.9.9, ASAR 1s launch")
+    ]
+    for idx, (sha, msg) in enumerate(git_commits):
+        p_c = tf_log.paragraphs[0] if idx == 0 else tf_log.add_paragraph()
+        if idx > 0:
+            p_c.space_before = Pt(6)
+        r_sha = p_c.add_run()
+        r_sha.text = f"{sha} "
+        r_sha.font.bold = True
+        r_sha.font.size = Pt(10)
+        r_sha.font.color.rgb = AMBER
+
+        r_msg = p_c.add_run()
+        r_msg.text = msg
+        r_msg.font.size = Pt(9.5)
+        r_msg.font.color.rgb = SLATE_100
+
+    # Right: Release & QA Cards
+    right_y = Inches(1.6)
+    r_cards = [
+        ("📦 Bộ Cài Đặt Desktop Chính Thức", 
+         "• 3TG Học Vui Mỗi Ngày Setup 9.9.9.exe (~111MB)\n• Bản chạy ngay Portable 9.9.9.exe\n• Tối ưu khởi động cực nhanh chỉ trong 1 - 2 giây."),
+        ("📊 Quản Lý GitHub Issues", 
+         "• Hơn 30+ GitHub Issues được đóng thành công.\n• Gán nhãn minh bạch: enhancement, security, bug.\n• Theo dõi tiến độ Sprint qua GitHub Projects."),
+        ("🧪 Nghiệm Thu 85+ Test Cases", 
+         "• Bộ tài liệu kiểm thử Tai_Lieu_Test_Case DOCX.\n• Độ bao phủ toàn diện luồng người dùng E2E.\n• Nghiệm thu 100% chức năng không phát sinh lỗi.")
+    ]
+    for i, (rtitle, rdesc) in enumerate(r_cards):
+        ry = Inches(1.6 + i * 1.8)
+        rc = s9.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(7.8), ry, Inches(4.733), Inches(1.65))
+        rc.fill.solid()
+        rc.fill.fore_color.rgb = PINK_SOFT if i == 0 else SLATE_50
+        rc.line.color.rgb = PINK_PRIMARY if i == 0 else SLATE_200
+        rc.line.width = Pt(1.5)
+
+        tx_rc = s9.shapes.add_textbox(Inches(8.0), ry + Inches(0.12), Inches(4.3), Inches(1.4))
+        tf_rc = tx_rc.text_frame
+        tf_rc.word_wrap = True
+
+        p1 = tf_rc.paragraphs[0]
+        r1 = p1.add_run()
+        r1.text = rtitle
+        r1.font.bold = True
+        r1.font.size = Pt(12)
+        r1.font.color.rgb = PINK_PRIMARY if i == 0 else SLATE_900
+
+        p2 = tf_rc.add_paragraph()
+        p2.space_before = Pt(4)
+        r2 = p2.add_run()
+        r2.text = rdesc
+        r2.font.size = Pt(10)
+        r2.font.color.rgb = SLATE_700
+
+    # ==========================================
+    # SLIDE 10: SELF-EVALUATION & CHALLENGES OVERCOME (3 Team Cards + 4 Challenge Badges)
+    # ==========================================
+    s10 = prs.slides.add_slide(blank_layout)
+    add_header(s10, "PHẦN VI • TỰ ĐÁNH GIÁ", "TỰ ĐÁNH GIÁ KẾT QUẢ ĐẠT ĐƯỢC SAU MÔN HỌC & THÁCH THỨC ĐÃ VƯỢT QUA")
+
+    # Top: 3 Team Growth Cards
+    t_cards = [
+        ("Lê Văn An (Nhóm trưởng)", "Trưởng thành vượt bậc về tư duy Kiến trúc hệ thống phân tán, làm chủ Serverless Edge, giải quyết sự cố bảo mật OWASP và dẫn dắt nhóm theo chuẩn Agile."),
+        ("Nguyễn Như Quỳnh", "Nâng cao năng lực UX Design, làm chủ hệ thống biến CSS3 đa tầng, thiết kế Mascot tương tác sinh động và bộ 6 Theme Duolingo hiện đại."),
+        ("Nguyễn Tú", "Làm chủ chuẩn hóa CSDL quan hệ 3NF trên quy mô lớn (29.000 câu hỏi), xây dựng thuật toán Gamification chặt chẽ và thiết lập 85+ ca kiểm thử chi tiết.")
+    ]
+    t_w = Inches(3.75)
+    for i, (t_name, t_eval) in enumerate(t_cards):
+        tx = Inches(0.8 + i * 3.99)
+        tc = s10.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, tx, Inches(1.6), t_w, Inches(2.2))
+        tc.fill.solid()
+        tc.fill.fore_color.rgb = PINK_SOFT if i == 0 else SLATE_50
+        tc.line.color.rgb = PINK_PRIMARY if i == 0 else SLATE_200
+        tc.line.width = Pt(1.5)
+
+        tx_t = s10.shapes.add_textbox(tx + Inches(0.18), Inches(1.75), t_w - Inches(0.36), Inches(1.9))
+        tf_t = tx_t.text_frame
+        tf_t.word_wrap = True
+
+        p1 = tf_t.paragraphs[0]
+        r1 = p1.add_run()
+        r1.text = f"👤 {t_name}"
+        r1.font.bold = True
+        r1.font.size = Pt(13)
+        r1.font.color.rgb = PINK_PRIMARY if i == 0 else SLATE_900
+
+        p2 = tf_t.add_paragraph()
+        p2.space_before = Pt(6)
+        r2 = p2.add_run()
+        r2.text = t_eval
+        r2.font.size = Pt(10)
+        r2.font.color.rgb = SLATE_700
+
+    # Bottom: 4 Challenges Overcome
+    ch_box = s10.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(4.05), Inches(11.733), Inches(2.85))
+    ch_box.fill.solid()
+    ch_box.fill.fore_color.rgb = SLATE_50
+    ch_box.line.color.rgb = SLATE_200
+    ch_box.line.width = Pt(1.5)
+
+    tx_ch = s10.shapes.add_textbox(Inches(1.05), Inches(4.15), Inches(11.2), Inches(2.65))
+    tf_ch = tx_ch.text_frame
+    tf_ch.word_wrap = True
+
+    p_ch_t = tf_ch.paragraphs[0]
+    r_ch_t = p_ch_t.add_run()
+    r_ch_t.text = "🎯 4 THÁCH THỨC KỸ THUẬT LỚN ĐÃ ĐỐI ĐẦU VÀ GIẢI QUYẾT TRIỆT ĐỂ"
+    r_ch_t.font.bold = True
+    r_ch_t.font.size = Pt(13)
+    r_ch_t.font.color.rgb = PINK_PRIMARY
+
+    challenges = [
+        ("1. Rò rỉ Secret trong bản cài Electron:", "Cách ly hoàn toàn .dev.vars khỏi gói cài; Giải mã runtime base64 an toàn; Vượt qua cơ chế kiểm duyệt tự động GitHub Push Protection."),
+        ("2. Lệch pha CSDL ngoại tuyến:", "Áp dụng Transactional Outbox Pattern với bảng sync_outbox; Hàng đợi FIFO tự động phát lại và đối soát dữ liệu khi có mạng."),
+        ("3. Gian lận Pomodoro & Hack API AI:", "Server tự động tính giờ thực tế (now - started_at); Thiết lập 6 tầng AI Anti-Abuse Shield HMAC client signature token & Cooldown 3s."),
+        ("4. Tối ưu hóa cực hạn máy yếu:", "Can thiệp cờ phần cứng Chromium; Áp dụng CSS content-visibility: auto (giảm 70% render DOM); Mở app dưới 1 giây.")
+    ]
+    for ch_title, ch_sol in challenges:
+        p_c = tf_ch.add_paragraph()
+        p_c.space_before = Pt(4)
+        r_ct = p_c.add_run()
+        r_ct.text = f"• {ch_title} "
+        r_ct.font.bold = True
+        r_ct.font.size = Pt(10)
+        r_ct.font.color.rgb = SLATE_900
+
+        r_cs = p_c.add_run()
+        r_cs.text = ch_sol
+        r_cs.font.size = Pt(9.5)
+        r_cs.font.color.rgb = SLATE_600
+
+    # ==========================================
+    # SLIDE 11: CONCLUSION, FUTURE ROADMAP & ACKNOWLEDGEMENT (Hero Split Layout)
+    # ==========================================
+    s11 = prs.slides.add_slide(blank_layout)
+    bg11 = s11.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
+    bg11.fill.solid()
+    bg11.fill.fore_color.rgb = DARKER_BG
+    bg11.line.fill.background()
+
+    # Pink Neon Accent Line
+    glow11 = s11.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(0.2))
+    glow11.fill.solid()
+    glow11.fill.fore_color.rgb = PINK_NEON
+    glow11.line.fill.background()
+
+    # Top Success Tag
+    succ_tag = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.2), Inches(0.8), Inches(6.2), Inches(0.45))
+    succ_tag.fill.solid()
+    succ_tag.fill.fore_color.rgb = CARD_DARK
+    succ_tag.line.color.rgb = PINK_PRIMARY
+    succ_tag.line.width = Pt(1.5)
+    p_st = succ_tag.text_frame.paragraphs[0]
+    p_st.alignment = PP_ALIGN.CENTER
+    r_st = p_st.add_run()
+    r_st.text = "🌸 ĐỒ ÁN HOÀN THÀNH XUẤT SẮC 100% MỤC TIÊU MÔN HỌC"
+    r_st.font.bold = True
+    r_st.font.size = Pt(11)
+    r_st.font.color.rgb = PINK_NEON
+
+    # Left: Future Roadmap Card
+    r_box = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.2), Inches(1.5), Inches(5.3), Inches(4.6))
+    r_box.fill.solid()
+    r_box.fill.fore_color.rgb = CARD_DARK
+    r_box.line.color.rgb = SLATE_600
+    r_box.line.width = Pt(1.5)
+
+    tx_rb = s11.shapes.add_textbox(Inches(1.4), Inches(1.7), Inches(4.9), Inches(4.2))
+    tf_rb = tx_rb.text_frame
+    tf_rb.word_wrap = True
+
+    p_rt = tf_rb.paragraphs[0]
+    r_rt = p_rt.add_run()
+    r_rt.text = "🚀 ĐỊNH HƯỚNG PHÁT TRIỂN TƯƠNG LAI\n"
+    r_rt.font.bold = True
+    r_rt.font.size = Pt(15)
+    r_rt.font.color.rgb = PINK_NEON
+
+    roadmap_points = [
+        ("📱 Ứng Dụng Di Động Đa Nền Tảng:", "Phát triển phiên bản React Native / Flutter cho iOS và Android, đồng bộ dữ liệu thời gian thực."),
+        ("🧠 Trợ Lý AI Gia Sư Cá Nhân Hóa:", "Xây dựng Adaptive AI Tutor tự động điều chỉnh độ khó bài học và phân tích điểm yếu học bạ."),
+        ("🏫 Kết Nối Hệ Thống Các Trường Đại Học:", "Mở rộng giao thức đồng bộ dữ liệu điểm số tới nhiều trường đại học trên cả nước.")
+    ]
+    for r_title, r_desc in roadmap_points:
+        p_rp = tf_rb.add_paragraph()
+        p_rp.space_before = Pt(10)
+        r_pt = p_rp.add_run()
+        r_pt.text = f"{r_title}\n"
+        r_pt.font.bold = True
+        r_pt.font.size = Pt(11)
+        r_pt.font.color.rgb = WHITE
+
+        r_pd = p_rp.add_run()
+        r_pd.text = r_desc
+        r_pd.font.size = Pt(10)
+        r_pd.font.color.rgb = SLATE_200
+
+    # Right: Thank You & Tribute Card
+    t_box = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.8), Inches(1.5), Inches(5.333), Inches(4.6))
+    t_box.fill.solid()
+    t_box.fill.fore_color.rgb = RGBColor(26, 31, 54)
+    t_box.line.color.rgb = PINK_PRIMARY
+    t_box.line.width = Pt(2)
+
+    tx_tb = s11.shapes.add_textbox(Inches(7.0), Inches(1.7), Inches(4.9), Inches(4.2))
+    tf_tb = tx_tb.text_frame
+    tf_tb.word_wrap = True
+
+    p_tt = tf_tb.paragraphs[0]
+    r_tt = p_tt.add_run()
+    r_tt.text = "💖 LỜI TRI ÂN SÂU SẮC\n"
+    r_tt.font.bold = True
+    r_tt.font.size = Pt(15)
+    r_tt.font.color.rgb = PINK_PRIMARY
+
+    p_tp = tf_tb.add_paragraph()
+    p_tp.space_before = Pt(6)
+    r_tp = p_tp.add_run()
+    r_tp.text = "Nhóm TONE PINK xin chân thành cảm ơn:\n"
+    r_tp.font.size = Pt(11)
+    r_tp.font.color.rgb = WHITE
+
+    p_gv = tf_tb.add_paragraph()
+    p_gv.space_before = Pt(4)
+    r_gv = p_gv.add_run()
+    r_gv.text = "Giảng viên hướng dẫn — ThS. VÂN ANH\n"
+    r_gv.font.bold = True
+    r_gv.font.size = Pt(13)
+    r_gv.font.color.rgb = AMBER
+
+    p_tmsg = tf_tb.add_paragraph()
+    p_tmsg.space_before = Pt(6)
+    r_tmsg = p_tmsg.add_run()
+    r_tmsg.text = "Những bài giảng tâm huyết, những lời góp ý chuyên môn sắc bén và định hướng quý báu của Cô trong suốt môn học Công nghệ phần mềm đã giúp nhóm thực sự trưởng thành và hoàn thiện một sản phẩm phần mềm chuyên nghiệp!\n\n" \
+                  "Nhóm xin chân thành cảm ơn Cô và các bạn đã chú ý lắng nghe! 🌸✨"
+    r_tmsg.font.size = Pt(10.5)
+    r_tmsg.font.color.rgb = SLATE_200
+
+    # Bottom Pill
+    foot11 = s11.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1.2), Inches(6.3), Inches(10.933), Inches(0.55))
+    foot11.fill.solid()
+    foot11.fill.fore_color.rgb = CARD_DARK
+    foot11.line.color.rgb = PINK_PRIMARY
+    foot11.line.width = Pt(1)
+    p_f11 = foot11.text_frame.paragraphs[0]
+    p_f11.alignment = PP_ALIGN.CENTER
+    r_f11 = p_f11.add_run()
+    r_f11.text = "TONE PINK GROUP  •  3TG STUDY AI  •  Q&A - SẴN SÀNG TRẢ LỜI CÂU HỎI"
+    r_f11.font.size = Pt(11)
+    r_f11.font.bold = True
+    r_f11.font.color.rgb = PINK_NEON
+
     prs.save(PPTX_PATH)
-    print(f"-> Đã tạo thành công Slide PowerPoint (11 Slides) tại: {PPTX_PATH}")
+    print(f"-> ĐÃ TÁI TẠO XONG SLIDE PPTX ĐẸP MẮT (11 SLIDES KHÁC BIỆT 100%) TẠI: {PPTX_PATH}")
 
 if __name__ == "__main__":
     build_docx_report()
-    build_pptx_slides()
-    print("=== HOÀN TẤT XUẤT BẢN TOÀN BỘ TÀI LIỆU TỔNG KẾT MÔN HỌC ===")
+    build_presentation()
+    print("=== TẤT CẢ TÀI LIỆU VÀ SLIDE ĐÃ ĐƯỢC XUẤT BẢN THÀNH CÔNG ===")
