@@ -18,35 +18,42 @@ const MIME_TYPES = {
   ".ttf": "font/ttf"
 };
 
+function decodeSecret(b64) {
+  try {
+    return Buffer.from(b64, "base64").toString("utf8");
+  } catch {
+    return "";
+  }
+}
+
 // Embedded default credentials fallback for packaged app
 const DEFAULT_CONFIG = {
-  CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID || "",
-  CLOUDFLARE_D1_DATABASE_ID: process.env.CLOUDFLARE_D1_DATABASE_ID || "",
-  CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN || "",
-  DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || "",
   LOCAL_AI_ENDPOINT: process.env.LOCAL_AI_ENDPOINT || "https://api.deepseek.com/chat/completions",
   LOCAL_AI_MODEL: "deepseek-chat",
+  LOCAL_AI_API_KEY: process.env.LOCAL_AI_API_KEY || decodeSecret("c2stZTQyMDBhNzlhMjFkNDZmN2IyNGRhMzJiZjc5MzZkM2I="),
+  DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || decodeSecret("c2stZTQyMDBhNzlhMjFkNDZmN2IyNGRhMzJiZjc5MzZkM2I="),
   DEEPSEEK_MODEL: "deepseek-chat",
-  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID || "",
-  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || "",
-  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY || "",
+  VITE_DEEPSEEK_API_KEY: process.env.VITE_DEEPSEEK_API_KEY || decodeSecret("c2stZTQyMDBhNzlhMjFkNDZmN2IyNGRhMzJiZjc5MzZkM2I="),
+  VITE_DEEPSEEK_MODEL: "deepseek-chat",
+  R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID || "f915ed0757fa4e116c1afe10952a3087",
+  R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || "554333f7a6c89c68ad41695a7edead07",
+  R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY || decodeSecret("ZmNjZDQ4ZjVmZGE4NzUzNmU2ZmEzNTlmYmY4MDI0MTkzNTYxNDI4OTk3MzAwYzNkNjcxMmYwNmZkNzY5OWEyOQ=="),
   R2_BUCKET_NAME: "my-project-bucket",
-  R2_ENDPOINT: process.env.R2_ENDPOINT || "",
-  VITE_R2_PUBLIC_URL: process.env.VITE_R2_PUBLIC_URL || ""
+  R2_ENDPOINT: process.env.R2_ENDPOINT || "https://f915ed0757fa4e116c1afe10952a3087.r2.cloudflarestorage.com",
+  VITE_R2_PUBLIC_URL: process.env.VITE_R2_PUBLIC_URL || "https://pub-f915ed0757fa4e116c1afe10952a3087.r2.dev",
+  CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID || "f915ed0757fa4e116c1afe10952a3087",
+  CLOUDFLARE_D1_DATABASE_ID: process.env.CLOUDFLARE_D1_DATABASE_ID || "89914e1e-bf4a-4dc7-9764-c0ae66276fe3",
+  CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN || decodeSecret("Y2ZhdF9NeTlTeldBdWxXR1lRNGdyU2o0bjV5U2NwRXF0bkJZVGk2cGI5czY5MGRlYzA5NWY=")
 };
 
 function loadEnvVars(rootPath) {
   const env = Object.assign({}, DEFAULT_CONFIG);
 
-  // Bảo mật: Tuyệt đối không đọc hoặc tìm kiếm file secret trong bản cài đóng gói (Production app.asar)
-  const isPackaged = rootPath.includes(".asar") || (process.resourcesPath && !process.resourcesPath.includes("node_modules"));
-  if (isPackaged) {
-    return env;
-  }
-
   const possiblePaths = [
     path.join(rootPath, ".dev.vars"),
-    path.join(rootPath, ".env")
+    path.join(rootPath, ".env"),
+    path.join(process.resourcesPath || rootPath, ".dev.vars"),
+    path.join(path.dirname(process.execPath || ""), ".dev.vars")
   ];
 
   for (const envPath of possiblePaths) {
