@@ -182,8 +182,16 @@ async function createWindow() {
     const isCtrl = input.control || input.meta;
     const keyLower = (input.key || "").toLowerCase();
 
-    // Cho phép phím soạn thảo và phím thoát khẩn cấp Pomodoro (Ctrl + Q)
-    if (isCtrl && (keyLower === "c" || keyLower === "v" || keyLower === "a" || keyLower === "x" || keyLower === "z" || keyLower === "q")) {
+    // Cho phép phím bổ trợ (Control, Shift) để cử chỉ chuột và phím tắt hoạt động
+    if (keyLower === "control" || keyLower === "shift") {
+      return;
+    }
+
+    // Cho phép phím soạn thảo, phím zoom tài liệu (Ctrl +, Ctrl -, Ctrl 0) và phím thoát Pomodoro (Ctrl + Q)
+    if (isCtrl && (
+      keyLower === "c" || keyLower === "v" || keyLower === "a" || keyLower === "x" || keyLower === "z" || keyLower === "q" ||
+      keyLower === "+" || keyLower === "=" || keyLower === "-" || keyLower === "0" || keyLower === "numadd" || keyLower === "numsub"
+    )) {
       return;
     }
 

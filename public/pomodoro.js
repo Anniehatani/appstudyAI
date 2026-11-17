@@ -347,6 +347,7 @@ export const pomodoroState = {
   // MULTI-DOCUMENT ARCHITECTURE
   docs: [], // Array of { id, name, type: "pdf"|"text"|"image"|"note"|"docx"|"pptx"|"code"|"video"|"audio", content, active }
   activeDocId: null,
+  docZoom: typeof localStorage !== "undefined" && localStorage.getItem("pomo_doc_zoom") ? parseFloat(localStorage.getItem("pomo_doc_zoom")) || 1.0 : 1.0,
   sidebarOpen: typeof localStorage !== "undefined" && localStorage.getItem("pomo_sidebar_open") !== null ? localStorage.getItem("pomo_sidebar_open") !== "false" : true,
   sidebarWidth: typeof localStorage !== "undefined" ? Math.max(180, Math.min(480, parseInt(localStorage.getItem("pomo_sidebar_w") || "260", 10))) : 260,
   
@@ -480,11 +481,26 @@ if (typeof window !== "undefined") {
       return false;
     }
 
-    // Nếu người dùng nhấn Ctrl / Meta: Chỉ cho phép các phím soạn thảo C, V, A, X, Z
+    // Nếu người dùng nhấn Ctrl / Meta: Cho phép soạn thảo (C, V, A, X, Z) và phóng to/thu nhỏ tài liệu (+, -, 0)
     if (e.ctrlKey || e.metaKey) {
       const k = (e.key || "").toLowerCase();
       if (k === "c" || k === "v" || k === "a" || k === "x" || k === "z") {
         return; // Cho phép copy, paste, select all, cut, undo
+      }
+      if (k === "=" || k === "+" || k === "add") {
+        e.preventDefault();
+        changeDocZoom(0.1);
+        return;
+      }
+      if (k === "-" || k === "subtract") {
+        e.preventDefault();
+        changeDocZoom(-0.1);
+        return;
+      }
+      if (k === "0") {
+        e.preventDefault();
+        resetDocZoom();
+        return;
       }
       // Chặn mọi tổ hợp Ctrl khác (Ctrl+W, Ctrl+R, Ctrl+N, Ctrl+P, Ctrl+S, Ctrl+T, Ctrl+Shift+I...)
       e.preventDefault();
@@ -2319,14 +2335,24 @@ function renderPomodoroActiveRoom() {
           ` : ""}
 
           ${activeDoc ? `
-            <!-- KHI ĐANG MỞ FILE TÀI LIỆU: TRÌNH ĐỌC TRUNG TÂM -->
-            <div class="pomo-doc-full-viewer">
+            <!-- KHI ĐANG MỞ FILE TÀI LIỆU: TRÌNH ĐỌC TRUNG TÂM (CÓ HỖ TRỢ ZOOM TRACKPAD & CUỘN CHUỘT) -->
+            <div class="pomo-doc-full-viewer" id="pomo-doc-full-viewer">
               <div class="doc-viewer-header">
                 <div class="doc-viewer-title-row">
                   <span class="doc-badge-pill">${activeDoc.type.toUpperCase()}</span>
                   <strong class="doc-active-name">${safeEsc(activeDoc.name)}</strong>
                 </div>
                 <div class="doc-viewer-actions">
+                  <!-- ZOOM CONTROLS (Trackpad 2-finger pinch, Ctrl + cuộn chuột, hoặc bấm +/-) -->
+                  <div class="doc-zoom-toolbar" id="pomo-doc-zoom-toolbar" onwheel="window.handleDocZoomToolbarWheel(event)" title="Phóng to / thu nhỏ tài liệu: Chụm/vuốt 2 ngón trackpad, Ctrl + cuộn chuột hoặc bấm +/-">
+                    <button type="button" class="btn-zoom-step" onclick="window.changeDocZoom(-0.1)" title="Thu nhỏ (Ctrl -)">−</button>
+                    <button type="button" class="btn-zoom-badge" id="pomo-doc-zoom-badge" onclick="window.resetDocZoom()" title="Bấm để về 100% (Ctrl 0)">
+                      ${Math.round((pomodoroState.docZoom || 1) * 100)}%
+                    </button>
+                    <button type="button" class="btn-zoom-step" onclick="window.changeDocZoom(0.1)" title="Phóng to (Ctrl +)">＋</button>
+                    <button type="button" class="btn-zoom-reset" id="pomo-doc-zoom-reset" onclick="window.resetDocZoom()" title="Đặt lại 100%" style="${(pomodoroState.docZoom || 1) === 1 ? 'opacity: 0.4; pointer-events: none;' : ''}">↺</button>
+                  </div>
+
                   <button type="button" class="btn-viewer-tool" onclick="window.triggerAddPomoFiles()" title="Thêm tài liệu mới">
                     ＋ Thêm tệp
                   </button>
@@ -2335,8 +2361,10 @@ function renderPomodoroActiveRoom() {
                   </button>
                 </div>
               </div>
-              <div class="doc-viewer-scrollable-body ${activeDoc.type === 'pdf' ? 'pdf-mode' : ''}">
-                ${renderDocContent(activeDoc)}
+              <div class="doc-viewer-scrollable-body ${activeDoc.type === 'pdf' ? 'pdf-mode' : ''}" id="pomo-doc-scroll-body">
+                <div class="pomo-doc-zoom-content" id="pomo-doc-zoom-content" style="zoom: ${pomodoroState.docZoom || 1};">
+                  ${renderDocContent(activeDoc)}
+                </div>
               </div>
             </div>
           ` : `
@@ -2901,3 +2929,71 @@ window.hoverPomoAudioScrub = hoverPomoAudioScrub;
 window.leavePomoAudioScrub = leavePomoAudioScrub;
 window.setPomodoroPlaylistSearch = setPomodoroPlaylistSearch;
 window.setPomodoroPlaylistCategory = setPomodoroPlaylistCategory;
+
+// ========================================================
+// 10. DOCUMENT VIEWER ZOOM CONTROLLER (Trackpad Pinch & Ctrl + MouseWheel)
+// ========================================================
+export function setDocZoom(zoomLevel) {
+  const clamped = Math.max(0.5, Math.min(2.5, Math.round(zoomLevel * 100) / 100));
+  pomodoroState.docZoom = clamped;
+  try {
+    localStorage.setItem("pomo_doc_zoom", String(clamped));
+  } catch {}
+
+  const zoomContent = document.getElementById("pomo-doc-zoom-content");
+  if (zoomContent) {
+    zoomContent.style.zoom = clamped;
+  }
+  const badge = document.getElementById("pomo-doc-zoom-badge");
+  if (badge) {
+    badge.textContent = `${Math.round(clamped * 100)}%`;
+  }
+  const resetBtn = document.getElementById("pomo-doc-zoom-reset");
+  if (resetBtn) {
+    resetBtn.style.opacity = clamped === 1.0 ? "0.4" : "1";
+    resetBtn.style.pointerEvents = clamped === 1.0 ? "none" : "auto";
+  }
+}
+
+export function changeDocZoom(delta) {
+  const cur = pomodoroState.docZoom || 1.0;
+  setDocZoom(cur + delta);
+}
+
+export function resetDocZoom() {
+  setDocZoom(1.0);
+}
+
+export function handleDocZoomToolbarWheel(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const delta = e.deltaY < 0 ? 0.08 : -0.08;
+  changeDocZoom(delta);
+}
+
+// Global Non-Passive Wheel Listener for Trackpad 2-finger Pinch & Ctrl + MouseWheel
+if (typeof document !== "undefined") {
+  document.addEventListener("wheel", (e) => {
+    const scrollBody = document.getElementById("pomo-doc-scroll-body");
+    if (!scrollBody) return;
+
+    if (scrollBody.contains(e.target)) {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        let step;
+        if (Math.abs(e.deltaY) > 40) {
+          step = e.deltaY < 0 ? 0.1 : -0.1;
+        } else {
+          step = -e.deltaY * 0.005;
+        }
+        changeDocZoom(step);
+      }
+    }
+  }, { passive: false });
+}
+
+window.setDocZoom = setDocZoom;
+window.changeDocZoom = changeDocZoom;
+window.resetDocZoom = resetDocZoom;
+window.handleDocZoomToolbarWheel = handleDocZoomToolbarWheel;

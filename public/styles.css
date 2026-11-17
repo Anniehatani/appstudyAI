@@ -13324,6 +13324,106 @@ body.pomodoro-kiosk-mode .page-view-enter {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.doc-viewer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.doc-zoom-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-page, #f1f5f9);
+  border: 1.5px solid var(--border-light, #e2e8f0);
+  border-radius: 10px;
+  padding: 2px 4px;
+  user-select: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.btn-zoom-step {
+  background: transparent;
+  border: none;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-700, #334155);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-zoom-step:hover {
+  background: rgba(139, 92, 246, 0.15);
+  color: #7c3aed;
+}
+.btn-zoom-step:active {
+  transform: scale(0.9);
+}
+.btn-zoom-badge {
+  background: transparent;
+  border: none;
+  min-width: 44px;
+  padding: 0 4px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #7c3aed;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+.btn-zoom-badge:hover {
+  background: rgba(139, 92, 246, 0.1);
+}
+.btn-zoom-reset {
+  background: transparent;
+  border: none;
+  width: 22px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--ink-400, #94a3b8);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+.btn-zoom-reset:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ink-700);
+}
+[data-theme="dark"] .doc-zoom-toolbar {
+  background: #111420;
+  border-color: #273043;
+}
+[data-theme="dark"] .btn-zoom-step {
+  color: #cbd5e1;
+}
+[data-theme="dark"] .btn-zoom-step:hover {
+  background: rgba(139, 92, 246, 0.25);
+  color: #c4b5fd;
+}
+[data-theme="dark"] .btn-zoom-badge {
+  color: #c4b5fd;
+}
+[data-theme="dark"] .btn-zoom-badge:hover {
+  background: rgba(139, 92, 246, 0.2);
+}
+[data-theme="dark"] .btn-zoom-reset {
+  color: #64748b;
+}
+[data-theme="dark"] .btn-zoom-reset:hover {
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .btn-viewer-tool {
   background: var(--bg-page, #f1f5f9);
   border: none;
@@ -13341,12 +13441,21 @@ body.pomodoro-kiosk-mode .page-view-enter {
   flex: 1;
   height: calc(100% - 48px);
   overflow-y: auto;
+  overflow-x: auto;
   padding: 20px 24px;
   box-sizing: border-box;
 }
 .doc-viewer-scrollable-body.pdf-mode {
   padding: 0 !important;
-  overflow: hidden !important;
+  overflow: auto !important;
+}
+.pomo-doc-zoom-content {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  transform-origin: top center;
+  transition: zoom 0.05s ease-out;
 }
 .pomo-doc-pdf-wrap {
   width: 100%;
@@ -14095,9 +14204,10 @@ body.pomo-is-resizing * {
   max-width: 90%;
 }
 .pomo-doc-office-wrap {
-  padding: 24px;
-  overflow-y: auto;
-  height: 100%;
+  padding: 16px 20px;
+  overflow: visible;
+  height: auto;
+  min-height: 100%;
 }
 .office-doc-card {
   background: var(--card-bg, #ffffff);
