@@ -13453,7 +13453,17 @@ body.pomodoro-kiosk-mode .page-view-enter {
 }
 .doc-viewer-scrollable-body.pdf-mode {
   padding: 0 !important;
-  overflow: auto !important;
+  overflow: hidden !important;
+  height: calc(100% - 48px) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.doc-viewer-scrollable-body.pdf-mode .pomo-doc-zoom-content {
+  height: 100% !important;
+  min-height: 100% !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 .pomo-doc-zoom-content {
   width: 100%;
@@ -13464,17 +13474,21 @@ body.pomodoro-kiosk-mode .page-view-enter {
   transition: zoom 0.05s ease-out;
 }
 .pomo-doc-pdf-wrap {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex: 1;
-  overflow: hidden;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  overflow: hidden !important;
 }
 .pomo-pdf-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: calc(100vh - 180px) !important;
+  flex: 1 !important;
+  border: none !important;
+  display: block !important;
 }
 .pomo-doc-pre {
   white-space: pre-wrap;

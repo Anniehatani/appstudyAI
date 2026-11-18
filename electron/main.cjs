@@ -76,7 +76,7 @@ function startKioskGuard() {
   let guardPath = getGuardExecutablePath();
   if (!guardPath) {
     const csFile = path.join(__dirname, "kiosk-guard.cs");
-    const targetExe = path.join(__dirname, "../build/pomo_guard.exe");
+    const targetExe = path.join(__dirname, "focus_guard.exe");
     const cscCandidates = [
       "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
       "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe"
@@ -88,7 +88,7 @@ function startKioskGuard() {
         const res = spawnSync(cscPath, ["/target:winexe", `/out:${targetExe}`, csFile], { windowsHide: true });
         if (res.status === 0 && fs.existsSync(targetExe)) {
           guardPath = targetExe;
-          console.log("[KioskGuard] Tự động biên dịch pomo_guard.exe thành công!");
+          console.log("[KioskGuard] Tự động biên dịch focus_guard.exe thành công!");
         } else {
           console.warn("[KioskGuard Compile Failed]", res.stderr ? res.stderr.toString() : res.status);
         }
@@ -99,7 +99,7 @@ function startKioskGuard() {
   }
 
   if (!guardPath) {
-    console.warn("[KioskGuard] Không tìm thấy tệp bảo vệ pomo_guard.exe tại các vị trí kiểm tra");
+    console.warn("[KioskGuard] Không tìm thấy tệp bảo vệ focus_guard.exe tại các vị trí kiểm tra");
     return;
   }
 
@@ -181,7 +181,7 @@ async function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       spellcheck: false,
-      plugins: false,
+      plugins: true,
       backgroundThrottling: true,
       v8CacheOptions: "code"
     }

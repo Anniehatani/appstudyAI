@@ -1420,7 +1420,8 @@ export async function addMultipleLocalFiles(fileList) {
       };
       reader.readAsDataURL(file);
     } else if (file.type === "application/pdf" || ext === ".pdf") {
-      const blobUrl = URL.createObjectURL(file);
+      const pdfBlob = file.type === "application/pdf" ? file : new Blob([file], { type: "application/pdf" });
+      const blobUrl = URL.createObjectURL(pdfBlob);
       const pdfText = await extractTextFromPdfDoc(file);
       pomodoroState.docs.push({
         id: docId,
@@ -1622,7 +1623,15 @@ export async function triggerAddPomoFiles() {
           const binary = atob(f.base64);
           const bytes = new Uint8Array(binary.length);
           for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-          return new File([bytes], f.name, { type: "application/octet-stream" });
+          let mime = "application/octet-stream";
+          const ext = (f.ext || (f.name.includes(".") ? f.name.slice(f.name.lastIndexOf(".")) : "")).toLowerCase();
+          if (ext === ".pdf") mime = "application/pdf";
+          else if (ext === ".png") mime = "image/png";
+          else if (ext === ".jpg" || ext === ".jpeg") mime = "image/jpeg";
+          else if (ext === ".webp") mime = "image/webp";
+          else if (ext === ".mp4") mime = "video/mp4";
+          else if (ext === ".mp3") mime = "audio/mp3";
+          return new File([bytes], f.name, { type: mime });
         });
         await addMultipleLocalFiles(fileList);
         return;
@@ -2576,13 +2585,7 @@ function renderDocContent(doc) {
   if (doc.type === "pdf") {
     return `
       <div class="pomo-doc-pdf-wrap">
-        <object data="${doc.content}" type="application/pdf" class="pomo-pdf-iframe">
-          <iframe src="${doc.content}" class="pomo-pdf-iframe" title="${safeEsc(doc.name)}">
-            <div class="pomo-doc-empty">
-              Trình duyệt không hỗ trợ xem trực tiếp PDF này. Bạn có thể nhấn vào "Tóm tắt tài liệu" bên phải để Cố vấn AI đọc nội dung cho bạn.
-            </div>
-          </iframe>
-        </object>
+        <iframe src="${doc.content}#toolbar=1&navpanes=0" class="pomo-pdf-iframe" type="application/pdf" title="${safeEsc(doc.name)}"></iframe>
       </div>
     `;
   }
