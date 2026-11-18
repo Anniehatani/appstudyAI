@@ -159,7 +159,95 @@ function startKioskGuard() {
   });
 }
 
+let secondaryBlockerWindows = [];
+
+function createSecondaryBlockers() {
+  closeSecondaryBlockers();
+  try {
+    const displays = screen.getAllDisplays();
+    const primary = screen.getPrimaryDisplay();
+    const secondaryDisplays = displays.filter(d => d.id !== primary.id);
+
+    for (const disp of secondaryDisplays) {
+      const win = new BrowserWindow({
+        x: disp.bounds.x,
+        y: disp.bounds.y,
+        width: disp.bounds.width,
+        height: disp.bounds.height,
+        frame: false,
+        kiosk: true,
+        fullscreen: true,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        backgroundColor: "#0c0f17",
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true
+        }
+      });
+
+      win.setAlwaysOnTop(true, "screen-saver");
+      const blockerHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; background: #0c0f17;
+      color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none; -webkit-user-select: none; cursor: default;
+    }
+    .card {
+      text-align: center; padding: 48px 56px; border-radius: 28px;
+      background: rgba(255, 255, 255, 0.04); border: 1.5px solid rgba(255, 105, 180, 0.25);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6); max-width: 440px;
+    }
+    .mascot { font-size: 56px; margin-bottom: 16px; animation: pulse 1.6s infinite alternate ease-in-out; }
+    h2 { margin: 0 0 10px; color: #ff5e8e; font-size: 22px; font-weight: 800; }
+    p { margin: 0; color: #cbd5e1; font-size: 14px; line-height: 1.6; }
+    .badge {
+      display: inline-block; margin-top: 18px; padding: 6px 16px;
+      background: rgba(255, 75, 130, 0.15); border: 1px solid rgba(255, 75, 130, 0.3);
+      border-radius: 999px; font-size: 12px; font-weight: 700; color: #ff759f;
+    }
+    @keyframes pulse { from { transform: scale(0.96); } to { transform: scale(1.04); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="mascot">🐰💤</div>
+    <h2>MÀN HÌNH PHỤ ĐANG KHÓA ZEN</h2>
+    <p>Ca học Pomodoro Siêu Tập Trung đang hoạt động ở màn hình chính. Màn hình phụ được tạm khóa để giữ tuyệt đối 100% sự tập trung!</p>
+    <div class="badge">🔒 Chế độ Chống Xao Nhãng Active</div>
+  </div>
+</body>
+</html>`;
+      win.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(blockerHtml));
+      win.on("focus", () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          setTimeout(() => mainWindow.focus(), 30);
+        }
+      });
+      secondaryBlockerWindows.push(win);
+    }
+  } catch (e) {
+    console.warn("[SecondaryBlockers Error]", e.message);
+  }
+}
+
+function closeSecondaryBlockers() {
+  for (const win of secondaryBlockerWindows) {
+    try {
+      if (!win.isDestroyed()) win.destroy();
+    } catch {}
+  }
+  secondaryBlockerWindows = [];
+}
+
 function stopKioskGuard() {
+  closeSecondaryBlockers();
   if (kioskGuardProc) {
     try {
       kioskGuardProc.stdin?.write("STOP\n");
@@ -235,12 +323,6 @@ async function createWindow() {
   Menu.setApplicationMenu(null);
   mainWindow.setMenu(null);
   mainWindow.setMenuBarVisibility(false);
-
-  // Đảm bảo phiên luôn trống khi mở app: Xóa cookie phiên lưu tạm để người dùng đăng nhập tài khoản riêng của họ
-  try {
-    const { session } = require("electron");
-    session.defaultSession.clearStorageData({ storages: ["cookies"] });
-  } catch {}
 
   // Giữ cửa sổ luôn ở trên cùng và lấy lại tiêu điểm ngay lập tức nếu có tác vụ hệ thống muốn can thiệp khi Kiosk đang kích hoạt
   mainWindow.on("blur", () => {
@@ -467,7 +549,11 @@ ipcMain.handle("window:set-kiosk", async (event, flag) => {
     } catch {}
     mainWindow.setFullScreen(true);
     mainWindow.focus();
+
+    // KHÓA MỌI MÀN HÌNH PHỤ (SECONDARY DISPLAYS) ĐỂ DUY TRÌ TẬP TRUNG TUYỆT ĐỐI
+    createSecondaryBlockers();
   } else {
+    closeSecondaryBlockers();
     // 1. Phục hồi trạng thái cửa sổ ngay lập tức (0ms delay) để người dùng không cảm nhận bất kỳ độ trễ nào
     try {
       mainWindow.setAlwaysOnTop(false);
@@ -518,6 +604,27 @@ ipcMain.handle("dialog:open-study-files", async () => {
     }
   }
   return filesData;
+});
+ipcMain.handle("dialog:open-audio-files", async () => {
+  if (!mainWindow || mainWindow.isDestroyed()) return [];
+  const { dialog } = require("electron");
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: "Thêm tệp nhạc cá nhân vào phòng Pomodoro (Offline)",
+    properties: ["openFile", "multiSelections"],
+    filters: [
+      { name: "Tệp nhạc âm thanh (MP3, WAV, FLAC, M4A, OGG)", extensions: ["mp3", "wav", "flac", "m4a", "ogg", "aac"] },
+      { name: "Tất cả tệp", extensions: ["*"] }
+    ]
+  });
+  if (result.canceled || !result.filePaths || !result.filePaths.length) return [];
+  return result.filePaths.map(filePath => {
+    const fileName = path.basename(filePath);
+    return {
+      name: fileName,
+      path: filePath,
+      streamUrl: `${currentAppUrl || "http://127.0.0.1:8787"}/local-audio?path=${encodeURIComponent(filePath)}`
+    };
+  });
 });
 ipcMain.handle("auth:clear-cookies", async () => {
   try {

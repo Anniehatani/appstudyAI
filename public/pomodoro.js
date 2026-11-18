@@ -79,7 +79,59 @@ export class PomodoroMusicEngine {
     this.audio = null;
     this.activeChannel = "lofi";
     this.isScrubbing = false;
+    this.loadSavedLocalTracks();
     this.initAudio();
+  }
+
+  loadSavedLocalTracks() {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem("3tg_local_music_tracks");
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && list.length > 0) {
+          const valid = list.filter(t => t && t.id && (t.streamUrl || t.localPath));
+          for (const item of valid) {
+            if (!this.playlist.some(p => p.id === item.id)) {
+              this.playlist.unshift(item);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("loadSavedLocalTracks error:", e);
+    }
+  }
+
+  saveLocalTracks() {
+    if (typeof window === "undefined") return;
+    try {
+      const locals = this.playlist.filter(t => t.isLocal && !t.blobUrl);
+      localStorage.setItem("3tg_local_music_tracks", JSON.stringify(locals));
+    } catch {}
+  }
+
+  removeLocalTrack(trackId) {
+    const idx = this.playlist.findIndex(t => t.id === trackId);
+    if (idx !== -1) {
+      const isCurrent = this.currentIndex === idx;
+      if (isCurrent && this.isPlaying) {
+        this.pause();
+      }
+      this.playlist.splice(idx, 1);
+      this.saveLocalTracks();
+      if (isCurrent) {
+        this.currentIndex = Math.max(0, Math.min(this.currentIndex, this.playlist.length - 1));
+        if (this.playlist.length > 0) {
+          this.playTrack(this.currentIndex, false);
+        }
+      }
+      if (window.render) window.render();
+      const popoverEl = document.getElementById("pomo-playlist-popover");
+      if (popoverEl) {
+        popoverEl.outerHTML = renderPomodoroPlaylistPopover();
+      }
+    }
   }
 
   initAudio() {
@@ -116,7 +168,13 @@ export class PomodoroMusicEngine {
   }
 
   getTrackUrl(track) {
-    if (!track || !track.file) return "";
+    if (!track) return "";
+    if (track.blobUrl) return track.blobUrl;
+    if (track.streamUrl) return track.streamUrl;
+    if (track.file && (track.file.startsWith("blob:") || track.file.startsWith("data:") || track.file.startsWith("http:") || track.file.startsWith("https:"))) {
+      return track.file;
+    }
+    if (!track.file) return "";
     return `/media/pomodoro_music/${encodeURIComponent(track.file)}`;
   }
 
@@ -1433,7 +1491,8 @@ export async function extractTextFromPdfDoc(file, prefBuffer = null) {
     if (typeof window !== "undefined" && window.pdfjsLib) {
       try {
         window.pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdf.worker.min.js";
-        const loadingTask = window.pdfjsLib.getDocument({ data: buffer });
+        const cloneData = buffer instanceof ArrayBuffer ? new Uint8Array(buffer.slice(0)) : (buffer.buffer ? new Uint8Array(buffer.buffer.slice(0)) : buffer);
+        const loadingTask = window.pdfjsLib.getDocument({ data: cloneData });
         const pdf = await loadingTask.promise;
         const textPieces = [];
         const maxPages = Math.min(pdf.numPages, 30);
@@ -2404,6 +2463,9 @@ function renderPomodoroLobby() {
                 </option>
               `).join("")}
             </select>
+            <button type="button" class="btn-lobby-add-music" onclick="window.triggerAddLocalMusic()" title="Thêm file nhạc từ máy tính (MP3, WAV, FLAC...) phát offline">
+              ＋ Thêm tệp
+            </button>
           </div>
 
           <div class="volume-slider-row" style="margin-top: 12px;">
@@ -3021,17 +3083,34 @@ export async function initPdfDocViewer(doc) {
   // Fallback nếu window.pdfjsLib chưa nạp kịp
   if (typeof window === "undefined" || !window.pdfjsLib) {
     container.innerHTML = `
-      <embed src="${doc.blobUrl || doc.content}" type="application/pdf" class="pomo-pdf-iframe" style="width:100%;height:100%;min-height:calc(100vh - 180px);" />
+      <embed src="${doc.blobUrl || doc.content}#toolbar=0&navpanes=0&scrollbar=1" type="application/pdf" class="pomo-pdf-iframe" style="width:100%;height:100%;min-height:calc(100vh - 180px);border:none;" />
     `;
     return;
   }
 
   try {
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdf.worker.min.js";
+    try {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdf.worker.min.js";
+    } catch {}
 
     if (!doc._pdfDoc) {
-      const data = doc.arrayBuffer || (doc.file ? await doc.file.arrayBuffer() : doc.blobUrl || doc.content);
-      const loadingTask = window.pdfjsLib.getDocument({ data: data });
+      let source = null;
+      if (doc.blobUrl) {
+        source = { url: doc.blobUrl };
+      } else if (doc.arrayBuffer && doc.arrayBuffer.byteLength > 0) {
+        source = { data: new Uint8Array(doc.arrayBuffer.slice(0)) };
+      } else if (doc.file) {
+        try {
+          const ab = await doc.file.arrayBuffer();
+          source = { data: new Uint8Array(ab) };
+        } catch {
+          source = { url: doc.blobUrl || doc.content };
+        }
+      } else {
+        source = { url: doc.blobUrl || doc.content };
+      }
+
+      const loadingTask = window.pdfjsLib.getDocument(source);
       doc._pdfDoc = await loadingTask.promise;
       doc.numPages = doc._pdfDoc.numPages;
 
@@ -3100,7 +3179,7 @@ export async function initPdfDocViewer(doc) {
   } catch (err) {
     console.warn("[PDF Render Error]:", err);
     container.innerHTML = `
-      <embed src="${doc.blobUrl || doc.content}" type="application/pdf" class="pomo-pdf-iframe" style="width:100%;height:100%;min-height:calc(100vh - 180px);" />
+      <embed src="${doc.blobUrl || doc.content}#toolbar=0&navpanes=0&scrollbar=1" type="application/pdf" class="pomo-pdf-iframe" style="width:100%;height:100%;min-height:calc(100vh - 180px);border:none;" />
     `;
   }
 }
@@ -3168,8 +3247,10 @@ export function renderPomodoroPlaylistPopover() {
   const search = (pomodoroState.playlistSearch || "").trim().toLowerCase();
   const cat = pomodoroState.playlistCategory || "all";
 
+  const localTracksCount = pomodoroAudio.playlist.filter(t => t.isLocal).length;
   const categories = [
-    { key: "all", label: `Tất cả (${POMODORO_PLAYLIST.length})` },
+    { key: "all", label: `Tất cả (${pomodoroAudio.playlist.length})` },
+    ...(localTracksCount > 0 ? [{ key: "local", label: `Của bạn (${localTracksCount}) 🎵` }] : []),
     { key: "lofi", label: "Lofi Beat" },
     { key: "rain", label: "Tiếng Mưa" },
     { key: "brain", label: "Sóng Não" },
@@ -3179,6 +3260,7 @@ export function renderPomodoroPlaylistPopover() {
 
   const filtered = pomodoroAudio.playlist.filter(t => {
     if (cat !== "all") {
+      if (cat === "local" && !t.isLocal) return false;
       if (cat === "lofi" && !t.tag.toLowerCase().includes("lofi")) return false;
       if (cat === "rain" && !t.tag.toLowerCase().includes("mưa")) return false;
       if (cat === "brain" && !t.tag.toLowerCase().includes("não")) return false;
@@ -3201,7 +3283,12 @@ export function renderPomodoroPlaylistPopover() {
           <span class="pomo-playlist-header-icon">🎧</span>
           <strong>Nhạc Pomodoro</strong>
         </div>
-        <button type="button" class="pomo-playlist-close-x" onclick="window.closePomodoroPlaylist()" title="Đóng">✕</button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="btn-pomo-add-local-music" onclick="window.triggerAddLocalMusic()" title="Thêm file nhạc MP3, WAV, FLAC từ máy tính để nghe hoàn toàn offline (0 byte upload)">
+            ＋ Thêm nhạc tệp
+          </button>
+          <button type="button" class="pomo-playlist-close-x" onclick="window.closePomodoroPlaylist()" title="Đóng">✕</button>
+        </div>
       </div>
 
       <!-- Search bar -->
@@ -3242,10 +3329,15 @@ export function renderPomodoroPlaylistPopover() {
               </div>
               <div class="track-row-right">
                 <span class="track-row-tag">${safeEsc(track.tag)}</span>
-                <span class="track-row-size">${track.sizeMb} MB</span>
+                <span class="track-row-size">${track.sizeMb || (track.isLocal ? 'Offline' : '2.5 MB')}</span>
                 <button type="button" class="pomo-track-play-btn" title="${isPlayingThis ? 'Tạm dừng' : 'Phát'}" onclick="event.stopPropagation(); ${isCurrent ? 'window.pomodoroAudio.togglePlay()' : `window.pomodoroAudio.playTrack(${globalIdx}, true)`}">
                   <span class="pomo-track-play-icon">${isPlayingThis ? '⏸' : '▶'}</span>
                 </button>
+                ${track.isLocal ? `
+                  <button type="button" class="pomo-track-del-btn" title="Xóa bài hát khỏi danh sách" onclick="event.stopPropagation(); window.removeCustomAudioTrack('${track.id}')">
+                    ✕
+                  </button>
+                ` : ""}
               </div>
             </div>
           `;
@@ -3379,6 +3471,80 @@ export function setPomodoroPlaylistCategory(cat) {
   }
 }
 
+export async function triggerAddLocalMusic() {
+  if (window.electronAPI && typeof window.electronAPI.openAudioFiles === "function") {
+    try {
+      const files = await window.electronAPI.openAudioFiles();
+      if (Array.isArray(files) && files.length > 0) {
+        for (const f of files) {
+          const trackId = "local_" + Math.random().toString(36).slice(2, 9);
+          const track = {
+            id: trackId,
+            title: f.name.replace(/\.[^/.]+$/, ""),
+            artist: "Tệp cá nhân (Offline)",
+            tag: "Của bạn",
+            icon: "🎵",
+            localPath: f.path,
+            streamUrl: f.streamUrl,
+            file: f.streamUrl,
+            sizeMb: "Offline",
+            isLocal: true
+          };
+          pomodoroAudio.playlist.unshift(track);
+        }
+        pomodoroAudio.saveLocalTracks();
+        pomodoroAudio.playTrack(0, true);
+        if (window.showToast) window.showToast(`Đã thêm ${files.length} bài hát từ máy tính vào danh sách phát! 🎶`);
+        if (window.render) window.render();
+        const popoverEl = document.getElementById("pomo-playlist-popover");
+        if (popoverEl) popoverEl.outerHTML = renderPomodoroPlaylistPopover();
+        return;
+      }
+    } catch (e) {
+      console.warn("openAudioFiles error:", e);
+    }
+  }
+
+  // Web input fallback
+  let input = document.getElementById("pomo-local-audio-input");
+  if (!input) {
+    input = document.createElement("input");
+    input.id = "pomo-local-audio-input";
+    input.type = "file";
+    input.accept = "audio/*";
+    input.multiple = true;
+    input.style.display = "none";
+    input.onchange = (e) => {
+      const files = Array.from(e.target.files || []);
+      if (!files.length) return;
+      for (const f of files) {
+        const blobUrl = URL.createObjectURL(f);
+        const trackId = "local_" + Math.random().toString(36).slice(2, 9);
+        const track = {
+          id: trackId,
+          title: f.name.replace(/\.[^/.]+$/, ""),
+          artist: "Tệp cá nhân (Offline)",
+          tag: "Của bạn",
+          icon: "🎵",
+          blobUrl: blobUrl,
+          file: blobUrl,
+          sizeMb: (f.size / (1024 * 1024)).toFixed(1) + " MB",
+          isLocal: true
+        };
+        pomodoroAudio.playlist.unshift(track);
+      }
+      pomodoroAudio.playTrack(0, true);
+      if (window.showToast) window.showToast(`Đã thêm ${files.length} bài hát từ máy tính! 🎶`);
+      if (window.render) window.render();
+      const popoverEl = document.getElementById("pomo-playlist-popover");
+      if (popoverEl) popoverEl.outerHTML = renderPomodoroPlaylistPopover();
+      input.value = "";
+    };
+    document.body.appendChild(input);
+  }
+  input.click();
+}
+
 // Click outside popover to close
 if (typeof document !== "undefined") {
   document.addEventListener("click", (e) => {
@@ -3395,6 +3561,8 @@ if (typeof document !== "undefined") {
 // Window global bridges
 window.pomodoroAudio = pomodoroAudio;
 window.pomodoroState = pomodoroState;
+window.triggerAddLocalMusic = triggerAddLocalMusic;
+window.removeCustomAudioTrack = (id) => pomodoroAudio.removeLocalTrack(id);
 window.startPomodoroSession = startPomodoroSession;
 window.pausePomodoroTimer = pausePomodoroTimer;
 window.openPomodoroExitConfirm = openPomodoroExitConfirm;

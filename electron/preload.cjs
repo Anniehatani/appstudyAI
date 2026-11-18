@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   setKiosk: (flag) => ipcRenderer.invoke("window:set-kiosk", flag),
   isKiosk: () => ipcRenderer.invoke("window:is-kiosk"),
   openStudyFiles: () => ipcRenderer.invoke("dialog:open-study-files"),
+  openAudioFiles: () => ipcRenderer.invoke("dialog:open-audio-files"),
   openIuLogin: () => ipcRenderer.invoke("academic:open-iu-login"),
   clearSessionCookies: () => ipcRenderer.invoke("auth:clear-cookies"),
   restoreTaskbar: () => ipcRenderer.invoke("kiosk:restore")

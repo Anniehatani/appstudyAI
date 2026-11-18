@@ -3671,6 +3671,18 @@ async function handleGetAcademicTranscript(user, env) {
   }
 }
 
+async function handleAcademicDisconnect(user, env) {
+  try {
+    await env.DB.prepare(`
+      DELETE FROM user_academic_transcripts WHERE user_id = ?
+    `).bind(user.userId).run();
+    return { ok: true, message: "Đã ngắt kết nối và xóa toàn bộ dữ liệu bảng điểm IU thành công." };
+  } catch (err) {
+    console.warn("[Academic Disconnect Error]", err.message);
+    return { ok: false, error: err.message };
+  }
+}
+
 async function handleAcademicScrapeIU(request, user, env) {
   const row = await env.DB.prepare(`
     SELECT raw_data, last_synced_at FROM user_academic_transcripts WHERE user_id = ? LIMIT 1
@@ -4042,6 +4054,7 @@ async function routeApi(request, env) {
   if (path === "/api/academic/login-iu" && method === "POST") return respond(await handleAcademicLoginIU(request, user, env));
   if (path === "/api/academic/scrape-iu" && method === "POST") return respond(await handleAcademicScrapeIU(request, user, env));
   if (path === "/api/academic/transcript" && method === "GET") return respond(await handleGetAcademicTranscript(user, env));
+  if (path === "/api/academic/disconnect" && (method === "POST" || method === "DELETE")) return respond(await handleAcademicDisconnect(user, env));
   if (path === "/api/academic/advisor" && method === "POST") return respond(await handleAcademicAdvisor(request, user, env));
   if (path === "/api/me" && method === "GET") {
     const stats = await env.DB.prepare("SELECT * FROM user_stats WHERE user_id = ? LIMIT 1").bind(user.userId).first();

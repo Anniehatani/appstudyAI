@@ -15458,6 +15458,58 @@ canvas {
   overflow: hidden !important;
   background: var(--bg-card, #ffffff);
 }
+/* Custom Local Audio UI */
+.btn-pomo-add-local-music {
+  background: rgba(255, 75, 130, 0.1);
+  color: var(--theme-accent, #ff4b82);
+  border: 1px solid rgba(255, 75, 130, 0.3);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-pomo-add-local-music:hover {
+  background: var(--theme-accent, #ff4b82);
+  color: #fff;
+}
+.btn-lobby-add-music {
+  background: rgba(255, 75, 130, 0.1);
+  color: var(--theme-accent, #ff4b82);
+  border: 1.5px solid rgba(255, 75, 130, 0.3);
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.btn-lobby-add-music:hover {
+  background: var(--theme-accent, #ff4b82);
+  color: #fff;
+}
+.pomo-track-del-btn {
+  background: none;
+  border: none;
+  color: var(--ink-400, #94a3b8);
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+.pomo-track-del-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
 .pomo-pdf-toolbar {
   display: flex;
   align-items: center;

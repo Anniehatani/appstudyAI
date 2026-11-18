@@ -729,6 +729,52 @@ async function startEmbeddedServer(rootPath, port = 8787) {
       const parsedUrl = new URL(req.url, `http://${req.headers.host || "127.0.0.1"}`);
       const pathname = parsedUrl.pathname;
 
+      // 1.0 STREAM LOCAL OFFLINE AUDIO (Tệp nhạc cá nhân trong máy người dùng, 0 byte lên cloudflare)
+      if (pathname === "/local-audio" || pathname === "/api/local-audio") {
+        const filePath = parsedUrl.searchParams.get("path");
+        if (!filePath || !fs.existsSync(filePath)) {
+          res.writeHead(404, { "Content-Type": "text/plain" });
+          return res.end("Audio file not found");
+        }
+        try {
+          const stat = fs.statSync(filePath);
+          const ext = path.extname(filePath).toLowerCase();
+          let mime = "audio/mpeg";
+          if (ext === ".wav") mime = "audio/wav";
+          else if (ext === ".flac") mime = "audio/flac";
+          else if (ext === ".ogg") mime = "audio/ogg";
+          else if (ext === ".m4a") mime = "audio/mp4";
+          else if (ext === ".aac") mime = "audio/aac";
+
+          const range = req.headers.range;
+          if (range) {
+            const parts = range.replace(/bytes=/, "").split("-");
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+            const chunksize = (end - start) + 1;
+            const stream = fs.createReadStream(filePath, { start, end });
+            res.writeHead(206, {
+              "Content-Range": `bytes ${start}-${end}/${stat.size}`,
+              "Accept-Ranges": "bytes",
+              "Content-Length": chunksize,
+              "Content-Type": mime
+            });
+            stream.pipe(res);
+          } else {
+            res.writeHead(200, {
+              "Content-Length": stat.size,
+              "Content-Type": mime,
+              "Accept-Ranges": "bytes"
+            });
+            fs.createReadStream(filePath).pipe(res);
+          }
+          return;
+        } catch (e) {
+          res.writeHead(500, { "Content-Type": "text/plain" });
+          return res.end("Error streaming audio: " + e.message);
+        }
+      }
+
       // 1. HIGH-SPEED STREAMING FOR R2 MEDIA (AVATARS, WALLPAPERS, POMODORO MUSIC)
       if (pathname.startsWith("/media/")) {
         const handled = streamR2Media(req, res, pathname, envVars);

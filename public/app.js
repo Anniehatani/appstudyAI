@@ -10541,13 +10541,18 @@ window.resetSimulatedScores = function() {
   render();
 };
 
-window.resetAcademicTranscript = function() {
-  if (!confirm("Bạn có chắc chắn muốn ngắt kết nối và xóa dữ liệu bảng điểm IU hiện tại khỏi phiên học không?")) return;
+window.resetAcademicTranscript = async function() {
+  if (!confirm("Bạn có chắc chắn muốn ngắt kết nối và xóa toàn bộ dữ liệu bảng điểm IU khỏi tài khoản 3TG không?")) return;
+  try {
+    await api("/api/academic/disconnect", { method: "POST" });
+  } catch (e) {
+    console.warn("Lỗi khi gọi API ngắt kết nối IU:", e);
+  }
   state.academicTranscript = null;
   state.academicSimulatedScores.clear();
   updateShell();
   render();
-  showToast("Đã ngắt kết nối tài khoản IU.", false);
+  showToast("Đã ngắt kết nối tài khoản IU và xóa toàn bộ dữ liệu bảng điểm thành công.", false);
 };
 
 // ========================================================
@@ -10918,10 +10923,24 @@ document.getElementById("mobile-overlay")?.addEventListener("click", closeMobile
 
 async function initialize() {
   try {
-    showAppLoader("Đang chuẩn bị kho bài học 3TG… 🌸", "Thỏ Bảy Màu đang tải lộ trình học tập…");
+    showAppLoader("Đang chuẩn bị kho bài học 3TG… 🌸", "Thỏ Bảy Màu đang kiểm tra phiên học…");
     setAppLoaderProgress(25);
 
-    // Luôn khởi động ứng dụng ở trạng thái sạch (trống phiên đăng nhập) để bảo vệ quyền riêng tư và người dùng tự đăng nhập
+    // 1. Tự động kiểm tra và khôi phục phiên đăng nhập từ cookie / session đã lưu
+    const sess = await api("/api/session").catch(() => null);
+    if (sess && sess.profile) {
+      state.profile = sess.profile;
+      state.account = sess.account || null;
+      if (sess.profile.color_theme) {
+        applyColorTheme(sess.profile.color_theme, false, false);
+      }
+      setAppLoaderProgress(60);
+      await loadAuthenticatedData();
+      setAppLoaderProgress(100);
+      return;
+    }
+
+    // 2. Nếu chưa có phiên đăng nhập: tải danh mục môn học và hiển thị màn hình đăng nhập
     state.profile = null;
     state.account = null;
     applyColorTheme("theme_sakura_pink", true, false);
