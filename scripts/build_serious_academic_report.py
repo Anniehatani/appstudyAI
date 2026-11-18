@@ -9,8 +9,24 @@ from docx.oxml.ns import nsdecls, qn
 import html
 
 def build_report(toc_page_map=None):
-    template_path = os.path.abspath(os.path.join("tổng kết dự án", "Mẫu bìa BTL.docx"))
-    doc = docx.Document(template_path)
+    clean_template_path = os.path.abspath(os.path.join("tổng kết dự án", "Mẫu bìa BTL_Clean.docx"))
+    if not os.path.exists(clean_template_path):
+        import zipfile
+        from PIL import Image
+        src_docx = os.path.abspath(os.path.join("tổng kết dự án", "Mẫu bìa BTL.docx"))
+        clean_frame_path = os.path.abspath(os.path.join("tổng kết dự án", "figures", "clean_frame.jpeg"))
+        if not os.path.exists(clean_frame_path):
+            border_im = Image.open(os.path.join("tổng kết dự án", "figures", "sample_border_frame_clean.png")).convert("RGB")
+            border_im.resize((2000, 2960), Image.Resampling.LANCZOS).save(clean_frame_path, "JPEG", quality=98)
+        with zipfile.ZipFile(src_docx, 'r') as zin, zipfile.ZipFile(clean_template_path, 'w') as zout:
+            for item in zin.infolist():
+                if item.filename == "word/media/image1.jpeg":
+                    with open(clean_frame_path, 'rb') as f_img:
+                        zout.writestr(item.filename, f_img.read())
+                else:
+                    zout.writestr(item, zin.read(item.filename))
+
+    doc = docx.Document(clean_template_path)
     
     # 1. Isolate the paragraph containing the ornate border frame (<w:drawing>)
     drawing_p_elem = None
@@ -24,15 +40,21 @@ def build_report(toc_page_map=None):
         if p._p != drawing_p_elem:
             p._p.getparent().remove(p._p)
 
+    # Disable expansion of soft line breaks (Shift+Enter / <w:br/>) across document
+    compat_xml = parse_xml('<w:compat xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:doNotExpandShiftReturn/></w:compat>')
+    doc.settings.element.append(compat_xml)
+
     COLOR_BLACK = RGBColor(0, 0, 0)
     COLOR_DARK = RGBColor(30, 30, 30)
     COLOR_GRAY = RGBColor(70, 70, 70)
+    COLOR_DARK_RED = RGBColor(180, 30, 30)
 
-    def set_font(run, size_pt=13, bold=False, italic=False, color=COLOR_BLACK, font_name="Times New Roman"):
+    def set_font(run, size_pt=13, bold=False, italic=False, underline=False, color=COLOR_BLACK, font_name="Times New Roman"):
         run.font.name = font_name
         run.font.size = Pt(size_pt)
         run.font.bold = bold
         run.font.italic = italic
+        run.font.underline = underline
         run.font.color.rgb = color
 
     def p_text(text, bold_prefix="", italic=False, space_after=4, align=WD_ALIGN_PARAGRAPH.JUSTIFY):
@@ -79,32 +101,56 @@ def build_report(toc_page_map=None):
             
         return p
 
-    def callout_box(title, text):
-        p = doc.add_paragraph()
-        p.paragraph_format.line_spacing = 1.5
-        p.paragraph_format.left_indent = Inches(0.4)
-        p.paragraph_format.right_indent = Inches(0.2)
-        p.paragraph_format.space_before = Pt(8)
-        p.paragraph_format.space_after = Pt(8)
-        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-        
-        rt = p.add_run(f"• {title}\n")
+    def callout_box(title, text_or_items):
+        p_t = doc.add_paragraph()
+        p_t.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p_t.paragraph_format.left_indent = Inches(0.4)
+        p_t.paragraph_format.space_before = Pt(8)
+        p_t.paragraph_format.space_after = Pt(2)
+        p_t.paragraph_format.keep_with_next = True
+        rt = p_t.add_run(f"• {title.strip()}")
         set_font(rt, size_pt=12.5, bold=True, color=COLOR_BLACK)
-        
-        rc = p.add_run(text)
-        set_font(rc, size_pt=12, italic=True, color=COLOR_DARK)
-        return p
+
+        if isinstance(text_or_items, list):
+            items = text_or_items
+        else:
+            items = [item.strip() for item in text_or_items.split("\n\n") if item.strip()]
+
+        for item in items:
+            clean_item = " ".join(item.split())
+            if not clean_item:
+                continue
+            p = doc.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            p.paragraph_format.line_spacing = 1.35
+            p.paragraph_format.left_indent = Inches(0.6)
+            p.paragraph_format.right_indent = Inches(0.2)
+            p.paragraph_format.space_before = Pt(2)
+            p.paragraph_format.space_after = Pt(3)
+            
+            # Check for colon prefix like "DÀNH CHO: " or "1. Lý thuyết ...: "
+            if ": " in clean_item:
+                prefix, body = clean_item.split(": ", 1)
+                r_pre = p.add_run(prefix + ": ")
+                set_font(r_pre, size_pt=12, bold=True, color=COLOR_BLACK)
+                r_body = p.add_run(body)
+                set_font(r_body, size_pt=12, italic=True, color=COLOR_DARK)
+            else:
+                r = p.add_run(clean_item)
+                set_font(r, size_pt=12, italic=True, color=COLOR_DARK)
+        return p_t
 
     def code_box(code_text):
         p = doc.add_paragraph()
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
         p.paragraph_format.line_spacing = 1.15
-        p.paragraph_format.left_indent = Inches(0.3)
+        p.paragraph_format.left_indent = Inches(0.4)
         p.paragraph_format.right_indent = Inches(0.2)
         p.paragraph_format.space_before = Pt(6)
         p.paragraph_format.space_after = Pt(6)
         
-        r = p.add_run(code_text)
-        set_font(r, size_pt=10, font_name="Consolas", color=COLOR_BLACK)
+        r = p.add_run(code_text.strip())
+        set_font(r, size_pt=9.5, font_name="Consolas", color=COLOR_BLACK)
         return p
 
     def styled_table(headers, rows_data, col_widths=None):
@@ -174,69 +220,105 @@ def build_report(toc_page_map=None):
     print("-> Đang thiết lập Trang bìa chính (Khung hoa văn Mẫu bìa BTL.docx)...")
     p0 = doc.paragraphs[0]
     p0.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p0.paragraph_format.space_before = Pt(4)
+    p0.paragraph_format.space_before = Pt(0)
     p0.paragraph_format.space_after = Pt(2)
     p0.paragraph_format.line_spacing = 1.15
-    r0 = p0.add_run("BỘ GIÁO DỤC VÀ ĐÀO TẠO\nTRƯỜNG ĐẠI HỌC CMC\nKHOA CÔNG NGHỆ THÔNG TIN VÀ TRUYỀN THÔNG\n")
-    set_font(r0, size_pt=13, bold=True, color=COLOR_BLACK)
-    
-    r_star = p0.add_run("-------------------- *** --------------------\n\n")
-    set_font(r_star, size_pt=11, color=COLOR_GRAY)
 
-    p1 = doc.add_paragraph()
-    p1.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p1.paragraph_format.space_after = Pt(4)
-    p1.paragraph_format.line_spacing = 1.15
-    r1 = p1.add_run("BÁO CÁO BÀI TẬP LỚN\nMÔN HỌC: CÔNG NGHỆ PHẦN MỀM (MÃ HP: INFO2005 / INFO2011)\nLỚP HỌC PHẦN: N08\n\n")
-    set_font(r1, size_pt=14, bold=True, color=COLOR_BLACK)
+    r0 = p0.add_run("BỘ GIÁO DỤC VÀ ĐÀO TẠO\nTRƯỜNG ĐẠI HỌC CMC\nKHOA: CÔNG NGHỆ THÔNG TIN\n")
+    set_font(r0, size_pt=12.5, bold=True, color=COLOR_BLACK)
 
-    p2 = doc.add_paragraph()
-    p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p2.paragraph_format.space_after = Pt(12)
-    p2.paragraph_format.line_spacing = 1.2
-    r2_lbl = p2.add_run("ĐỀ TÀI DỰ ÁN CUỐI KỲ:\n")
-    set_font(r2_lbl, size_pt=13, italic=True, color=COLOR_DARK)
-    
-    r2_val = p2.add_run("XÂY DỰNG HỆ SINH THÁI HỌC TẬP THÔNG MINH 3TG STUDY AI:\nTÍCH HỢP TRÍ TUỆ NHÂN TẠO ĐA TẦNG, CƠ CHẾ GAMIFICATION PHÂN TẦNG TƯƠNG TÁC\nVÀ PHÒNG HỌC FOCUS KIOSK MODE BẢO VỆ NATIVE C++\n\n")
-    set_font(r2_val, size_pt=15, bold=True, color=COLOR_BLACK)
+    r_div1 = p0.add_run("----- ")
+    set_font(r_div1, size_pt=11, bold=True, color=COLOR_BLACK)
+    r_book = p0.add_run("&")
+    set_font(r_book, size_pt=12, bold=True, color=COLOR_BLACK, font_name="Wingdings")
+    r_div2 = p0.add_run(" -----\n")
+    set_font(r_div2, size_pt=11, bold=True, color=COLOR_BLACK)
 
-    tbl_cover = doc.add_table(rows=3, cols=2)
-    tbl_cover.alignment = WD_TABLE_ALIGNMENT.CENTER
-    tbl_cover.autofit = False
+    # Logo CMC University
+    p_logo = doc.add_paragraph()
+    p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_logo.paragraph_format.space_before = Pt(8)
+    p_logo.paragraph_format.space_after = Pt(14)
+    logo_path = os.path.abspath(os.path.join("tổng kết dự án", "figures", "cmc_logo_perfect.png"))
+    if os.path.exists(logo_path):
+        p_logo.add_run().add_picture(logo_path, width=Inches(2.3))
 
-    col_widths_cover = [Inches(2.2), Inches(3.8)]
-    for row in tbl_cover.rows:
-        for idx, width in enumerate(col_widths_cover):
+    # Title "TIỂU LUẬN BÀI TẬP LỚN"
+    p_title = doc.add_paragraph()
+    p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_title.paragraph_format.space_before = Pt(6)
+    p_title.paragraph_format.space_after = Pt(12)
+    r_title = p_title.add_run("TIỂU LUẬN BÀI TẬP LỚN")
+    set_font(r_title, size_pt=16.5, bold=True, color=COLOR_BLACK)
+
+    # ĐỀ TÀI:
+    p_topic = doc.add_paragraph()
+    p_topic.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_topic.paragraph_format.space_before = Pt(4)
+    p_topic.paragraph_format.space_after = Pt(20)
+    p_topic.paragraph_format.line_spacing = 1.25
+
+    r_lbl = p_topic.add_run("ĐỀ TÀI: ")
+    set_font(r_lbl, size_pt=13.5, bold=True, italic=True, underline=True, color=COLOR_DARK_RED)
+
+    r_val = p_topic.add_run("Xây dựng hệ sinh thái học tập thông minh 3TG Study AI:\nTích hợp trí tuệ nhân tạo đa tầng, cơ chế Gamification tương tác\nvà phòng học Focus Kiosk Mode bảo vệ Native C++")
+    set_font(r_val, size_pt=13.5, bold=True, color=COLOR_DARK_RED)
+
+    # 2-column table: Instructor & Subject
+    tbl_meta = doc.add_table(rows=3, cols=2)
+    tbl_meta.alignment = WD_TABLE_ALIGNMENT.CENTER
+    tbl_meta.autofit = False
+
+    col_widths = [Inches(2.5), Inches(3.2)]
+    for row in tbl_meta.rows:
+        for idx, width in enumerate(col_widths):
             row.cells[idx].width = width
 
-    cover_meta = [
-        ("Giảng viên hướng dẫn:", "ThS. Nguyễn Thị Vân Anh"),
-        ("Nhóm thực hiện:", "TONE PINK (Nhóm 08)"),
-        ("Sinh viên thực hiện:", "1. Lê Văn An        - MSSV: BAI250001 (Nhóm trưởng)\n2. Nguyễn Như Quỳnh - MSSV: BCS252491\n3. Nguyễn Văn Tú    - MSSV: BIT250364")
+    meta_rows = [
+        ("Giảng viên hướng dẫn", "ThS. Nguyễn Thị Vân Anh"),
+        ("Học phần", "Công nghệ phần mềm"),
+        ("Lớp", "N08")
     ]
 
-    for r_idx, (lbl, val) in enumerate(cover_meta):
-        c0 = tbl_cover.rows[r_idx].cells[0]
-        c1 = tbl_cover.rows[r_idx].cells[1]
+    for r_idx, (col1, col2) in enumerate(meta_rows):
+        c0 = tbl_meta.rows[r_idx].cells[0]
+        c1 = tbl_meta.rows[r_idx].cells[1]
         
         p_c0 = c0.paragraphs[0]
-        p_c0.paragraph_format.line_spacing = 1.2
-        p_c0.paragraph_format.space_after = Pt(3)
-        r_c0 = p_c0.add_run(lbl)
+        p_c0.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_c0.paragraph_format.space_before = Pt(2)
+        p_c0.paragraph_format.space_after = Pt(2)
+        r_c0 = p_c0.add_run(col1)
         set_font(r_c0, size_pt=12.5, bold=True, color=COLOR_BLACK)
         
         p_c1 = c1.paragraphs[0]
-        p_c1.paragraph_format.line_spacing = 1.2
-        p_c1.paragraph_format.space_after = Pt(3)
-        r_c1 = p_c1.add_run(val)
-        set_font(r_c1, size_pt=12.5, color=COLOR_BLACK)
+        p_c1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_c1.paragraph_format.space_before = Pt(2)
+        p_c1.paragraph_format.space_after = Pt(2)
+        r_c1 = p_c1.add_run(col2)
+        set_font(r_c1, size_pt=12.5, bold=True, color=COLOR_BLACK)
 
-    p4 = doc.add_paragraph()
-    p4.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p4.paragraph_format.space_before = Pt(24)
-    p4.paragraph_format.space_after = Pt(0)
-    r4 = p4.add_run("HÀ NỘI, THÁNG 11 NĂM 2026")
-    set_font(r4, size_pt=13, bold=True, color=COLOR_BLACK)
+    # Group section
+    p_grp_lbl = doc.add_paragraph()
+    p_grp_lbl.paragraph_format.left_indent = Inches(0.8)
+    p_grp_lbl.paragraph_format.space_before = Pt(22)
+    p_grp_lbl.paragraph_format.space_after = Pt(6)
+    r_grp = p_grp_lbl.add_run("Nhóm thực hiện:")
+    set_font(r_grp, size_pt=13, bold=True, color=COLOR_BLACK)
+
+    students = [
+        "Lê Văn An – BAI250001 (Nhóm trưởng)",
+        "Nguyễn Như Quỳnh – BCS252491",
+        "Nguyễn Văn Tú – BIT250364"
+    ]
+
+    for s in students:
+        p_s = doc.add_paragraph()
+        p_s.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_s.paragraph_format.space_before = Pt(1.5)
+        p_s.paragraph_format.space_after = Pt(1.5)
+        r_s = p_s.add_run(s)
+        set_font(r_s, size_pt=13, bold=True, color=COLOR_BLACK)
 
     # Move to Page 2 (Bìa lót)
     doc.add_page_break()
@@ -245,59 +327,87 @@ def build_report(toc_page_map=None):
     # 2. TRANG BÌA LÓT (INNER COVER)
     # =========================================================================
     print("-> Đang tạo Trang bìa lót (Giấy trắng chuẩn Mẫu bìa BTL)...")
-    p_inst2 = doc.add_paragraph()
-    p_inst2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_inst2.paragraph_format.space_before = Pt(12)
-    p_inst2.paragraph_format.space_after = Pt(2)
-    r1_2 = p_inst2.add_run("BỘ GIÁO DỤC VÀ ĐÀO TẠO\nTRƯỜNG ĐẠI HỌC CMC\nKHOA CÔNG NGHỆ THÔNG TIN VÀ TRUYỀN THÔNG\n")
-    set_font(r1_2, size_pt=13, bold=True, color=COLOR_BLACK)
-    
-    r_star2 = p_inst2.add_run("-------------------- *** --------------------\n\n")
-    set_font(r_star2, size_pt=11, color=COLOR_GRAY)
-    
-    p_rep2 = doc.add_paragraph()
-    p_rep2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_rep2.paragraph_format.space_after = Pt(6)
-    r_rep2 = p_rep2.add_run("BÁO CÁO BÀI TẬP LỚN\nMÔN HỌC: CÔNG NGHỆ PHẦN MỀM (MÃ HP: INFO2005 / INFO2011)\nLỚP HỌC PHẦN: N08\n\n")
-    set_font(r_rep2, size_pt=14, bold=True, color=COLOR_BLACK)
-    
-    p_top2 = doc.add_paragraph()
-    p_top2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_top2.paragraph_format.space_after = Pt(18)
-    r_t_lbl2 = p_top2.add_run("ĐỀ TÀI DỰ ÁN CUỐI KỲ:\n")
-    set_font(r_t_lbl2, size_pt=13, italic=True, color=COLOR_DARK)
-    
-    r_t_val2 = p_top2.add_run("XÂY DỰNG HỆ SINH THÁI HỌC TẬP THÔNG MINH 3TG STUDY AI:\nTÍCH HỢP TRÍ TUỆ NHÂN TẠO ĐA TẦNG, CƠ CHẾ GAMIFICATION PHÂN TẦNG TƯƠNG TÁC\nVÀ PHÒNG HỌC FOCUS KIOSK MODE BẢO VỆ NATIVE C++\n\n")
-    set_font(r_t_val2, size_pt=15, bold=True, color=COLOR_BLACK)
+    p0_2 = doc.add_paragraph()
+    p0_2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p0_2.paragraph_format.space_before = Pt(12)
+    p0_2.paragraph_format.space_after = Pt(2)
+    p0_2.paragraph_format.line_spacing = 1.15
+
+    r0_2 = p0_2.add_run("BỘ GIÁO DỤC VÀ ĐÀO TẠO\nTRƯỜNG ĐẠI HỌC CMC\nKHOA: CÔNG NGHỆ THÔNG TIN\n")
+    set_font(r0_2, size_pt=12.5, bold=True, color=COLOR_BLACK)
+
+    r_div1_2 = p0_2.add_run("----- ")
+    set_font(r_div1_2, size_pt=11, bold=True, color=COLOR_BLACK)
+    r_book_2 = p0_2.add_run("&")
+    set_font(r_book_2, size_pt=12, bold=True, color=COLOR_BLACK, font_name="Wingdings")
+    r_div2_2 = p0_2.add_run(" -----\n")
+    set_font(r_div2_2, size_pt=11, bold=True, color=COLOR_BLACK)
+
+    p_logo_2 = doc.add_paragraph()
+    p_logo_2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_logo_2.paragraph_format.space_before = Pt(8)
+    p_logo_2.paragraph_format.space_after = Pt(14)
+    if os.path.exists(logo_path):
+        p_logo_2.add_run().add_picture(logo_path, width=Inches(2.3))
+
+    p_title_2 = doc.add_paragraph()
+    p_title_2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_title_2.paragraph_format.space_before = Pt(6)
+    p_title_2.paragraph_format.space_after = Pt(12)
+    r_title_2 = p_title_2.add_run("TIỂU LUẬN BÀI TẬP LỚN")
+    set_font(r_title_2, size_pt=16.5, bold=True, color=COLOR_BLACK)
+
+    p_topic_2 = doc.add_paragraph()
+    p_topic_2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_topic_2.paragraph_format.space_before = Pt(4)
+    p_topic_2.paragraph_format.space_after = Pt(20)
+    p_topic_2.paragraph_format.line_spacing = 1.25
+
+    r_lbl_2 = p_topic_2.add_run("ĐỀ TÀI: ")
+    set_font(r_lbl_2, size_pt=13.5, bold=True, italic=True, underline=True, color=COLOR_DARK_RED)
+
+    r_val_2 = p_topic_2.add_run("Xây dựng hệ sinh thái học tập thông minh 3TG Study AI:\nTích hợp trí tuệ nhân tạo đa tầng, cơ chế Gamification tương tác\nvà phòng học Focus Kiosk Mode bảo vệ Native C++")
+    set_font(r_val_2, size_pt=13.5, bold=True, color=COLOR_DARK_RED)
 
     tbl_inner = doc.add_table(rows=3, cols=2)
     tbl_inner.alignment = WD_TABLE_ALIGNMENT.CENTER
     tbl_inner.autofit = False
     for row in tbl_inner.rows:
-        for idx, width in enumerate(col_widths_cover):
+        for idx, width in enumerate(col_widths):
             row.cells[idx].width = width
 
-    for r_idx, (lbl, val) in enumerate(cover_meta):
+    for r_idx, (col1, col2) in enumerate(meta_rows):
         c0 = tbl_inner.rows[r_idx].cells[0]
         c1 = tbl_inner.rows[r_idx].cells[1]
         
         p_c0 = c0.paragraphs[0]
-        p_c0.paragraph_format.line_spacing = 1.2
-        p_c0.paragraph_format.space_after = Pt(4)
-        r_c0 = p_c0.add_run(lbl)
+        p_c0.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_c0.paragraph_format.space_before = Pt(2)
+        p_c0.paragraph_format.space_after = Pt(2)
+        r_c0 = p_c0.add_run(col1)
         set_font(r_c0, size_pt=12.5, bold=True, color=COLOR_BLACK)
         
         p_c1 = c1.paragraphs[0]
-        p_c1.paragraph_format.line_spacing = 1.2
-        p_c1.paragraph_format.space_after = Pt(4)
-        r_c1 = p_c1.add_run(val)
-        set_font(r_c1, size_pt=12.5, color=COLOR_BLACK)
+        p_c1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_c1.paragraph_format.space_before = Pt(2)
+        p_c1.paragraph_format.space_after = Pt(2)
+        r_c1 = p_c1.add_run(col2)
+        set_font(r_c1, size_pt=12.5, bold=True, color=COLOR_BLACK)
 
-    p_dt2 = doc.add_paragraph()
-    p_dt2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_dt2.paragraph_format.space_before = Pt(30)
-    r_dt2 = p_dt2.add_run("HÀ NỘI, THÁNG 11 NĂM 2026")
-    set_font(r_dt2, size_pt=13, bold=True, color=COLOR_BLACK)
+    p_grp_lbl_2 = doc.add_paragraph()
+    p_grp_lbl_2.paragraph_format.left_indent = Inches(0.8)
+    p_grp_lbl_2.paragraph_format.space_before = Pt(22)
+    p_grp_lbl_2.paragraph_format.space_after = Pt(6)
+    r_grp_2 = p_grp_lbl_2.add_run("Nhóm thực hiện:")
+    set_font(r_grp_2, size_pt=13, bold=True, color=COLOR_BLACK)
+
+    for s in students:
+        p_s = doc.add_paragraph()
+        p_s.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_s.paragraph_format.space_before = Pt(1.5)
+        p_s.paragraph_format.space_after = Pt(1.5)
+        r_s = p_s.add_run(s)
+        set_font(r_s, size_pt=13, bold=True, color=COLOR_BLACK)
 
     # Move to Page 3 (Đề bài)
     doc.add_page_break()
@@ -307,9 +417,9 @@ def build_report(toc_page_map=None):
     # =========================================================================
     print("-> Đang tạo Trang đề bài bài tập lớn...")
     h_styled("ĐỀ BÀI BÀI TẬP LỚN MÔN HỌC CÔNG NGHỆ PHẦN MỀM", level=1)
-    p_text("Học phần: Công nghệ phần mềm (Software Engineering) — Mã học phần: INFO2005 / INFO2011", bold_prefix="1. Thông tin học phần: ")
+    p_text("Học phần: Công nghệ phần mềm (Software Engineering) — Mã học phần: INFO2011", bold_prefix="1. Thông tin học phần: ")
     p_text("Xây dựng hoàn chỉnh một ứng dụng phần mềm Desktop native/hybrid có khả năng hỗ trợ học tập chuyên sâu, tích hợp công nghệ AI, tuân thủ nghiêm ngặt quy trình Agile Scrum qua 6 Sprints và vượt qua bộ kiểm thử tự động toàn diện.", bold_prefix="2. Yêu cầu tổng quát: ")
-    p_text("Toàn bộ chu trình phát triển sản phẩm phải được quản trị nghiêm ngặt và minh bạch trên nền tảng GitHub tại kho lưu trữ Anniehatani/appstudyAI, bao gồm hệ thống Issues phân công có gán nhãn, Milestones theo từng Sprint, Git Commits có thông điệp chuẩn mực, Pull Requests, Code Review và gắn Tag bản phát hành (Releases v29.9.07).", bold_prefix="3. Yêu cầu quản trị mã nguồn: ")
+    p_text("Toàn bộ chu trình phát triển sản phẩm phải được quản trị nghiêm ngặt và minh bạch trên nền tảng GitHub (kho lưu trữ Anniehatani / appstudyAI), bao gồm hệ thống Issues phân công có gán nhãn, Milestones theo từng Sprint, Git Commits có thông điệp chuẩn mực, Pull Requests, Code Review và gắn Tag bản phát hành (Releases v29.9.07).", bold_prefix="3. Yêu cầu quản trị mã nguồn: ")
     p_text("Xây dựng thành công một Sản phẩm khả dụng tối thiểu (MVP) chạy được trên môi trường máy tính Desktop Windows (bản cài Installer và Portable), tích hợp đầy đủ backend cơ sở dữ liệu D1 chuẩn 3NF, API RESTful, và tác tử AI hoạt động thực tế.", bold_prefix="4. Yêu cầu sản phẩm MVP: ")
     p_text("Đáp ứng trọn vẹn 5 Chuẩn đầu ra học phần (CLO1 đến CLO5): Kỹ nghệ phần mềm hiện đại & Agile; Phân tích yêu cầu & Tầm nhìn sản phẩm; Thiết kế kiến trúc & CSDL 3NF; Bảo mật, lập trình tin cậy & Kiểm thử QA; Làm việc nhóm, tài liệu kỹ thuật & Khai thác AI có trách nhiệm.", bold_prefix="5. Chuẩn đầu ra hướng tới: ")
 
@@ -320,12 +430,12 @@ def build_report(toc_page_map=None):
     # =========================================================================
     print("-> Đang tạo Trang nhận xét và phiếu chấm điểm...")
     h_styled("PHIẾU NHẬN XÉT VÀ ĐÁNH GIÁ CỦA GIẢNG VIÊN CHẤM THI", level=1)
-    p_text("Họ và tên giảng viên chấm 1: ....................................................................... Chữ ký: ......................")
-    p_text("Họ và tên giảng viên chấm 2: ....................................................................... Chữ ký: ......................")
-    p_text("Điểm kết luận toàn diện bài tập lớn: Bằng số: .............. / 10 | Bằng chữ: ..........................................")
+    p_text("Họ và tên giảng viên chấm 1: ....................................................................... Chữ ký: ......................", align=WD_ALIGN_PARAGRAPH.LEFT)
+    p_text("Họ và tên giảng viên chấm 2: ....................................................................... Chữ ký: ......................", align=WD_ALIGN_PARAGRAPH.LEFT)
+    p_text("Điểm kết luận toàn diện bài tập lớn: Bằng số: .............. / 10 | Bằng chữ: ..........................................", align=WD_ALIGN_PARAGRAPH.LEFT)
     
     doc.add_paragraph().paragraph_format.space_after = Pt(4)
-    p_text("BẢNG ĐÁNH GIÁ CHI TIẾT THEO 5 CHUẨN ĐẦU RA (CLO) - RUBRIC INFO2011 CMCU K4", bold_prefix="• ")
+    p_text("BẢNG ĐÁNH GIÁ CHI TIẾT THEO 5 CHUẨN ĐẦU RA (CLO) - RUBRIC INFO2011 CMCU K4", bold_prefix="• ", align=WD_ALIGN_PARAGRAPH.LEFT)
     rubric_tbl = [
         ["Tiêu chí CLO", "Nội dung chuẩn đầu ra đánh giá", "Trọng số", "Điểm tối đa", "Điểm đánh giá"],
         ["CLO1", "Áp dụng quy trình Agile Scrum, quản lý mã nguồn Git, quản trị Sprint và phát hành phiên bản.", "20%", "2.0", ""],
@@ -337,9 +447,9 @@ def build_report(toc_page_map=None):
     ]
     styled_table(rubric_tbl[0], rubric_tbl[1:], col_widths=[0.9, 3.2, 0.7, 0.8, 0.9])
     
-    p_text("Nhận xét chi tiết của cán bộ chấm thi:", bold_prefix="• ")
+    p_text("Nhận xét chi tiết của cán bộ chấm thi:", bold_prefix="• ", align=WD_ALIGN_PARAGRAPH.LEFT)
     for _ in range(4):
-        p_text("....................................................................................................................................................................................")
+        p_text("....................................................................................................................................................................................", align=WD_ALIGN_PARAGRAPH.LEFT)
 
     doc.add_page_break()
 
@@ -589,13 +699,14 @@ def build_report(toc_page_map=None):
 
     h_styled("1.2. Tuyên ngôn Tầm nhìn sản phẩm (Product Vision Statement)", level=2, bookmark_name="sec_ch1_2")
     p_text("Áp dụng khung mẫu chuẩn của Geoffrey Moore (Crossing the Chasm) trong kỹ nghệ sản phẩm phần mềm:")
-    callout_box("Tuyên ngôn Tầm nhìn Sản phẩm 3TG Study AI",
-                "DÀNH CHO sinh viên đại học theo học chế tín chỉ (đặc biệt là sinh viên công nghệ thông tin Trường Đại học CMC),\n"
-                "NHỮNG NGƯỜI đang gặp khó khăn trong việc duy trì tập trung chuyên sâu, quản lý điểm rèn luyện GPA và cần động lực học tập bền bỉ,\n"
-                "SẢN PHẨM 3TG Study AI LÀ MỘT hệ sinh thái không gian học tập thông minh toàn diện tích hợp Trí tuệ nhân tạo (AI-Native Focus Study Ecosystem),\n"
-                "CUNG CẤP lộ trình học tập phân tầng tương tác Gamification, cổng đồng bộ bảng điểm tín chỉ IU CMCU tự động, trợ lý AI tư vấn cá nhân hóa, và phòng học Zen Pomodoro bảo vệ bằng cơ chế Native Kiosk C++ chống sao nhãng tuyệt đối trên toàn bộ hệ thống đa màn hình,\n"
-                "KHÁC BIỆT HOÀN TOÀN VỚI các ứng dụng bấm giờ Pomodoro thông thường hoặc phần mềm học tập đơn lẻ trên thị trường,\n"
-                "SẢN PHẨM CỦA CHÚNG TÔI kết hợp sức mạnh điện toán biên Cloudflare Serverless siêu nhẹ với trình bảo vệ tiến trình Win32 Native cấp thấp, đảm bảo trải nghiệm học tập mượt mà, đồng bộ ngoại tuyến tức thì và an toàn tuyệt đối cho người dùng.")
+    callout_box("Tuyên ngôn Tầm nhìn Sản phẩm 3TG Study AI (Geoffrey Moore Framework)", [
+        "DÀNH CHO: Sinh viên đại học theo học chế tín chỉ (đặc biệt là sinh viên công nghệ thông tin Trường Đại học CMC).",
+        "NHỮNG NGƯỜI: Đang gặp khó khăn trong việc duy trì tập trung chuyên sâu, quản lý điểm rèn luyện GPA và cần động lực học tập bền bỉ.",
+        "SẢN PHẨM 3TG Study AI LÀ: Một hệ sinh thái không gian học tập thông minh toàn diện tích hợp Trí tuệ nhân tạo (AI-Native Focus Study Ecosystem).",
+        "CUNG CẤP: Lộ trình học tập phân tầng tương tác Gamification, cổng đồng bộ bảng điểm tín chỉ IU CMCU tự động, trợ lý AI tư vấn cá nhân hóa, và phòng học Zen Pomodoro bảo vệ bằng cơ chế Native Kiosk C++ chống sao nhãng tuyệt đối trên toàn bộ hệ thống đa màn hình.",
+        "KHÁC BIỆT HOÀN TOÀN VỚI: Các ứng dụng bấm giờ Pomodoro thông thường hoặc phần mềm học tập đơn lẻ trên thị trường.",
+        "SẢN PHẨM CỦA CHÚNG TÔI: Kết hợp sức mạnh điện toán biên Cloudflare Serverless siêu nhẹ với trình bảo vệ tiến trình Win32 Native cấp thấp, đảm bảo trải nghiệm học tập mượt mà, đồng bộ ngoại tuyến tức thì và an toàn tuyệt đối cho người dùng."
+    ])
 
     h_styled("1.3. Chân dung người dùng điển hình (User Personas)", level=2, bookmark_name="sec_ch1_3")
     p_text("Để định hình các yêu cầu chức năng chính xác, nhóm phát triển đã xây dựng 3 Personas đại diện cho các nhóm đối tượng sử dụng khác nhau:")
@@ -762,11 +873,11 @@ def build_report(toc_page_map=None):
 
     h_styled("3.5. Trình bảo vệ Kiosk C++ Native & Khôi phục 100% Taskbar Windows <5ms", level=2, bookmark_name="sec_ch3_5")
     p_text("Một trong những đóng góp kỹ thuật tinh xảo nhất của đồ án là việc giải quyết dứt điểm lỗi mất thanh tác vụ hệ thống (Windows Taskbar Disappearance) mà các phần mềm Kiosk thông thường hay gặp phải khi ứng dụng bị tắt đột ngột.")
-    p_text("Giải pháp kiến trúc: Thay vì chỉ gọi hàm ẩn Taskbar từ tiến trình giao diện Electron, nhóm phát triển một chương trình độc lập viết bằng Win32 C++ Native (kiosk_guard.exe) được nhúng trực tiếp trong tệp cài đặt. Khi kích hoạt chế độ Kiosk Mode, chương trình gọi ShowWindow(FindWindowA(\"Shell_TrayWnd\", NULL), SW_HIDE). Đồng thời, một trình xử lý ngắt tín hiệu hệ thống (Signal Handler) bắt các sự kiện SIGINT, SIGTERM và ngoại lệ sập ứng dụng (Unhandled Exception) để đảm bảo ShowWindow(FindWindowA(\"Shell_TrayWnd\", NULL), SW_SHOW) luôn được thực thi trong thời gian dưới 5ms, khôi phục thanh Taskbar nguyên vẹn 100%.")
+    p_text("Giải pháp kiến trúc: Thay vì chỉ gọi hàm ẩn Taskbar từ tiến trình giao diện Electron, nhóm phát triển một chương trình độc lập viết bằng Win32 C++ Native (kiosk_guard.exe) được nhúng trực tiếp trong bộ cài đặt. Khi kích hoạt chế độ Kiosk Mode, chương trình gọi hàm Win32 API: ShowWindow(FindWindowA(\"Shell_TrayWnd\", NULL), SW_HIDE). Đồng thời, một trình xử lý ngắt tín hiệu hệ thống (Signal Handler) bắt các sự kiện ngắt tín hiệu SIGINT, SIGTERM và ngoại lệ sự cố ứng dụng để đảm bảo ShowWindow(FindWindowA(\"Shell_TrayWnd\", NULL), SW_SHOW) luôn được thực thi trong thời gian dưới 5ms, khôi phục thanh tác vụ Taskbar nguyên vẹn 100%.")
     add_image_figure("fig_sequence_kiosk.png", "Hình 3.1: Sơ đồ Tuần tự (Sequence Diagram) Kích hoạt và Thoát an toàn Kiosk Mode với C++ Native Worker")
 
     h_styled("3.6. Cơ chế Multi-Monitor Zen Blocker bao phủ màn hình phụ", level=2, bookmark_name="sec_ch3_6")
-    p_text("Trong thực tế, nhiều sinh viên sử dụng máy tính kèm màn hình phụ thứ hai hoặc cắm dây HDMI lên tivi. Các phần mềm thông thường chỉ khóa màn hình chính, khiến sinh viên dễ dàng chuyển các ứng dụng giải trí sang màn hình phụ để xem trong giờ học Pomodoro. Đồ án 3TG Study AI giải quyết triệt để vấn đề này bằng API screen.getAllDisplays() của Electron: Hệ thống tự động phát hiện số lượng màn hình kết nối, khởi tạo các cửa sổ phụ tràn viền không viền màu đen tuyệt đối phủ kín toàn bộ các màn hình phụ còn lại, cô lập hoàn toàn không gian học tập.")
+    p_text("Trong thực tế, nhiều sinh viên sử dụng máy tính kèm màn hình phụ thứ hai hoặc cắm dây HDMI lên tivi. Các phần mềm thông thường chỉ khóa màn hình chính, khiến sinh viên dễ dàng chuyển các ứng dụng giải trí sang màn hình phụ để xem trong giờ học Pomodoro. Đồ án 3TG Study AI giải quyết triệt để vấn đề này bằng API đa màn hình của Electron (screen.getAllDisplays): Hệ thống tự động phát hiện số lượng màn hình kết nối, khởi tạo các cửa sổ phụ tràn viền không viền màu đen tuyệt đối phủ kín toàn bộ các màn hình phụ còn lại, cô lập hoàn toàn không gian học tập.")
 
     h_styled("3.7. Trình phát nhạc Local Offline qua HTTP 206 Byte-Range", level=2, bookmark_name="sec_ch3_7")
     p_text("Nhằm tối ưu hóa chi phí vận hành máy chủ đám mây và cho phép nghe nhạc tập trung mượt mà khi không có mạng, toàn bộ các tệp âm thanh (Sóng Não Alpha, ASMR Bút Viết, Lofi Beats) được lưu trữ ngay trong thư mục tài nguyên cục bộ của máy tính. Máy chủ nhúng nội bộ Node.js Embedded Server phục vụ các tệp âm thanh này thông qua chuẩn HTTP 206 Partial Content (Byte-Range Requests). Cơ chế này cho phép thẻ audio HTML5 của trình duyệt tua nhanh đến bất kỳ giây nào mà không cần tải lại toàn bộ tệp MP3, triệt tiêu độ trễ phát nhạc.")
@@ -785,7 +896,7 @@ def build_report(toc_page_map=None):
     h_styled("CHƯƠNG 4: THỰC THI QUA 6 SPRINTS AGILE & ĐỐI CHIẾU LÝ THUYẾT IAN SOMMERVILLE (AGILE & THEORY)", level=1, bookmark_name="sec_ch4")
     
     h_styled("4.1. Quy trình quản trị dự án Agile Scrum trên GitHub", level=2, bookmark_name="sec_ch4_1")
-    p_text("Dự án áp dụng mô hình phát triển phần mềm linh hoạt Agile Scrum với chu kỳ Sprint 1-2 tuần. Toàn bộ tiến trình được công khai minh bạch trên GitHub Repository tại kho lưu trữ Anniehatani/appstudyAI thông qua: 6 Milestones chính thức, 57 Issues được gán nhãn chuyên biệt, hơn 100 Git Commits tuân thủ chuẩn Conventional Commits, và bản phát hành cuối cùng gắn tag v29.9.07.")
+    p_text("Dự án áp dụng mô hình phát triển phần mềm linh hoạt Agile Scrum với chu kỳ Sprint 1-2 tuần. Toàn bộ tiến trình được công khai minh bạch trên GitHub Repository tại kho lưu trữ Anniehatani / appstudyAI thông qua: 6 Milestones chính thức, 57 Issues được gán nhãn chuyên biệt, hơn 100 Git Commits tuân thủ chuẩn Conventional Commits, và bản phát hành cuối cùng gắn tag v29.9.07.")
     add_image_figure("fig_github_repo.png", "Hình 4.1: Bằng chứng quản trị dự án phần mềm trên GitHub Repository Anniehatani/appstudyAI", width_inches=5.8)
 
     h_styled("4.2. Báo cáo chi tiết chuỗi 6 Sprints phát triển phần mềm", level=2, bookmark_name="sec_ch4_2")
@@ -802,21 +913,17 @@ def build_report(toc_page_map=None):
     h_styled("4.3. Phân tích đối chiếu lý thuyết Ian Sommerville (Mạch 3 bước)", level=2, bookmark_name="sec_ch4_3")
     p_text("Để thể hiện tư duy học thuật hàn lâm và năng lực phản biện kỹ thuật, nhóm áp dụng mạch phản biện 3 bước (Lý thuyết sách giáo khoa - Áp dụng thực tiễn trong đồ án - Phản biện đánh đổi kỹ thuật) dựa trên tác phẩm kinh điển 'Engineering Software Products' của Giáo sư Ian Sommerville:")
     
-    callout_box("QUYẾT ĐỊNH 1: MÔ HÌNH TIẾN HÓA SẢN PHẨM KHẢ DỤNG TỐI THIỂU (MVP-DRIVEN DEVELOPMENT)",
-                "1. Lý thuyết (Ian Sommerville - Ch.2, Engineering Software Products):\n"
-                "Sommerville nhấn mạnh rằng trong phát triển sản phẩm phần mềm hiện đại, việc cố gắng định nghĩa toàn bộ yêu cầu ngay từ đầu theo mô hình Thác nước (Waterfall) thường dẫn đến việc xây dựng các tính năng thừa thãi mà người dùng không cần. Thay vào đó, nhóm phát triển phải nhanh chóng xây dựng phiên bản Khả dụng Tối thiểu (MVP) chứa các tính năng cốt lõi (Core Features) để thử nghiệm thực tế và tiếp nhận phản hồi.\n\n"
-                "2. Áp dụng thực tiễn trong đồ án 3TG Study AI:\n"
-                "Nhóm đã chia nhỏ phạm vi dự án thành 6 Sprints rõ rệt. Tại Sprint 1, nhóm không vội vàng làm tính năng Kiosk hay AI phức tạp, mà tập trung hoàn thiện bộ khung MVP gồm: CSDL Cloudflare D1, cây lộ trình bài học uốn lượn và hệ thống tính điểm XP. Sau khi các tính năng này chạy ổn định, các tầng logic phức tạp hơn (như kết nối bảng điểm IU CMCU, phân tích AI, Kiosk C++ Native) mới được phát triển gối đầu qua các Sprints sau.\n\n"
-                "3. Phản biện & Đánh đổi kỹ thuật (Trade-off Analysis):\n"
-                "Cách tiếp cận MVP giúp nhóm luôn có một sản phẩm phần mềm chạy được (Working Software) ở cuối mỗi Sprint, giảm thiểu tối đa rủi ro 'cháy deadline'. Tuy nhiên, sự đánh đổi là nhóm phải liên tục tái cấu trúc mã nguồn (Code Refactoring) khi các tính năng mới được tích hợp vào. Sự linh hoạt này đem lại độ tin cậy vượt trội so với việc cố định thiết kế từ đầu.")
+    callout_box("QUYẾT ĐỊNH 1: MÔ HÌNH TIẾN HÓA SẢN PHẨM KHẢ DỤNG TỐI THIỂU (MVP-DRIVEN DEVELOPMENT)", [
+        "1. Lý thuyết (Ian Sommerville - Ch.2, Engineering Software Products): Sommerville nhấn mạnh rằng trong phát triển sản phẩm phần mềm hiện đại, việc cố gắng định nghĩa toàn bộ yêu cầu ngay từ đầu theo mô hình Thác nước (Waterfall) thường dẫn đến việc xây dựng các tính năng thừa thãi mà người dùng không cần. Thay vào đó, nhóm phát triển phải nhanh chóng xây dựng phiên bản Khả dụng Tối thiểu (MVP) chứa các tính năng cốt lõi (Core Features) để thử nghiệm thực tế và tiếp nhận phản hồi.",
+        "2. Áp dụng thực tiễn trong đồ án 3TG Study AI: Nhóm đã chia nhỏ phạm vi dự án thành 6 Sprints rõ rệt. Tại Sprint 1, nhóm không vội vàng làm tính năng Kiosk hay AI phức tạp, mà tập trung hoàn thiện bộ khung MVP gồm: CSDL Cloudflare D1, cây lộ trình bài học uốn lượn và hệ thống tính điểm XP. Sau khi các tính năng này chạy ổn định, các tầng logic phức tạp hơn (như kết nối bảng điểm IU CMCU, phân tích AI, Kiosk C++ Native) mới được phát triển gối đầu qua các Sprints sau.",
+        "3. Phản biện & Đánh đổi kỹ thuật (Trade-off Analysis): Cách tiếp cận MVP giúp nhóm luôn có một sản phẩm phần mềm chạy được (Working Software) ở cuối mỗi Sprint, giảm thiểu tối đa rủi ro chậm tiến độ. Tuy nhiên, sự đánh đổi là nhóm phải liên tục tái cấu trúc mã nguồn (Code Refactoring) khi các tính năng mới được tích hợp vào. Sự linh hoạt này đem lại độ tin cậy vượt trội so với việc cố định thiết kế từ đầu."
+    ])
 
-    callout_box("QUYẾT ĐỊNH 2: KIẾN TRÚC HYBRID SERVERLESS & LOCAL EMBEDDED SERVER",
-                "1. Lý thuyết (Ian Sommerville - Ch.4, Ch.5, Engineering Software Products):\n"
-                "Kiến trúc phần mềm hướng dịch vụ (Service-Oriented Architecture) và kiến trúc phân tán cần cân bằng giữa độ trễ mạng, tính sẵn sàng của dữ liệu và chi phí tài nguyên máy chủ.\n\n"
-                "2. Áp dụng thực tiễn trong đồ án 3TG Study AI:\n"
-                "Nhóm không lưu trữ tệp nhạc MP3 của sinh viên trên đám mây Cloudflare mà phát triển một máy chủ nhúng nội bộ (Embedded Server) tại máy khách phục vụ stream trực tiếp từ ổ cứng bằng chuẩn HTTP 206.\n\n"
-                "3. Phản biện & Đánh đổi kỹ thuật:\n"
-                "Giải pháp này giúp triệt tiêu hoàn toàn chi phí băng thông mạng đám mây và cho phép nghe nhạc tập trung ngay cả khi mất mạng. Đánh đổi lại là dung lượng bộ cài ứng dụng Desktop tăng thêm khoảng 30MB để chứa các tệp âm thanh tích hợp sẵn. Đây là sự đánh đổi hoàn toàn xứng đáng vì trải nghiệm của học viên được đặt lên hàng đầu.")
+    callout_box("QUYẾT ĐỊNH 2: KIẾN TRÚC HYBRID SERVERLESS & LOCAL EMBEDDED SERVER", [
+        "1. Lý thuyết (Ian Sommerville - Ch.4, Ch.5, Engineering Software Products): Kiến trúc phần mềm hướng dịch vụ (Service-Oriented Architecture) và kiến trúc phân tán cần cân bằng giữa độ trễ mạng, tính sẵn sàng của dữ liệu và chi phí tài nguyên máy chủ.",
+        "2. Áp dụng thực tiễn trong đồ án 3TG Study AI: Nhóm không lưu trữ tệp nhạc MP3 của sinh viên trên đám mây Cloudflare mà phát triển một máy chủ nhúng nội bộ (Embedded Server) tại máy khách phục vụ stream trực tiếp từ ổ cứng bằng chuẩn HTTP 206.",
+        "3. Phản biện & Đánh đổi kỹ thuật: Giải pháp này giúp triệt tiêu hoàn toàn chi phí băng thông mạng đám mây và cho phép nghe nhạc tập trung ngay cả khi mất mạng. Đánh đổi lại là dung lượng bộ cài ứng dụng Desktop tăng thêm khoảng 30MB để chứa các tệp âm thanh tích hợp sẵn. Đây là sự đánh đổi hoàn toàn xứng đáng vì trải nghiệm của học viên được đặt lên hàng đầu."
+    ])
 
     h_styled("4.4. Bảng tổng kết đóng góp thành viên nhóm TONE PINK", level=2, bookmark_name="sec_ch4_4")
     p_text("Nhóm TONE PINK gồm 3 thành viên, phối hợp theo mô hình Agile phân công nhiệm vụ rõ ràng và đóng góp công sức cân bằng tuyệt đối:")
@@ -921,13 +1028,13 @@ def build_report(toc_page_map=None):
 
     h_styled("PHỤ LỤC: HƯỚNG DẪN CÀI ĐẶT & VẬN HÀNH HỆ THỐNG", level=1, bookmark_name="sec_appendix")
     p_text("HƯỚNG DẪN CÀI ĐẶT VÀ KHỞI CHẠY BẢN PHÁT HÀNH DESKTOP V29.9.07", bold_prefix="Phụ lục 1: ")
-    p_text("Truy cập trang phát hành GitHub Releases tại kho lưu trữ Anniehatani/appstudyAI phiên bản v29.9.07", bold_prefix="• Bước 1: ")
+    p_text("Truy cập trang phát hành GitHub Releases tại kho lưu trữ Anniehatani / appstudyAI phiên bản v29.9.07", bold_prefix="• Bước 1: ")
     p_text("Tải tệp `3TG Học Vui Mỗi Ngày V29.9.07.exe` (Bản Portable) hoặc `3TG Học Vui Mỗi Ngày Setup V29.9.07.exe` (Bản Installer).", bold_prefix="• Bước 2: ")
     p_text("Nhấp đúp chuột vào tệp tin để khởi chạy ứng dụng. Không cần cài đặt thêm môi trường Node.js hay cơ sở dữ liệu bên ngoài.", bold_prefix="• Bước 3: ")
 
     p_text("HƯỚNG DẪN THỰC THI BỘ KIỂM THỬ TỰ ĐỘNG MASTER TEST SUITE", bold_prefix="Phụ lục 2: ")
     p_text("Mở cửa sổ dòng lệnh PowerShell tại thư mục gốc của dự án.", bold_prefix="• Bước 1: ")
-    p_text("Chạy lệnh kiểm thử tự động toàn diện: `node scripts/test_sprint6_full_suite.cjs`", bold_prefix="• Bước 2: ")
+    p_text("Chạy lệnh kiểm thử tự động toàn diện: `node scripts / test_sprint6_full_suite.cjs`", bold_prefix="• Bước 2: ")
     p_text("Quan sát kết quả trên màn hình console: toàn bộ 38 kịch bản kiểm thử xuất hiện trạng thái xanh `PASS 100%`.", bold_prefix="• Bước 3: ")
 
     output_path = os.path.abspath(os.path.join("tổng kết dự án", "Bao_Cao_Tong_Ket_Do_An_3TG_Study_TONE_PINK_Final.docx"))

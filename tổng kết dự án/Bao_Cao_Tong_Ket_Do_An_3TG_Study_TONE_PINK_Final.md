@@ -1,12 +1,13 @@
-# BÁO CÁO KHOA HỌC TỔNG KẾT BÀI TẬP LỚN CÔNG NGHỆ PHẦN MỀM
-**HỌC PHẦN:** CÔNG NGHỆ PHẦN MỀM (SOFTWARE ENGINEERING) — MÃ HP: INFO2005 / INFO2011 (4 TÍN CHỈ)  
+# TIỂU LUẬN BÀI TẬP LỚN CÔNG NGHỆ PHẦN MỀM
+**BỘ GIÁO DỤC VÀ ĐÀO TẠO — TRƯỜNG ĐẠI HỌC CMC — KHOA: CÔNG NGHỆ THÔNG TIN**  
+**ĐỀ TÀI:** Xây dựng hệ sinh thái học tập thông minh 3TG Study AI: Tích hợp trí tuệ nhân tạo đa tầng, cơ chế Gamification tương tác và phòng học Focus Kiosk Mode bảo vệ Native C++  
+**HỌC PHẦN:** CÔNG NGHỆ PHẦN MỀM (MÃ HP: INFO2011)  
 **LỚP HỌC PHẦN:** N08  
-**TRƯỜNG ĐẠI HỌC CMC — KHOA CÔNG NGHỆ THÔNG TIN VÀ TRUYỀN THÔNG**  
 **GIẢNG VIÊN HƯỚNG DẪN:** ThS. NGUYỄN THỊ VÂN ANH  
-**NHÓM THỰC HIỆN:** TONE PINK  
-* **Lê Văn An** — MSSV: **BAI250001** — Lớp: **N08** — GitHub: [https://github.com/Anniehatani](https://github.com/Anniehatani) (Nhóm trưởng - Kiến trúc hệ thống, Bảo mật & Backend)
-* **Nguyễn Như Quỳnh** — MSSV: **BCS252491** — Lớp: **N08** — GitHub: [https://github.com/nguyennhuuquynhh07-07](https://github.com/nguyennhuuquynhh07-07) (Thành viên - Lập trình Giao diện Frontend & Thiết kế Trải nghiệm UI/UX)
-* **Nguyễn Văn Tú** — MSSV: **BIT250364** — Lớp: **N08** — GitHub: [https://github.com/nguyennhuuquynhh07-07](https://github.com/nguyennhuuquynhh07-07) (Thành viên - Trình bảo vệ Kiosk Native C++, Tích hợp Đa màn hình & Đảm bảo chất lượng QA)  
+**NHÓM THỰC HIỆN:**  
+* **Lê Văn An** – BAI250001 (Nhóm trưởng)  
+* **Nguyễn Như Quỳnh** – BCS252491  
+* **Nguyễn Văn Tú** – BIT250364  
 **KHO LƯU TRỮ MÃ NGUỒN GITHUB:** [https://github.com/Anniehatani/appstudyAI](https://github.com/Anniehatani/appstudyAI)  
 **PHIÊN BẢN PHÁT HÀNH CHÍNH THỨC:** `V29.9.07 (Release Gold Master)`  
 **QUY CHUẨN ĐỊNH DẠNG:** Tuân thủ nghiêm ngặt theo *Mẫu bìa BTL.docx* và *Rubric INFO2011 Công nghệ phần mềm CMCU K4*
