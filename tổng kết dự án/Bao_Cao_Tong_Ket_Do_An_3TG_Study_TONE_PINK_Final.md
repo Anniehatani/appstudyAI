@@ -18,48 +18,48 @@
 | Mục lục đề mục | Trang |
 | :--- | :---: |
 | **LỜI NÓI ĐẦU & TÓM TẮT DỰ ÁN (EXECUTIVE ABSTRACT)** | **1** |
-| **CHƯƠNG 1: TỔNG QUAN DỰ ÁN & KỸ NGHỆ YÊU CẦU PHẦN MỀM** | **3** |
-| 1.1. Bối cảnh nghiên cứu, tính cấp thiết và lý do chọn đề tài | 3 |
-| 1.2. Tuyên ngôn Tầm nhìn sản phẩm (Product Vision Statement) | 4 |
-| 1.3. Chân dung người dùng điển hình (User Personas) | 5 |
-| 1.4. Kịch bản sử dụng (User Scenarios) & Bản đồ hành trình (Journey Maps) | 7 |
-| 1.5. Sơ đồ Use Case tổng thể hệ thống (UML 2.5 Specification) | 8 |
-| 1.6. Kỹ nghệ Yêu cầu hệ thống: Chức năng (FR) và Phi chức năng (NFR) | 9 |
-| 1.7. User Stories & Tiêu chuẩn chấp thuận (Acceptance Criteria) | 11 |
-| 1.8. Product Backlog & Ước lượng độ phức tạp (Fibonacci Story Points) | 12 |
-| **CHƯƠNG 2: THIẾT KẾ KIẾN TRÚC PHẦN MỀM & CƠ SỞ DỮ LIỆU** | **13** |
-| 2.1. Đề xuất Kiến trúc tổng thể: Hybrid Edge-Serverless & Desktop Client | 13 |
-| 2.2. Phân tích các đánh đổi kiến trúc (Trade-offs) & Định lý CAP | 14 |
-| 2.3. Sơ đồ kiến trúc phân tầng hệ thống (Layered Architecture) | 15 |
-| 2.4. Thiết kế chuẩn hóa giao tiếp RESTful API & Idempotency | 16 |
-| 2.5. Thiết kế Toàn diện CSDL Cloudflare D1 chuẩn 3NF & Sơ đồ SQL ERD | 18 |
-| 2.6. Hệ thống Giao diện người dùng & Động cơ Gamification phân tầng | 21 |
-| **CHƯƠNG 3: BẢO MẬT, LẬP TRÌNH TIN CẬY & VẬN HÀNH DEVOPS** | **23** |
-| 3.1. Phân tích Mô hình đe dọa STRIDE Threat Modeling | 23 |
-| 3.2. Thuật toán băm mật khẩu PBKDF2-HMAC-SHA256 chuẩn OWASP | 24 |
-| 3.3. Cơ chế Rate Limiting trượt (Sliding Window Algorithm) | 25 |
-| 3.4. Kiến trúc Transactional Outbox & Replay Queue đồng bộ ngoại tuyến | 26 |
-| 3.5. Trình bảo vệ Kiosk C++ Native & Khôi phục 100% Taskbar Windows <5ms | 27 |
-| 3.6. Cơ chế Multi-Monitor Zen Blocker bao phủ màn hình phụ | 29 |
-| 3.7. Trình phát nhạc Local Offline qua HTTP 206 Byte-Range | 30 |
-| 3.8. Sửa lỗi Detached Buffer trên PDF.js & Tối ưu Resizer RAF 60 FPS | 31 |
-| **CHƯƠNG 4: THỰC THI QUA 6 SPRINTS AGILE & ĐỐI CHIẾU SOMMERVILLE** | **32** |
-| 4.1. Quy trình quản trị dự án Agile Scrum trên GitHub | 32 |
-| 4.2. Báo cáo chi tiết chuỗi 6 Sprints phát triển phần mềm | 33 |
-| 4.3. Phân tích đối chiếu lý thuyết Ian Sommerville (Mạch 3 bước) | 36 |
-| 4.4. Bảng tổng kết đóng góp thành viên nhóm TONE PINK | 38 |
-| **CHƯƠNG 5: KHAI THÁC AI CÓ TRÁCH NHIỆM & KIỂM THỬ PHẦN MỀM** | **39** |
-| 5.1. Khung nguyên tắc khai thác AI có trách nhiệm (Responsible AI) | 39 |
-| 5.2. Nhật ký phối hợp AI (AI Collaboration Log) qua 4 giai đoạn | 40 |
-| 5.3. Hệ sinh thái 3TG AI Đa tầng & Phím tắt Ctrl + V dán ảnh | 41 |
-| 5.4. Master Test Suite: Bảng kết quả kiểm thử 38/38 Pass 100% | 42 |
-| **CHƯƠNG 6: KẾT QUẢ THỰC HIỆN, ĐÁNH GIÁ & HƯỚNG PHÁT TRIỂN** | **44** |
-| 6.1. Trình diễn sản phẩm MVP hoàn thiện V29.9.07 | 44 |
-| 6.2. Đánh giá mức độ hoàn thành so với mục tiêu ban đầu | 46 |
-| 6.3. Những thách thức kỹ thuật lớn nhất đã vượt qua | 47 |
-| 6.4. Những hạn chế và hướng phát triển trong tương lai | 48 |
-| **DANH MỤC TÀI LIỆU THAM KHẢO (IEEE / APA STANDARD)** | **49** |
-| **PHỤ LỤC: HƯỚNG DẪN CÀI ĐẶT & VẬN HÀNH HỆ THỐNG** | **50** |
+| **CHƯƠNG 1: TỔNG QUAN DỰ ÁN & KỸ NGHỆ YÊU CẦU PHẦN MỀM** | **2** |
+| 1.1. Bối cảnh nghiên cứu, tính cấp thiết và lý do chọn đề tài | 2 |
+| 1.2. Tuyên ngôn Tầm nhìn sản phẩm (Product Vision Statement) | 2 |
+| 1.3. Chân dung người dùng điển hình (User Personas) | 3 |
+| 1.4. Kịch bản sử dụng (User Scenarios) & Bản đồ hành trình (Journey Maps) | 4 |
+| 1.5. Sơ đồ Use Case tổng thể hệ thống (UML 2.5 Specification) | 4 |
+| 1.6. Kỹ nghệ Yêu cầu hệ thống: Chức năng (FR) và Phi chức năng (NFR) | 4 |
+| 1.7. User Stories & Tiêu chuẩn chấp thuận (Acceptance Criteria) | 6 |
+| 1.8. Product Backlog & Ước lượng độ phức tạp (Fibonacci Story Points) | 6 |
+| **CHƯƠNG 2: THIẾT KẾ KIẾN TRÚC PHẦN MỀM & CƠ SỞ DỮ LIỆU** | **7** |
+| 2.1. Đề xuất Kiến trúc tổng thể: Hybrid Edge-Serverless & Desktop Client | 7 |
+| 2.2. Phân tích các đánh đổi kiến trúc (Trade-offs) & Định lý CAP | 7 |
+| 2.3. Sơ đồ kiến trúc phân tầng hệ thống (Layered Architecture) | 8 |
+| 2.4. Thiết kế chuẩn hóa giao tiếp RESTful API & Idempotency | 9 |
+| 2.5. Thiết kế Toàn diện CSDL Cloudflare D1 chuẩn 3NF & Sơ đồ SQL ERD | 9 |
+| 2.6. Hệ thống Giao diện người dùng & Động cơ Gamification phân tầng | 11 |
+| **CHƯƠNG 3: BẢO MẬT, LẬP TRÌNH TIN CẬY & VẬN HÀNH DEVOPS** | **12** |
+| 3.1. Phân tích Mô hình đe dọa STRIDE Threat Modeling | 12 |
+| 3.2. Thuật toán băm mật khẩu PBKDF2-HMAC-SHA256 chuẩn OWASP | 13 |
+| 3.3. Cơ chế Rate Limiting trượt (Sliding Window Algorithm) | 13 |
+| 3.4. Kiến trúc Transactional Outbox & Replay Queue đồng bộ ngoại tuyến | 13 |
+| 3.5. Trình bảo vệ Kiosk C++ Native & Khôi phục 100% Taskbar Windows <5ms | 14 |
+| 3.6. Cơ chế Multi-Monitor Zen Blocker bao phủ màn hình phụ | 15 |
+| 3.7. Trình phát nhạc Local Offline qua HTTP 206 Byte-Range | 15 |
+| 3.8. Sửa lỗi Detached Buffer trên PDF.js & Tối ưu Resizer RAF 60 FPS | 15 |
+| **CHƯƠNG 4: THỰC THI QUA 6 SPRINTS AGILE & ĐỐI CHIẾU SOMMERVILLE** | **16** |
+| 4.1. Quy trình quản trị dự án Agile Scrum trên GitHub | 16 |
+| 4.2. Báo cáo chi tiết chuỗi 6 Sprints phát triển phần mềm | 17 |
+| 4.3. Phân tích đối chiếu lý thuyết Ian Sommerville (Mạch 3 bước) | 18 |
+| 4.4. Bảng tổng kết đóng góp thành viên nhóm TONE PINK | 19 |
+| **CHƯƠNG 5: KHAI THÁC AI CÓ TRÁCH NHIỆM & KIỂM THỬ PHẦN MỀM** | **20** |
+| 5.1. Khung nguyên tắc khai thác AI có trách nhiệm (Responsible AI) | 20 |
+| 5.2. Nhật ký phối hợp AI (AI Collaboration Log) qua 4 giai đoạn | 20 |
+| 5.3. Hệ sinh thái 3TG AI Đa tầng & Phím tắt Ctrl + V dán ảnh | 20 |
+| 5.4. Master Test Suite: Bảng kết quả kiểm thử 38/38 Pass 100% | 21 |
+| **CHƯƠNG 6: KẾT QUẢ THỰC HIỆN, ĐÁNH GIÁ & HƯỚNG PHÁT TRIỂN** | **22** |
+| 6.1. Trình diễn sản phẩm MVP hoàn thiện V29.9.07 | 22 |
+| 6.2. Đánh giá mức độ hoàn thành so với mục tiêu ban đầu | 23 |
+| 6.3. Những thách thức kỹ thuật lớn nhất đã vượt qua | 23 |
+| 6.4. Những hạn chế và hướng phát triển trong tương lai | 23 |
+| **DANH MỤC TÀI LIỆU THAM KHẢO (IEEE / APA STANDARD)** | **24** |
+| **PHỤ LỤC: HƯỚNG DẪN CÀI ĐẶT & VẬN HÀNH HỆ THỐNG** | **25** |
 
 ---
 
