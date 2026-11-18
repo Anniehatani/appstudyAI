@@ -12,7 +12,7 @@
     "dev:web": "wrangler dev",
     "deploy": "wrangler deploy",
     "build:icon": "python scripts/convert_icon.py",
-    "build:kiosk": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe /nologo /target:winexe /out:electron\\focus_guard.exe electron\\kiosk-guard.cs",
+    "build:kiosk": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe /nologo /target:winexe /out:electron\\study_guard.exe electron\\kiosk-guard.cs",
     "electron": "electron .",
     "electron:dev": "electron .",
     "electron:pack": "npm run build:kiosk && electron-builder --dir",
@@ -36,7 +36,7 @@
     "asarUnpack": [
       "build/local_replica.sqlite",
       "build/icon.ico",
-      "electron/focus_guard.exe",
+      "electron/study_guard.exe",
       "package.json",
       "src/**/*"
     ],

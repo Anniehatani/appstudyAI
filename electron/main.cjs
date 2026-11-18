@@ -26,24 +26,24 @@ let kioskGuardProc = null;
 
 function getGuardExecutablePath() {
   if (process.platform !== "win32") return null;
-  const exeNames = ["pomo_guard.exe", "focus_guard.exe", "study_guard.exe", "kiosk_guard.exe"];
+  const exeNames = ["study_guard.exe", "pomo_guard.exe", "focus_guard.exe", "kiosk_guard.exe"];
   const candidates = [];
   // Khi ứng dụng đã đóng gói thành installer/exe (process.resourcesPath tồn tại):
   // ƯU TIÊN TUYỆT ĐỐI đường dẫn đã giải nén (unpacked) ngoài ASAR, vì Windows không thể chạy .exe từ trong app.asar
   if (process.resourcesPath) {
     for (const name of exeNames) {
-      candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "build", name));
       candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "electron", name));
-      candidates.push(path.join(process.resourcesPath, "build", name));
+      candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "build", name));
       candidates.push(path.join(process.resourcesPath, "electron", name));
+      candidates.push(path.join(process.resourcesPath, "build", name));
       candidates.push(path.join(process.resourcesPath, name));
     }
   }
   // Nếu đang chạy trong môi trường phát triển (npm run dev / source tree):
   if (!app.isPackaged) {
     for (const name of exeNames) {
-      candidates.push(path.join(__dirname, "..", "build", name));
       candidates.push(path.join(__dirname, name));
+      candidates.push(path.join(__dirname, "..", "build", name));
     }
   }
   return candidates.find(p => fs.existsSync(p)) || null;
@@ -51,68 +51,116 @@ function getGuardExecutablePath() {
 
 function restoreWindowsTaskbar() {
   if (process.platform !== "win32") return;
+
+  // Tầng 1: Kích hoạt guard process với tham số --restore (C# Native ShowWindow + SetWindowPos)
   const targetExe = getGuardExecutablePath();
   if (targetExe) {
     try {
-      const { spawn } = require("child_process");
-      // Gọi bất đồng bộ (non-blocking) để hoàn toàn không gây lag hoặc giật giao diện Electron khi thoát Pomodoro
       const p = spawn(targetExe, ["--restore"], {
         detached: true,
         stdio: "ignore",
         windowsHide: true
       });
       p.unref();
-      console.log("[KioskGuard] Đã gửi tín hiệu khôi phục thanh Taskbar Windows hoàn tất (async)");
+      console.log("[KioskGuard] Đã kích hoạt khôi phục Taskbar qua study_guard.exe --restore (async)");
     } catch (e) {
       console.warn("[TaskbarRestore Error]", e.message);
     }
   }
+
+  // Tầng 2: Win32 PowerShell Native Fallback trực tiếp để đảm bảo 100% Shell_TrayWnd và Shell_SecondaryTrayWnd được hiển thị lại
+  try {
+    const psScript = "$d='[DllImport(\"user32.dll\")] public static extern bool ShowWindow(IntPtr h, int c); [DllImport(\"user32.dll\")] public static extern bool EnableWindow(IntPtr h, bool e); [DllImport(\"user32.dll\")] public static extern IntPtr FindWindow(string c, string n);'; $w=Add-Type -MemberDefinition $d -Name W -PassThru; $t1=$w::FindWindow('Shell_TrayWnd', $null); if ($t1 -ne [IntPtr]::Zero) { $w::EnableWindow($t1, $true); $w::ShowWindow($t1, 5); $w::ShowWindow($t1, 9); }; $t2=$w::FindWindow('Shell_SecondaryTrayWnd', $null); if ($t2 -ne [IntPtr]::Zero) { $w::EnableWindow($t2, $true); $w::ShowWindow($t2, 5); $w::ShowWindow($t2, 9); }";
+    const ps = spawn("powershell", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", psScript], {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true
+    });
+    ps.unref();
+  } catch {}
 }
 
 function startKioskGuard() {
-  if (process.platform !== "win32") return;
-  if (kioskGuardProc && !kioskGuardProc.killed) return;
+  return new Promise((resolve) => {
+    if (process.platform !== "win32") return resolve({ ok: true, reason: "non-win32" });
+    if (kioskGuardProc && !kioskGuardProc.killed) {
+      return resolve({ ok: true, alreadyRunning: true, pid: kioskGuardProc.pid });
+    }
 
-  let guardPath = getGuardExecutablePath();
-  if (!guardPath) {
-    const csFile = path.join(__dirname, "kiosk-guard.cs");
-    const targetExe = path.join(__dirname, "focus_guard.exe");
-    const cscCandidates = [
-      "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
-      "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe"
-    ];
-    const cscPath = cscCandidates.find(p => fs.existsSync(p));
-    if (fs.existsSync(csFile) && cscPath) {
-      try {
-        const { spawnSync } = require("child_process");
-        const res = spawnSync(cscPath, ["/target:winexe", `/out:${targetExe}`, csFile], { windowsHide: true });
-        if (res.status === 0 && fs.existsSync(targetExe)) {
-          guardPath = targetExe;
-          console.log("[KioskGuard] Tự động biên dịch focus_guard.exe thành công!");
-        } else {
-          console.warn("[KioskGuard Compile Failed]", res.stderr ? res.stderr.toString() : res.status);
+    let guardPath = getGuardExecutablePath();
+    if (!guardPath) {
+      const csFile = path.join(__dirname, "kiosk-guard.cs");
+      const targetExe = path.join(__dirname, "study_guard.exe");
+      const cscCandidates = [
+        "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
+        "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe"
+      ];
+      const cscPath = cscCandidates.find(p => fs.existsSync(p));
+      if (fs.existsSync(csFile) && cscPath) {
+        try {
+          const { spawnSync } = require("child_process");
+          const res = spawnSync(cscPath, ["/nologo", "/target:winexe", `/out:${targetExe}`, csFile], { windowsHide: true });
+          if (res.status === 0 && fs.existsSync(targetExe)) {
+            guardPath = targetExe;
+            console.log("[KioskGuard] Tự động biên dịch study_guard.exe thành công!");
+          } else {
+            console.warn("[KioskGuard Compile Failed]", res.stderr ? res.stderr.toString() : res.status);
+          }
+        } catch (err) {
+          console.warn("[KioskGuard Compile Error]", err.message);
         }
-      } catch (err) {
-        console.warn("[KioskGuard Compile Error]", err.message);
       }
     }
-  }
 
-  if (!guardPath) {
-    console.warn("[KioskGuard] Không tìm thấy tệp bảo vệ focus_guard.exe tại các vị trí kiểm tra");
-    return;
-  }
+    if (!guardPath) {
+      console.warn("[KioskGuard] Không tìm thấy tệp bảo vệ study_guard.exe tại các vị trí kiểm tra");
+      return resolve({ ok: false, error: "not_found" });
+    }
 
-  try {
-    kioskGuardProc = spawn(guardPath, [], {
-      stdio: ["pipe", "ignore", "ignore"],
-      windowsHide: true
-    });
-    kioskGuardProc.on("error", (e) => console.warn("[KioskGuard Error]", e.message));
-    console.log("[KioskGuard] Đã kích hoạt Hook bàn phím & Watchdog khóa cứng Windows (PID:", kioskGuardProc.pid, ")");
-  } catch (err) {
-    console.warn("[KioskGuard Exception]", err.message);
-  }
+    try {
+      let isResolved = false;
+      const timeoutTimer = setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
+          console.log("[KioskGuard] Guard đã kích hoạt (PID:", kioskGuardProc?.pid, "), hết thời gian chờ handshake, cho phép vào phòng");
+          resolve({ ok: true, timeoutFallback: true, pid: kioskGuardProc?.pid });
+        }
+      }, 800);
+
+      kioskGuardProc = spawn(guardPath, ["--parent-pid", String(process.pid)], {
+        stdio: ["pipe", "pipe", "ignore"],
+        windowsHide: true
+      });
+
+      kioskGuardProc.stdout?.on("data", (data) => {
+        const str = data.toString();
+        if (str.includes("GUARD_READY") && !isResolved) {
+          isResolved = true;
+          clearTimeout(timeoutTimer);
+          console.log("[KioskGuard] Hook bàn phím & Watchdog đã phản hồi GUARD_READY hoàn tất 100%!");
+          resolve({ ok: true, ready: true, pid: kioskGuardProc?.pid });
+        }
+      });
+
+      kioskGuardProc.on("error", (e) => {
+        console.warn("[KioskGuard Error]", e.message);
+        if (!isResolved) {
+          isResolved = true;
+          clearTimeout(timeoutTimer);
+          resolve({ ok: false, error: e.message });
+        }
+      });
+
+      kioskGuardProc.on("exit", () => {
+        kioskGuardProc = null;
+      });
+
+      console.log("[KioskGuard] Đã kích hoạt Hook bàn phím & Watchdog khóa cứng Windows (PID:", kioskGuardProc.pid, ")");
+    } catch (err) {
+      console.warn("[KioskGuard Exception]", err.message);
+      resolve({ ok: false, error: err.message });
+    }
+  });
 }
 
 function stopKioskGuard() {
@@ -131,9 +179,9 @@ function stopKioskGuard() {
           oldProc.kill();
         }
       } catch {}
-    }, 120);
+    }, 150);
   }
-  // Khôi phục thanh Taskbar Windows ngay lập tức ở chế độ ngầm async
+  // Khôi phục thanh Taskbar Windows ngay lập tức ở cả 2 tầng bảo vệ
   restoreWindowsTaskbar();
 }
 
@@ -402,7 +450,7 @@ ipcMain.handle("window:set-fullscreen", (event, flag) => {
 ipcMain.handle("window:is-fullscreen", () => {
   return mainWindow ? mainWindow.isFullScreen() : false;
 });
-ipcMain.handle("window:set-kiosk", (event, flag) => {
+ipcMain.handle("window:set-kiosk", async (event, flag) => {
   if (!mainWindow || mainWindow.isDestroyed()) return false;
   isKioskActive = Boolean(flag);
   if (isKioskActive) {
@@ -412,7 +460,10 @@ ipcMain.handle("window:set-kiosk", (event, flag) => {
       mainWindow.setMenuBarVisibility(false);
       mainWindow.autoHideMenuBar = false;
     } catch {}
-    startKioskGuard();
+
+    // ĐẢM BẢO HOOK BÀN PHÍM VÀ BẢO VỆ WINDOWS HOẠT ĐỘNG HOÀN TOÀN TRƯỚC KHI BẬT KIOSK
+    await startKioskGuard();
+
     try {
       mainWindow.setAlwaysOnTop(true, "screen-saver");
       mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
@@ -604,8 +655,23 @@ if (!gotTheLock) {
     }
   });
 
+  app.on("before-quit", () => {
+    stopKioskGuard();
+    restoreWindowsTaskbar();
+  });
+
   app.on("will-quit", () => {
     stopKioskGuard();
+    restoreWindowsTaskbar();
+  });
+
+  process.on("exit", () => {
+    restoreWindowsTaskbar();
+  });
+
+  process.on("uncaughtException", (err) => {
+    console.error("[UncaughtException]", err);
+    restoreWindowsTaskbar();
   });
 
   app.on("activate", () => {

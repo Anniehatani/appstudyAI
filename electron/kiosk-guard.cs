@@ -15,6 +15,14 @@ public class KioskGuard {
     private const int SW_SHOW = 5;
     private const int SW_RESTORE = 9;
 
+    private const uint SWP_NOSIZE = 0x0001;
+    private const uint SWP_NOMOVE = 0x0002;
+    private const uint SWP_NOZORDER = 0x0004;
+    private const uint SWP_NOACTIVATE = 0x0010;
+    private const uint SWP_FRAMECHANGED = 0x0020;
+    private const uint SWP_SHOWWINDOW = 0x0040;
+
+    private static readonly object _stateLock = new object();
     private static volatile bool _stopping = false;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -58,89 +66,117 @@ public class KioskGuard {
     [DllImport("user32.dll")]
     private static extern bool IsWindowVisible(IntPtr hWnd);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
     public static void HideTaskbar() {
-        try {
-            IntPtr tray = FindWindow("Shell_TrayWnd", null);
-            if (tray != IntPtr.Zero) {
-                ShowWindow(tray, SW_HIDE);
-            }
+        lock (_stateLock) {
+            if (_stopping) return;
+            try {
+                IntPtr tray = FindWindow("Shell_TrayWnd", null);
+                if (tray != IntPtr.Zero) {
+                    ShowWindow(tray, SW_HIDE);
+                }
 
-            IntPtr secTray = FindWindow("Shell_SecondaryTrayWnd", null);
-            if (secTray != IntPtr.Zero) {
-                ShowWindow(secTray, SW_HIDE);
-            }
+                IntPtr secTray = FindWindow("Shell_SecondaryTrayWnd", null);
+                if (secTray != IntPtr.Zero) {
+                    ShowWindow(secTray, SW_HIDE);
+                }
 
-            IntPtr taskView = FindWindow("MultitaskingViewFrame", null);
-            if (taskView != IntPtr.Zero) ShowWindow(taskView, SW_HIDE);
-        } catch {}
+                IntPtr taskView = FindWindow("MultitaskingViewFrame", null);
+                if (taskView != IntPtr.Zero) ShowWindow(taskView, SW_HIDE);
+            } catch {}
+        }
     }
 
     public static void ShowTaskbar() {
-        try {
-            IntPtr tray = FindWindow("Shell_TrayWnd", null);
-            if (tray != IntPtr.Zero) {
-                EnableWindow(tray, true);
-                ShowWindow(tray, SW_SHOW);
-                ShowWindow(tray, SW_RESTORE);
-            }
+        lock (_stateLock) {
+            _stopping = true;
+            try {
+                IntPtr tray = FindWindow("Shell_TrayWnd", null);
+                if (tray != IntPtr.Zero) {
+                    EnableWindow(tray, true);
+                    ShowWindow(tray, SW_SHOW);
+                    ShowWindow(tray, SW_RESTORE);
+                    SetWindowPos(tray, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+                }
 
-            IntPtr secTray = FindWindow("Shell_SecondaryTrayWnd", null);
-            if (secTray != IntPtr.Zero) {
-                EnableWindow(secTray, true);
-                ShowWindow(secTray, SW_SHOW);
-                ShowWindow(secTray, SW_RESTORE);
-            }
+                IntPtr secTray = FindWindow("Shell_SecondaryTrayWnd", null);
+                if (secTray != IntPtr.Zero) {
+                    EnableWindow(secTray, true);
+                    ShowWindow(secTray, SW_SHOW);
+                    ShowWindow(secTray, SW_RESTORE);
+                    SetWindowPos(secTray, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+                }
 
-            IntPtr island = FindWindow("XamlExplorerHostIslandWindow", null);
-            if (island != IntPtr.Zero) {
-                EnableWindow(island, true);
-                ShowWindow(island, SW_SHOW);
-            }
+                IntPtr island = FindWindow("XamlExplorerHostIslandWindow", null);
+                if (island != IntPtr.Zero) {
+                    EnableWindow(island, true);
+                    ShowWindow(island, SW_SHOW);
+                    SetWindowPos(island, IntPtr.Zero, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+                }
 
-            IntPtr startBtn = FindWindow("Button", "Start");
-            if (startBtn != IntPtr.Zero) {
-                EnableWindow(startBtn, true);
-                ShowWindow(startBtn, SW_SHOW);
-                ShowWindow(startBtn, SW_RESTORE);
-            }
+                IntPtr startBtn = FindWindow("Button", "Start");
+                if (startBtn != IntPtr.Zero) {
+                    EnableWindow(startBtn, true);
+                    ShowWindow(startBtn, SW_SHOW);
+                    ShowWindow(startBtn, SW_RESTORE);
+                }
 
-            IntPtr startMenu = FindWindow("Windows.UI.Core.CoreWindow", "Start");
-            if (startMenu != IntPtr.Zero) {
-                EnableWindow(startMenu, true);
-                ShowWindow(startMenu, SW_SHOW);
-            }
-
-            // Khởi động lại nhẹ nhàng tiến trình StartMenuExperienceHost trong luồng ngầm (không chặn UI)
-            System.Threading.ThreadPool.QueueUserWorkItem(_ => {
-                try {
-                    foreach (var p in Process.GetProcessesByName("StartMenuExperienceHost")) {
-                        p.Kill();
-                    }
-                } catch {}
-            });
-        } catch {}
+                IntPtr startMenu = FindWindow("Windows.UI.Core.CoreWindow", "Start");
+                if (startMenu != IntPtr.Zero) {
+                    EnableWindow(startMenu, true);
+                    ShowWindow(startMenu, SW_SHOW);
+                }
+            } catch {}
+        }
     }
 
     [STAThread]
     public static void Main(string[] args) {
+        int parentPid = 0;
         if (args != null && args.Length > 0) {
-            string cmd = args[0].ToLowerInvariant();
-            if (cmd == "--restore" || cmd == "--show" || cmd == "-r" || cmd == "restore" || cmd == "show") {
-                ShowTaskbar();
-                return;
+            for (int i = 0; i < args.Length; i++) {
+                string arg = args[i].ToLowerInvariant();
+                if (arg == "--restore" || arg == "--show" || arg == "-r" || arg == "restore" || arg == "show") {
+                    ShowTaskbar();
+                    return;
+                }
+                if ((arg == "--parent-pid" || arg == "-p") && i + 1 < args.Length) {
+                    int.TryParse(args[i + 1], out parentPid);
+                }
             }
+        }
+
+        // Tự động khôi phục Taskbar ngay lập tức nếu tiến trình cha (Electron) bị đóng, thoát hoặc crash bất ngờ
+        if (parentPid > 0) {
+            System.Threading.Thread parentWatchdog = new System.Threading.Thread(() => {
+                try {
+                    Process parent = Process.GetProcessById(parentPid);
+                    parent.WaitForExit();
+                } catch {}
+                ShowTaskbar();
+                if (_hookID != IntPtr.Zero) UnhookWindowsHookEx(_hookID);
+                Application.Exit();
+                Environment.Exit(0);
+            });
+            parentWatchdog.IsBackground = true;
+            parentWatchdog.Start();
         }
 
         _hookID = SetHook(_proc);
         HideTaskbar();
 
+        // GỬI TÍN HIỆU GUARD_READY RA STDOUT ĐỂ ELECTRON BIẾT CHÍNH XÁC PHẦN CHẶN ĐÃ HOẠT ĐỘNG HOÀN TOÀN 100%
+        Console.WriteLine("GUARD_READY");
+        Console.Out.Flush();
+
         AppDomain.CurrentDomain.ProcessExit += (s, e) => {
-            _stopping = true;
             ShowTaskbar();
             if (_hookID != IntPtr.Zero) UnhookWindowsHookEx(_hookID);
         };
 
-        // Watchdog thread: liên tục khóa thanh taskbar, dập tắt Task View và dập tắt cửa sổ Search/Start Menu/Copilot
+        // Watchdog thread: định kỳ khóa taskbar và dập tắt cửa sổ Search/Start Menu/Copilot nếu xuất hiện
         System.Threading.Thread watchdogThread = new System.Threading.Thread(() => {
             while (!_stopping) {
                 try {
@@ -151,7 +187,6 @@ public class KioskGuard {
                         ShowWindow(taskView, SW_HIDE);
                     }
 
-                    // Dập tắt lập tức mọi cửa sổ Search / Start Menu / Copilot flyout
                     IntPtr searchWnd = FindWindow("Windows.UI.Core.CoreWindow", "Search");
                     if (searchWnd != IntPtr.Zero && IsWindowVisible(searchWnd)) {
                         ShowWindow(searchWnd, SW_HIDE);
@@ -172,18 +207,17 @@ public class KioskGuard {
                         ShowWindow(searchPane, SW_HIDE);
                     }
                 } catch {}
-                System.Threading.Thread.Sleep(50);
+                System.Threading.Thread.Sleep(100);
             }
         });
         watchdogThread.IsBackground = true;
         watchdogThread.Start();
 
-        // Background thread to listen for parent exit or STOP on stdin
+        // Luồng ngầm lắng nghe lệnh STOP từ stdin (Electron gọi khi thoát Pomodoro)
         System.Threading.Thread stdinThread = new System.Threading.Thread(() => {
             try {
                 Console.ReadLine();
             } catch {}
-            _stopping = true;
             ShowTaskbar();
             if (_hookID != IntPtr.Zero) UnhookWindowsHookEx(_hookID);
             Application.Exit();
@@ -194,7 +228,6 @@ public class KioskGuard {
 
         Application.Run();
 
-        _stopping = true;
         ShowTaskbar();
         if (_hookID != IntPtr.Zero) UnhookWindowsHookEx(_hookID);
     }
@@ -207,7 +240,7 @@ public class KioskGuard {
     }
 
     private static IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam) {
-        if (nCode >= 0) {
+        if (nCode >= 0 && !_stopping) {
             KBDLLHOOKSTRUCT hookStruct = (KBDLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(KBDLLHOOKSTRUCT));
             uint vk = hookStruct.vkCode;
             bool altDown = (hookStruct.flags & 0x20) != 0;
@@ -218,7 +251,6 @@ public class KioskGuard {
             }
 
             // 1. Chặn phím Windows (LWIN, RWIN) & Context Menu (APPS) tuyệt đối
-            // Ngăn chặn Start Menu, Cortana, Windows Search, Task View (Win+Tab), Win+D (vuốt trackpad)
             if (vk == VK_LWIN || vk == VK_RWIN || vk == VK_APPS) {
                 return (IntPtr)1;
             }
@@ -230,14 +262,13 @@ public class KioskGuard {
                 return (IntPtr)1;
             }
 
-            // 3. Chặn TẤT CẢ phím ALT (0x12, 0xA4, 0xA5) và bất kỳ tổ hợp nào khi giữ ALT
-            // (Alt, Alt+Tab, Alt+F4, Alt+Esc, Alt+Space, Alt mở menubar...)
+            // 3. Chặn TẤT CẢ phím ALT (0x12, 0xA4, 0xA5) và bất kỳ tổ hợp nào khi giữ ALT (Alt, Alt+Tab, Alt+F4, Alt+Esc, Alt+Space...)
             if (vk == 0x12 || vk == 0xA4 || vk == 0xA5 || altDown) {
                 return (IntPtr)1;
             }
 
             // 4. Chặn toàn bộ phím chức năng F1 đến F24 (0x70 đến 0x87)
-            // LƯU Ý ĐẶC BIỆT: Phím cứng Copilot trên Windows 11 gửi mã VK_F23 = 0x86 (hoặc LeftShift + Win + F23).
+            // LƯU Ý ĐẶC BIỆT: Phím Copilot trên Windows 11 gửi mã VK_F23 = 0x86 (hoặc LeftShift + Win + F23).
             // Chặn 0x86 và toàn dải 0x70-0x87 đảm bảo triệt tiêu hoàn toàn phím Copilot & Windows Search flyout!
             if ((vk >= 0x70 && vk <= 0x87) || vk == 0x86) {
                 return (IntPtr)1;
@@ -248,14 +279,11 @@ public class KioskGuard {
                 return (IntPtr)1;
             }
 
-            // 5. Kiểm tra khi giữ phím CTRL:
+            // 6. Kiểm tra khi giữ phím CTRL:
             // Chỉ cho phép:
-            // - Ctrl + C (0x43)
-            // - Ctrl + V (0x56)
-            // - Ctrl + A (0x41)
-            // - Ctrl + X (0x58)
-            // - Ctrl + Z (0x5A)
+            // - Ctrl + C (0x43), Ctrl + V (0x56), Ctrl + A (0x41), Ctrl + X (0x58), Ctrl + Z (0x5A)
             // - Ctrl + Q (0x51 - Thoát khẩn cấp Pomodoro)
+            // - Phím Zoom tài liệu: Ctrl + (+) / (-) / (=) / (0)
             bool ctrlDown = (GetAsyncKeyState(0x11) & 0x8000) != 0 ||
                             (GetAsyncKeyState(0xA2) & 0x8000) != 0 ||
                             (GetAsyncKeyState(0xA3) & 0x8000) != 0;
@@ -266,9 +294,10 @@ public class KioskGuard {
                     return CallNextHookEx(_hookID, nCode, wParam, lParam);
                 }
 
-                // Kiểm tra ký tự đi kèm Ctrl:
                 bool isAllowedCtrlCombo = (vk == 0x43 || vk == 0x56 || vk == 0x41 || 
-                                           vk == 0x58 || vk == 0x5A || vk == 0x51);
+                                           vk == 0x58 || vk == 0x5A || vk == 0x51 ||
+                                           vk == 0xBB || vk == 0xBD || vk == 0x30 ||
+                                           vk == 0x6B || vk == 0x6D);
                 if (!isAllowedCtrlCombo) {
                     return (IntPtr)1; // Chặn triệt để mọi Ctrl khác (Ctrl+W, Ctrl+R, Ctrl+N, Ctrl+P, Ctrl+Shift+Esc...)
                 }

@@ -25,4 +25,5 @@ scratch/
 !build/pomo_guard.exe
 !build/focus_guard.exe
 !electron/focus_guard.exe
+!electron/study_guard.exe
 

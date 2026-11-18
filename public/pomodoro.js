@@ -514,7 +514,7 @@ if (typeof window !== "undefined") {
 // ========================================================
 // 4. POMODORO TIMER ENGINE & CYCLE CONTROLLER
 // ========================================================
-export function startPomodoroSession() {
+export async function startPomodoroSession() {
   pomodoroState.active = true;
   pomodoroState.mode = "focus";
   pomodoroState.remainingSeconds = pomodoroState.focusDuration;
@@ -528,7 +528,8 @@ export function startPomodoroSession() {
     pomodoroState.activeDocId = pomodoroState.docs[0].id;
   }
 
-  enterPomodoroKiosk();
+  // Đảm bảo Kiosk Guard và Hook bàn phím/Taskbar hoàn tất 100% trước khi bước vào phòng học
+  await enterPomodoroKiosk();
 
   // Kích hoạt nhịp tim trực tuyến báo danh đang học trong phòng Pomodoro
   sendPomodoroHeartbeat();
@@ -635,7 +636,7 @@ export function closePomodoroExitConfirm() {
   updatePomodoroModalsInDom();
 }
 
-export function abandonPomodoroSession() {
+export async function abandonPomodoroSession() {
   if (pomodoroState.timerId) clearInterval(pomodoroState.timerId);
   if (pomodoroState.quotesTimer) clearInterval(pomodoroState.quotesTimer);
   if (pomodoroState.heartbeatTimerId) {
@@ -650,7 +651,7 @@ export function abandonPomodoroSession() {
   pomodoroState.showCelebrationModal = false;
   pomodoroState.isPaused = false;
 
-  exitPomodoroKiosk();
+  await exitPomodoroKiosk();
 
   if (window.showToast) {
     if (pomodoroState.completedCycles > 0) {
