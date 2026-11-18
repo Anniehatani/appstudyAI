@@ -3189,24 +3189,42 @@ async function askAI(request, user, env) {
       };
 
       if (userCustomBaseUrl) {
-        // Tùy biến Proxy Base URL cho người dùng mua key từ bên thứ 3 (OneAPI / NewAPI / Relay Proxy)
-        primaryEndpoint = userCustomBaseUrl.includes("/chat/completions")
-          ? userCustomBaseUrl
-          : userCustomBaseUrl.replace(/\/+$/, "") + "/chat/completions";
-        primaryHeaders = {
-          "content-type": "application/json",
-          "authorization": "Bearer " + deepseekKey
-        };
-        primaryBody.model = body.model || (deepseekKey.startsWith("sk-ant-") ? "claude-3-5-sonnet" : "deepseek-chat");
+        // Tùy biến Proxy Base URL cho người dùng mua key từ bên thứ 3
+        if (userCustomBaseUrl.includes("gwai.cloud") || deepseekKey.startsWith("sk-ant-")) {
+          primaryEndpoint = userCustomBaseUrl.includes("/messages")
+            ? userCustomBaseUrl
+            : userCustomBaseUrl.replace(/\/+$/, "") + (userCustomBaseUrl.includes("/v1") ? "/messages" : "/v1/messages");
+          primaryHeaders = {
+            "content-type": "application/json",
+            "x-api-key": deepseekKey,
+            "anthropic-version": "2023-06-01"
+          };
+          primaryBody = {
+            model: body.model || "deepseek-v4.1-flash-1017",
+            system: systemText,
+            messages: [{ role: "user", content: typeof userContent === "string" ? userContent : userPrompt }],
+            max_tokens: AI_LIMITS.MAX_TOKENS_OUTPUT
+          };
+        } else {
+          primaryEndpoint = userCustomBaseUrl.includes("/chat/completions")
+            ? userCustomBaseUrl
+            : userCustomBaseUrl.replace(/\/+$/, "") + (userCustomBaseUrl.includes("/v1") ? "/chat/completions" : "/v1/chat/completions");
+          primaryHeaders = {
+            "content-type": "application/json",
+            "authorization": "Bearer " + deepseekKey
+          };
+          primaryBody.model = body.model || "deepseek-chat";
+        }
       } else if (deepseekKey.startsWith("sk-ant-")) {
-        primaryEndpoint = "https://api.anthropic.com/v1/messages";
+        // Tự động nhận diện key sk-ant- mua từ bên thứ 3 qua cổng relay Claude/DeepSeek (như genzshop / gwai.cloud)
+        primaryEndpoint = "https://1gw.gwai.cloud/v1/messages";
         primaryHeaders = {
           "content-type": "application/json",
           "x-api-key": deepseekKey,
           "anthropic-version": "2023-06-01"
         };
         primaryBody = {
-          model: "claude-3-5-sonnet-20241022",
+          model: "deepseek-v4.1-flash-1017",
           system: systemText,
           messages: [{ role: "user", content: typeof userContent === "string" ? userContent : userPrompt }],
           max_tokens: AI_LIMITS.MAX_TOKENS_OUTPUT
