@@ -1,0 +1,221 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1080" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #F8FAFC; }
+      .title { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 26px; font-weight: 800; fill: #0A2540; letter-spacing: -0.5px; }
+      .subtitle { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 14px; fill: #64748B; font-weight: 500; }
+      .badge-header { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; fill: #FFFFFF; }
+      .table-card { fill: #FFFFFF; stroke: #CBD5E1; stroke-width: 1.5; rx: 8; filter: drop-shadow(0 4px 12px rgba(10, 37, 64, 0.08)); }
+      .header-acc { fill: #0A2540; rx: 8; }
+      .header-core { fill: #1E3A8A; rx: 8; }
+      .header-study { fill: #0F766E; rx: 8; }
+      .header-sync { fill: #475569; rx: 8; }
+      .table-name { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; fill: #FFFFFF; }
+      .row-pk { font-family: 'Consolas', monospace; font-size: 12.5px; font-weight: 700; fill: #1D4ED8; }
+      .row-fk { font-family: 'Consolas', monospace; font-size: 12.5px; font-weight: 700; fill: #B45309; }
+      .row-attr { font-family: 'Consolas', monospace; font-size: 12.5px; fill: #1E293B; }
+      .row-type { font-family: 'Consolas', monospace; font-size: 12px; fill: #64748B; text-anchor: end; }
+      .divider { stroke: #F1F5F9; stroke-width: 1; }
+      .rel-line { stroke: #0A2540; stroke-width: 2; fill: none; stroke-dasharray: none; }
+      .rel-dash { stroke: #2563EB; stroke-width: 1.8; fill: none; stroke-dasharray: 4,4; }
+      .rel-label { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; fill: #0A2540; background: #FFFFFF; }
+      .cardinality { font-family: 'Consolas', monospace; font-size: 12px; font-weight: 800; fill: #1E3A8A; }
+    </style>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0A2540" flood-opacity="0.08" />
+    </filter>
+    <marker id="crow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 6 L 0 11 M 10 1 L 10 11" fill="none" stroke="#0A2540" stroke-width="1.8" />
+    </marker>
+    <marker id="one" viewBox="0 0 12 12" refX="2" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 4 1 L 4 11 M 8 1 L 8 11" fill="none" stroke="#0A2540" stroke-width="1.8" />
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" class="bg" />
+
+  <!-- Diagram Header -->
+  <g transform="translate(60, 48)">
+    <text class="title" x="0" y="0">HỆ THỐNG CƠ SỞ DỮ LIỆU QUAN HỆ CHUẨN 3NF (RELATIONAL DATABASE SQL ERD)</text>
+    <text class="subtitle" x="0" y="24">Mô hình dữ liệu chuẩn hóa dạng 3 (Third Normal Form) — Triệt tiêu dư thừa &amp; Dị thường trên Cloudflare D1 / SQLite Engine</text>
+    <rect x="1260" y="-22" width="220" height="34" rx="6" fill="#0A2540" />
+    <text class="badge-header" x="1370" y="0" text-anchor="middle">INFO2011 • THIẾT KẾ CHUẨN 3NF</text>
+  </g>
+
+  <!-- TABLE: ACCOUNTS (Center Master) -->
+  <g transform="translate(620, 120)">
+    <rect width="360" height="210" class="table-card" filter="url(#shadow)" />
+    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-acc" />
+    <text class="table-name" x="16" y="25">accounts (Bảng Tài khoản Gốc)</text>
+    
+    <text class="row-pk" x="16" y="64">[PK] id</text><text class="row-type" x="344" y="64">TEXT (UUID v4)</text>
+    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
+    <text class="row-attr" x="16" y="98">username</text><text class="row-type" x="344" y="98">TEXT (UNIQUE, NOT NULL)</text>
+    <line x1="0" y1="108" x2="360" y2="108" class="divider" />
+    <text class="row-attr" x="16" y="132">password_hash</text><text class="row-type" x="344" y="132">TEXT (PBKDF2-SHA256)</text>
+    <line x1="0" y1="142" x2="360" y2="142" class="divider" />
+    <text class="row-attr" x="16" y="166">role</text><text class="row-type" x="344" y="166">TEXT ('user'|'admin')</text>
+    <line x1="0" y1="176" x2="360" y2="176" class="divider" />
+    <text class="row-attr" x="16" y="200">created_at</text><text class="row-type" x="344" y="200">DATETIME (UTC)</text>
+  </g>
+
+  <!-- TABLE: PROFILES (Top Left) -->
+  <g transform="translate(100, 120)">
+    <rect width="360" height="210" class="table-card" filter="url(#shadow)" />
+    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-core" />
+    <text class="table-name" x="16" y="25">profiles (Hồ sơ Người dùng)</text>
+    
+    <text class="row-pk" x="16" y="64">[PK,FK] user_id</text><text class="row-type" x="344" y="64">TEXT → accounts(id)</text>
+    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
+    <text class="row-attr" x="16" y="98">display_name</text><text class="row-type" x="344" y="98">TEXT (NOT NULL)</text>
+    <line x1="0" y1="108" x2="360" y2="108" class="divider" />
+    <text class="row-attr" x="16" y="132">color_theme</text><text class="row-type" x="344" y="132">TEXT ('pink'|'cyan'|'dark')</text>
+    <line x1="0" y1="142" x2="360" y2="142" class="divider" />
+    <text class="row-attr" x="16" y="166">status_icon</text><text class="row-type" x="344" y="166">TEXT DEFAULT '🐰'</text>
+    <line x1="0" y1="176" x2="360" y2="176" class="divider" />
+    <text class="row-attr" x="16" y="200">social_links</text><text class="row-type" x="344" y="200">TEXT (JSON Array)</text>
+  </g>
+
+  <!-- TABLE: USER_STATS (Top Right) -->
+  <g transform="translate(1140, 120)">
+    <rect width="360" height="210" class="table-card" filter="url(#shadow)" />
+    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-core" />
+    <text class="table-name" x="16" y="25">user_stats (Thống kê Gamification)</text>
+    
+    <text class="row-pk" x="16" y="64">[PK,FK] user_id</text><text class="row-type" x="344" y="64">TEXT → accounts(id)</text>
+    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
+    <text class="row-attr" x="16" y="98">total_xp</text><text class="row-type" x="344" y="98">INTEGER DEFAULT 0</text>
+    <line x1="0" y1="108" x2="360" y2="108" class="divider" />
+    <text class="row-attr" x="16" y="132">current_streak</text><text class="row-type" x="344" y="132">INTEGER DEFAULT 0</text>
+    <line x1="0" y1="142" x2="360" y2="142" class="divider" />
+    <text class="row-attr" x="16" y="166">gems</text><text class="row-type" x="344" y="166">INTEGER DEFAULT 50</text>
+    <line x1="0" y1="176" x2="360" y2="176" class="divider" />
+    <text class="row-attr" x="16" y="200">hearts</text><text class="row-type" x="344" y="200">INTEGER DEFAULT 5</text>
+  </g>
+
+  <!-- TABLE: POMODORO_SESSIONS (Mid Left) -->
+  <g transform="translate(100, 410)">
+    <rect width="360" height="235" class="table-card" filter="url(#shadow)" />
+    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-study" />
+    <text class="table-name" x="16" y="25">pomodoro_sessions (Lịch sử Ca học)</text>
+    
+    <text class="row-pk" x="16" y="64">[PK] id</text><text class="row-type" x="344" y="64">TEXT (UUID v4)</text>
+    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
+    <text class="row-fk" x="16" y="95">[FK] user_id</text><text class="row-type" x="344" y="95">TEXT → accounts(id)</text>
+    <line x1="0" y1="103" x2="360" y2="103" class="divider" />
+    <text class="row-attr" x="16" y="124">cycles</text><text class="row-type" x="344" y="124">INTEGER (Chu kỳ học)</text>
+    <line x1="0" y1="132" x2="360" y2="132" class="divider" />
+    <text class="row-attr" x="16" y="153">focus_minutes</text><text class="row-type" x="344" y="153">INTEGER (Phút tập trung)</text>
+    <line x1="0" y1="161" x2="360" y2="161" class="divider" />
+    <text class="row-attr" x="16" y="182">xp_reward / gems_reward</text><text class="row-type" x="344" y="182">INTEGER / INTEGER</text>
+    <line x1="0" y1="190" x2="360" y2="190" class="divider" />
+    <text class="row-attr" x="16" y="211">completed_at</text><text class="row-type" x="344" y="211">DATETIME (UTC)</text>
+  </g>
+
+  <!-- TABLE: POMODORO_ACTIVE_LEARNERS (Mid Center) -->
+  <g transform="translate(620, 410)">
+    <rect width="360" height="235" class="table-card" filter="url(#shadow)" />
+    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-study" />
+    <text class="table-name" x="16" y="25">pomodoro_active (Phiên Kiosk Active)</text>
+    
+    <text class="row-pk" x="16" y="64">[PK,FK] user_id</text><text class="row-type" x="344" y="64">TEXT → accounts(id)</text>
+    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
+    <text class="row-attr" x="16" y="98">started_at</text><text class="row-type" x="344" y="98">DATETIME (Server Stamp)</text>
+    <line x1="0" y1="108" x2="360" y2="108" class="divider" />
+    <text class="row-attr" x="16" y="132">target_cycles</text><text class="row-type" x="344" y="132">INTEGER NOT NULL</text>
+    <line x1="0" y1="142" x2="360" y2="142" class="divider" />
+    <text class="row-attr" x="16" y="166">current_cycle</text><text class="row-type" x="344" y="166">INTEGER DEFAULT 1</text>
+    <line x1="0" y1="176" x2="360" y2="176" class="divider" />
+    <text class="row-attr" x="16" y="200">doc_name</text><text class="row-type" x="344" y="200">TEXT (Tài liệu đang học)</text>
+  </g>
+
+  <!-- TABLE: USER_ACADEMIC_TRANSCRIPTS (Mid Right) -->
+  <g transform="translate(1140, 410)">
+    <rect width="360" height="235" class="table-card" filter="url(#shadow)" />
+    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-study" />
+    <text class="table-name" x="16" y="25">academic_transcripts (Điểm IU)</text>
+    
+    <text class="row-pk" x="16" y="64">[PK] id</text><text class="row-type" x="344" y="64">INTEGER AUTOINCREMENT</text>
+    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
+    <text class="row-fk" x="16" y="95">[UK,FK] user_id</text><text class="row-type" x="344" y="95">TEXT → accounts(id)</text>
+    <line x1="0" y1="103" x2="360" y2="103" class="divider" />
+    <text class="row-attr" x="16" y="124">student_code / full_name</text><text class="row-type" x="344" y="124">TEXT / TEXT</text>
+    <line x1="0" y1="132" x2="360" y2="132" class="divider" />
+    <text class="row-attr" x="16" y="153">gpa_4 / total_credits</text><text class="row-type" x="344" y="153">REAL / INTEGER</text>
+    <line x1="0" y1="161" x2="360" y2="161" class="divider" />
+    <text class="row-attr" x="16" y="182">raw_data</text><text class="row-type" x="344" y="182">TEXT (Encrypted JSON)</text>
+    <line x1="0" y1="190" x2="360" y2="190" class="divider" />
+    <text class="row-attr" x="16" y="211">created_at</text><text class="row-type" x="344" y="211">DATETIME (UTC)</text>
+  </g>
+
+  <!-- TABLE: USER_NOTES (Bottom Left) -->
+  <g transform="translate(260, 740)">
+    <rect width="450" height="210" class="table-card" filter="url(#shadow)" />
+    <path d="M 0 8 Q 0 0 8 0 L 442 0 Q 450 0 450 8 L 450 38 L 0 38 Z" class="header-sync" />
+    <text class="table-name" x="16" y="25">user_notes (Sổ tay Ghi chú Bài học)</text>
+    
+    <text class="row-pk" x="16" y="64">[PK] id</text><text class="row-type" x="434" y="64">TEXT (UUID v4)</text>
+    <line x1="0" y1="74" x2="450" y2="74" class="divider" />
+    <text class="row-fk" x="16" y="98">[FK] user_id</text><text class="row-type" x="434" y="98">TEXT → accounts(id)</text>
+    <line x1="0" y1="108" x2="450" y2="108" class="divider" />
+    <text class="row-attr" x="16" y="132">title / content</text><text class="row-type" x="434" y="132">TEXT / TEXT (Markdown)</text>
+    <line x1="0" y1="142" x2="450" y2="142" class="divider" />
+    <text class="row-attr" x="16" y="166">tags / subject_id</text><text class="row-type" x="434" y="166">TEXT / TEXT</text>
+    <line x1="0" y1="176" x2="450" y2="176" class="divider" />
+    <text class="row-attr" x="16" y="200">updated_at</text><text class="row-type" x="434" y="200">DATETIME (UTC)</text>
+  </g>
+
+  <!-- TABLE: SYNC_OUTBOX (Bottom Right) -->
+  <g transform="translate(890, 740)">
+    <rect width="450" height="210" class="table-card" filter="url(#shadow)" />
+    <path d="M 0 8 Q 0 0 8 0 L 442 0 Q 450 0 450 8 L 450 38 L 0 38 Z" class="header-sync" />
+    <text class="table-name" x="16" y="25">sync_outbox (Hàng đợi Đồng bộ Offline)</text>
+    
+    <text class="row-pk" x="16" y="64">[PK] id</text><text class="row-type" x="434" y="64">TEXT (UUID v4)</text>
+    <line x1="0" y1="74" x2="450" y2="74" class="divider" />
+    <text class="row-fk" x="16" y="98">[FK] user_id</text><text class="row-type" x="434" y="98">TEXT → accounts(id)</text>
+    <line x1="0" y1="108" x2="450" y2="108" class="divider" />
+    <text class="row-attr" x="16" y="132">event_type / payload_json</text><text class="row-type" x="434" y="132">TEXT / TEXT (Payload)</text>
+    <line x1="0" y1="142" x2="450" y2="142" class="divider" />
+    <text class="row-attr" x="16" y="166">status / retry_count</text><text class="row-type" x="434" y="166">TEXT ('pending'|'synced') / INT</text>
+    <line x1="0" y1="176" x2="450" y2="176" class="divider" />
+    <text class="row-attr" x="16" y="200">created_at</text><text class="row-type" x="434" y="200">DATETIME (UTC)</text>
+  </g>
+
+  <!-- RELATIONSHIP PATHS WITH CROW'S FOOT AND LABELS -->
+  <!-- accounts to profiles (1:1) -->
+  <path d="M 620 220 L 460 220" class="rel-line" marker-start="url(#one)" marker-end="url(#one)" />
+  <rect x="515" y="208" width="50" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text class="cardinality" x="540" y="224" text-anchor="middle">1 : 1</text>
+
+  <!-- accounts to user_stats (1:1) -->
+  <path d="M 980 220 L 1140 220" class="rel-line" marker-start="url(#one)" marker-end="url(#one)" />
+  <rect x="1035" y="208" width="50" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text class="cardinality" x="1060" y="224" text-anchor="middle">1 : 1</text>
+
+  <!-- accounts to pomodoro_sessions (1:N) -->
+  <path d="M 680 330 L 680 370 L 280 370 L 280 410" class="rel-line" marker-start="url(#one)" marker-end="url(#crow)" />
+  <rect x="450" y="358" width="56" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text class="cardinality" x="478" y="374" text-anchor="middle">1 : N</text>
+
+  <!-- accounts to pomodoro_active (1:0..1) -->
+  <path d="M 800 330 L 800 410" class="rel-line" marker-start="url(#one)" marker-end="url(#one)" />
+  <rect x="768" y="358" width="64" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text class="cardinality" x="800" y="374" text-anchor="middle">1 : 0..1</text>
+
+  <!-- accounts to academic_transcripts (1:0..1) -->
+  <path d="M 920 330 L 920 370 L 1320 370 L 1320 410" class="rel-line" marker-start="url(#one)" marker-end="url(#one)" />
+  <rect x="1090" y="358" width="64" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text class="cardinality" x="1122" y="374" text-anchor="middle">1 : 0..1</text>
+
+  <!-- accounts to user_notes (1:N) -->
+  <path d="M 720 330 L 720 700 L 485 700 L 485 740" class="rel-line" marker-start="url(#one)" marker-end="url(#crow)" />
+  <rect x="575" y="688" width="56" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text class="cardinality" x="603" y="704" text-anchor="middle">1 : N</text>
+
+  <!-- accounts to sync_outbox (1:N) -->
+  <path d="M 880 330 L 880 700 L 1115 700 L 1115 740" class="rel-line" marker-start="url(#one)" marker-end="url(#crow)" />
+  <rect x="970" y="688" width="56" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
+  <text class="cardinality" x="998" y="704" text-anchor="middle">1 : N</text>
+
+</svg>

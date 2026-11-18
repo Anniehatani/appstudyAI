@@ -1,0 +1,206 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1050" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #F8FAFC; }
+      .title { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 26px; font-weight: 800; fill: #0A2540; letter-spacing: -0.5px; }
+      .subtitle { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 14px; fill: #64748B; font-weight: 500; }
+      .sys-box { fill: #FFFFFF; stroke: #0A2540; stroke-width: 2.5; stroke-dasharray: none; rx: 16; }
+      .sys-header { fill: #0A2540; }
+      .sys-title { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 16px; font-weight: 800; fill: #FFFFFF; letter-spacing: 0.5px; }
+      .actor-card { fill: #FFFFFF; stroke: #CBD5E1; stroke-width: 1.5; rx: 12; filter: drop-shadow(0 4px 10px rgba(10, 37, 64, 0.08)); }
+      .actor-title { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 14px; font-weight: 800; fill: #0A2540; text-anchor: middle; }
+      .actor-role { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 11.5px; font-weight: 600; fill: #64748B; text-anchor: middle; }
+      .uc-pill { fill: #F8FAFC; stroke: #1E3A8A; stroke-width: 1.8; rx: 28; filter: drop-shadow(0 2px 6px rgba(30, 58, 138, 0.08)); }
+      .uc-pill-core { fill: #EFF6FF; stroke: #0A2540; stroke-width: 2; rx: 28; filter: drop-shadow(0 2px 8px rgba(10, 37, 64, 0.1)); }
+      .uc-code { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 10.5px; font-weight: 800; fill: #2563EB; text-anchor: middle; }
+      .uc-label { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 13px; font-weight: 700; fill: #0F172A; text-anchor: middle; }
+      .assoc-line { stroke: #334155; stroke-width: 1.5; fill: none; }
+      .include-line { stroke: #0F766E; stroke-width: 1.5; stroke-dasharray: 4,4; fill: none; marker-end: url(#arrow-green); }
+      .extend-line { stroke: #B45309; stroke-width: 1.5; stroke-dasharray: 4,4; fill: none; marker-end: url(#arrow-amber); }
+      .stereo-text { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 10.5px; font-weight: 700; fill: #0F766E; text-anchor: middle; }
+    </style>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0A2540" flood-opacity="0.08" />
+    </filter>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#0F766E" />
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#B45309" />
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" class="bg" />
+
+  <!-- Diagram Header -->
+  <g transform="translate(60, 48)">
+    <text class="title" x="0" y="0">SƠ ĐỒ USE CASE TỔNG THỂ HỆ THỐNG (UML 2.5 USE CASE SPECIFICATION)</text>
+    <text class="subtitle" x="0" y="24">Mô hình hóa tương tác giữa 3 tác nhân nghiệp vụ và 10 ca sử dụng chức năng chuẩn mực Kỹ nghệ phần mềm</text>
+  </g>
+
+  <!-- ACTOR 1: HỌC VIÊN (LEARNER) - LEFT -->
+  <g transform="translate(60, 400)">
+    <rect width="150" height="210" class="actor-card" />
+    <!-- Stick Figure -->
+    <circle cx="75" cy="46" r="20" fill="none" stroke="#0A2540" stroke-width="2.5" />
+    <line x1="75" y1="66" x2="75" y2="120" stroke="#0A2540" stroke-width="2.5" />
+    <line x1="40" y1="88" x2="110" y2="88" stroke="#0A2540" stroke-width="2.5" />
+    <line x1="75" y1="120" x2="48" y2="165" stroke="#0A2540" stroke-width="2.5" />
+    <line x1="75" y1="120" x2="102" y2="165" stroke="#0A2540" stroke-width="2.5" />
+    <text class="actor-title" x="75" y="186">Học viên</text>
+    <text class="actor-role" x="75" y="200">(Primary Learner)</text>
+  </g>
+
+  <!-- SYSTEM BOUNDARY -->
+  <g transform="translate(260, 110)">
+    <rect width="1020" height="900" class="sys-box" filter="url(#shadow)" />
+    <path d="M 0 16 Q 0 0 16 0 L 1004 0 Q 1020 0 1020 16 L 1020 44 L 0 44 Z" class="sys-header" />
+    <text class="sys-title" x="30" y="28">HỆ SINH THÁI 3TG STUDY AI (ELECTRON DESKTOP &amp; EDGE WORKERS BOUNDARY)</text>
+
+    <!-- COLUMN 1: USE CASES -->
+    <!-- UC-01 -->
+    <g transform="translate(60, 80)">
+      <rect width="400" height="64" class="uc-pill" />
+      <text class="uc-code" x="200" y="25">USE CASE: UC-01</text>
+      <text class="uc-label" x="200" y="46">Đăng ký &amp; Đăng nhập bảo mật (PBKDF2)</text>
+    </g>
+
+    <!-- UC-02 -->
+    <g transform="translate(60, 175)">
+      <rect width="400" height="64" class="uc-pill-core" />
+      <text class="uc-code" x="200" y="25">USE CASE: UC-02 (CORE)</text>
+      <text class="uc-label" x="200" y="46">Học tập theo Lộ trình Gamification Duolingo</text>
+    </g>
+
+    <!-- UC-03 -->
+    <g transform="translate(60, 270)">
+      <rect width="400" height="64" class="uc-pill-core" />
+      <text class="uc-code" x="200" y="25">USE CASE: UC-03 (CORE FOCUS)</text>
+      <text class="uc-label" x="200" y="46">Kích hoạt Phòng học Focus Zen (Kiosk Mode)</text>
+    </g>
+
+    <!-- UC-04 -->
+    <g transform="translate(60, 365)">
+      <rect width="400" height="64" class="uc-pill" />
+      <text class="uc-code" x="200" y="25">USE CASE: UC-04</text>
+      <text class="uc-label" x="200" y="46">Khóa chống sao nhãng Đa màn hình (Multi-Monitor)</text>
+    </g>
+
+    <!-- UC-05 -->
+    <g transform="translate(60, 460)">
+      <rect width="400" height="64" class="uc-pill" />
+      <text class="uc-code" x="200" y="25">USE CASE: UC-05</text>
+      <text class="uc-label" x="200" y="46">Phát nhạc tập trung Local Offline (HTTP 206)</text>
+    </g>
+
+    <!-- UC-06 -->
+    <g transform="translate(60, 555)">
+      <rect width="400" height="64" class="uc-pill" />
+      <text class="uc-code" x="200" y="25">USE CASE: UC-06</text>
+      <text class="uc-label" x="200" y="46">Đọc tài liệu học tập &amp; Đề thi PDF Canvas</text>
+    </g>
+
+    <!-- UC-07 -->
+    <g transform="translate(60, 650)">
+      <rect width="400" height="64" class="uc-pill-core" />
+      <text class="uc-code" x="200" y="25">USE CASE: UC-07 (AI VISION)</text>
+      <text class="uc-label" x="200" y="46">Hỏi đáp &amp; Dán ảnh giải bài tập (Ctrl + V)</text>
+    </g>
+
+    <!-- UC-08 -->
+    <g transform="translate(60, 745)">
+      <rect width="400" height="64" class="uc-pill" />
+      <text class="uc-code" x="200" y="25">USE CASE: UC-08</text>
+      <text class="uc-label" x="200" y="46">Tra cứu &amp; Quản lý bảo mật Điểm học tập IU</text>
+    </g>
+
+    <!-- COLUMN 2: EXTENSIONS & INCLUDES -->
+    <!-- UC-09 -->
+    <g transform="translate(560, 270)">
+      <rect width="380" height="64" class="uc-pill" />
+      <text class="uc-code" x="190" y="25">USE CASE: UC-09</text>
+      <text class="uc-label" x="190" y="46">Ẩn Taskbar &amp; Chặn phím nóng C++ Native</text>
+    </g>
+
+    <!-- UC-10 -->
+    <g transform="translate(560, 460)">
+      <rect width="380" height="64" class="uc-pill" />
+      <text class="uc-code" x="190" y="25">USE CASE: UC-10</text>
+      <text class="uc-label" x="190" y="46">Đồng bộ hai chiều Offline-First (Outbox Queue)</text>
+    </g>
+
+    <!-- UC-11 -->
+    <g transform="translate(560, 650)">
+      <rect width="380" height="64" class="uc-pill" />
+      <text class="uc-code" x="190" y="25">USE CASE: UC-11</text>
+      <text class="uc-label" x="190" y="46">Phân tích hình ảnh OCR &amp; Suy luận Groq Vision</text>
+    </g>
+
+    <!-- UC-12 -->
+    <g transform="translate(560, 745)">
+      <rect width="380" height="64" class="uc-pill" />
+      <text class="uc-code" x="190" y="25">USE CASE: UC-12</text>
+      <text class="uc-label" x="190" y="46">Xóa vĩnh viễn dữ liệu điểm cá nhân khỏi Server</text>
+    </g>
+
+    <!-- INCLUDE / EXTEND CONNECTORS INSIDE BOUNDARY -->
+    <!-- UC-03 -> UC-09 (include) -->
+    <path d="M 460 302 L 560 302" class="include-line" />
+    <text class="stereo-text" x="510" y="295">&lt;&lt;include&gt;&gt;</text>
+
+    <!-- UC-03 -> UC-04 (include) -->
+    <path d="M 260 334 L 260 365" class="include-line" />
+    <text class="stereo-text" x="295" y="352">&lt;&lt;include&gt;&gt;</text>
+
+    <!-- UC-07 -> UC-11 (include) -->
+    <path d="M 460 682 L 560 682" class="include-line" />
+    <text class="stereo-text" x="510" y="675">&lt;&lt;include&gt;&gt;</text>
+
+    <!-- UC-08 -> UC-12 (extend) -->
+    <path d="M 460 777 L 560 777" class="extend-line" />
+    <text class="stereo-text" x="510" y="770" fill="#B45309">&lt;&lt;extend&gt;&gt;</text>
+  </g>
+
+  <!-- ACTOR 2: AI ASSISTANT (RIGHT TOP) -->
+  <g transform="translate(1360, 240)">
+    <rect width="180" height="170" class="actor-card" />
+    <rect x="65" y="24" width="50" height="42" rx="8" fill="#0A2540" />
+    <circle cx="80" cy="42" r="5" fill="#38BDF8" />
+    <circle cx="100" cy="42" r="5" fill="#38BDF8" />
+    <path d="M 78 54 Q 90 60 102 54" stroke="#FFFFFF" stroke-width="2" fill="none" />
+    <line x1="90" y1="24" x2="90" y2="12" stroke="#0A2540" stroke-width="2.5" />
+    <circle cx="90" cy="10" r="4" fill="#38BDF8" />
+    <text class="actor-title" x="90" y="105">3TG AI Engine</text>
+    <text class="actor-role" x="90" y="123">(Groq LPU &amp; Vision)</text>
+    <text class="actor-role" x="90" y="142" font-size="10.5px">Trợ lý học thuật tự động</text>
+  </g>
+
+  <!-- ACTOR 3: QUẢN TRỊ VIÊN (RIGHT BOTTOM) -->
+  <g transform="translate(1360, 680)">
+    <rect width="180" height="170" class="actor-card" />
+    <circle cx="90" cy="42" r="18" fill="none" stroke="#0A2540" stroke-width="2.5" />
+    <line x1="90" y1="60" x2="90" y2="105" stroke="#0A2540" stroke-width="2.5" />
+    <line x1="60" y1="78" x2="120" y2="78" stroke="#0A2540" stroke-width="2.5" />
+    <line x1="90" y1="105" x2="68" y2="140" stroke="#0A2540" stroke-width="2.5" />
+    <line x1="90" y1="105" x2="112" y2="140" stroke="#0A2540" stroke-width="2.5" />
+    <text class="actor-title" x="90" y="160">Administrator</text>
+    <text class="actor-role" x="90" y="174">(Quản trị Hệ sinh thái)</text>
+  </g>
+
+  <!-- ASSOCIATIONS FROM LEARNER (ACTOR 1) TO USE CASES -->
+  <line x1="210" y1="480" x2="320" y2="222" class="assoc-line" />
+  <line x1="210" y1="495" x2="320" y2="317" class="assoc-line" />
+  <line x1="210" y1="505" x2="320" y2="412" class="assoc-line" />
+  <line x1="210" y1="515" x2="320" y2="507" class="assoc-line" />
+  <line x1="210" y1="525" x2="320" y2="602" class="assoc-line" />
+  <line x1="210" y1="535" x2="320" y2="697" class="assoc-line" />
+  <line x1="210" y1="545" x2="320" y2="792" class="assoc-line" />
+  <line x1="210" y1="555" x2="320" y2="887" class="assoc-line" />
+
+  <!-- ASSOCIATIONS TO AI ENGINE (ACTOR 2) -->
+  <line x1="1200" y1="792" x2="1360" y2="340" class="assoc-line" />
+
+  <!-- ASSOCIATIONS TO ADMIN (ACTOR 3) -->
+  <line x1="1200" y1="602" x2="1360" y2="750" class="assoc-line" />
+
+</svg>

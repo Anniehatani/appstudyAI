@@ -235,7 +235,7 @@ Hệ thống được thiết kế theo chuẩn UML 2.5 với 3 tác nhân chín
 * **Trợ lý Trí tuệ Nhân tạo (AI Assistant):** Tác nhân hệ thống tự động suy luận ngôn ngữ và thị giác;
 * **Quản trị viên Hệ thống (System Administrator):** Quản lý cấu hình, giám sát lưu lượng và phân quyền.
 
-![Hình 1.1: Sơ đồ Use Case tổng thể hệ thống 3TG Study AI](figures/fig_use_case_diagram.png)
+![Hình 1.1: Sơ đồ Use Case tổng thể hệ thống 3TG Study AI](figures/fig_use_case_diagram.svg)
 
 *Hình 1.1: Sơ đồ Use Case tổng thể hệ thống 3TG Study AI (Chuẩn UML 2.5 Specification)*
 
@@ -265,7 +265,7 @@ Dự án áp dụng mô hình kiến trúc lai hiện đại gồm 4 phân tần
 3. **Internal Local Streaming Server:** Máy chủ nhúng cục bộ chạy trên cổng nội bộ máy tính (Port 3000) xử lý truyền phát âm thanh và quản lý bộ nhớ đệm SQLite Local Replica.
 4. **Cloudflare Serverless Edge Network:** Mạng lưới điện toán đám mây biên phân tán toàn cầu thực thi mã JavaScript chuẩn V8 Worker và CSDL quan hệ Cloudflare D1.
 
-![Hình 2.1: Sơ đồ Kiến trúc phân tầng Hybrid Edge-Serverless & Desktop Client](figures/fig_system_architecture.png)
+![Hình 2.1: Sơ đồ Kiến trúc phân tầng Hybrid Edge-Serverless & Desktop Client](figures/fig_system_architecture.svg)
 
 *Hình 2.1: Kiến trúc phân tầng Hybrid Edge-Serverless & Desktop Client (4-Layer Architecture)*
 
@@ -283,7 +283,7 @@ Dự án áp dụng mô hình kiến trúc lai hiện đại gồm 4 phân tần
 
 CSDL được chuẩn hóa nghiêm ngặt đạt Chuẩn dạng 3 (3NF), loại bỏ hoàn toàn các dị thường thêm, xóa, sửa (Insert, Delete, Update Anomalies). Mọi thuộc tính không khóa đều phụ thuộc đầy đủ vào khóa chính và không tồn tại phụ thuộc bắc cầu.
 
-![Hình 2.2: Sơ đồ quan hệ thực thể Cơ sở dữ liệu CSDL chuẩn 3NF](figures/fig_erd_database.png)
+![Hình 2.2: Sơ đồ quan hệ thực thể Cơ sở dữ liệu CSDL chuẩn 3NF](figures/fig_erd_database.svg)
 
 *Hình 2.2: Sơ đồ quan hệ thực thể Cơ sở dữ liệu CSDL chuẩn 3NF (Relational Database SQL ERD)*
 
@@ -330,7 +330,7 @@ CSDL được chuẩn hóa nghiêm ngặt đạt Chuẩn dạng 3 (3NF), loại 
 
 Quy trình kích hoạt chế độ tập trung Kiosk, kiểm soát màn hình phụ và phục hồi giao diện hệ điều hành được minh họa chi tiết:
 
-![Hình 3.1: Sơ đồ tuần tự kích hoạt chế độ tập trung Kiosk, Win32 Native C++ và phục hồi Taskbar](figures/fig_sequence_kiosk.png)
+![Hình 3.1: Sơ đồ tuần tự kích hoạt chế độ tập trung Kiosk, Win32 Native C++ và phục hồi Taskbar](figures/fig_sequence_kiosk.svg)
 
 *Hình 3.1: Sơ đồ tuần tự kích hoạt chế độ tập trung Kiosk, Win32 Native C++ và phục hồi Taskbar*
 
