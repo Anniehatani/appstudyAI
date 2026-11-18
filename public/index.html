@@ -27,6 +27,15 @@
           if (perfPref === "low" || (perfPref === "auto" && (cores <= 4 || mem <= 4))) {
             document.documentElement.classList.add("low-spec-device");
           }
+
+          // Tự động mở vào trong nếu màn hình splash bị treo quá 6s
+          setTimeout(function() {
+            var sl = document.getElementById("app-splash-loader");
+            if (sl && !sl.classList.contains("hidden")) {
+              sl.classList.add("hidden");
+              setTimeout(function() { sl.style.display = "none"; }, 300);
+            }
+          }, 6000);
         } catch (e) {}
       })();
     </script>

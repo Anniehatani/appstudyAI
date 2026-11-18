@@ -133,6 +133,13 @@ export function showAppLoader(text = "Đang chuẩn bị kho bài học 3TG… �
       }
     }, 2800);
   }
+
+  // Safety fallback: Đảm bảo tối đa 5.5 giây sẽ tự động mở vào trong, không bao giờ bị kẹt
+  setTimeout(() => {
+    if (splashLoader && !splashLoader.classList.contains("hidden")) {
+      hideAppLoader();
+    }
+  }, 5500);
 }
 
 export function setAppLoaderProgress(percent) {
