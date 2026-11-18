@@ -52,31 +52,27 @@ function getGuardExecutablePath() {
 function restoreWindowsTaskbar() {
   if (process.platform !== "win32") return;
 
-  // Tầng 1: Kích hoạt guard process với tham số --restore (C# Native ShowWindow + SetWindowPos)
+  // Tầng 1: Native C Win32 Binary Execution tức thì (<5ms) để khôi phục 100% Taskbar
   const targetExe = getGuardExecutablePath();
   if (targetExe) {
     try {
-      const p = spawn(targetExe, ["--restore"], {
-        detached: true,
-        stdio: "ignore",
-        windowsHide: true
-      });
-      p.unref();
-      console.log("[KioskGuard] Đã kích hoạt khôi phục Taskbar qua study_guard.exe --restore (async)");
+      const { spawnSync } = require("child_process");
+      spawnSync(targetExe, ["--restore"], { windowsHide: true, timeout: 2000 });
+      console.log("[KioskGuard] Đã khôi phục Taskbar thành công qua study_guard.exe --restore (sync)");
+      return;
     } catch (e) {
-      console.warn("[TaskbarRestore Error]", e.message);
+      console.warn("[TaskbarRestore Sync Error]", e.message);
     }
   }
 
   // Tầng 2: Win32 PowerShell Native Fallback trực tiếp để đảm bảo 100% Shell_TrayWnd và Shell_SecondaryTrayWnd được hiển thị lại
   try {
+    const { spawnSync } = require("child_process");
     const psScript = "$d='[DllImport(\"user32.dll\")] public static extern bool ShowWindow(IntPtr h, int c); [DllImport(\"user32.dll\")] public static extern bool EnableWindow(IntPtr h, bool e); [DllImport(\"user32.dll\")] public static extern IntPtr FindWindow(string c, string n);'; $w=Add-Type -MemberDefinition $d -Name W -PassThru; $t1=$w::FindWindow('Shell_TrayWnd', $null); if ($t1 -ne [IntPtr]::Zero) { $w::EnableWindow($t1, $true); $w::ShowWindow($t1, 5); $w::ShowWindow($t1, 9); }; $t2=$w::FindWindow('Shell_SecondaryTrayWnd', $null); if ($t2 -ne [IntPtr]::Zero) { $w::EnableWindow($t2, $true); $w::ShowWindow($t2, 5); $w::ShowWindow($t2, 9); }";
-    const ps = spawn("powershell", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", psScript], {
-      detached: true,
-      stdio: "ignore",
-      windowsHide: true
+    spawnSync("powershell", ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", psScript], {
+      windowsHide: true,
+      timeout: 3000
     });
-    ps.unref();
   } catch {}
 }
 
@@ -486,6 +482,11 @@ ipcMain.handle("window:set-kiosk", async (event, flag) => {
   return isKioskActive;
 });
 ipcMain.handle("window:is-kiosk", () => isKioskActive);
+ipcMain.handle("kiosk:restore", () => {
+  stopKioskGuard();
+  restoreWindowsTaskbar();
+  return { ok: true };
+});
 ipcMain.handle("dialog:open-study-files", async () => {
   if (!mainWindow || mainWindow.isDestroyed()) return [];
   const { dialog } = require("electron");

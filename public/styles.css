@@ -13687,6 +13687,21 @@ body.pomo-is-resizing * {
   cursor: col-resize !important;
   user-select: none !important;
 }
+body.pomo-is-resizing iframe,
+body.pomo-is-resizing embed,
+body.pomo-is-resizing object,
+body.pomo-is-resizing canvas,
+body.pomo-is-resizing #pomo-doc-scroll-body,
+body.pomo-is-resizing .doc-viewer-scrollable-body,
+body.pomo-is-resizing .pomo-pdf-pages,
+body.pomo-is-resizing .pomo-pdf-canvas {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+body.pomo-is-resizing .pomo-main-content,
+body.pomo-is-resizing .pomo-center-stage {
+  contain: layout style;
+}
 .pomo-sidebar-reopen-pill {
   position: absolute;
   top: 14px;

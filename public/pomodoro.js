@@ -439,6 +439,12 @@ export async function exitPomodoroKiosk() {
     }
   } catch {}
 
+  try {
+    if (window.electronAPI && typeof window.electronAPI.restoreTaskbar === "function") {
+      await window.electronAPI.restoreTaskbar();
+    }
+  } catch {}
+
   if (document.body) document.body.classList.remove("pomodoro-kiosk-mode");
 }
 
@@ -1850,16 +1856,29 @@ export function initPomoResizers() {
       document.body.classList.add("pomo-is-resizing");
       const startX = e.clientX || (e.touches && e.touches[0].clientX);
       const startW = pomodoroState.sidebarWidth || 260;
+      let rafId = null;
+      let pendingW = startW;
 
       const onMove = (ev) => {
         const curX = ev.clientX || (ev.touches && ev.touches[0].clientX);
         const delta = curX - startX;
-        const newW = Math.max(180, Math.min(480, startW + delta));
-        pomodoroState.sidebarWidth = newW;
-        room.style.setProperty("--pomo-sidebar-width", newW + "px");
+        pendingW = Math.max(180, Math.min(480, startW + delta));
+        if (!rafId) {
+          rafId = requestAnimationFrame(() => {
+            rafId = null;
+            pomodoroState.sidebarWidth = pendingW;
+            room.style.setProperty("--pomo-sidebar-width", pendingW + "px");
+          });
+        }
       };
 
       const onEnd = () => {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        pomodoroState.sidebarWidth = pendingW;
+        room.style.setProperty("--pomo-sidebar-width", pendingW + "px");
         leftResizer.classList.remove("is-dragging");
         document.body.classList.remove("pomo-is-resizing");
         try {
@@ -1871,9 +1890,9 @@ export function initPomoResizers() {
         window.removeEventListener("touchend", onEnd);
       };
 
-      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mousemove", onMove, { passive: true });
       window.addEventListener("mouseup", onEnd);
-      window.addEventListener("touchmove", onMove, { passive: false });
+      window.addEventListener("touchmove", onMove, { passive: true });
       window.addEventListener("touchend", onEnd);
     };
 
@@ -1890,16 +1909,29 @@ export function initPomoResizers() {
       document.body.classList.add("pomo-is-resizing");
       const startX = e.clientX || (e.touches && e.touches[0].clientX);
       const startW = pomodoroState.aiDockWidth || 360;
+      let rafId = null;
+      let pendingW = startW;
 
       const onMove = (ev) => {
         const curX = ev.clientX || (ev.touches && ev.touches[0].clientX);
         const delta = startX - curX;
-        const newW = Math.max(260, Math.min(680, startW + delta));
-        pomodoroState.aiDockWidth = newW;
-        room.style.setProperty("--pomo-ai-width", newW + "px");
+        pendingW = Math.max(260, Math.min(680, startW + delta));
+        if (!rafId) {
+          rafId = requestAnimationFrame(() => {
+            rafId = null;
+            pomodoroState.aiDockWidth = pendingW;
+            room.style.setProperty("--pomo-ai-width", pendingW + "px");
+          });
+        }
       };
 
       const onEnd = () => {
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        pomodoroState.aiDockWidth = pendingW;
+        room.style.setProperty("--pomo-ai-width", pendingW + "px");
         rightResizer.classList.remove("is-dragging");
         document.body.classList.remove("pomo-is-resizing");
         try {
@@ -1911,9 +1943,9 @@ export function initPomoResizers() {
         window.removeEventListener("touchend", onEnd);
       };
 
-      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mousemove", onMove, { passive: true });
       window.addEventListener("mouseup", onEnd);
-      window.addEventListener("touchmove", onMove, { passive: false });
+      window.addEventListener("touchmove", onMove, { passive: true });
       window.addEventListener("touchend", onEnd);
     };
 
@@ -1939,6 +1971,10 @@ export async function askPomodoroAi(customPrompt = null) {
   });
   pomodoroState.aiInput = "";
   pomodoroState.pastedImage = null;
+  const inputEl = document.getElementById("pomo-ai-text-input");
+  if (inputEl) {
+    inputEl.value = "";
+  }
   renderPomoPastedImageBadge();
   renderPomodoroAiMessages();
 

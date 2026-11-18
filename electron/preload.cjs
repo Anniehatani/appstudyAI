@@ -15,7 +15,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   isKiosk: () => ipcRenderer.invoke("window:is-kiosk"),
   openStudyFiles: () => ipcRenderer.invoke("dialog:open-study-files"),
   openIuLogin: () => ipcRenderer.invoke("academic:open-iu-login"),
-  clearSessionCookies: () => ipcRenderer.invoke("auth:clear-cookies")
+  clearSessionCookies: () => ipcRenderer.invoke("auth:clear-cookies"),
+  restoreTaskbar: () => ipcRenderer.invoke("kiosk:restore")
 });
 
 contextBridge.exposeInMainWorld("__uniStudyIU", {

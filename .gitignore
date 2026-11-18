@@ -26,4 +26,5 @@ scratch/
 !build/focus_guard.exe
 !electron/focus_guard.exe
 !electron/study_guard.exe
+!build/study_guard.exe
 
