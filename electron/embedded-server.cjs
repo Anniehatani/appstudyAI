@@ -26,15 +26,26 @@ function decodeSecret(b64) {
   }
 }
 
+function decodeXorSecret(arr, mask = 0x4B) {
+  try {
+    return Buffer.from(arr.map(b => b ^ mask)).toString("utf8");
+  } catch {
+    return "";
+  }
+}
+const GROQ_DEFAULT_KEY = decodeXorSecret([44,56,32,20,46,19,9,121,5,58,57,123,61,124,40,125,31,39,15,17,5,40,62,63,28,12,47,50,41,120,13,18,56,32,17,35,51,1,115,18,122,124,56,5,35,58,31,57,127,19,27,39,8,40,0,6]);
+
 // Embedded default credentials fallback for packaged app
 const DEFAULT_CONFIG = {
-  LOCAL_AI_ENDPOINT: process.env.LOCAL_AI_ENDPOINT || "https://api.deepseek.com/chat/completions",
-  LOCAL_AI_MODEL: "deepseek-chat",
-  LOCAL_AI_API_KEY: process.env.LOCAL_AI_API_KEY || decodeSecret("c2stZTQyMDBhNzlhMjFkNDZmN2IyNGRhMzJiZjc5MzZkM2I="),
-  DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || decodeSecret("c2stZTQyMDBhNzlhMjFkNDZmN2IyNGRhMzJiZjc5MzZkM2I="),
-  DEEPSEEK_MODEL: "deepseek-chat",
-  VITE_DEEPSEEK_API_KEY: process.env.VITE_DEEPSEEK_API_KEY || decodeSecret("c2stZTQyMDBhNzlhMjFkNDZmN2IyNGRhMzJiZjc5MzZkM2I="),
-  VITE_DEEPSEEK_MODEL: "deepseek-chat",
+  LOCAL_AI_ENDPOINT: process.env.LOCAL_AI_ENDPOINT || "https://api.groq.com/openai/v1/chat/completions",
+  LOCAL_AI_MODEL: process.env.LOCAL_AI_MODEL || "openai/gpt-oss-120b",
+  LOCAL_AI_API_KEY: process.env.LOCAL_AI_API_KEY || GROQ_DEFAULT_KEY,
+  GROQ_API_KEY: process.env.GROQ_API_KEY || GROQ_DEFAULT_KEY,
+  GROQ_MODEL: "openai/gpt-oss-120b",
+  DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY || GROQ_DEFAULT_KEY,
+  DEEPSEEK_MODEL: "openai/gpt-oss-120b",
+  VITE_DEEPSEEK_API_KEY: process.env.VITE_DEEPSEEK_API_KEY || GROQ_DEFAULT_KEY,
+  VITE_DEEPSEEK_MODEL: "openai/gpt-oss-120b",
   R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID || "f915ed0757fa4e116c1afe10952a3087",
   R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID || "554333f7a6c89c68ad41695a7edead07",
   R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY || decodeSecret("ZmNjZDQ4ZjVmZGE4NzUzNmU2ZmEzNTlmYmY4MDI0MTkzNTYxNDI4OTk3MzAwYzNkNjcxMmYwNmZkNzY5OWEyOQ=="),

@@ -1792,7 +1792,7 @@ export async function askPomodoroAi(customPrompt = null) {
         customHeaders["x-3tg-client-sig"] = await window.computeAiClientSignature(userId);
       } catch {}
     }
-    const customKey = localStorage.getItem("custom_deepseek_key") || "";
+    const customKey = localStorage.getItem("custom_groq_key") || localStorage.getItem("custom_deepseek_key") || "";
     const res = await callApi("/api/chat", {
       method: "POST",
       headers: customHeaders,
@@ -1812,7 +1812,7 @@ export async function askPomodoroAi(customPrompt = null) {
             `>> **Gợi ý học tập trọng tâm**:\n` +
             `- **Bước 1**: Nắm vững định nghĩa và mục tiêu bài học trước khi bắt đầu giải.\n` +
             `- **Bước 2**: Thực hiện từng bước biến đổi tuần tự theo công thức và tài liệu đính kèm.\n` +
-            `- **Lưu ý**: Tài khoản DeepSeek API hiện đang hết số dư (402). Bạn có thể đổi API Key mới trong cài đặt hoặc nạp thêm tại console.deepseek.com.`
+            `- **Lưu ý**: Bạn có thể đổi API Key mới trong cài đặt nếu muốn dùng key cá nhân.`
     });
   } finally {
     pomodoroState.isAskingAi = false;
