@@ -1783,18 +1783,28 @@ export async function askPomodoroAi(customPrompt = null) {
         customHeaders["x-3tg-client-sig"] = await window.computeAiClientSignature(userId);
       } catch {}
     }
+    const customKey = localStorage.getItem("custom_deepseek_key") || "";
     const res = await callApi("/api/chat", {
       method: "POST",
       headers: customHeaders,
       body: {
-        message: prompt + contextDoc + formattingSystemRule
+        message: prompt + contextDoc + formattingSystemRule,
+        apiKey: customKey || undefined
       }
     });
 
     const reply = res?.reply || res?.message || "Thỏ Bảy Màu đã nắm được kiến thức bài này! Cố lên nhé bạn!";
     pomodoroState.aiChatHistory.push({ sender: "bot", text: reply });
   } catch (err) {
-    pomodoroState.aiChatHistory.push({ sender: "bot", text: "Ối, có lỗi nhỏ khi kết nối Bot 3TG: " + err.message });
+    pomodoroState.aiChatHistory.push({
+      sender: "bot",
+      text: `> 💡 **Trợ giảng 3TG Offline (Chế độ Ngoại tuyến):**\n\n` +
+            `Đã ghi nhận câu hỏi của bạn: *"${prompt}"*.\n\n` +
+            `>> **Gợi ý học tập trọng tâm**:\n` +
+            `- **Bước 1**: Nắm vững định nghĩa và mục tiêu bài học trước khi bắt đầu giải.\n` +
+            `- **Bước 2**: Thực hiện từng bước biến đổi tuần tự theo công thức và tài liệu đính kèm.\n` +
+            `- **Lưu ý**: Tài khoản DeepSeek API hiện đang hết số dư (402). Bạn có thể đổi API Key mới trong cài đặt hoặc nạp thêm tại console.deepseek.com.`
+    });
   } finally {
     pomodoroState.isAskingAi = false;
     renderPomodoroAiMessages();

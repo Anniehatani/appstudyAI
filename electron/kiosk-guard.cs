@@ -55,6 +55,9 @@ public class KioskGuard {
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool EnableWindow(IntPtr hWnd, bool bEnable);
 
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
     public static void HideTaskbar() {
         try {
             IntPtr tray = FindWindow("Shell_TrayWnd", null);
@@ -107,12 +110,14 @@ public class KioskGuard {
                 ShowWindow(startMenu, SW_SHOW);
             }
 
-            // Khởi động lại nhẹ nhàng tiến trình StartMenuExperienceHost để nút Windows phản hồi ngay lập tức
-            try {
-                foreach (var p in Process.GetProcessesByName("StartMenuExperienceHost")) {
-                    p.Kill();
-                }
-            } catch {}
+            // Khởi động lại nhẹ nhàng tiến trình StartMenuExperienceHost trong luồng ngầm (không chặn UI)
+            System.Threading.ThreadPool.QueueUserWorkItem(_ => {
+                try {
+                    foreach (var p in Process.GetProcessesByName("StartMenuExperienceHost")) {
+                        p.Kill();
+                    }
+                } catch {}
+            });
         } catch {}
     }
 
@@ -135,18 +140,39 @@ public class KioskGuard {
             if (_hookID != IntPtr.Zero) UnhookWindowsHookEx(_hookID);
         };
 
-        // Watchdog thread: liên tục khóa thanh taskbar và dập tắt Task View (3 ngón vuốt trackpad)
+        // Watchdog thread: liên tục khóa thanh taskbar, dập tắt Task View và dập tắt cửa sổ Search/Start Menu/Copilot
         System.Threading.Thread watchdogThread = new System.Threading.Thread(() => {
             while (!_stopping) {
                 try {
                     HideTaskbar();
 
                     IntPtr taskView = FindWindow("MultitaskingViewFrame", null);
-                    if (taskView != IntPtr.Zero) {
+                    if (taskView != IntPtr.Zero && IsWindowVisible(taskView)) {
                         ShowWindow(taskView, SW_HIDE);
                     }
+
+                    // Dập tắt lập tức mọi cửa sổ Search / Start Menu / Copilot flyout
+                    IntPtr searchWnd = FindWindow("Windows.UI.Core.CoreWindow", "Search");
+                    if (searchWnd != IntPtr.Zero && IsWindowVisible(searchWnd)) {
+                        ShowWindow(searchWnd, SW_HIDE);
+                    }
+
+                    IntPtr searchVi = FindWindow("Windows.UI.Core.CoreWindow", "Tìm kiếm");
+                    if (searchVi != IntPtr.Zero && IsWindowVisible(searchVi)) {
+                        ShowWindow(searchVi, SW_HIDE);
+                    }
+
+                    IntPtr startWnd = FindWindow("Windows.UI.Core.CoreWindow", "Start");
+                    if (startWnd != IntPtr.Zero && IsWindowVisible(startWnd)) {
+                        ShowWindow(startWnd, SW_HIDE);
+                    }
+
+                    IntPtr searchPane = FindWindow("SearchPane", null);
+                    if (searchPane != IntPtr.Zero && IsWindowVisible(searchPane)) {
+                        ShowWindow(searchPane, SW_HIDE);
+                    }
                 } catch {}
-                System.Threading.Thread.Sleep(80);
+                System.Threading.Thread.Sleep(50);
             }
         });
         watchdogThread.IsBackground = true;
@@ -197,18 +223,27 @@ public class KioskGuard {
                 return (IntPtr)1;
             }
 
-            // 2. Chặn TẤT CẢ phím ALT (0x12, 0xA4, 0xA5) và bất kỳ tổ hợp nào khi giữ ALT
+            // 2. Chặn TẤT CẢ tổ hợp khi đang giữ phím Windows (Win+S, Win+C, Win+Tab, Win+D, Win+E, Win+R...)
+            bool winDown = (GetAsyncKeyState(VK_LWIN) & 0x8000) != 0 || 
+                           (GetAsyncKeyState(VK_RWIN) & 0x8000) != 0;
+            if (winDown) {
+                return (IntPtr)1;
+            }
+
+            // 3. Chặn TẤT CẢ phím ALT (0x12, 0xA4, 0xA5) và bất kỳ tổ hợp nào khi giữ ALT
             // (Alt, Alt+Tab, Alt+F4, Alt+Esc, Alt+Space, Alt mở menubar...)
             if (vk == 0x12 || vk == 0xA4 || vk == 0xA5 || altDown) {
                 return (IntPtr)1;
             }
 
-            // 3. Chặn toàn bộ phím chức năng F1 đến F12 (0x70 đến 0x7B)
-            if (vk >= 0x70 && vk <= 0x7B) {
+            // 4. Chặn toàn bộ phím chức năng F1 đến F24 (0x70 đến 0x87)
+            // LƯU Ý ĐẶC BIỆT: Phím cứng Copilot trên Windows 11 gửi mã VK_F23 = 0x86 (hoặc LeftShift + Win + F23).
+            // Chặn 0x86 và toàn dải 0x70-0x87 đảm bảo triệt tiêu hoàn toàn phím Copilot & Windows Search flyout!
+            if ((vk >= 0x70 && vk <= 0x87) || vk == 0x86) {
                 return (IntPtr)1;
             }
 
-            // 4. Chặn phím ESC (0x1B) để không thoát fullscreen / start menu
+            // 5. Chặn phím ESC (0x1B) để không thoát fullscreen / start menu
             if (vk == VK_ESCAPE) {
                 return (IntPtr)1;
             }

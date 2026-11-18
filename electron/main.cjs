@@ -26,19 +26,25 @@ let kioskGuardProc = null;
 
 function getGuardExecutablePath() {
   if (process.platform !== "win32") return null;
+  const exeNames = ["pomo_guard.exe", "focus_guard.exe", "study_guard.exe", "kiosk_guard.exe"];
   const candidates = [];
   // Khi ứng dụng đã đóng gói thành installer/exe (process.resourcesPath tồn tại):
   // ƯU TIÊN TUYỆT ĐỐI đường dẫn đã giải nén (unpacked) ngoài ASAR, vì Windows không thể chạy .exe từ trong app.asar
   if (process.resourcesPath) {
-    candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "build", "focus_guard.exe"));
-    candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "electron", "focus_guard.exe"));
-    candidates.push(path.join(process.resourcesPath, "build", "focus_guard.exe"));
-    candidates.push(path.join(process.resourcesPath, "focus_guard.exe"));
+    for (const name of exeNames) {
+      candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "build", name));
+      candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "electron", name));
+      candidates.push(path.join(process.resourcesPath, "build", name));
+      candidates.push(path.join(process.resourcesPath, "electron", name));
+      candidates.push(path.join(process.resourcesPath, name));
+    }
   }
   // Nếu đang chạy trong môi trường phát triển (npm run dev / source tree):
   if (!app.isPackaged) {
-    candidates.push(path.join(__dirname, "..", "build", "focus_guard.exe"));
-    candidates.push(path.join(__dirname, "focus_guard.exe"));
+    for (const name of exeNames) {
+      candidates.push(path.join(__dirname, "..", "build", name));
+      candidates.push(path.join(__dirname, name));
+    }
   }
   return candidates.find(p => fs.existsSync(p)) || null;
 }
@@ -48,9 +54,15 @@ function restoreWindowsTaskbar() {
   const targetExe = getGuardExecutablePath();
   if (targetExe) {
     try {
-      const { spawnSync } = require("child_process");
-      spawnSync(targetExe, ["--restore"], { windowsHide: true, timeout: 3000 });
-      console.log("[KioskGuard] Đã khôi phục thanh Taskbar Windows hoàn tất");
+      const { spawn } = require("child_process");
+      // Gọi bất đồng bộ (non-blocking) để hoàn toàn không gây lag hoặc giật giao diện Electron khi thoát Pomodoro
+      const p = spawn(targetExe, ["--restore"], {
+        detached: true,
+        stdio: "ignore",
+        windowsHide: true
+      });
+      p.unref();
+      console.log("[KioskGuard] Đã gửi tín hiệu khôi phục thanh Taskbar Windows hoàn tất (async)");
     } catch (e) {
       console.warn("[TaskbarRestore Error]", e.message);
     }
@@ -64,7 +76,7 @@ function startKioskGuard() {
   let guardPath = getGuardExecutablePath();
   if (!guardPath) {
     const csFile = path.join(__dirname, "kiosk-guard.cs");
-    const targetExe = path.join(__dirname, "../build/focus_guard.exe");
+    const targetExe = path.join(__dirname, "../build/pomo_guard.exe");
     const cscCandidates = [
       "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe",
       "C:\\Windows\\Microsoft.NET\\Framework\\v4.0.30319\\csc.exe"
@@ -76,7 +88,7 @@ function startKioskGuard() {
         const res = spawnSync(cscPath, ["/target:winexe", `/out:${targetExe}`, csFile], { windowsHide: true });
         if (res.status === 0 && fs.existsSync(targetExe)) {
           guardPath = targetExe;
-          console.log("[KioskGuard] Tự động biên dịch focus_guard.exe thành công!");
+          console.log("[KioskGuard] Tự động biên dịch pomo_guard.exe thành công!");
         } else {
           console.warn("[KioskGuard Compile Failed]", res.stderr ? res.stderr.toString() : res.status);
         }
@@ -87,7 +99,7 @@ function startKioskGuard() {
   }
 
   if (!guardPath) {
-    console.warn("[KioskGuard] Không tìm thấy tệp bảo vệ focus_guard.exe tại các vị trí kiểm tra");
+    console.warn("[KioskGuard] Không tìm thấy tệp bảo vệ pomo_guard.exe tại các vị trí kiểm tra");
     return;
   }
 
@@ -111,16 +123,17 @@ function stopKioskGuard() {
     try {
       kioskGuardProc.stdin?.end();
     } catch {}
+    const oldProc = kioskGuardProc;
+    kioskGuardProc = null;
     setTimeout(() => {
       try {
-        if (kioskGuardProc && !kioskGuardProc.killed) {
-          kioskGuardProc.kill();
+        if (oldProc && !oldProc.killed) {
+          oldProc.kill();
         }
       } catch {}
-      kioskGuardProc = null;
-    }, 100);
+    }, 120);
   }
-  // Luôn khôi phục thanh Taskbar Windows ngay lập tức và vô điều kiện
+  // Khôi phục thanh Taskbar Windows ngay lập tức ở chế độ ngầm async
   restoreWindowsTaskbar();
 }
 
@@ -408,14 +421,16 @@ ipcMain.handle("window:set-kiosk", (event, flag) => {
     mainWindow.setFullScreen(true);
     mainWindow.focus();
   } else {
-    stopKioskGuard();
+    // 1. Phục hồi trạng thái cửa sổ ngay lập tức (0ms delay) để người dùng không cảm nhận bất kỳ độ trễ nào
     try {
       mainWindow.setAlwaysOnTop(false);
       mainWindow.setVisibleOnAllWorkspaces(false);
       mainWindow.setKiosk(false);
+      mainWindow.setFullScreen(false);
+      mainWindow.focus();
     } catch {}
-    mainWindow.setFullScreen(false);
-    restoreWindowsTaskbar();
+    // 2. Dừng guard và khôi phục taskbar trong background (không chặn event loop)
+    stopKioskGuard();
   }
   return isKioskActive;
 });

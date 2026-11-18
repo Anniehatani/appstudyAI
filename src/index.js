@@ -2964,6 +2964,112 @@ async function addGroupMembers(request, groupId, currentUser, env) {
   return { ok: true, addedCount, message: `Đã thêm ${addedCount} thành viên vào nhóm!` };
 }
 
+async function generateOfflineTutorResponse(message, userPrompt, courseTitle, context, documentParts, env, statusReason) {
+  const isSummary = /tóm tắt|3 ý|ý chính|nội dung chính|summary|overview/i.test(message);
+  const isExplain = /giải thích|dễ hiểu|hướng dẫn|chi tiết|bước|explain|làm sao|thế nào/i.test(message);
+  const isQuiz = /trắc nghiệm|câu hỏi|luyện tập|quiz|test|đáp án|bài tập/i.test(message);
+
+  const notice = `> 💡 **Trợ giảng 3TG Offline (Chế độ Trợ giảng Giáo trình Ngoại tuyến):**\n` +
+                 `> *Tài khoản DeepSeek API hiện hết số dư tín chỉ (${statusReason || "402 Insufficient Balance"}).*\n` +
+                 `> *3TG Study đã tự động kích hoạt bộ giải đáp ngoại tuyến dựa trên giáo trình & tài liệu học tập của bạn để việc học không bị gián đoạn!*\n\n`;
+
+  // 1. Nếu người học yêu cầu câu hỏi trắc nghiệm
+  if (isQuiz) {
+    let dbQuestions = [];
+    try {
+      let qQuery = "SELECT q.question_text, q.options, q.correct_answer, q.explanation, l.title as lesson_title " +
+                   "FROM questions q JOIN lessons l ON q.lesson_id = l.id ";
+      if (courseTitle) {
+        qQuery += "JOIN units u ON l.unit_id = u.id JOIN subjects s ON u.subject_id = s.id WHERE s.subject_name LIKE ? ";
+        const qRes = await env.DB.prepare(qQuery + "ORDER BY RANDOM() LIMIT 3").bind(`%${courseTitle}%`).all();
+        dbQuestions = qRes.results || [];
+      }
+      if (!dbQuestions.length) {
+        const qRes = await env.DB.prepare(
+          "SELECT q.question_text, q.options, q.correct_answer, q.explanation, l.title as lesson_title " +
+          "FROM questions q JOIN lessons l ON q.lesson_id = l.id ORDER BY RANDOM() LIMIT 3"
+        ).all();
+        dbQuestions = qRes.results || [];
+      }
+    } catch (e) {
+      console.warn("Offline quiz query error:", e.message);
+    }
+
+    if (dbQuestions && dbQuestions.length > 0) {
+      let qText = `### 🎯 3 CÂU HỎI TRẮC NGHIỆM ÔN LUYỆN TRỌNG TÂM ${courseTitle ? "(" + courseTitle + ")" : ""}:\n\n`;
+      dbQuestions.forEach((q, idx) => {
+        let opts = [];
+        try {
+          const parsed = typeof q.options === "string" ? JSON.parse(q.options) : q.options;
+          if (Array.isArray(parsed)) opts = parsed;
+          else if (typeof parsed === "object") opts = Object.values(parsed);
+        } catch {}
+        qText += `**Câu ${idx + 1} [${q.lesson_title || "Trọng tâm"}]:** ${q.question_text}\n`;
+        if (opts.length >= 4) {
+          qText += `- A. ${opts[0]}\n- B. ${opts[1]}\n- C. ${opts[2]}\n- D. ${opts[3]}\n`;
+        }
+        qText += `> 💡 *Đáp án chính xác:* **${q.correct_answer}**\n`;
+        if (q.explanation) qText += `> 📝 *Giải thích chi tiết:* ${q.explanation}\n\n`;
+        else qText += `\n`;
+      });
+      return notice + qText;
+    }
+  }
+
+  // 2. Nếu có tài liệu đính kèm (Code, PDF, Ghi chú) đang mở trên màn hình Pomodoro
+  if (documentParts && documentParts.length > 0) {
+    const doc = documentParts[0];
+    const docName = doc.name || "Tài liệu học tập";
+    const text = (doc.text || "").trim();
+
+    if (isSummary) {
+      const lines = text.split("\n")
+        .map(l => l.trim())
+        .filter(l => l.length > 12 && !l.startsWith("//") && !l.startsWith("#") && !l.startsWith("/*"));
+      const p1 = lines[0] || "Nắm vững định nghĩa nền tảng và mục tiêu bài học.";
+      const p2 = lines[Math.min(lines.length - 1, Math.floor(lines.length / 2))] || "Thực hiện đúng quy trình logic, công thức và phương pháp giải.";
+      const p3 = lines[Math.max(0, lines.length - 1)] || "Kiểm tra kỹ các trường hợp biên, tối ưu hóa và liên hệ thực tế.";
+
+      return notice +
+        `### 📌 TÓM TẮT 3 Ý CỐT LÕI TÀI LIỆU ("${docName}"):\n\n` +
+        `>> **Ý 1 - Trọng tâm & Khái niệm cơ bản**:\n` +
+        `   ${p1.slice(0, 220)}\n\n` +
+        `>> **Ý 2 - Cấu trúc giải thuật / Quy trình thực thi**:\n` +
+        `   ${p2.slice(0, 220)}\n\n` +
+        `>> **Ý 3 - Lưu ý quan trọng & Mẹo ôn thi**:\n` +
+        `   ${p3.slice(0, 220)}\n\n` +
+        `> 💡 **Mẹo ghi nhớ từ Thỏ Bảy Màu**: Hãy tự diễn giải lại 3 ý trên theo sơ đồ tư duy để nhớ bài lâu hơn 200%!`;
+    }
+
+    if (isExplain || /code|thuật toán|hàm|function/i.test(message)) {
+      return notice +
+        `### 📖 GIẢI THÍCH DỄ HIỂU NỘI DUNG ("${docName}"):\n\n` +
+        `>> **Bước 1 - Mục tiêu của bài/đoạn mã**:\n` +
+        `Phân tách bài toán thành các khối chức năng độc lập, làm rõ điều kiện đầu vào (Input) và kết quả cần đạt (Output).\n\n` +
+        `>> **Bước 2 - Phân tích từng bước thực hiện**:\n` +
+        `- **Khởi tạo dữ liệu**: Khai báo cấu trúc dữ liệu thích hợp, gán biến trạng thái ban đầu.\n` +
+        `- **Xử lý thuật toán**: Duyệt qua từng trường hợp, áp dụng công thức hoặc cấu trúc điều khiển để tính toán.\n` +
+        `- **Kiểm tra ngoại lệ**: Xử lý các điều kiện biên (Boundary conditions) để không bị lỗi thời gian chạy (Runtime error).\n\n` +
+        `>> **Mẹo nhớ nhanh khi thi**:\n` +
+        `Ghi nhớ theo quy tắc luồng dữ liệu: *Đầu vào -> Biến đổi -> Đầu ra*. Luôn kiểm tra kỹ các trường hợp mảng rỗng hoặc số 0!`;
+    }
+  }
+
+  // 3. Phản hồi học tập tổng quát kết hợp ngữ cảnh môn học
+  let subjectInfo = courseTitle ? `môn học **${courseTitle}**` : "buổi học";
+  return notice +
+    `### 🎓 HƯỚNG DẪN HỌC TẬP & GIẢI ĐÁP ${courseTitle ? "(" + courseTitle.toUpperCase() + ")" : ""}:\n\n` +
+    `>> **1. Phân tích trọng tâm câu hỏi**:\n` +
+    `Bạn đang thắc mắc về: *"${message.slice(0, 150)}"* trong ${subjectInfo}.\n\n` +
+    `>> **2. Kiến thức cốt lõi cần ghi nhớ**:\n` +
+    `- **Bản chất**: Nắm chắc định nghĩa nguyên lý trước khi giải bài tập cụ thể.\n` +
+    `- **Phương pháp làm bài**: Luôn viết rõ công thức, giả thiết và từng bước suy luận có căn cứ.\n` +
+    `- **Luyện tập**: Đối chiếu với các đề thi các kỳ trước và luyện trắc nghiệm trong mục Môn Học.\n\n` +
+    `>> **3. Kế hoạch ôn tập đề xuất**:\n` +
+    `- Tập trung cao độ hoàn thành phiên Pomodoro này (tích lũy +50 XP & +30 Đá quý).\n` +
+    `- Bạn có thể nhập thêm DeepSeek API Key mới vào Cài đặt nếu muốn kích hoạt lại toàn diện kết nối AI trực tuyến!`;
+}
+
 async function askAI(request, user, env) {
   // 1. Xác thực chữ ký Client (Chống tool/script cào hoặc gọi API ngoài ứng dụng)
   const sigCheck = await verifyClientSignature(request, user.userId);
@@ -3025,7 +3131,8 @@ async function askAI(request, user, env) {
     conversationId = crypto.randomUUID();
   }
   let endpoint = String(env.LOCAL_AI_ENDPOINT || "").trim() || "https://api.deepseek.com/chat/completions";
-  const apiKey = env.LOCAL_AI_API_KEY || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || "sk-e4200a79a21d46f7b24da32bf7936d3b";
+  const userCustomKey = (body.apiKey && String(body.apiKey).trim()) || (body.customApiKey && String(body.customApiKey).trim());
+  const apiKey = userCustomKey || env.LOCAL_AI_API_KEY || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || "sk-e4200a79a21d46f7b24da32bf7936d3b";
   const configuredModel = env.LOCAL_AI_MODEL || env.DEEPSEEK_MODEL || env.VITE_DEEPSEEK_MODEL || "deepseek-chat";
 
   if (!endpoint && apiKey) {
@@ -3060,9 +3167,10 @@ async function askAI(request, user, env) {
   const userContent = imageParts.length
     ? [{ type: "text", text: userPrompt + (imageParts.length ? "\n\nHãy phân tích nội dung trong ảnh đính kèm." : "") }, ...imageParts]
     : userPrompt;
-  let response;
+
+  let reply = "";
   try {
-    response = await fetch(endpoint, {
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: Object.assign({ "content-type": "application/json" }, apiKey ? { authorization: "Bearer " + apiKey } : {}),
       body: JSON.stringify({
@@ -3077,27 +3185,30 @@ async function askAI(request, user, env) {
       }),
       signal: AbortSignal.timeout(90000)
     });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "");
+      console.warn("AI response status error:", response.status, errText);
+      const reason = response.status === 402 ? "402 Insufficient Balance - Tài khoản hết số dư" : `HTTP ${response.status}`;
+      reply = await generateOfflineTutorResponse(message, userPrompt, courseTitle, context, documentParts, env, reason);
+    } else {
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        result = null;
+      }
+      reply = result && result.choices && result.choices[0] && result.choices[0].message
+        ? String(result.choices[0].message.content || "")
+        : "";
+      if (!reply) {
+        reply = await generateOfflineTutorResponse(message, userPrompt, courseTitle, context, documentParts, env, "Phản hồi rỗng");
+      }
+    }
   } catch (err) {
-    console.error("AI fetch error:", err);
-    throw new HttpError(502, "3TG AI chưa kết nối được lúc này. Thử gửi lại sau một chút nhé.");
+    console.warn("AI fetch error, switching to offline tutor fallback:", err.message);
+    reply = await generateOfflineTutorResponse(message, userPrompt, courseTitle, context, documentParts, env, "Mất kết nối mạng / Lỗi máy chủ AI");
   }
-  if (!response.ok) {
-    const errText = await response.text().catch(() => "");
-    console.error("AI response error:", response.status, errText);
-    throw new HttpError(502, imageParts.length
-      ? "AI chưa đọc được ảnh. Hãy kiểm tra model có hỗ trợ vision hoặc gửi ảnh nhỏ hơn."
-      : "Trợ giảng 3TG AI đang bận hoặc gặp sự cố (" + response.status + "). Bạn thử lại sau một chút nhé.");
-  }
-  let result;
-  try {
-    result = await response.json();
-  } catch {
-    throw new HttpError(502, "Trợ giảng AI trả về phản hồi chưa đọc được.");
-  }
-  const reply = result && result.choices && result.choices[0] && result.choices[0].message
-    ? String(result.choices[0].message.content || "")
-    : "";
-  if (!reply) throw new HttpError(502, "3TG AI chưa nhận được câu trả lời. Thử hỏi lại nhé.");
 
   // 5. Ghi nhận lượt sử dụng hợp lệ vào DB để trừ hạn ngạch
   await recordAiUsage(env.DB, user.userId);

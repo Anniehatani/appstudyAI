@@ -8366,6 +8366,7 @@ window.handleSendChat = async function(e) {
         message: prompt,
         subjectId: subId,
         freeMode,
+        apiKey: localStorage.getItem("custom_deepseek_key") || undefined,
         attachments: attachments.map(file => file.kind === "image"
           ? { name: file.name, type: file.type, data: file.data }
           : { name: file.name, type: file.type, text: file.text }),
