@@ -3140,6 +3140,7 @@ async function askAI(request, user, env) {
     conversationId = crypto.randomUUID();
   }
   const userCustomKey = (body.apiKey && String(body.apiKey).trim()) || (body.customApiKey && String(body.customApiKey).trim());
+  const userCustomBaseUrl = (body.baseUrl && String(body.baseUrl).trim()) || (body.customBaseUrl && String(body.customBaseUrl).trim()) || (env.CUSTOM_AI_BASE_URL && String(env.CUSTOM_AI_BASE_URL).trim());
   const deepseekKey = userCustomKey || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || getDeepseekDefaultKey();
   const groqKey = env.GROQ_API_KEY || getGroqDefaultKey();
 
@@ -3167,7 +3168,7 @@ async function askAI(request, user, env) {
   let primarySuccess = false;
 
   // ========================================================
-  // BƯỚC 1: Ưu tiên gọi API DeepSeek trước (hoặc Anthropic nếu là key sk-ant-)
+  // BƯỚC 1: Ưu tiên gọi API DeepSeek / Anthropic / Custom Proxy
   // ========================================================
   if (deepseekKey) {
     try {
@@ -3187,7 +3188,17 @@ async function askAI(request, user, env) {
         max_tokens: AI_LIMITS.MAX_TOKENS_OUTPUT
       };
 
-      if (deepseekKey.startsWith("sk-ant-")) {
+      if (userCustomBaseUrl) {
+        // Tùy biến Proxy Base URL cho người dùng mua key từ bên thứ 3 (OneAPI / NewAPI / Relay Proxy)
+        primaryEndpoint = userCustomBaseUrl.includes("/chat/completions")
+          ? userCustomBaseUrl
+          : userCustomBaseUrl.replace(/\/+$/, "") + "/chat/completions";
+        primaryHeaders = {
+          "content-type": "application/json",
+          "authorization": "Bearer " + deepseekKey
+        };
+        primaryBody.model = body.model || (deepseekKey.startsWith("sk-ant-") ? "claude-3-5-sonnet" : "deepseek-chat");
+      } else if (deepseekKey.startsWith("sk-ant-")) {
         primaryEndpoint = "https://api.anthropic.com/v1/messages";
         primaryHeaders = {
           "content-type": "application/json",

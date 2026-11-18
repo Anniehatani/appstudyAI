@@ -8378,6 +8378,7 @@ window.handleSendChat = async function(e) {
         subjectId: subId,
         freeMode,
         apiKey: localStorage.getItem("custom_groq_key") || localStorage.getItem("custom_deepseek_key") || undefined,
+        baseUrl: localStorage.getItem("custom_ai_base_url") || undefined,
         attachments: attachments.map(file => file.kind === "image"
           ? { name: file.name, type: file.type, data: file.data }
           : { name: file.name, type: file.type, text: file.text }),
@@ -8712,6 +8713,31 @@ function renderSettings() {
               Xem tất cả huy hiệu ➔
             </a>
           </div>
+
+          <!-- AI & API KEY CONFIGURATION CARD -->
+          <div class="fb-side-card" style="margin-top:14px;">
+            <h3 class="fb-side-card-title">🤖 Cấu hình Trợ lý Cố vấn 3TG AI</h3>
+            <p style="font-size:12.5px; color:var(--ink-500); margin:4px 0 10px 0;">
+              Mặc định hệ thống sử dụng kết nối <strong>Groq LPU siêu tốc</strong>. Bạn có thể tự điền API Key riêng (DeepSeek, Claude, Groq) hoặc Proxy bên thứ 3.
+            </p>
+            <div class="form-group" style="margin-bottom:8px;">
+              <label class="form-label" style="font-size:12px; margin-bottom:3px;">Khóa API Key riêng</label>
+              <input type="password" id="custom-ai-key-input" class="form-input" style="font-size:12px; padding:8px 10px;" placeholder="sk-... hoặc gsk_..." value="${esc(localStorage.getItem('custom_deepseek_key') || localStorage.getItem('custom_groq_key') || '')}" />
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label" style="font-size:12px; margin-bottom:3px;">Proxy Base URL (cho key mua bên thứ 3)</label>
+              <input type="text" id="custom-ai-baseurl-input" class="form-input" style="font-size:12px; padding:8px 10px;" placeholder="Ví dụ: https://api.proxy.vn/v1" value="${esc(localStorage.getItem('custom_ai_base_url') || '')}" />
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:8px 12px; font-size:12.5px;" onclick="window.saveAiSettings()">
+                💾 Lưu cấu hình
+              </button>
+              <button type="button" class="btn-duo btn-duo-white" style="flex:1; padding:8px 12px; font-size:12.5px;" onclick="window.testAiConnection()">
+                ⚡ Thử kết nối
+              </button>
+            </div>
+            <div id="ai-test-status" style="font-size:12px; margin-top:8px; display:none;"></div>
+          </div>
         </div>
 
         <!-- RIGHT COLUMN: CHỈ SỐ HỌC TẬP & DÒNG TRẠNG THÁI -->
@@ -8837,6 +8863,66 @@ window.switchFbTab = function(tab) {
   playSound("click");
   state.fbProfileTab = tab;
   render();
+};
+
+window.saveAiSettings = function() {
+  const keyInput = document.getElementById("custom-ai-key-input");
+  const urlInput = document.getElementById("custom-ai-baseurl-input");
+  const key = keyInput ? keyInput.value.trim() : "";
+  const url = urlInput ? urlInput.value.trim() : "";
+
+  if (key) {
+    if (key.startsWith("gsk_")) {
+      localStorage.setItem("custom_groq_key", key);
+      localStorage.removeItem("custom_deepseek_key");
+    } else {
+      localStorage.setItem("custom_deepseek_key", key);
+      localStorage.removeItem("custom_groq_key");
+    }
+  } else {
+    localStorage.removeItem("custom_deepseek_key");
+    localStorage.removeItem("custom_groq_key");
+  }
+
+  if (url) {
+    localStorage.setItem("custom_ai_base_url", url);
+  } else {
+    localStorage.removeItem("custom_ai_base_url");
+  }
+
+  try { playSound("fanfare"); } catch {}
+  showToast("Đã lưu cấu hình AI thành công! 🌸");
+};
+
+window.testAiConnection = async function() {
+  const statusEl = document.getElementById("ai-test-status");
+  if (statusEl) {
+    statusEl.style.display = "block";
+    statusEl.style.color = "var(--ink-500)";
+    statusEl.textContent = "⏳ Đang gửi thử 1 tin nhắn kiểm tra kết nối AI...";
+  }
+  try {
+    const res = await api("/api/chat", {
+      method: "POST",
+      body: {
+        message: "Xin chào 3TG! Hãy phản hồi ngắn gọn 1 câu để kiểm tra kết nối.",
+        freeMode: true,
+        apiKey: localStorage.getItem("custom_groq_key") || localStorage.getItem("custom_deepseek_key") || undefined,
+        baseUrl: localStorage.getItem("custom_ai_base_url") || undefined
+      }
+    });
+    if (statusEl) {
+      statusEl.style.color = "#16a34a";
+      statusEl.textContent = "🟢 Kết nối AI hoàn hảo! " + (res.reply ? res.reply.slice(0, 80) + "..." : "Thành công.");
+    }
+    showToast("Kết nối AI thành công rực rỡ! ✨");
+  } catch (err) {
+    if (statusEl) {
+      statusEl.style.color = "#dc2626";
+      statusEl.textContent = "🔴 Lỗi kết nối: " + err.message;
+    }
+    showToast("Thử kết nối thất bại: " + err.message, true);
+  }
 };
 
 window.openEditProfileModal = function() {

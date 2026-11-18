@@ -2026,13 +2026,15 @@ export async function askPomodoroAi(customPrompt = null) {
       } catch {}
     }
     const customKey = localStorage.getItem("custom_groq_key") || localStorage.getItem("custom_deepseek_key") || "";
+    const customBaseUrl = localStorage.getItem("custom_ai_base_url") || "";
     const res = await callApi("/api/chat", {
       method: "POST",
       headers: customHeaders,
       body: {
         message: userQuestion + contextDoc + formattingSystemRule,
         attachments: attachments.length ? attachments : undefined,
-        apiKey: customKey || undefined
+        apiKey: customKey || undefined,
+        baseUrl: customBaseUrl || undefined
       }
     });
 
