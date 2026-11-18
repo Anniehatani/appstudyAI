@@ -372,6 +372,7 @@ export const pomodoroState = {
     { sender: "bot", text: "Xin chào! Mình là Cố vấn AI Bot 3TG trong phòng học Pomodoro 🎧 Bật tùy chọn 'Đọc tài liệu trên màn hình' để mình xem và giải thích bài ngay cho bạn nhé!" }
   ],
   aiInput: "",
+  pastedImage: null,
   isAskingAi: false,
   showExitModal: false,
   showCelebrationModal: false,
@@ -443,6 +444,49 @@ export async function exitPomodoroKiosk() {
 
 // Cho phép chụp màn hình (PrtSc / Win + Shift + S) - tạm thời không ép cướp lại focus khi blur
 if (typeof window !== "undefined") {
+  // Lắng nghe dán ảnh từ Clipboard (Ctrl + V) trong phòng Pomodoro để gửi trực tiếp cho AI
+  window.addEventListener("paste", (e) => {
+    if (!pomodoroState.active) return;
+    const items = e.clipboardData?.items;
+    if (!items || !items.length) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type && item.type.indexOf("image") !== -1) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target.result;
+          const commaIdx = dataUrl.indexOf(",");
+          const base64 = commaIdx !== -1 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+          pomodoroState.pastedImage = {
+            name: "Ảnh dán (" + new Date().toLocaleTimeString("vi-VN") + ").png",
+            type: file.type || "image/png",
+            data: base64,
+            previewUrl: dataUrl
+          };
+          renderPomoPastedImageBadge();
+          if (!pomodoroState.aiDockOpen) {
+            pomodoroState.aiDockOpen = true;
+            const dock = document.getElementById("pomo-ai-dock");
+            if (dock) {
+              dock.classList.remove("collapsed");
+              dock.classList.add("open");
+            }
+          }
+          const textInput = document.getElementById("pomo-ai-text-input");
+          if (textInput) textInput.focus();
+          if (window.showToast) window.showToast("📸 Đã nhận ảnh từ Clipboard! Bấm Gửi để hỏi Bot 3TG AI.");
+        };
+        reader.readAsDataURL(file);
+        break;
+      }
+    }
+  });
+
   // Global Pomodoro Keyboard Guard: Chặn triệt để các phím chức năng khi đang học (trừ PrtSc, Ctrl+C, Ctrl+V, Ctrl+A, Ctrl+X, Ctrl+Z, Ctrl+Q)
   window.addEventListener("keydown", (e) => {
     if (!pomodoroState.active) return;
@@ -528,7 +572,12 @@ export async function startPomodoroSession() {
     pomodoroState.activeDocId = pomodoroState.docs[0].id;
   }
 
-  // Đảm bảo Kiosk Guard và Hook bàn phím/Taskbar hoàn tất 100% trước khi bước vào phòng học
+  // 1. Phản hồi giao diện tức thì (0ms latency), đóng băng trang chủ
+  if (document.body) document.body.classList.add("pomodoro-kiosk-mode");
+  window._isPomodoroActive = true;
+  if (window.render) window.render();
+
+  // 2. Kích hoạt guard bảo vệ hệ thống & Kiosk
   await enterPomodoroKiosk();
 
   // Kích hoạt nhịp tim trực tuyến báo danh đang học trong phòng Pomodoro
@@ -650,8 +699,11 @@ export async function abandonPomodoroSession() {
   pomodoroState.showExitModal = false;
   pomodoroState.showCelebrationModal = false;
   pomodoroState.isPaused = false;
+  pomodoroState.pastedImage = null;
 
   await exitPomodoroKiosk();
+  window._isPomodoroActive = false;
+  if (document.body) document.body.classList.remove("pomodoro-kiosk-mode");
 
   if (window.showToast) {
     if (pomodoroState.completedCycles > 0) {
@@ -1367,21 +1419,126 @@ export async function extractTextFromZipDoc(file, ext) {
   }
 }
 
-export async function extractTextFromPdfDoc(file) {
+export async function extractTextFromPdfDoc(file, prefBuffer = null) {
   try {
-    const buffer = await file.arrayBuffer();
+    const buffer = prefBuffer || (file.arrayBuffer ? await file.arrayBuffer() : file);
+
+    // 1. Ưu tiên PDF.js nếu có trong runtime (Trích xuất toàn bộ text chuẩn xác 100%)
+    if (typeof window !== "undefined" && window.pdfjsLib) {
+      try {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdf.worker.min.js";
+        const loadingTask = window.pdfjsLib.getDocument({ data: buffer });
+        const pdf = await loadingTask.promise;
+        const textPieces = [];
+        const maxPages = Math.min(pdf.numPages, 30);
+        for (let i = 1; i <= maxPages; i++) {
+          const page = await pdf.getPage(i);
+          const tc = await page.getTextContent();
+          const pt = tc.items.map(it => it.str).join(" ");
+          if (pt.trim()) textPieces.push(`[Trang ${i}]:\n${pt}`);
+        }
+        if (textPieces.length > 0) {
+          return textPieces.join("\n\n");
+        }
+      } catch (e) {
+        console.warn("pdfjs extractText error:", e);
+      }
+    }
+
     const decoder = new TextDecoder("latin1");
     const rawStr = decoder.decode(buffer);
     const textPieces = [];
+
+    // 1. Trích xuất text thông thường (uncompressed Tj)
     const tjMatches = [...rawStr.matchAll(/\(([^()]{2,100})\)\s*Tj/g)];
     tjMatches.forEach(m => {
       const clean = m[1].replace(/\\([()\\])/g, "$1").trim();
       if (clean.length > 2) textPieces.push(clean);
     });
-    if (textPieces.length > 10) {
-      return textPieces.slice(0, 300).join(" ");
+
+    // 2. Trích xuất từ các FlateDecode stream nén bằng DecompressionStream nguyên bản của Chromium/Electron
+    if (typeof DecompressionStream !== "undefined") {
+      const streamRegex = /stream\r?\n([\s\S]*?)endstream/g;
+      let streamMatch;
+      let decompCount = 0;
+      while ((streamMatch = streamRegex.exec(rawStr)) !== null && decompCount < 30) {
+        decompCount++;
+        const rawPart = streamMatch[1];
+        if (!rawPart || rawPart.length < 10) continue;
+        const streamBytes = new Uint8Array(rawPart.length);
+        for (let i = 0; i < rawPart.length; i++) {
+          streamBytes[i] = rawPart.charCodeAt(i);
+        }
+
+        let decText = null;
+        try {
+          const ds = new DecompressionStream("deflate");
+          const writer = ds.writable.getWriter();
+          writer.write(streamBytes);
+          writer.close();
+          const reader = ds.readable.getReader();
+          const chunks = [];
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+          }
+          const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+          const merged = new Uint8Array(totalLen);
+          let offset = 0;
+          for (const c of chunks) {
+            merged.set(c, offset);
+            offset += c.length;
+          }
+          decText = new TextDecoder("utf-8", { fatal: false }).decode(merged);
+        } catch {
+          try {
+            const ds = new DecompressionStream("deflate-raw");
+            const writer = ds.writable.getWriter();
+            writer.write(streamBytes);
+            writer.close();
+            const reader = ds.readable.getReader();
+            const chunks = [];
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+            }
+            const totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+            const merged = new Uint8Array(totalLen);
+            let offset = 0;
+            for (const c of chunks) {
+              merged.set(c, offset);
+              offset += c.length;
+            }
+            decText = new TextDecoder("utf-8", { fatal: false }).decode(merged);
+          } catch {}
+        }
+
+        if (decText) {
+          const streamTj = [...decText.matchAll(/\(([^()]{2,140})\)\s*Tj/g)];
+          streamTj.forEach(m => {
+            const clean = m[1].replace(/\\([()\\])/g, "$1").trim();
+            if (clean.length > 2) textPieces.push(clean);
+          });
+          const streamTJArr = [...decText.matchAll(/\[(.*?)\]\s*TJ/g)];
+          streamTJArr.forEach(m => {
+            const items = [...m[1].matchAll(/\(([^()]+)\)/g)];
+            items.forEach(it => {
+              const clean = it[1].replace(/\\([()\\])/g, "$1").trim();
+              if (clean.length > 1) textPieces.push(clean);
+            });
+          });
+        }
+      }
     }
-  } catch {}
+
+    if (textPieces.length > 0) {
+      return textPieces.slice(0, 1000).join(" ");
+    }
+  } catch (err) {
+    console.warn("extractTextFromPdfDoc error:", err);
+  }
   return "";
 }
 
@@ -1421,19 +1578,32 @@ export async function addMultipleLocalFiles(fileList) {
       };
       reader.readAsDataURL(file);
     } else if (file.type === "application/pdf" || ext === ".pdf") {
-      const pdfBlob = file.type === "application/pdf" ? file : new Blob([file], { type: "application/pdf" });
+      let arrayBuffer = null;
+      try {
+        arrayBuffer = await file.arrayBuffer();
+      } catch (abErr) {
+        console.warn("arrayBuffer error:", abErr);
+      }
+      const pdfBlob = arrayBuffer ? new Blob([arrayBuffer], { type: "application/pdf" }) : (file.type === "application/pdf" ? file : new Blob([file], { type: "application/pdf" }));
       const blobUrl = URL.createObjectURL(pdfBlob);
-      const pdfText = await extractTextFromPdfDoc(file);
-      pomodoroState.docs.push({
+      const pdfText = await extractTextFromPdfDoc(file, arrayBuffer);
+      const pdfDocObj = {
         id: docId,
         name: file.name,
         type: "pdf",
         content: blobUrl,
         blobUrl: blobUrl,
-        extractedText: pdfText
-      });
+        arrayBuffer: arrayBuffer,
+        file: file,
+        extractedText: pdfText,
+        currentPage: 1,
+        numPages: 1,
+        viewMode: "continuous"
+      };
+      pomodoroState.docs.push(pdfDocObj);
       if (!pomodoroState.activeDocId) pomodoroState.activeDocId = docId;
       if (window.render) window.render();
+      setTimeout(() => initPdfDocViewer(pdfDocObj), 60);
     } else if (ext === ".pptx" || ext === ".ppt") {
       const extracted = await extractTextFromZipDoc(file, "pptx");
       pomodoroState.docs.push({
@@ -1543,6 +1713,10 @@ export function addNoteToDocs(noteId) {
 export function setActiveDoc(docId) {
   pomodoroState.activeDocId = docId;
   if (window.render) window.render();
+  const doc = pomodoroState.docs.find(d => d.id === docId);
+  if (doc && doc.type === "pdf") {
+    setTimeout(() => initPdfDocViewer(doc), 50);
+  }
 }
 
 export function removeDoc(docId, event) {
@@ -1750,33 +1924,91 @@ export function initPomoResizers() {
 
 export async function askPomodoroAi(customPrompt = null) {
   const prompt = customPrompt || pomodoroState.aiInput;
-  if (!prompt || !prompt.trim() || pomodoroState.isAskingAi) return;
+  const pastedImg = pomodoroState.pastedImage;
+  if ((!prompt || !prompt.trim()) && !pastedImg) return;
+  if (pomodoroState.isAskingAi) return;
 
+  const userQuestion = prompt && prompt.trim() ? prompt.trim() : (pastedImg ? "Hãy giải chi tiết bài tập/nội dung trong hình ảnh này giúp mình nhé!" : "");
   pomodoroState.isAskingAi = true;
-  pomodoroState.aiChatHistory.push({ sender: "user", text: prompt.trim() });
+
+  // Lưu tin nhắn người dùng (kèm ảnh nếu có dán qua Ctrl+V)
+  pomodoroState.aiChatHistory.push({
+    sender: "user",
+    text: userQuestion,
+    image: pastedImg ? pastedImg.previewUrl : null
+  });
   pomodoroState.aiInput = "";
+  pomodoroState.pastedImage = null;
+  renderPomoPastedImageBadge();
   renderPomodoroAiMessages();
 
-  // Attach context of the document currently on screen if enabled
   let contextDoc = "";
+  const attachments = [];
   const activeDoc = pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
+
+  // 1. Nếu có ảnh dán từ Clipboard (Ctrl + V): gửi ảnh đính kèm để AI phân tích trực quan
+  if (pastedImg) {
+    attachments.push({
+      name: pastedImg.name || "Pasted Image.png",
+      type: pastedImg.type || "image/png",
+      data: pastedImg.data
+    });
+  }
+
+  // 2. Nếu tùy chọn "Đọc tài liệu trên màn hình" được bật:
   if (pomodoroState.aiReadScreenContext && activeDoc) {
     const rawContent = activeDoc.extractedText || activeDoc.content || "";
-    if (activeDoc.type === "pptx" || activeDoc.type === "ppt") {
-      contextDoc = `\n\n[NGỮ CẢNH BÀI THUYẾT TRÌNH POWERPOINT ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n${rawContent.slice(0, 4500)}\n[HÃY TẬP TRUNG GIẢI ĐÁP, GIẢNG GIẢI CÁC SLIDE TRÊN DỄ HIỂU NHẤT]`;
-    } else if (activeDoc.type === "docx" || activeDoc.type === "doc") {
-      contextDoc = `\n\n[NGỮ CẢNH TÀI LIỆU SOẠN THẢO WORD ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n${rawContent.slice(0, 4500)}\n[HÃY GIẢI ĐÁP THEO NỘI DUNG TÀI LIỆU TRÊN]`;
-    } else if (activeDoc.type === "code") {
-      contextDoc = `\n\n[NGỮ CẢNH SOURCE CODE ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n\`\`\`\n${rawContent.slice(0, 4500)}\n\`\`\`\n[HÃY GIẢI THÍCH THUẬT TOÁN, TÌM LỖI HOẶC TỐI ƯU ĐOẠN CODE NÀY NẾU ĐƯỢC HỎI]`;
+    if (activeDoc.type === "image" && !pastedImg) {
+      // Nếu màn hình đang mở ảnh tài liệu và người dùng chưa dán ảnh khác: tự động gửi ảnh này cho AI
+      if (typeof activeDoc.content === "string" && activeDoc.content.startsWith("data:")) {
+        const commaIdx = activeDoc.content.indexOf(",");
+        const base64 = commaIdx !== -1 ? activeDoc.content.slice(commaIdx + 1) : "";
+        let mime = "image/png";
+        const mimeMatch = activeDoc.content.match(/^data:([^;]+);/);
+        if (mimeMatch) mime = mimeMatch[1];
+        attachments.push({
+          name: activeDoc.name,
+          type: mime,
+          data: base64
+        });
+        contextDoc = `\n\n[HÌNH ẢNH ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]: Hãy nhìn hình ảnh đính kèm và phân tích, giải đáp chi tiết cho người học.`;
+      } else {
+        contextDoc = `\n\n[HÌNH ẢNH TRÊN MÀN HÌNH]: Người học đang xem ảnh/sơ đồ "${activeDoc.name}".`;
+      }
     } else if (activeDoc.type === "pdf") {
-      const pdfText = activeDoc.extractedText ? activeDoc.extractedText.slice(0, 4500) : "";
-      contextDoc = `\n\n[NGỮ CẢNH GIÁO TRÌNH PDF ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]:${pdfText ? '\n' + pdfText : ''}\n[HÃY HƯỚNG DẪN CHI TIẾT TỪNG BƯỚC, GIẢI CÔNG THỨC TOÁN HỌC HOẶC KHÁI NIỆM TRONG BÀI NÀY DỄ HIỂU NHẤT]`;
+      const pdfText = activeDoc.extractedText ? activeDoc.extractedText.slice(0, 6000) : "";
+      contextDoc = `\n\n[NGỮ CẢNH GIÁO TRÌNH/ĐỀ THI PDF ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name} - Trang ${activeDoc.currentPage || 1}"]:${pdfText ? '\n' + pdfText : '\n(Tài liệu PDF đề thi/bài học đang mở trên màn hình)'}\n[HÃY HƯỚNG DẪN CHI TIẾT TỪNG BƯỚC, GIẢI CÔNG THỨC TOÁN HỌC HOẶC KHÁI NIỆM TRONG BÀI NÀY DỄ HIỂU NHẤT]`;
+      
+      // Chụp trực tiếp canvas trang PDF hiện tại gửi cho Groq Multimodal Vision (Qwen2.5-VL)
+      if (!pastedImg) {
+        try {
+          const pageCanvas = document.getElementById(`pdf-canvas-${activeDoc.id}-${activeDoc.currentPage || 1}`) 
+                          || document.querySelector(`#pomo-pdf-pages-${activeDoc.id} canvas`);
+          if (pageCanvas) {
+            const dataUrl = pageCanvas.toDataURL("image/jpeg", 0.85);
+            const commaIdx = dataUrl.indexOf(",");
+            const b64 = commaIdx !== -1 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+            attachments.push({
+              name: `${activeDoc.name} (Trang ${activeDoc.currentPage || 1}).jpg`,
+              type: "image/jpeg",
+              data: b64
+            });
+            contextDoc += `\n[ẢNH CHỤP TRỰC TIẾP TRANG ${activeDoc.currentPage || 1} ĐƯỢC ĐÍNH KÈM]: Hãy nhìn ảnh đính kèm để xem chính xác các biểu thức toán học, sơ đồ và đề bài.`;
+          }
+        } catch (cErr) {
+          console.warn("Canvas capture error for PDF:", cErr);
+        }
+      }
+    } else if (activeDoc.type === "pptx" || activeDoc.type === "ppt") {
+      contextDoc = `\n\n[NGỮ CẢNH BÀI THUYẾT TRÌNH POWERPOINT ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n${rawContent.slice(0, 5000)}\n[HÃY TẬP TRUNG GIẢI ĐÁP, GIẢNG GIẢI CÁC SLIDE TRÊN DỄ HIỂU NHẤT]`;
+    } else if (activeDoc.type === "docx" || activeDoc.type === "doc") {
+      contextDoc = `\n\n[NGỮ CẢNH TÀI LIỆU SOẠN THẢO WORD ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n${rawContent.slice(0, 5000)}\n[HÃY GIẢI ĐÁP THEO NỘI DUNG TÀI LIỆU TRÊN]`;
+    } else if (activeDoc.type === "code") {
+      contextDoc = `\n\n[NGỮ CẢNH SOURCE CODE ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n\`\`\`\n${rawContent.slice(0, 5000)}\n\`\`\`\n[HÃY GIẢI THÍCH THUẬT TOÁN, TÌM LỖI HOẶC TỐI ƯU ĐOẠN CODE NÀY NẾU ĐƯỢC HỎI]`;
     } else if (activeDoc.type === "text" || activeDoc.type === "note") {
-      contextDoc = `\n\n[NGỮ CẢNH BÀI HỌC/GHI CHÚ ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n${rawContent.slice(0, 4500)}\n[HÃY GIẢI ĐÁP, HƯỚNG DẪN CHI TIẾT THEO TÀI LIỆU TRÊN]`;
+      contextDoc = `\n\n[NGỮ CẢNH BÀI HỌC/GHI CHÚ ĐANG MỞ TRÊN MÀN HÌNH - "${activeDoc.name}"]:\n${rawContent.slice(0, 5000)}\n[HÃY GIẢI ĐÁP, HƯỚNG DẪN CHI TIẾT THEO TÀI LIỆU TRÊN]`;
     } else if (activeDoc.type === "video" || activeDoc.type === "audio") {
       contextDoc = `\n\n[NGỮ CẢNH]: Người học đang nghe/xem bài giảng "${activeDoc.name}".`;
-    } else if (activeDoc.type === "image") {
-      contextDoc = `\n\n[NGỮ CẢNH]: Người học đang xem ảnh/sơ đồ "${activeDoc.name}".`;
     }
   }
 
@@ -1798,7 +2030,8 @@ export async function askPomodoroAi(customPrompt = null) {
       method: "POST",
       headers: customHeaders,
       body: {
-        message: prompt + contextDoc + formattingSystemRule,
+        message: userQuestion + contextDoc + formattingSystemRule,
+        attachments: attachments.length ? attachments : undefined,
         apiKey: customKey || undefined
       }
     });
@@ -1809,16 +2042,37 @@ export async function askPomodoroAi(customPrompt = null) {
     pomodoroState.aiChatHistory.push({
       sender: "bot",
       text: `> 💡 **Trợ giảng 3TG Offline (Chế độ Ngoại tuyến):**\n\n` +
-            `Đã ghi nhận câu hỏi của bạn: *"${prompt}"*.\n\n` +
+            `Đã ghi nhận câu hỏi của bạn: *"${userQuestion}"*.\n\n` +
             `>> **Gợi ý học tập trọng tâm**:\n` +
             `- **Bước 1**: Nắm vững định nghĩa và mục tiêu bài học trước khi bắt đầu giải.\n` +
             `- **Bước 2**: Thực hiện từng bước biến đổi tuần tự theo công thức và tài liệu đính kèm.\n` +
-            `- **Lưu ý**: Bạn có thể đổi API Key mới trong cài đặt nếu muốn dùng key cá nhân.`
+            `- **Mẹo**: Bạn có thể dùng phím chụp màn hình (PrtSc) rồi bấm Ctrl+V vào ô chat để gửi ảnh đề bài cho Bot giải!`
     });
   } finally {
     pomodoroState.isAskingAi = false;
     renderPomodoroAiMessages();
   }
+}
+
+export function renderPomoPastedImageBadge() {
+  const badge = document.getElementById("pomo-ai-pasted-badge");
+  const thumb = document.getElementById("pomo-pasted-thumb-img");
+  const name = document.getElementById("pomo-pasted-name-text");
+  if (!badge) return;
+  if (pomodoroState.pastedImage) {
+    badge.style.display = "flex";
+    if (thumb) thumb.src = pomodoroState.pastedImage.previewUrl;
+    if (name) name.textContent = pomodoroState.pastedImage.name;
+  } else {
+    badge.style.display = "none";
+  }
+}
+if (typeof window !== "undefined") {
+  window.renderPomoPastedImageBadge = renderPomoPastedImageBadge;
+  window.removePomoPastedImage = function() {
+    pomodoroState.pastedImage = null;
+    renderPomoPastedImageBadge();
+  };
 }
 
 function renderPomodoroAiMessages() {
@@ -1829,6 +2083,7 @@ function renderPomodoroAiMessages() {
     <div class="pomo-ai-bubble ${m.sender}">
       <div class="pomo-ai-avatar">${m.sender === "bot" ? "🐰" : "👤"}</div>
       <div class="pomo-ai-text">
+        ${m.image ? `<img src="${m.image}" class="pomo-ai-chat-bubble-image" onclick="window.open(this.src)" title="Bấm để xem ảnh gốc" />` : ''}
         ${m.sender === "bot" ? formatPomodoroAiText(m.text) : safeEsc(m.text)}
         ${m.sender === "bot" ? `
           <button type="button" class="pomo-ai-save-btn" onclick="window.savePomoAiToNotes('${encodeURIComponent(m.text)}')">
@@ -1840,7 +2095,7 @@ function renderPomodoroAiMessages() {
   `).join("") + (pomodoroState.isAskingAi ? `
     <div class="pomo-ai-bubble bot typing">
       <div class="pomo-ai-avatar">🐰</div>
-      <div class="pomo-ai-text">Thỏ Bảy Màu đang gõ câu trả lời... ✨</div>
+      <div class="pomo-ai-text">Thỏ Bảy Màu đang phân tích đề và giải bài... ✨</div>
     </div>
   ` : "");
 
@@ -2480,12 +2735,16 @@ function renderPomodoroActiveRoom() {
 
           <!-- CONTEXT READING TOGGLE SWITCH -->
           <div class="pomo-ai-context-bar">
-            <label class="pomo-ai-context-label" title="Khi bật, AI sẽ tự động đọc nội dung tài liệu đang mở ở màn hình giữa để giải thích và tóm tắt">
+            <label class="pomo-ai-context-label" title="Khi bật, AI sẽ tự động đọc nội dung tài liệu hoặc ảnh đang mở ở màn hình giữa">
               <input type="checkbox" ${pomodoroState.aiReadScreenContext ? 'checked' : ''} onchange="window.togglePomoAiContext(this.checked)">
               <span class="pomo-switch-slider"></span>
               <span class="context-switch-text">👀 Đọc tài liệu trên màn hình</span>
             </label>
-            ${activeDoc ? `<span class="context-active-indicator" title="Đang liên kết: ${safeEsc(activeDoc.name)}">● Đang liên kết</span>` : `<span class="context-idle-indicator">Chưa mở file</span>`}
+            ${activeDoc ? `
+              <span class="context-active-indicator" title="Đang liên kết: ${safeEsc(activeDoc.name)}">
+                ● Đang xem: ${safeEsc(activeDoc.name.slice(0, 16))}${activeDoc.name.length > 16 ? '...' : ''} ${activeDoc.type === 'image' ? '📸' : activeDoc.type === 'pdf' ? '📑' : '📄'}
+              </span>
+            ` : `<span class="context-idle-indicator">Chưa mở file</span>`}
           </div>
 
           <!-- Quick Prompts Chips -->
@@ -2514,9 +2773,16 @@ function renderPomodoroActiveRoom() {
 
           <!-- Chat Composer Footer -->
           <div class="pomo-ai-footer">
-            <input type="text" class="pomo-ai-input" placeholder="Hỏi Bot 3TG về bài học..." value="${pomodoroState.aiInput}" 
-                   oninput="window.pomodoroState.aiInput = this.value" onkeydown="if(event.key === 'Enter') window.askPomodoroAi()">
-            <button type="button" class="pomo-ai-send-btn" onclick="window.askPomodoroAi()">Gửi ➔</button>
+            <div class="pomo-ai-pasted-badge" id="pomo-ai-pasted-badge" style="display: ${pomodoroState.pastedImage ? 'flex' : 'none'};">
+              <img src="${pomodoroState.pastedImage?.previewUrl || ''}" class="pomo-pasted-thumb" id="pomo-pasted-thumb-img" />
+              <span class="pomo-pasted-name" id="pomo-pasted-name-text">${safeEsc(pomodoroState.pastedImage?.name || 'Ảnh đính kèm')}</span>
+              <button type="button" class="pomo-pasted-remove" onclick="window.removePomoPastedImage()" title="Xóa ảnh đính kèm">✕</button>
+            </div>
+            <div class="pomo-ai-footer-input-row">
+              <input type="text" class="pomo-ai-input" id="pomo-ai-text-input" placeholder="Hỏi Bot 3TG hoặc dán ảnh (Ctrl + V)..." value="${pomodoroState.aiInput}" 
+                     oninput="window.pomodoroState.aiInput = this.value" onkeydown="if(event.key === 'Enter') window.askPomodoroAi()">
+              <button type="button" class="pomo-ai-send-btn" onclick="window.askPomodoroAi()">Gửi ➔</button>
+            </div>
           </div>
         </aside>
 
@@ -2585,8 +2851,31 @@ function renderDocContent(doc) {
 
   if (doc.type === "pdf") {
     return `
-      <div class="pomo-doc-pdf-wrap">
-        <iframe src="${doc.content}#toolbar=1&navpanes=0" class="pomo-pdf-iframe" type="application/pdf" title="${safeEsc(doc.name)}"></iframe>
+      <div class="pomo-doc-pdf-wrap" id="pomo-pdf-wrap-${doc.id}">
+        <div class="pomo-pdf-toolbar">
+          <div class="pomo-pdf-nav">
+            <button type="button" class="btn-pdf-nav" onclick="window.changePdfPage('${doc.id}', -1)" title="Trang trước (Phím ←)">◀ Trang trước</button>
+            <span class="pomo-pdf-page-indicator">
+              Trang <input type="number" class="pomo-pdf-page-input" id="pomo-pdf-page-input-${doc.id}" min="1" max="${doc.numPages || 1}" value="${doc.currentPage || 1}" onchange="window.goToPdfPage('${doc.id}', this.value)"> / <span id="pomo-pdf-total-pages-${doc.id}">${doc.numPages || 1}</span>
+            </span>
+            <button type="button" class="btn-pdf-nav" onclick="window.changePdfPage('${doc.id}', 1)" title="Trang sau (Phím →)">Trang sau ▶</button>
+          </div>
+          <div class="pomo-pdf-tools">
+            <button type="button" class="btn-pdf-tool ${doc.viewMode === 'single' ? '' : 'active'}" onclick="window.togglePdfViewMode('${doc.id}')" id="btn-pdf-mode-${doc.id}" title="Chuyển chế độ: Từng trang / Cuộn liên tục tất cả các trang">
+              ${doc.viewMode === 'single' ? '📄 Chế độ từng trang' : '📜 Chế độ cuộn liên tục'}
+            </button>
+            <button type="button" class="btn-pdf-tool" onclick="window.openDocInNewTab('${doc.id}')" title="Mở file gốc">
+              ↗ Mở ngoài
+            </button>
+          </div>
+        </div>
+        <div class="pomo-pdf-viewport" id="pomo-pdf-viewport-${doc.id}">
+          <div class="pomo-pdf-canvas-container" id="pomo-pdf-pages-${doc.id}">
+            <div class="pomo-pdf-loading">
+              <span class="pomo-spinner"></span> Đang nạp và kết xuất PDF chuẩn nét...
+            </div>
+          </div>
+        </div>
       </div>
     `;
   }
@@ -2681,6 +2970,155 @@ function renderDocContent(doc) {
       <pre class="pomo-doc-pre">${safeEsc(doc.content)}</pre>
     </div>
   `;
+}
+
+// ========================================================
+// 8. ADVANCED PDF.JS RENDERING & PAGE CONTROLS
+// ========================================================
+export async function initPdfDocViewer(doc) {
+  if (!doc || doc.type !== "pdf") return;
+  const container = document.getElementById("pomo-pdf-pages-" + doc.id);
+  if (!container) return;
+
+  // Fallback nếu window.pdfjsLib chưa nạp kịp
+  if (typeof window === "undefined" || !window.pdfjsLib) {
+    container.innerHTML = `
+      <embed src="${doc.blobUrl || doc.content}" type="application/pdf" class="pomo-pdf-iframe" style="width:100%;height:100%;min-height:calc(100vh - 180px);" />
+    `;
+    return;
+  }
+
+  try {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "/vendor/pdf.worker.min.js";
+
+    if (!doc._pdfDoc) {
+      const data = doc.arrayBuffer || (doc.file ? await doc.file.arrayBuffer() : doc.blobUrl || doc.content);
+      const loadingTask = window.pdfjsLib.getDocument({ data: data });
+      doc._pdfDoc = await loadingTask.promise;
+      doc.numPages = doc._pdfDoc.numPages;
+
+      // Trích xuất text cho AI
+      if (!doc.extractedText) {
+        try {
+          const textPieces = [];
+          const maxP = Math.min(doc.numPages, 30);
+          for (let p = 1; p <= maxP; p++) {
+            const pg = await doc._pdfDoc.getPage(p);
+            const tc = await pg.getTextContent();
+            const str = tc.items.map(it => it.str).join(" ");
+            if (str.trim()) textPieces.push(`[Trang ${p}]:\n${str}`);
+          }
+          doc.extractedText = textPieces.join("\n\n");
+        } catch (tErr) {
+          console.warn("PDF text extract error:", tErr);
+        }
+      }
+    }
+
+    const totalEl = document.getElementById("pomo-pdf-total-pages-" + doc.id);
+    if (totalEl) totalEl.textContent = String(doc.numPages);
+    const inputEl = document.getElementById("pomo-pdf-page-input-" + doc.id);
+    if (inputEl) {
+      inputEl.max = String(doc.numPages);
+      inputEl.value = String(doc.currentPage || 1);
+    }
+
+    const isSingle = doc.viewMode === "single";
+    const pagesToRender = isSingle ? [doc.currentPage || 1] : Array.from({ length: doc.numPages }, (_, i) => i + 1);
+
+    container.innerHTML = "";
+
+    for (const pageNum of pagesToRender) {
+      const pageBox = document.createElement("div");
+      pageBox.className = "pomo-pdf-page-box";
+      pageBox.id = `pdf-page-box-${doc.id}-${pageNum}`;
+
+      const badge = document.createElement("div");
+      badge.className = "pomo-pdf-page-badge";
+      badge.textContent = `Trang ${pageNum} / ${doc.numPages}`;
+      pageBox.appendChild(badge);
+
+      const canvas = document.createElement("canvas");
+      canvas.className = "pomo-pdf-canvas";
+      canvas.id = `pdf-canvas-${doc.id}-${pageNum}`;
+      pageBox.appendChild(canvas);
+
+      container.appendChild(pageBox);
+
+      const page = await doc._pdfDoc.getPage(pageNum);
+      const zoom = (pomodoroState.docZoom || 1) * 1.35;
+      const viewport = page.getViewport({ scale: zoom });
+      const pixelRatio = window.devicePixelRatio || 1;
+
+      canvas.width = Math.floor(viewport.width * pixelRatio);
+      canvas.height = Math.floor(viewport.height * pixelRatio);
+      canvas.style.width = Math.floor(viewport.width) + "px";
+      canvas.style.height = Math.floor(viewport.height) + "px";
+
+      const ctx = canvas.getContext("2d");
+      const transform = pixelRatio !== 1 ? [pixelRatio, 0, 0, pixelRatio, 0, 0] : null;
+      await page.render({ canvasContext: ctx, transform, viewport }).promise;
+    }
+  } catch (err) {
+    console.warn("[PDF Render Error]:", err);
+    container.innerHTML = `
+      <embed src="${doc.blobUrl || doc.content}" type="application/pdf" class="pomo-pdf-iframe" style="width:100%;height:100%;min-height:calc(100vh - 180px);" />
+    `;
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.initPdfDocViewer = initPdfDocViewer;
+  window.changePdfPage = function(docId, delta) {
+    const doc = pomodoroState.docs.find(d => d.id === docId);
+    if (!doc || !doc.numPages) return;
+    const target = Math.max(1, Math.min(doc.numPages, (doc.currentPage || 1) + delta));
+    if (target === doc.currentPage) return;
+    doc.currentPage = target;
+    const inputEl = document.getElementById("pomo-pdf-page-input-" + doc.id);
+    if (inputEl) inputEl.value = String(target);
+    if (doc.viewMode === "single") {
+      initPdfDocViewer(doc);
+    } else {
+      const el = document.getElementById(`pdf-page-box-${doc.id}-${target}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  window.goToPdfPage = function(docId, val) {
+    const doc = pomodoroState.docs.find(d => d.id === docId);
+    if (!doc || !doc.numPages) return;
+    const num = parseInt(val, 10);
+    if (isNaN(num)) return;
+    const target = Math.max(1, Math.min(doc.numPages, num));
+    doc.currentPage = target;
+    if (doc.viewMode === "single") {
+      initPdfDocViewer(doc);
+    } else {
+      const el = document.getElementById(`pdf-page-box-${doc.id}-${target}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  window.togglePdfViewMode = function(docId) {
+    const doc = pomodoroState.docs.find(d => d.id === docId);
+    if (!doc) return;
+    doc.viewMode = doc.viewMode === "single" ? "continuous" : "single";
+    const btn = document.getElementById("btn-pdf-mode-" + doc.id);
+    if (btn) {
+      btn.textContent = doc.viewMode === "single" ? "📄 Chế độ từng trang" : "📜 Chế độ cuộn liên tục";
+      btn.classList.toggle("active", doc.viewMode !== "single");
+    }
+    initPdfDocViewer(doc);
+  };
+
+  window.openDocInNewTab = function(docId) {
+    const doc = pomodoroState.docs.find(d => d.id === docId);
+    if (!doc) return;
+    if (doc.blobUrl || doc.content) {
+      window.open(doc.blobUrl || doc.content, "_blank");
+    }
+  };
 }
 
 
@@ -2973,9 +3411,14 @@ export function setDocZoom(zoomLevel) {
     localStorage.setItem("pomo_doc_zoom", String(clamped));
   } catch {}
 
-  const zoomContent = document.getElementById("pomo-doc-zoom-content");
-  if (zoomContent) {
-    zoomContent.style.zoom = clamped;
+  const activeDoc = pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
+  if (activeDoc && activeDoc.type === "pdf") {
+    initPdfDocViewer(activeDoc);
+  } else {
+    const zoomContent = document.getElementById("pomo-doc-zoom-content");
+    if (zoomContent) {
+      zoomContent.style.zoom = clamped;
+    }
   }
   const badge = document.getElementById("pomo-doc-zoom-badge");
   if (badge) {

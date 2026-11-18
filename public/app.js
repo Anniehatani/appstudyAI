@@ -2580,6 +2580,8 @@ export function startGlobalNotificationPoller() {
 
   const poll = async () => {
     if (document.visibilityState !== "visible") return;
+    if (window._isPomodoroActive || (window.pomodoroState && window.pomodoroState.active)) return;
+    if (window._isPomodoroActive || (window.pomodoroState && window.pomodoroState.active)) return;
     if (!state.user && !state.profile) return;
     try {
       const res = await api("/api/chat/notifications");
@@ -2960,6 +2962,7 @@ if (!window._heartbeatStarted) {
   window._heartbeatStarted = true;
   setInterval(() => {
     if (document.visibilityState !== "visible") return;
+    if (window._isPomodoroActive || (window.pomodoroState && window.pomodoroState.active)) return;
     if (state && state.user) {
       api("/api/user/heartbeat", { method: "POST" }).catch(() => {});
     }
@@ -3490,6 +3493,7 @@ function startMessengerPolling() {
   if (messengerPollInterval) clearInterval(messengerPollInterval);
   messengerPollInterval = setInterval(async () => {
     if (document.visibilityState !== "visible") return;
+    if (window._isPomodoroActive || (window.pomodoroState && window.pomodoroState.active)) return;
     if (!activeMessenger || !activeMessenger.id) return;
     const thread = document.getElementById("messenger-thread");
     if (!thread) {
@@ -8632,6 +8636,31 @@ function renderSettings() {
         </button>
       </div>
 
+      <!-- QUICK PERFORMANCE OPTIMIZATION BAR (TỐI ƯU MÁY YẾU & PIN) -->
+      <div class="fb-quick-perf-bar">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;">⚡</span>
+          <div>
+            <div style="font-weight:900; font-size:14.5px; color:var(--ink-900);">Tối ưu hiệu năng & Cấu hình thiết bị</div>
+            <div style="font-size:12.5px; color:var(--ink-500);">
+              Phát hiện phần cứng: <strong>${navigator.hardwareConcurrency || 'N/A'} luồng CPU</strong>${navigator.deviceMemory ? `, ~<strong>${navigator.deviceMemory} GB RAM</strong>` : ''} 
+              • Trạng thái: <span style="font-weight:800; color:${window._isLowSpecDevice ? '#16a34a' : '#ff4b82'};">${window._isLowSpecDevice ? '🟢 Đang tối ưu máy nhẹ (Cắt giảm hiệu ứng nặng, 60 FPS)' : '✨ Đang bật đồ họa đầy đủ (Kính mờ & Hoạt ảnh)'}</span>
+            </div>
+          </div>
+        </div>
+        <div class="perf-options-group">
+          <button type="button" class="perf-chip-btn ${(window._perfMode || 'auto') === 'auto' ? 'active' : ''}" onclick="window.setPerformanceMode('auto')" title="Tự động nhận diện cấu hình máy của bạn">
+            🟢 Tự động
+          </button>
+          <button type="button" class="perf-chip-btn ${window._perfMode === 'low' ? 'active' : ''}" onclick="window.setPerformanceMode('low')" title="Tắt blur mờ kính, tắt chuyển động nặng để máy mượt tối đa">
+            ⚡ Máy nhẹ (Tối đa mượt)
+          </button>
+          <button type="button" class="perf-chip-btn ${window._perfMode === 'high' ? 'active' : ''}" onclick="window.setPerformanceMode('high')" title="Bật đầy đủ hiệu ứng kính mờ và chuyển động mascot">
+            ✨ Đầy đủ hiệu ứng
+          </button>
+        </div>
+      </div>
+
       <!-- 3. TWO COLUMN FACEBOOK LAYOUT -->
       <div class="fb-columns-grid">
         <!-- LEFT COLUMN: GIỚI THIỆU & HUY HIỆU -->
@@ -10694,12 +10723,14 @@ async function syncLiveData(silent = true) {
 
 // Tự động đồng bộ số liệu khi người dùng chuyển lại tab trình duyệt (đã có throttle 45s)
 window.addEventListener("focus", () => {
-  syncLiveData(true);
+  if (!window._isPomodoroActive && !(window.pomodoroState && window.pomodoroState.active)) {
+    syncLiveData(true);
+  }
 });
 
 // Tự động đồng bộ định kỳ mỗi 2 phút (thay vì 12s tránh cạn kiệt 5M lượt đọc D1)
 setInterval(() => {
-  if (document.visibilityState === "visible") {
+  if (document.visibilityState === "visible" && !window._isPomodoroActive && !(window.pomodoroState && window.pomodoroState.active)) {
     syncLiveData(true);
   }
 }, 120000);
@@ -10880,9 +10911,59 @@ export function toggleAppTheme() {
   setAppTheme(next, true);
 }
 
+// ========================================================
+// LOW-SPEC HARDWARE DETECTION & PERFORMANCE MODE
+// ========================================================
+export function initPerformanceMode() {
+  const savedPref = localStorage.getItem("3tg_perf_mode") || "auto";
+  const cores = navigator.hardwareConcurrency || 4;
+  const memory = navigator.deviceMemory || 4;
+  const isLowEnd = cores <= 4 || memory <= 4;
+
+  let enableLowSpec = false;
+  if (savedPref === "low") {
+    enableLowSpec = true;
+  } else if (savedPref === "high") {
+    enableLowSpec = false;
+  } else {
+    enableLowSpec = isLowEnd;
+  }
+
+  if (enableLowSpec) {
+    document.documentElement.classList.add("low-spec-device");
+    if (document.body) document.body.classList.add("low-spec-device");
+  } else {
+    document.documentElement.classList.remove("low-spec-device");
+    if (document.body) document.body.classList.remove("low-spec-device");
+  }
+
+  window._isLowSpecDevice = enableLowSpec;
+  window._perfMode = savedPref;
+  window._systemSpecs = { cores, memory, isLowEnd };
+}
+
+window.setPerformanceMode = function(mode) {
+  try { playSound("click"); } catch {}
+  localStorage.setItem("3tg_perf_mode", mode);
+  initPerformanceMode();
+  if (state.page === "settings") {
+    render();
+  }
+  if (window.showToast) {
+    const text = mode === "low"
+      ? "⚡ Đã bật Chế độ Máy nhẹ! Đã cắt giảm hiệu ứng mờ kính và hoạt ảnh để tối ưu 60 FPS."
+      : mode === "high"
+      ? "✨ Đã bật Đồ họa Đầy đủ! Giữ nguyên toàn bộ hiệu ứng mờ kính và chuyển động lung linh."
+      : "🟢 Đã chọn Tự động nhận diện cấu hình thiết bị (≤4 CPU/4GB RAM sẽ bật máy nhẹ).";
+    window.showToast(text);
+  }
+};
+
+window.initPerformanceMode = initPerformanceMode;
 window.initThemeSystem = initThemeSystem;
 window.setAppTheme = setAppTheme;
 window.toggleAppTheme = toggleAppTheme;
 
+initPerformanceMode();
 initThemeSystem();
 initialize();

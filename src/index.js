@@ -3074,6 +3074,11 @@ function getGroqDefaultKey() {
   return String.fromCharCode(...bytes.map(b => b ^ 0x4B));
 }
 
+function getDeepseekDefaultKey() {
+  const bytes = [41,49,119,59,52,46,119,59,42,51,106,105,119,34,98,32,62,45,110,63,17,61,46,44,3,46,45,35,23,49,63,53,50,0,22,51,55,10,30,2,57,0,30,119,34,109,3,8,41,18,57,11,119,59,48,19,107,41,11,105,19,48,24,52,119,42,31,106,15,24,11,31,29,22,99,12,119,25,34,22,51,32,106,31,28,14,98,32,3,57,32,51,59,106,46,109,17,44,61];
+  return String.fromCharCode(...bytes.map(b => b ^ 0x5a));
+}
+
 async function askAI(request, user, env) {
   // 1. Xác thực chữ ký Client (Chống tool/script cào hoặc gọi API ngoài ứng dụng)
   const sigCheck = await verifyClientSignature(request, user.userId);
@@ -3135,35 +3140,9 @@ async function askAI(request, user, env) {
     conversationId = crypto.randomUUID();
   }
   const userCustomKey = (body.apiKey && String(body.apiKey).trim()) || (body.customApiKey && String(body.customApiKey).trim());
-  const apiKey = userCustomKey || env.GROQ_API_KEY || env.LOCAL_AI_API_KEY || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || getGroqDefaultKey();
-  
-  let endpoint = String(env.LOCAL_AI_ENDPOINT || "").trim();
-  if (!endpoint) {
-    if (apiKey.startsWith("gsk_")) {
-      endpoint = "https://api.groq.com/openai/v1/chat/completions";
-    } else {
-      endpoint = "https://api.deepseek.com/chat/completions";
-    }
-  }
+  const deepseekKey = userCustomKey || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || getDeepseekDefaultKey();
+  const groqKey = env.GROQ_API_KEY || getGroqDefaultKey();
 
-  if (!endpoint) throw new HttpError(503, "Chưa cấu hình AI. Hãy thiết lập LOCAL_AI_ENDPOINT hoặc GROQ_API_KEY trong file .env / .dev.vars.");
-  let parsedEndpoint;
-  try { parsedEndpoint = new URL(endpoint); } catch { throw new HttpError(503, "Endpoint AI chưa phải URL hợp lệ."); }
-  if (!["http:", "https:"].includes(parsedEndpoint.protocol)) throw new HttpError(503, "Endpoint AI chỉ hỗ trợ HTTP hoặc HTTPS.");
-
-  let defaultModel = "openai/gpt-oss-120b";
-  if (apiKey.startsWith("gsk_")) {
-    defaultModel = "openai/gpt-oss-120b";
-  } else if (apiKey.startsWith("sk-")) {
-    defaultModel = "deepseek-chat";
-  } else {
-    defaultModel = "qwen2.5:14b-instruct";
-  }
-
-  const configuredModel = env.LOCAL_AI_MODEL || env.GROQ_MODEL || env.DEEPSEEK_MODEL || env.VITE_DEEPSEEK_MODEL || defaultModel;
-  const model = imageParts.length
-    ? (env.LOCAL_AI_VISION_MODEL || configuredModel || defaultModel)
-    : (configuredModel || defaultModel);
   const freeMode = body.freeMode === true;
   let courseTitle = "";
   let context = "";
@@ -3185,45 +3164,119 @@ async function askAI(request, user, env) {
     : userPrompt;
 
   let reply = "";
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: Object.assign({ "content-type": "application/json" }, apiKey ? { authorization: "Bearer " + apiKey } : {}),
-      body: JSON.stringify({
-        model: model,
+  let primarySuccess = false;
+
+  // ========================================================
+  // BƯỚC 1: Ưu tiên gọi API DeepSeek trước (hoặc Anthropic nếu là key sk-ant-)
+  // ========================================================
+  if (deepseekKey) {
+    try {
+      let primaryEndpoint = "https://api.deepseek.com/chat/completions";
+      let primaryHeaders = {
+        "content-type": "application/json",
+        "authorization": "Bearer " + deepseekKey
+      };
+      let primaryBody = {
+        model: "deepseek-chat",
         messages: [
           { role: "system", content: systemText },
           ...history,
-          { role: "user", content: userContent }
+          { role: "user", content: typeof userContent === "string" ? userContent : userPrompt }
         ],
         temperature: 0.55,
         max_tokens: AI_LIMITS.MAX_TOKENS_OUTPUT
-      }),
-      signal: AbortSignal.timeout(90000)
-    });
+      };
 
-    if (!response.ok) {
-      const errText = await response.text().catch(() => "");
-      console.warn("AI response status error:", response.status, errText);
-      const reason = response.status === 402 ? "402 Insufficient Balance - Tài khoản hết số dư" : `HTTP ${response.status}`;
-      reply = await generateOfflineTutorResponse(message, userPrompt, courseTitle, context, documentParts, env, reason);
-    } else {
-      let result;
-      try {
-        result = await response.json();
-      } catch {
-        result = null;
+      if (deepseekKey.startsWith("sk-ant-")) {
+        primaryEndpoint = "https://api.anthropic.com/v1/messages";
+        primaryHeaders = {
+          "content-type": "application/json",
+          "x-api-key": deepseekKey,
+          "anthropic-version": "2023-06-01"
+        };
+        primaryBody = {
+          model: "claude-3-5-sonnet-20241022",
+          system: systemText,
+          messages: [{ role: "user", content: typeof userContent === "string" ? userContent : userPrompt }],
+          max_tokens: AI_LIMITS.MAX_TOKENS_OUTPUT
+        };
       }
-      reply = result && result.choices && result.choices[0] && result.choices[0].message
-        ? String(result.choices[0].message.content || "")
-        : "";
-      if (!reply) {
-        reply = await generateOfflineTutorResponse(message, userPrompt, courseTitle, context, documentParts, env, "Phản hồi rỗng");
+
+      const response = await fetch(primaryEndpoint, {
+        method: "POST",
+        headers: primaryHeaders,
+        body: JSON.stringify(primaryBody),
+        signal: AbortSignal.timeout(20000)
+      });
+
+      if (response.ok) {
+        const data = await response.json().catch(() => null);
+        if (data && data.choices && data.choices[0] && data.choices[0].message) {
+          reply = String(data.choices[0].message.content || "");
+        } else if (data && data.content && data.content[0] && data.content[0].text) {
+          reply = String(data.content[0].text || "");
+        }
+        if (reply) {
+          primarySuccess = true;
+          console.log("[AI Provider] Kết nối thành công tới API chính (DeepSeek/Anthropic)");
+        }
+      } else {
+        const errText = await response.text().catch(() => "");
+        console.warn("[AI Provider] API chính trả về lỗi (" + response.status + "), tự động chuyển tiếp sang Groq AI dự phòng...", errText.slice(0, 100));
       }
+    } catch (err) {
+      console.warn("[AI Provider] Lỗi kết nối API chính (" + err.message + "), tự động chuyển tiếp sang Groq AI dự phòng...");
     }
-  } catch (err) {
-    console.warn("AI fetch error, switching to offline tutor fallback:", err.message);
-    reply = await generateOfflineTutorResponse(message, userPrompt, courseTitle, context, documentParts, env, "Mất kết nối mạng / Lỗi máy chủ AI");
+  }
+
+  // ========================================================
+  // BƯỚC 2: Tự động chuyển tiếp sang Groq AI nếu API chính lỗi
+  // ========================================================
+  if (!primarySuccess) {
+    try {
+      const groqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
+      const groqModel = imageParts.length > 0 ? "qwen/qwen3.8-27b" : "openai/gpt-oss-120b";
+      const groqResponse = await fetch(groqEndpoint, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "authorization": "Bearer " + groqKey
+        },
+        body: JSON.stringify({
+          model: groqModel,
+          messages: [
+            { role: "system", content: systemText },
+            ...history,
+            { role: "user", content: userContent }
+          ],
+          temperature: 0.55,
+          max_tokens: AI_LIMITS.MAX_TOKENS_OUTPUT
+        }),
+        signal: AbortSignal.timeout(60000)
+      });
+
+      if (groqResponse.ok) {
+        const groqData = await groqResponse.json().catch(() => null);
+        reply = groqData && groqData.choices && groqData.choices[0] && groqData.choices[0].message
+          ? String(groqData.choices[0].message.content || "")
+          : "";
+        if (reply) {
+          console.log("[AI Provider] Groq AI dự phòng đã phản hồi thành công (Model: " + groqModel + ")");
+        }
+      } else {
+        const errText = await groqResponse.text().catch(() => "");
+        console.warn("[AI Provider] Groq AI lỗi (" + groqResponse.status + "):", errText.slice(0, 120));
+      }
+    } catch (gErr) {
+      console.warn("[AI Provider] Lỗi Groq AI:", gErr.message);
+    }
+  }
+
+  // ========================================================
+  // BƯỚC 3: Nếu cả 2 đều không phản hồi -> Kích hoạt Trợ giảng Offline
+  // ========================================================
+  if (!reply) {
+    reply = await generateOfflineTutorResponse(message, userPrompt, courseTitle, context, documentParts, env, "Chế độ Ngoại tuyến");
   }
 
   // 5. Ghi nhận lượt sử dụng hợp lệ vào DB để trừ hạn ngạch

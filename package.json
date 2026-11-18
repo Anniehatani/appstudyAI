@@ -83,5 +83,8 @@
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico"
     }
+  },
+  "dependencies": {
+    "pdfjs-dist": "3.11.174"
   }
 }
