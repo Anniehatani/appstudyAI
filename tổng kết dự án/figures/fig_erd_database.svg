@@ -1,221 +1,886 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1080" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2800 1950" width="100%" height="100%">
   <defs>
     <style>
-      .bg { fill: #F8FAFC; }
-      .title { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 26px; font-weight: 800; fill: #0A2540; letter-spacing: -0.5px; }
-      .subtitle { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 14px; fill: #64748B; font-weight: 500; }
-      .badge-header { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; fill: #FFFFFF; }
-      .table-card { fill: #FFFFFF; stroke: #CBD5E1; stroke-width: 1.5; rx: 8; filter: drop-shadow(0 4px 12px rgba(10, 37, 64, 0.08)); }
-      .header-acc { fill: #0A2540; rx: 8; }
-      .header-core { fill: #1E3A8A; rx: 8; }
-      .header-study { fill: #0F766E; rx: 8; }
-      .header-sync { fill: #475569; rx: 8; }
-      .table-name { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 15px; font-weight: 700; fill: #FFFFFF; }
-      .row-pk { font-family: 'Consolas', monospace; font-size: 12.5px; font-weight: 700; fill: #1D4ED8; }
-      .row-fk { font-family: 'Consolas', monospace; font-size: 12.5px; font-weight: 700; fill: #B45309; }
-      .row-attr { font-family: 'Consolas', monospace; font-size: 12.5px; fill: #1E293B; }
-      .row-type { font-family: 'Consolas', monospace; font-size: 12px; fill: #64748B; text-anchor: end; }
-      .divider { stroke: #F1F5F9; stroke-width: 1; }
-      .rel-line { stroke: #0A2540; stroke-width: 2; fill: none; stroke-dasharray: none; }
-      .rel-dash { stroke: #2563EB; stroke-width: 1.8; fill: none; stroke-dasharray: 4,4; }
-      .rel-label { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; font-size: 11px; font-weight: 700; fill: #0A2540; background: #FFFFFF; }
-      .cardinality { font-family: 'Consolas', monospace; font-size: 12px; font-weight: 800; fill: #1E3A8A; }
+      .bg { fill: #FFFFFF; }
+      .main-title { font-family: 'Times New Roman', serif; font-size: 28px; font-weight: bold; fill: #000000; letter-spacing: 0.5px; }
+      .main-sub { font-family: 'Times New Roman', serif; font-size: 15px; fill: #333333; font-style: italic; }
+      .cluster-box { fill: #FFFFFF; stroke: #000000; stroke-width: 1.5; stroke-dasharray: 6,4; rx: 8; }
+      .cluster-title { font-family: 'Times New Roman', serif; font-size: 15px; font-weight: bold; fill: #000000; }
+      .tbl-card { fill: #FFFFFF; stroke: #000000; stroke-width: 1.2; rx: 4; }
+      .tbl-hdr { fill: #F8F9FA; stroke: #000000; stroke-width: 1.2; rx: 4; }
+      .tbl-name { font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; font-weight: bold; fill: #000000; }
+      .fld-pk { font-family: 'Consolas', 'Courier New', monospace; font-size: 11.5px; font-weight: bold; fill: #000000; }
+      .fld-fk { font-family: 'Consolas', 'Courier New', monospace; font-size: 11.5px; font-weight: bold; fill: #333333; }
+      .fld-norm { font-family: 'Consolas', 'Courier New', monospace; font-size: 11px; fill: #111111; }
+      .fld-type { font-family: 'Consolas', 'Courier New', monospace; font-size: 10.5px; fill: #555555; text-anchor: end; }
+      .row-div { stroke: #E5E7EB; stroke-width: 0.8; }
+      .hdr-div { stroke: #000000; stroke-width: 1.2; }
+      .conn-line { stroke: #000000; stroke-width: 1.4; fill: none; }
+      .conn-arrow { fill: #000000; }
     </style>
-    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0A2540" flood-opacity="0.08" />
-    </filter>
-    <marker id="crow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 6 L 0 11 M 10 1 L 10 11" fill="none" stroke="#0A2540" stroke-width="1.8" />
-    </marker>
-    <marker id="one" viewBox="0 0 12 12" refX="2" refY="6" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-      <path d="M 4 1 L 4 11 M 8 1 L 8 11" fill="none" stroke="#0A2540" stroke-width="1.8" />
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#000000" />
     </marker>
   </defs>
 
   <rect width="100%" height="100%" class="bg" />
 
-  <!-- Diagram Header -->
-  <g transform="translate(60, 48)">
-    <text class="title" x="0" y="0">HỆ THỐNG CƠ SỞ DỮ LIỆU QUAN HỆ CHUẨN 3NF (RELATIONAL DATABASE SQL ERD)</text>
-    <text class="subtitle" x="0" y="24">Mô hình dữ liệu chuẩn hóa dạng 3 (Third Normal Form) — Triệt tiêu dư thừa &amp; Dị thường trên Cloudflare D1 / SQLite Engine</text>
-    <rect x="1260" y="-22" width="220" height="34" rx="6" fill="#0A2540" />
-    <text class="badge-header" x="1370" y="0" text-anchor="middle">INFO2011 • THIẾT KẾ CHUẨN 3NF</text>
+  <!-- Main Header -->
+  <g transform="translate(60, 50)">
+    <text class="main-title" x="0" y="0">SƠ ĐỒ THỰC THỂ QUAN HỆ TOÀN DIỆN CƠ SỞ DỮ LIỆU CLOUDFLARE D1 (3NF RELATIONAL ERD)</text>
+    <text class="main-sub" x="0" y="24">Hệ thống 33 bảng dữ liệu chuẩn hóa Chuẩn dạng 3 (3NF) • Hệ sinh thái học tập thông minh 3TG Study AI • Khóa ngoại và ràng buộc toàn vẹn</text>
+    <line x1="0" y1="36" x2="2680" y2="36" stroke="#000000" stroke-width="2" />
   </g>
 
-  <!-- TABLE: ACCOUNTS (Center Master) -->
-  <g transform="translate(620, 120)">
-    <rect width="360" height="210" class="table-card" filter="url(#shadow)" />
-    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-acc" />
-    <text class="table-name" x="16" y="25">accounts (Bảng Tài khoản Gốc)</text>
-    
-    <text class="row-pk" x="16" y="64">[PK] id</text><text class="row-type" x="344" y="64">TEXT (UUID v4)</text>
-    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
-    <text class="row-attr" x="16" y="98">username</text><text class="row-type" x="344" y="98">TEXT (UNIQUE, NOT NULL)</text>
-    <line x1="0" y1="108" x2="360" y2="108" class="divider" />
-    <text class="row-attr" x="16" y="132">password_hash</text><text class="row-type" x="344" y="132">TEXT (PBKDF2-SHA256)</text>
-    <line x1="0" y1="142" x2="360" y2="142" class="divider" />
-    <text class="row-attr" x="16" y="166">role</text><text class="row-type" x="344" y="166">TEXT ('user'|'admin')</text>
-    <line x1="0" y1="176" x2="360" y2="176" class="divider" />
-    <text class="row-attr" x="16" y="200">created_at</text><text class="row-type" x="344" y="200">DATETIME (UTC)</text>
-  </g>
-
-  <!-- TABLE: PROFILES (Top Left) -->
-  <g transform="translate(100, 120)">
-    <rect width="360" height="210" class="table-card" filter="url(#shadow)" />
-    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-core" />
-    <text class="table-name" x="16" y="25">profiles (Hồ sơ Người dùng)</text>
-    
-    <text class="row-pk" x="16" y="64">[PK,FK] user_id</text><text class="row-type" x="344" y="64">TEXT → accounts(id)</text>
-    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
-    <text class="row-attr" x="16" y="98">display_name</text><text class="row-type" x="344" y="98">TEXT (NOT NULL)</text>
-    <line x1="0" y1="108" x2="360" y2="108" class="divider" />
-    <text class="row-attr" x="16" y="132">color_theme</text><text class="row-type" x="344" y="132">TEXT ('pink'|'cyan'|'dark')</text>
-    <line x1="0" y1="142" x2="360" y2="142" class="divider" />
-    <text class="row-attr" x="16" y="166">status_icon</text><text class="row-type" x="344" y="166">TEXT DEFAULT '🐰'</text>
-    <line x1="0" y1="176" x2="360" y2="176" class="divider" />
-    <text class="row-attr" x="16" y="200">social_links</text><text class="row-type" x="344" y="200">TEXT (JSON Array)</text>
-  </g>
-
-  <!-- TABLE: USER_STATS (Top Right) -->
-  <g transform="translate(1140, 120)">
-    <rect width="360" height="210" class="table-card" filter="url(#shadow)" />
-    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-core" />
-    <text class="table-name" x="16" y="25">user_stats (Thống kê Gamification)</text>
-    
-    <text class="row-pk" x="16" y="64">[PK,FK] user_id</text><text class="row-type" x="344" y="64">TEXT → accounts(id)</text>
-    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
-    <text class="row-attr" x="16" y="98">total_xp</text><text class="row-type" x="344" y="98">INTEGER DEFAULT 0</text>
-    <line x1="0" y1="108" x2="360" y2="108" class="divider" />
-    <text class="row-attr" x="16" y="132">current_streak</text><text class="row-type" x="344" y="132">INTEGER DEFAULT 0</text>
-    <line x1="0" y1="142" x2="360" y2="142" class="divider" />
-    <text class="row-attr" x="16" y="166">gems</text><text class="row-type" x="344" y="166">INTEGER DEFAULT 50</text>
-    <line x1="0" y1="176" x2="360" y2="176" class="divider" />
-    <text class="row-attr" x="16" y="200">hearts</text><text class="row-type" x="344" y="200">INTEGER DEFAULT 5</text>
-  </g>
-
-  <!-- TABLE: POMODORO_SESSIONS (Mid Left) -->
-  <g transform="translate(100, 410)">
-    <rect width="360" height="235" class="table-card" filter="url(#shadow)" />
-    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-study" />
-    <text class="table-name" x="16" y="25">pomodoro_sessions (Lịch sử Ca học)</text>
-    
-    <text class="row-pk" x="16" y="64">[PK] id</text><text class="row-type" x="344" y="64">TEXT (UUID v4)</text>
-    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
-    <text class="row-fk" x="16" y="95">[FK] user_id</text><text class="row-type" x="344" y="95">TEXT → accounts(id)</text>
-    <line x1="0" y1="103" x2="360" y2="103" class="divider" />
-    <text class="row-attr" x="16" y="124">cycles</text><text class="row-type" x="344" y="124">INTEGER (Chu kỳ học)</text>
-    <line x1="0" y1="132" x2="360" y2="132" class="divider" />
-    <text class="row-attr" x="16" y="153">focus_minutes</text><text class="row-type" x="344" y="153">INTEGER (Phút tập trung)</text>
-    <line x1="0" y1="161" x2="360" y2="161" class="divider" />
-    <text class="row-attr" x="16" y="182">xp_reward / gems_reward</text><text class="row-type" x="344" y="182">INTEGER / INTEGER</text>
-    <line x1="0" y1="190" x2="360" y2="190" class="divider" />
-    <text class="row-attr" x="16" y="211">completed_at</text><text class="row-type" x="344" y="211">DATETIME (UTC)</text>
-  </g>
-
-  <!-- TABLE: POMODORO_ACTIVE_LEARNERS (Mid Center) -->
-  <g transform="translate(620, 410)">
-    <rect width="360" height="235" class="table-card" filter="url(#shadow)" />
-    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-study" />
-    <text class="table-name" x="16" y="25">pomodoro_active (Phiên Kiosk Active)</text>
-    
-    <text class="row-pk" x="16" y="64">[PK,FK] user_id</text><text class="row-type" x="344" y="64">TEXT → accounts(id)</text>
-    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
-    <text class="row-attr" x="16" y="98">started_at</text><text class="row-type" x="344" y="98">DATETIME (Server Stamp)</text>
-    <line x1="0" y1="108" x2="360" y2="108" class="divider" />
-    <text class="row-attr" x="16" y="132">target_cycles</text><text class="row-type" x="344" y="132">INTEGER NOT NULL</text>
-    <line x1="0" y1="142" x2="360" y2="142" class="divider" />
-    <text class="row-attr" x="16" y="166">current_cycle</text><text class="row-type" x="344" y="166">INTEGER DEFAULT 1</text>
-    <line x1="0" y1="176" x2="360" y2="176" class="divider" />
-    <text class="row-attr" x="16" y="200">doc_name</text><text class="row-type" x="344" y="200">TEXT (Tài liệu đang học)</text>
-  </g>
-
-  <!-- TABLE: USER_ACADEMIC_TRANSCRIPTS (Mid Right) -->
-  <g transform="translate(1140, 410)">
-    <rect width="360" height="235" class="table-card" filter="url(#shadow)" />
-    <path d="M 0 8 Q 0 0 8 0 L 352 0 Q 360 0 360 8 L 360 38 L 0 38 Z" class="header-study" />
-    <text class="table-name" x="16" y="25">academic_transcripts (Điểm IU)</text>
-    
-    <text class="row-pk" x="16" y="64">[PK] id</text><text class="row-type" x="344" y="64">INTEGER AUTOINCREMENT</text>
-    <line x1="0" y1="74" x2="360" y2="74" class="divider" />
-    <text class="row-fk" x="16" y="95">[UK,FK] user_id</text><text class="row-type" x="344" y="95">TEXT → accounts(id)</text>
-    <line x1="0" y1="103" x2="360" y2="103" class="divider" />
-    <text class="row-attr" x="16" y="124">student_code / full_name</text><text class="row-type" x="344" y="124">TEXT / TEXT</text>
-    <line x1="0" y1="132" x2="360" y2="132" class="divider" />
-    <text class="row-attr" x="16" y="153">gpa_4 / total_credits</text><text class="row-type" x="344" y="153">REAL / INTEGER</text>
-    <line x1="0" y1="161" x2="360" y2="161" class="divider" />
-    <text class="row-attr" x="16" y="182">raw_data</text><text class="row-type" x="344" y="182">TEXT (Encrypted JSON)</text>
-    <line x1="0" y1="190" x2="360" y2="190" class="divider" />
-    <text class="row-attr" x="16" y="211">created_at</text><text class="row-type" x="344" y="211">DATETIME (UTC)</text>
-  </g>
-
-  <!-- TABLE: USER_NOTES (Bottom Left) -->
-  <g transform="translate(260, 740)">
-    <rect width="450" height="210" class="table-card" filter="url(#shadow)" />
-    <path d="M 0 8 Q 0 0 8 0 L 442 0 Q 450 0 450 8 L 450 38 L 0 38 Z" class="header-sync" />
-    <text class="table-name" x="16" y="25">user_notes (Sổ tay Ghi chú Bài học)</text>
-    
-    <text class="row-pk" x="16" y="64">[PK] id</text><text class="row-type" x="434" y="64">TEXT (UUID v4)</text>
-    <line x1="0" y1="74" x2="450" y2="74" class="divider" />
-    <text class="row-fk" x="16" y="98">[FK] user_id</text><text class="row-type" x="434" y="98">TEXT → accounts(id)</text>
-    <line x1="0" y1="108" x2="450" y2="108" class="divider" />
-    <text class="row-attr" x="16" y="132">title / content</text><text class="row-type" x="434" y="132">TEXT / TEXT (Markdown)</text>
-    <line x1="0" y1="142" x2="450" y2="142" class="divider" />
-    <text class="row-attr" x="16" y="166">tags / subject_id</text><text class="row-type" x="434" y="166">TEXT / TEXT</text>
-    <line x1="0" y1="176" x2="450" y2="176" class="divider" />
-    <text class="row-attr" x="16" y="200">updated_at</text><text class="row-type" x="434" y="200">DATETIME (UTC)</text>
-  </g>
-
-  <!-- TABLE: SYNC_OUTBOX (Bottom Right) -->
-  <g transform="translate(890, 740)">
-    <rect width="450" height="210" class="table-card" filter="url(#shadow)" />
-    <path d="M 0 8 Q 0 0 8 0 L 442 0 Q 450 0 450 8 L 450 38 L 0 38 Z" class="header-sync" />
-    <text class="table-name" x="16" y="25">sync_outbox (Hàng đợi Đồng bộ Offline)</text>
-    
-    <text class="row-pk" x="16" y="64">[PK] id</text><text class="row-type" x="434" y="64">TEXT (UUID v4)</text>
-    <line x1="0" y1="74" x2="450" y2="74" class="divider" />
-    <text class="row-fk" x="16" y="98">[FK] user_id</text><text class="row-type" x="434" y="98">TEXT → accounts(id)</text>
-    <line x1="0" y1="108" x2="450" y2="108" class="divider" />
-    <text class="row-attr" x="16" y="132">event_type / payload_json</text><text class="row-type" x="434" y="132">TEXT / TEXT (Payload)</text>
-    <line x1="0" y1="142" x2="450" y2="142" class="divider" />
-    <text class="row-attr" x="16" y="166">status / retry_count</text><text class="row-type" x="434" y="166">TEXT ('pending'|'synced') / INT</text>
-    <line x1="0" y1="176" x2="450" y2="176" class="divider" />
-    <text class="row-attr" x="16" y="200">created_at</text><text class="row-type" x="434" y="200">DATETIME (UTC)</text>
-  </g>
-
-  <!-- RELATIONSHIP PATHS WITH CROW'S FOOT AND LABELS -->
-  <!-- accounts to profiles (1:1) -->
-  <path d="M 620 220 L 460 220" class="rel-line" marker-start="url(#one)" marker-end="url(#one)" />
-  <rect x="515" y="208" width="50" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
-  <text class="cardinality" x="540" y="224" text-anchor="middle">1 : 1</text>
-
-  <!-- accounts to user_stats (1:1) -->
-  <path d="M 980 220 L 1140 220" class="rel-line" marker-start="url(#one)" marker-end="url(#one)" />
-  <rect x="1035" y="208" width="50" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
-  <text class="cardinality" x="1060" y="224" text-anchor="middle">1 : 1</text>
-
-  <!-- accounts to pomodoro_sessions (1:N) -->
-  <path d="M 680 330 L 680 370 L 280 370 L 280 410" class="rel-line" marker-start="url(#one)" marker-end="url(#crow)" />
-  <rect x="450" y="358" width="56" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
-  <text class="cardinality" x="478" y="374" text-anchor="middle">1 : N</text>
-
-  <!-- accounts to pomodoro_active (1:0..1) -->
-  <path d="M 800 330 L 800 410" class="rel-line" marker-start="url(#one)" marker-end="url(#one)" />
-  <rect x="768" y="358" width="64" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
-  <text class="cardinality" x="800" y="374" text-anchor="middle">1 : 0..1</text>
-
-  <!-- accounts to academic_transcripts (1:0..1) -->
-  <path d="M 920 330 L 920 370 L 1320 370 L 1320 410" class="rel-line" marker-start="url(#one)" marker-end="url(#one)" />
-  <rect x="1090" y="358" width="64" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
-  <text class="cardinality" x="1122" y="374" text-anchor="middle">1 : 0..1</text>
-
-  <!-- accounts to user_notes (1:N) -->
-  <path d="M 720 330 L 720 700 L 485 700 L 485 740" class="rel-line" marker-start="url(#one)" marker-end="url(#crow)" />
-  <rect x="575" y="688" width="56" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
-  <text class="cardinality" x="603" y="704" text-anchor="middle">1 : N</text>
-
-  <!-- accounts to sync_outbox (1:N) -->
-  <path d="M 880 330 L 880 700 L 1115 700 L 1115 740" class="rel-line" marker-start="url(#one)" marker-end="url(#crow)" />
-  <rect x="970" y="688" width="56" height="22" rx="4" fill="#FFFFFF" stroke="#CBD5E1" />
-  <text class="cardinality" x="998" y="704" text-anchor="middle">1 : N</text>
-
+<!-- CLUSTER 1: HỌC PHẦN & CÂY BÀI HỌC -->
+<rect x="50" y="110" width="460" height="1780" class="cluster-box" />
+<text class="cluster-title" x="70" y="136">PHÂN HỆ 1: HỌC PHẦN &amp; LỘ TRÌNH HỌC TẬP</text>
+<g transform="translate(70, 155)">
+  <rect width="420" height="134" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">subjects</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-norm" x="10" y="61">subject_name</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">description</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">icon_url</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">created_at</text>
+  <text class="fld-type" x="410" y="121">DATETIME</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+</g>
+<g transform="translate(70, 314)">
+  <rect width="420" height="114" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">units</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] subject_id</text>
+  <text class="fld-type" x="410" y="61">INTEGER</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">title</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">order_index</text>
+  <text class="fld-type" x="410" y="101">INTEGER</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+</g>
+<g transform="translate(70, 453)">
+  <rect width="420" height="174" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">lessons</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] unit_id</text>
+  <text class="fld-type" x="410" y="61">INTEGER</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">title</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">order_index</text>
+  <text class="fld-type" x="410" y="101">INTEGER</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">xp_reward</text>
+  <text class="fld-type" x="410" y="121">INTEGER</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">content</text>
+  <text class="fld-type" x="410" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="420" y2="146" class="row-div" />
+  <text class="fld-norm" x="10" y="161">video_url</text>
+  <text class="fld-type" x="410" y="161">TEXT</text>
+  <line x1="0" y1="166" x2="420" y2="166" class="row-div" />
+</g>
+<g transform="translate(70, 652)">
+  <rect width="420" height="174" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">questions</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] lesson_id</text>
+  <text class="fld-type" x="410" y="61">INTEGER</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">question_type</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">question_text</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">options</text>
+  <text class="fld-type" x="410" y="121">JSON</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">correct_answer</text>
+  <text class="fld-type" x="410" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="420" y2="146" class="row-div" />
+  <text class="fld-norm" x="10" y="161">explanation</text>
+  <text class="fld-type" x="410" y="161">TEXT</text>
+  <line x1="0" y1="166" x2="420" y2="166" class="row-div" />
+</g>
+<g transform="translate(70, 851)">
+  <rect width="420" height="154" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_progress</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] lesson_id</text>
+  <text class="fld-type" x="410" y="81">INTEGER</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">status</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">score</text>
+  <text class="fld-type" x="410" y="121">INTEGER</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">completed_at</text>
+  <text class="fld-type" x="410" y="141">DATETIME</text>
+  <line x1="0" y1="146" x2="420" y2="146" class="row-div" />
+</g>
+<g transform="translate(70, 1030)">
+  <rect width="420" height="154" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_mistakes</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] question_id</text>
+  <text class="fld-type" x="410" y="81">INTEGER</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">wrong_count</text>
+  <text class="fld-type" x="410" y="101">INTEGER</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">last_wrong_at</text>
+  <text class="fld-type" x="410" y="121">DATETIME</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">is_mastered</text>
+  <text class="fld-type" x="410" y="141">BOOLEAN</text>
+  <line x1="0" y1="146" x2="420" y2="146" class="row-div" />
+</g>
+<g transform="translate(70, 1209)">
+  <rect width="420" height="194" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_notes</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">INTEGER</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] subject_id</text>
+  <text class="fld-type" x="410" y="81">INTEGER</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-fk" x="10" y="101">[FK] lesson_id</text>
+  <text class="fld-type" x="410" y="101">INTEGER</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">title</text>
+  <text class="fld-type" x="410" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">content</text>
+  <text class="fld-type" x="410" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="420" y2="146" class="row-div" />
+  <text class="fld-norm" x="10" y="161">created_at</text>
+  <text class="fld-type" x="410" y="161">TEXT</text>
+  <line x1="0" y1="166" x2="420" y2="166" class="row-div" />
+  <text class="fld-norm" x="10" y="181">updated_at</text>
+  <text class="fld-type" x="410" y="181">TEXT</text>
+  <line x1="0" y1="186" x2="420" y2="186" class="row-div" />
+</g>
+<!-- CLUSTER 2: GAMIFICATION & VẬT PHẨM -->
+<rect x="530" y="110" width="460" height="1780" class="cluster-box" />
+<text class="cluster-title" x="550" y="136">PHÂN HỆ 2: GAMIFICATION &amp; TƯỞNG THƯỞNG</text>
+<g transform="translate(550, 155)">
+  <rect width="420" height="174" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_stats</text>
+  <text class="fld-pk" x="10" y="41">[PK] user_id</text>
+  <text class="fld-type" x="410" y="41">TEXT</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-norm" x="10" y="61">total_xp</text>
+  <text class="fld-type" x="410" y="61">INTEGER</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">current_streak</text>
+  <text class="fld-type" x="410" y="81">INTEGER</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">longest_streak</text>
+  <text class="fld-type" x="410" y="101">INTEGER</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">hearts</text>
+  <text class="fld-type" x="410" y="121">INTEGER</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">gems</text>
+  <text class="fld-type" x="410" y="141">INTEGER</text>
+  <line x1="0" y1="146" x2="420" y2="146" class="row-div" />
+  <text class="fld-norm" x="10" y="161">last_active_date</text>
+  <text class="fld-type" x="410" y="161">DATE</text>
+  <line x1="0" y1="166" x2="420" y2="166" class="row-div" />
+</g>
+<g transform="translate(550, 354)">
+  <rect width="420" height="114" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_streak_history</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">activity_date</text>
+  <text class="fld-type" x="410" y="81">DATE</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">status</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+</g>
+<g transform="translate(550, 493)">
+  <rect width="420" height="134" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">weekly_leaderboards</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">league_name</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">weekly_xp</text>
+  <text class="fld-type" x="410" y="101">INTEGER</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">week_start_date</text>
+  <text class="fld-type" x="410" y="121">DATE</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+</g>
+<g transform="translate(550, 652)">
+  <rect width="420" height="154" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_leaderboard_rewards</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">week_start_date</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">rank</text>
+  <text class="fld-type" x="410" y="101">INTEGER</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">gems</text>
+  <text class="fld-type" x="410" y="121">INTEGER</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">claimed_at</text>
+  <text class="fld-type" x="410" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="420" y2="146" class="row-div" />
+</g>
+<g transform="translate(550, 831)">
+  <rect width="420" height="134" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_daily_quests</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">quest_date</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">quest_code</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">claimed_at</text>
+  <text class="fld-type" x="410" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+</g>
+<g transform="translate(550, 990)">
+  <rect width="420" height="134" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">shop_items</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-norm" x="10" y="61">item_code</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">name</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">description</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">price_gems</text>
+  <text class="fld-type" x="410" y="121">INTEGER</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+</g>
+<g transform="translate(550, 1149)">
+  <rect width="420" height="114" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_inventory</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] item_code</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">quantity</text>
+  <text class="fld-type" x="410" y="101">INTEGER</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+</g>
+<g transform="translate(550, 1288)">
+  <rect width="420" height="134" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">achievements</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-norm" x="10" y="61">title</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">description</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">badge_icon_url</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">required_value</text>
+  <text class="fld-type" x="410" y="121">INTEGER</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+</g>
+<g transform="translate(550, 1447)">
+  <rect width="420" height="114" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_achievements</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] achievement_id</text>
+  <text class="fld-type" x="410" y="81">INTEGER</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">unlocked_at</text>
+  <text class="fld-type" x="410" y="101">DATETIME</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+</g>
+<!-- CLUSTER 3: TÀI KHOẢN & HỒ SƠ -->
+<rect x="1010" y="110" width="480" height="780" class="cluster-box" />
+<text class="cluster-title" x="1030" y="136">PHÂN HỆ 3: TÀI KHOẢN &amp; HỒ SƠ CÁ NHÂN</text>
+<g transform="translate(1030, 155)">
+  <rect width="440" height="154" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">accounts</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="430" y="41">TEXT</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-norm" x="10" y="61">user_id</text>
+  <text class="fld-type" x="430" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">service_name</text>
+  <text class="fld-type" x="430" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">username</text>
+  <text class="fld-type" x="430" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">encrypted_password</text>
+  <text class="fld-type" x="430" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">created_at</text>
+  <text class="fld-type" x="430" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="440" y2="146" class="row-div" />
+</g>
+<g transform="translate(1030, 334)">
+  <rect width="440" height="334" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">profiles</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="430" y="41">TEXT</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="430" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">full_name</text>
+  <text class="fld-type" x="430" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">avatar_url</text>
+  <text class="fld-type" x="430" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">bio</text>
+  <text class="fld-type" x="430" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">cover_url</text>
+  <text class="fld-type" x="430" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="440" y2="146" class="row-div" />
+  <text class="fld-norm" x="10" y="161">school</text>
+  <text class="fld-type" x="430" y="161">TEXT</text>
+  <line x1="0" y1="166" x2="440" y2="166" class="row-div" />
+  <text class="fld-norm" x="10" y="181">major</text>
+  <text class="fld-type" x="430" y="181">TEXT</text>
+  <line x1="0" y1="186" x2="440" y2="186" class="row-div" />
+  <text class="fld-norm" x="10" y="201">avatar_decoration</text>
+  <text class="fld-type" x="430" y="201">TEXT</text>
+  <line x1="0" y1="206" x2="440" y2="206" class="row-div" />
+  <text class="fld-norm" x="10" y="221">profile_effect</text>
+  <text class="fld-type" x="430" y="221">TEXT</text>
+  <line x1="0" y1="226" x2="440" y2="226" class="row-div" />
+  <text class="fld-norm" x="10" y="241">profile_theme</text>
+  <text class="fld-type" x="430" y="241">TEXT</text>
+  <line x1="0" y1="246" x2="440" y2="246" class="row-div" />
+  <text class="fld-norm" x="10" y="261">social_links</text>
+  <text class="fld-type" x="430" y="261">TEXT</text>
+  <line x1="0" y1="266" x2="440" y2="266" class="row-div" />
+  <text class="fld-norm" x="10" y="281">status_icon</text>
+  <text class="fld-type" x="430" y="281">TEXT</text>
+  <line x1="0" y1="286" x2="440" y2="286" class="row-div" />
+  <text class="fld-norm" x="10" y="301">last_active_at</text>
+  <text class="fld-type" x="430" y="301">TEXT</text>
+  <line x1="0" y1="306" x2="440" y2="306" class="row-div" />
+  <text class="fld-norm" x="10" y="321">created_at</text>
+  <text class="fld-type" x="430" y="321">TEXT</text>
+  <line x1="0" y1="326" x2="440" y2="326" class="row-div" />
+</g>
+<g transform="translate(1030, 693)">
+  <rect width="440" height="134" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">friendships</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="430" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="430" y="61">INTEGER</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] friend_id</text>
+  <text class="fld-type" x="430" y="81">INTEGER</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">status</text>
+  <text class="fld-type" x="430" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">created_at</text>
+  <text class="fld-type" x="430" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+</g>
+<!-- CLUSTER 4: TIN NHẮN & HỌC NHÓM -->
+<rect x="1010" y="910" width="480" height="980" class="cluster-box" />
+<text class="cluster-title" x="1030" y="936">PHÂN HỆ 4: TIN NHẮN TRỰC TIẾP &amp; HỌC NHÓM</text>
+<g transform="translate(1030, 955)">
+  <rect width="440" height="254" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">direct_messages</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="430" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] sender_id</text>
+  <text class="fld-type" x="430" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] receiver_id</text>
+  <text class="fld-type" x="430" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">message</text>
+  <text class="fld-type" x="430" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">media_url</text>
+  <text class="fld-type" x="430" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">media_type</text>
+  <text class="fld-type" x="430" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="440" y2="146" class="row-div" />
+  <text class="fld-norm" x="10" y="161">media_size</text>
+  <text class="fld-type" x="430" y="161">INTEGER</text>
+  <line x1="0" y1="166" x2="440" y2="166" class="row-div" />
+  <text class="fld-norm" x="10" y="181">reply_to_id</text>
+  <text class="fld-type" x="430" y="181">INTEGER</text>
+  <line x1="0" y1="186" x2="440" y2="186" class="row-div" />
+  <text class="fld-norm" x="10" y="201">reply_to_name</text>
+  <text class="fld-type" x="430" y="201">TEXT</text>
+  <line x1="0" y1="206" x2="440" y2="206" class="row-div" />
+  <text class="fld-norm" x="10" y="221">is_read</text>
+  <text class="fld-type" x="430" y="221">INTEGER</text>
+  <line x1="0" y1="226" x2="440" y2="226" class="row-div" />
+  <text class="fld-norm" x="10" y="241">created_at</text>
+  <text class="fld-type" x="430" y="241">TEXT</text>
+  <line x1="0" y1="246" x2="440" y2="246" class="row-div" />
+</g>
+<g transform="translate(1030, 1229)">
+  <rect width="440" height="154" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">friend_messages</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="430" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] sender_id</text>
+  <text class="fld-type" x="430" y="61">INTEGER</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] receiver_id</text>
+  <text class="fld-type" x="430" y="81">INTEGER</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">message</text>
+  <text class="fld-type" x="430" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">is_read</text>
+  <text class="fld-type" x="430" y="121">INTEGER</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">created_at</text>
+  <text class="fld-type" x="430" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="440" y2="146" class="row-div" />
+</g>
+<g transform="translate(1030, 1403)">
+  <rect width="440" height="134" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">chat_groups</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="430" y="41">TEXT</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-norm" x="10" y="61">name</text>
+  <text class="fld-type" x="430" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">avatar_url</text>
+  <text class="fld-type" x="430" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-fk" x="10" y="101">[FK] created_by</text>
+  <text class="fld-type" x="430" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">created_at</text>
+  <text class="fld-type" x="430" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+</g>
+<g transform="translate(1030, 1557)">
+  <rect width="440" height="134" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">chat_group_members</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="430" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] group_id</text>
+  <text class="fld-type" x="430" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] user_id</text>
+  <text class="fld-type" x="430" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">role</text>
+  <text class="fld-type" x="430" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">joined_at</text>
+  <text class="fld-type" x="430" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+</g>
+<g transform="translate(1030, 1711)">
+  <rect width="440" height="154" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">chat_group_messages</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="430" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] group_id</text>
+  <text class="fld-type" x="430" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] sender_id</text>
+  <text class="fld-type" x="430" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">message</text>
+  <text class="fld-type" x="430" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">media_url</text>
+  <text class="fld-type" x="430" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">created_at</text>
+  <text class="fld-type" x="430" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="440" y2="146" class="row-div" />
+</g>
+<!-- CLUSTER 5: POMODORO & BẢNG ĐIỂM -->
+<rect x="1510" y="110" width="480" height="920" class="cluster-box" />
+<text class="cluster-title" x="1530" y="136">PHÂN HỆ 5: FOCUS KIOSK &amp; BẢNG ĐIỂM IU</text>
+<g transform="translate(1530, 155)">
+  <rect width="440" height="154" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">pomodoro_active_learners</text>
+  <text class="fld-pk" x="10" y="41">[PK] user_id</text>
+  <text class="fld-type" x="430" y="41">TEXT</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-norm" x="10" y="61">cycle_number</text>
+  <text class="fld-type" x="430" y="61">INTEGER</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">mode</text>
+  <text class="fld-type" x="430" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">doc_name</text>
+  <text class="fld-type" x="430" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">started_at</text>
+  <text class="fld-type" x="430" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">last_heartbeat</text>
+  <text class="fld-type" x="430" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="440" y2="146" class="row-div" />
+</g>
+<g transform="translate(1530, 334)">
+  <rect width="440" height="194" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_pomodoro_sessions</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="430" y="41">TEXT</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="430" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">cycles</text>
+  <text class="fld-type" x="430" y="81">INTEGER</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">focus_minutes</text>
+  <text class="fld-type" x="430" y="101">INTEGER</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">xp_reward</text>
+  <text class="fld-type" x="430" y="121">INTEGER</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">gems_reward</text>
+  <text class="fld-type" x="430" y="141">INTEGER</text>
+  <line x1="0" y1="146" x2="440" y2="146" class="row-div" />
+  <text class="fld-norm" x="10" y="161">doc_name</text>
+  <text class="fld-type" x="430" y="161">TEXT</text>
+  <line x1="0" y1="166" x2="440" y2="166" class="row-div" />
+  <text class="fld-norm" x="10" y="181">completed_at</text>
+  <text class="fld-type" x="430" y="181">TEXT</text>
+  <line x1="0" y1="186" x2="440" y2="186" class="row-div" />
+</g>
+<g transform="translate(1530, 553)">
+  <rect width="440" height="314" class="tbl-card" />
+  <rect width="440" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="440" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_academic_transcripts</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="430" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="440" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="430" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="440" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">student_code</text>
+  <text class="fld-type" x="430" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="440" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">full_name</text>
+  <text class="fld-type" x="430" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="440" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">major</text>
+  <text class="fld-type" x="430" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="440" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">class_name</text>
+  <text class="fld-type" x="430" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="440" y2="146" class="row-div" />
+  <text class="fld-norm" x="10" y="161">gpa_10</text>
+  <text class="fld-type" x="430" y="161">REAL</text>
+  <line x1="0" y1="166" x2="440" y2="166" class="row-div" />
+  <text class="fld-norm" x="10" y="181">gpa_4</text>
+  <text class="fld-type" x="430" y="181">REAL</text>
+  <line x1="0" y1="186" x2="440" y2="186" class="row-div" />
+  <text class="fld-norm" x="10" y="201">total_credits</text>
+  <text class="fld-type" x="430" y="201">INTEGER</text>
+  <line x1="0" y1="206" x2="440" y2="206" class="row-div" />
+  <text class="fld-norm" x="10" y="221">raw_data</text>
+  <text class="fld-type" x="430" y="221">TEXT</text>
+  <line x1="0" y1="226" x2="440" y2="226" class="row-div" />
+  <text class="fld-norm" x="10" y="241">ai_analysis</text>
+  <text class="fld-type" x="430" y="241">TEXT</text>
+  <line x1="0" y1="246" x2="440" y2="246" class="row-div" />
+  <text class="fld-norm" x="10" y="261">target_gpa</text>
+  <text class="fld-type" x="430" y="261">REAL</text>
+  <line x1="0" y1="266" x2="440" y2="266" class="row-div" />
+  <text class="fld-norm" x="10" y="281">last_synced_at</text>
+  <text class="fld-type" x="430" y="281">TEXT</text>
+  <line x1="0" y1="286" x2="440" y2="286" class="row-div" />
+  <text class="fld-norm" x="10" y="301">created_at</text>
+  <text class="fld-type" x="430" y="301">TEXT</text>
+  <line x1="0" y1="306" x2="440" y2="306" class="row-div" />
+</g>
+<!-- CLUSTER 6: AI ASSISTANT & SYNC ENGINE -->
+<rect x="2010" y="110" width="460" height="1780" class="cluster-box" />
+<text class="cluster-title" x="2030" y="136">PHÂN HỆ 6: TRỢ LÝ AI &amp; ĐỒNG BỘ OUTBOX</text>
+<g transform="translate(2030, 155)">
+  <rect width="420" height="134" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">ai_conversations</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">TEXT</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">title</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">created_at</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">updated_at</text>
+  <text class="fld-type" x="410" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+</g>
+<g transform="translate(2030, 314)">
+  <rect width="420" height="154" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">ai_messages</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] conversation_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">role</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">content</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">sender</text>
+  <text class="fld-type" x="410" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">created_at</text>
+  <text class="fld-type" x="410" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="420" y2="146" class="row-div" />
+</g>
+<g transform="translate(2030, 493)">
+  <rect width="420" height="134" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">ai_chats</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">INTEGER</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">INTEGER</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-fk" x="10" y="81">[FK] subject_id</text>
+  <text class="fld-type" x="410" y="81">INTEGER</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">title</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">created_at</text>
+  <text class="fld-type" x="410" y="121">TEXT</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+</g>
+<g transform="translate(2030, 652)">
+  <rect width="420" height="114" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">user_ai_usage</text>
+  <text class="fld-pk" x="10" y="41">[PK] user_id</text>
+  <text class="fld-type" x="410" y="41">TEXT</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-pk" x="10" y="61">[PK] date</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">count</text>
+  <text class="fld-type" x="410" y="81">INTEGER</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">last_req_ms</text>
+  <text class="fld-type" x="410" y="101">INTEGER</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+</g>
+<g transform="translate(2030, 791)">
+  <rect width="420" height="134" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">subject_data</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">TEXT</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-fk" x="10" y="61">[FK] user_id</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">subject_name</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">content</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">created_at</text>
+  <text class="fld-type" x="410" y="121">DATETIME</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+</g>
+<g transform="translate(2030, 950)">
+  <rect width="420" height="194" class="tbl-card" />
+  <rect width="420" height="26" class="tbl-hdr" />
+  <line x1="0" y1="26" x2="420" y2="26" class="hdr-div" />
+  <text class="tbl-name" x="10" y="18">sync_outbox</text>
+  <text class="fld-pk" x="10" y="41">[PK] id</text>
+  <text class="fld-type" x="410" y="41">TEXT</text>
+  <line x1="0" y1="46" x2="420" y2="46" class="row-div" />
+  <text class="fld-norm" x="10" y="61">sql</text>
+  <text class="fld-type" x="410" y="61">TEXT</text>
+  <line x1="0" y1="66" x2="420" y2="66" class="row-div" />
+  <text class="fld-norm" x="10" y="81">params</text>
+  <text class="fld-type" x="410" y="81">TEXT</text>
+  <line x1="0" y1="86" x2="420" y2="86" class="row-div" />
+  <text class="fld-norm" x="10" y="101">status</text>
+  <text class="fld-type" x="410" y="101">TEXT</text>
+  <line x1="0" y1="106" x2="420" y2="106" class="row-div" />
+  <text class="fld-norm" x="10" y="121">retry_count</text>
+  <text class="fld-type" x="410" y="121">INTEGER</text>
+  <line x1="0" y1="126" x2="420" y2="126" class="row-div" />
+  <text class="fld-norm" x="10" y="141">last_error</text>
+  <text class="fld-type" x="410" y="141">TEXT</text>
+  <line x1="0" y1="146" x2="420" y2="146" class="row-div" />
+  <text class="fld-norm" x="10" y="161">created_at</text>
+  <text class="fld-type" x="410" y="161">TEXT</text>
+  <line x1="0" y1="166" x2="420" y2="166" class="row-div" />
+  <text class="fld-norm" x="10" y="181">synced_at</text>
+  <text class="fld-type" x="410" y="181">TEXT</text>
+  <line x1="0" y1="186" x2="420" y2="186" class="row-div" />
+</g>
+<path d="M 280 280 L 280 325" class="conn-line" marker-end="url(#arrow)" />
+<path d="M 280 439 L 280 453" class="conn-line" marker-end="url(#arrow)" />
+<path d="M 280 627 L 280 652" class="conn-line" marker-end="url(#arrow)" />
+<path d="M 120 826 L 120 1030" class="conn-line" marker-end="url(#arrow)" />
+<path d="M 380 826 L 380 851" class="conn-line" marker-end="url(#arrow)" />
+<path d="M 1250 309 L 1250 334" class="conn-line" marker-end="url(#arrow)" />
+<path d="M 2240 289 L 2240 314" class="conn-line" marker-end="url(#arrow)" />
+<path d="M 1150 1537 L 1150 1557" class="conn-line" marker-end="url(#arrow)" />
+<path d="M 1350 1537 L 1350 1711" class="conn-line" marker-end="url(#arrow)" />
+<path d="M 760 1124 L 760 1149" class="conn-line" marker-end="url(#arrow)" />
+<path d="M 760 1422 L 760 1447" class="conn-line" marker-end="url(#arrow)" />
 </svg>
