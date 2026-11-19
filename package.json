@@ -1,23 +1,23 @@
 {
   "name": "3tg-study",
-  "version": "29.9.07",
+  "version": "9.9.9",
   "description": "3TG — Web và App học tập thông minh phong cách Duolingo cùng Mascot Thỏ Bảy Màu",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
-    "start": "electron .",
+    "start": "node server.cjs",
+    "web": "node server.cjs",
+    "dev:web": "node server.cjs",
     "dev": "electron .",
-    "web": "wrangler dev",
-    "dev:web": "wrangler dev",
     "deploy": "wrangler deploy",
+    "wrangler:dev": "wrangler dev",
     "build:icon": "python scripts/convert_icon.py",
-    "build:kiosk": "C:\\msys64\\ucrt64\\bin\\gcc.exe -O3 -s electron/kiosk_guard.c -o build/study_guard.exe",
     "electron": "electron .",
     "electron:dev": "electron .",
-    "electron:pack": "npm run build:kiosk && electron-builder --dir",
-    "electron:dist": "npm run build:kiosk && electron-builder --win",
-    "electron:build": "npm run build:icon && npm run build:kiosk && electron-builder --win"
+    "electron:pack": "electron-builder --dir",
+    "electron:dist": "electron-builder --win",
+    "electron:build": "npm run build:icon && electron-builder --win"
   },
   "devDependencies": {
     "electron": "^45.0.0",
@@ -28,7 +28,6 @@
     "appId": "com.tonepink.3tgstudy",
     "productName": "3TG Học Vui Mỗi Ngày",
     "copyright": "Copyright © 2026 3TG Study",
-    "compression": "normal",
     "directories": {
       "output": "dist-electron"
     },
@@ -36,8 +35,6 @@
     "asarUnpack": [
       "build/local_replica.sqlite",
       "build/icon.ico",
-      "build/study_guard.exe",
-      "electron/study_guard.exe",
       "package.json",
       "src/**/*"
     ],
@@ -48,34 +45,22 @@
       "build/**/*",
       "package.json",
       "wrangler.jsonc",
-      "!**/.dev.vars",
-      "!**/.env*",
-      "!**/*.key",
-      "!**/*.pem"
+      ".dev.vars"
     ],
-    "portable": {
-      "unpackDirName": "3tg_study_portable",
-      "artifactName": "${productName} V29.9.07.${ext}"
-    },
     "win": {
       "icon": "build/icon.ico",
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
         },
         {
           "target": "portable",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
         }
       ]
     },
     "nsis": {
-      "artifactName": "${productName} Setup V29.9.07.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
@@ -84,8 +69,5 @@
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico"
     }
-  },
-  "dependencies": {
-    "pdfjs-dist": "3.11.174"
   }
 }

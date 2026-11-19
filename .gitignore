@@ -18,13 +18,3 @@ build/test_screenshots/
 *.sqlite
 *.sqlite*
 smart_study_hub_cmc_uni-main/
-scratch/
-*.exe
-!build/study_kiosk.exe
-!electron/pomo_guard.exe
-!build/pomo_guard.exe
-!build/focus_guard.exe
-!electron/focus_guard.exe
-!electron/study_guard.exe
-!build/study_guard.exe
-
