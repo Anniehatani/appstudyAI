@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 1050" width="1320" height="1050">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .title { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 27px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .subtitle { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 17px; font-style: italic; font-weight: 400; fill: #222222; text-anchor: middle; }
+      .sys-box { fill: #FFFFFF; stroke: #000000; stroke-width: 3; }
+      .sys-hdr { fill: #F2F4F7; stroke: #000000; stroke-width: 3; }
+      .sys-title { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 21px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .actor-lbl { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 19px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .actor-stereo { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 15.5px; font-style: italic; font-weight: 400; fill: #111111; text-anchor: middle; }
+      .uc-oval { fill: #FFFFFF; stroke: #000000; stroke-width: 2.5; }
+      .uc-oval-core { fill: #F7F8FA; stroke: #000000; stroke-width: 3.2; }
+      .uc-id { font-family: Consolas, monospace; font-size: 15.5px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .uc-name { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 17.5px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .assoc { stroke: #000000; stroke-width: 2.2; fill: none; }
+      .dep { stroke: #000000; stroke-width: 2.2; stroke-dasharray: 8,5; fill: none; marker-end: url(#open-arrow); }
+      .stereo-bg { fill: #FFFFFF; }
+      .stereo { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 15.5px; font-style: italic; font-weight: 700; fill: #000000; text-anchor: middle; }
+    </style>
+    <marker id="open-arrow" viewBox="0 0 14 14" refX="12" refY="7" markerWidth="10" markerHeight="10" orient="auto">
+      <path d="M 2 2 L 12 7 L 2 12" fill="none" stroke="#000000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1320" height="1050" class="bg"/>
+  <text x="660" y="42" class="title">SƠ ĐỒ USE CASE TỔNG THỂ HỆ THỐNG 3TG STUDY (UML 2.5)</text>
+  <text x="660" y="70" class="subtitle">Mô hình hóa 4 tác nhân và 12 ca sử dụng chính cùng các quan hệ bao hàm và mở rộng</text>
+
+  <!-- Biên hệ thống -->
+  <rect x="210" y="95" width="885" height="930" class="sys-box"/>
+  <rect x="210" y="95" width="885" height="48" class="sys-hdr"/>
+  <text x="652" y="127" class="sys-title">PHẦN MỀM HỖ TRỢ HỌC TẬP THÔNG MINH 3TG STUDY</text>
+
+  <!-- Tác nhân trái: Học viên -->
+  <g transform="translate(25, 445)">
+    <circle cx="70" cy="30" r="22" fill="#FFFFFF" stroke="#000000" stroke-width="3"/>
+    <line x1="70" y1="52" x2="70" y2="112" stroke="#000000" stroke-width="3"/>
+    <line x1="30" y1="74" x2="110" y2="74" stroke="#000000" stroke-width="3"/>
+    <line x1="70" y1="112" x2="38" y2="162" stroke="#000000" stroke-width="3"/>
+    <line x1="70" y1="112" x2="102" y2="162" stroke="#000000" stroke-width="3"/>
+    <text x="70" y="190" class="actor-lbl">Học viên</text>
+    <text x="70" y="212" class="actor-stereo">(Người học chính)</text>
+  </g>
+
+  <!-- Tác nhân phải trên: Cổng đào tạo IU -->
+  <g transform="translate(1125, 290)">
+    <text x="85" y="0" class="actor-stereo">&lt;&lt;hệ thống ngoài&gt;&gt;</text>
+    <circle cx="85" cy="34" r="20" fill="#FFFFFF" stroke="#000000" stroke-width="2.8"/>
+    <line x1="85" y1="54" x2="85" y2="108" stroke="#000000" stroke-width="2.8"/>
+    <line x1="50" y1="74" x2="120" y2="74" stroke="#000000" stroke-width="2.8"/>
+    <line x1="85" y1="108" x2="56" y2="152" stroke="#000000" stroke-width="2.8"/>
+    <line x1="85" y1="108" x2="114" y2="152" stroke="#000000" stroke-width="2.8"/>
+    <text x="85" y="178" class="actor-lbl">Cổng đào tạo IU</text>
+    <text x="85" y="200" class="actor-stereo">(Nguồn bảng điểm)</text>
+  </g>
+
+  <!-- Tác nhân phải giữa: Dịch vụ AI -->
+  <g transform="translate(1125, 535)">
+    <text x="85" y="0" class="actor-stereo">&lt;&lt;hệ thống ngoài&gt;&gt;</text>
+    <circle cx="85" cy="34" r="20" fill="#FFFFFF" stroke="#000000" stroke-width="2.8"/>
+    <line x1="85" y1="54" x2="85" y2="108" stroke="#000000" stroke-width="2.8"/>
+    <line x1="50" y1="74" x2="120" y2="74" stroke="#000000" stroke-width="2.8"/>
+    <line x1="85" y1="108" x2="56" y2="152" stroke="#000000" stroke-width="2.8"/>
+    <line x1="85" y1="108" x2="114" y2="152" stroke="#000000" stroke-width="2.8"/>
+    <text x="85" y="178" class="actor-lbl">Dịch vụ 3TG AI</text>
+    <text x="85" y="200" class="actor-stereo">(Giải đáp &amp; đọc ảnh)</text>
+  </g>
+
+  <!-- Tác nhân phải dưới: Quản trị nhóm -->
+  <g transform="translate(1125, 780)">
+    <circle cx="85" cy="30" r="20" fill="#FFFFFF" stroke="#000000" stroke-width="2.8"/>
+    <line x1="85" y1="50" x2="85" y2="104" stroke="#000000" stroke-width="2.8"/>
+    <line x1="50" y1="70" x2="120" y2="70" stroke="#000000" stroke-width="2.8"/>
+    <line x1="85" y1="104" x2="56" y2="148" stroke="#000000" stroke-width="2.8"/>
+    <line x1="85" y1="104" x2="114" y2="148" stroke="#000000" stroke-width="2.8"/>
+    <text x="85" y="174" class="actor-lbl">Quản trị viên</text>
+    <text x="85" y="196" class="actor-stereo">(Quản lý nhóm học)</text>
+  </g>
+
+  <!-- CỘT TRÁI (UC-01 .. UC-08) -->
+  <g transform="translate(420, 198)">
+    <ellipse cx="0" cy="0" rx="185" ry="38" class="uc-oval"/>
+    <text x="0" y="-6" class="uc-id">UC-01</text>
+    <text x="0" y="16" class="uc-name">Đăng ký và đăng nhập bảo mật</text>
+  </g>
+
+  <g transform="translate(420, 304)">
+    <ellipse cx="0" cy="0" rx="185" ry="38" class="uc-oval-core"/>
+    <text x="0" y="-6" class="uc-id">UC-02</text>
+    <text x="0" y="16" class="uc-name">Học theo lộ trình và làm trắc nghiệm</text>
+  </g>
+
+  <g transform="translate(420, 410)">
+    <ellipse cx="0" cy="0" rx="185" ry="38" class="uc-oval"/>
+    <text x="0" y="-6" class="uc-id">UC-03</text>
+    <text x="0" y="16" class="uc-name">Ôn lại câu sai và ghi chú bài học</text>
+  </g>
+
+  <g transform="translate(420, 516)">
+    <ellipse cx="0" cy="0" rx="185" ry="38" class="uc-oval"/>
+    <text x="0" y="-6" class="uc-id">UC-04</text>
+    <text x="0" y="16" class="uc-name">Đồng bộ và dự báo điểm GPA</text>
+  </g>
+
+  <g transform="translate(420, 622)">
+    <ellipse cx="0" cy="0" rx="185" ry="38" class="uc-oval-core"/>
+    <text x="0" y="-6" class="uc-id">UC-05</text>
+    <text x="0" y="16" class="uc-name">Hỏi đáp AI và dán ảnh đề bài</text>
+  </g>
+
+  <g transform="translate(420, 728)">
+    <ellipse cx="0" cy="0" rx="185" ry="38" class="uc-oval-core"/>
+    <text x="0" y="-6" class="uc-id">UC-06</text>
+    <text x="0" y="16" class="uc-name">Học tập trung bấm giờ Pomodoro</text>
+  </g>
+
+  <g transform="translate(420, 834)">
+    <ellipse cx="0" cy="0" rx="185" ry="38" class="uc-oval"/>
+    <text x="0" y="-6" class="uc-id">UC-07</text>
+    <text x="0" y="16" class="uc-name">Cửa hàng, nhiệm vụ và bảng xếp hạng</text>
+  </g>
+
+  <g transform="translate(420, 940)">
+    <ellipse cx="0" cy="0" rx="185" ry="38" class="uc-oval"/>
+    <text x="0" y="-6" class="uc-id">UC-08</text>
+    <text x="0" y="16" class="uc-name">Kết bạn và thảo luận nhóm học</text>
+  </g>
+
+  <!-- CỘT PHẢI (UC-09 .. UC-12) -->
+  <g transform="translate(875, 304)">
+    <ellipse cx="0" cy="0" rx="175" ry="38" class="uc-oval"/>
+    <text x="0" y="-6" class="uc-id">UC-09</text>
+    <text x="0" y="16" class="uc-name">Lưu tạm và đồng bộ khi có mạng</text>
+  </g>
+
+  <g transform="translate(875, 516)">
+    <ellipse cx="0" cy="0" rx="175" ry="38" class="uc-oval"/>
+    <text x="0" y="-6" class="uc-id">UC-10</text>
+    <text x="0" y="16" class="uc-name">Ngắt kết nối và xóa sạch bảng điểm</text>
+  </g>
+
+  <g transform="translate(875, 728)">
+    <ellipse cx="0" cy="0" rx="175" ry="38" class="uc-oval-core"/>
+    <text x="0" y="-6" class="uc-id">UC-11</text>
+    <text x="0" y="16" class="uc-name">Khóa thanh tác vụ và màn hình phụ</text>
+  </g>
+
+  <g transform="translate(875, 834)">
+    <ellipse cx="0" cy="0" rx="180" ry="38" class="uc-oval"/>
+    <text x="0" y="-6" class="uc-id">UC-12</text>
+    <text x="0" y="16" class="uc-name">Đọc PDF và nghe nhạc từ máy</text>
+  </g>
+
+  <!-- Quan hệ <<include>> và <<extend>> chuẩn UML 2.5 -->
+  <line x1="605" y1="304" x2="696" y2="304" class="dep"/>
+  <rect x="615" y="268" width="72" height="22" class="stereo-bg"/>
+  <text x="651" y="284" class="stereo">&lt;&lt;include&gt;&gt;</text>
+
+  <line x1="700" y1="516" x2="609" y2="516" class="dep"/>
+  <rect x="615" y="480" width="72" height="22" class="stereo-bg"/>
+  <text x="651" y="496" class="stereo">&lt;&lt;extend&gt;&gt;</text>
+
+  <line x1="605" y1="728" x2="696" y2="728" class="dep"/>
+  <rect x="615" y="692" width="72" height="22" class="stereo-bg"/>
+  <text x="651" y="708" class="stereo">&lt;&lt;include&gt;&gt;</text>
+
+  <line x1="712" y1="818" x2="585" y2="752" class="dep"/>
+  <rect x="615" y="788" width="78" height="22" class="stereo-bg"/>
+  <text x="654" y="805" class="stereo">&lt;&lt;extend&gt;&gt;</text>
+
+  <!-- Liên kết tác nhân -->
+  <line x1="140" y1="515" x2="235" y2="198" class="assoc"/>
+  <line x1="140" y1="520" x2="235" y2="304" class="assoc"/>
+  <line x1="140" y1="525" x2="235" y2="410" class="assoc"/>
+  <line x1="140" y1="530" x2="235" y2="516" class="assoc"/>
+  <line x1="140" y1="535" x2="235" y2="622" class="assoc"/>
+  <line x1="140" y1="540" x2="235" y2="728" class="assoc"/>
+  <line x1="140" y1="545" x2="235" y2="834" class="assoc"/>
+  <line x1="140" y1="550" x2="235" y2="940" class="assoc"/>
+
+  <polyline points="1165,360 1084,360 1084,462 530,462 530,486" class="assoc"/>
+  <polyline points="1165,605 598,605" class="assoc"/>
+  <polyline points="1165,860 1064,940 605,940" class="assoc"/>
+  <polyline points="1165,845 1064,845 1064,304 1050,304" class="assoc"/>
+</svg>

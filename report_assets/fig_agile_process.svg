@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 540" width="1280" height="540">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .title { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 26px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .subtitle { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 16.5px; font-style: italic; font-weight: 400; fill: #222222; text-anchor: middle; }
+      .sp-box { fill: #FFFFFF; stroke: #000000; stroke-width: 2.5; rx: 8; }
+      .sp-hdr { fill: #E8ECEF; stroke: #000000; stroke-width: 2.5; }
+      .sp-num { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 17.5px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .sp-txt { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 15.5px; font-weight: 400; fill: #111111; }
+      .arrow { stroke: #000000; stroke-width: 3; fill: none; marker-end: url(#arr); }
+      .footer-box { fill: #F2F4F7; stroke: #000000; stroke-width: 2.4; rx: 6; }
+      .footer-txt { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 17.5px; font-weight: 700; fill: #000000; text-anchor: middle; }
+    </style>
+    <marker id="arr" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M 1 2 L 10 6 L 1 10 z" fill="#000000"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="540" class="bg"/>
+  <text x="640" y="38" class="title">QUY TRÌNH PHÁT TRIỂN LINH HOẠT QUA 6 GIAI ĐOẠN (SPRINTS 1–6)</text>
+  <text x="640" y="64" class="subtitle">Quản lý trên GitHub: 6 cột mốc, 57 đầu việc phân công, 108 lần cập nhật mã nguồn, đóng gói V29.9.07</text>
+
+  <g transform="translate(30, 88)">
+    <rect width="376" height="160" class="sp-box"/>
+    <rect width="376" height="36" class="sp-hdr" rx="6"/>
+    <text x="188" y="24" class="sp-num">GIAI ĐOẠN 1: NỀN TẢNG VÀ LỘ TRÌNH</text>
+    <text x="18" y="64" class="sp-txt">• Khởi tạo Cloudflare Workers và CSDL D1</text>
+    <text x="18" y="92" class="sp-txt">• Nạp 10 môn, 4.094 bài, 29.460 câu hỏi</text>
+    <text x="18" y="120" class="sp-txt">• Tính điểm thưởng, chuỗi ngày và cửa hàng</text>
+    <text x="18" y="146" class="sp-txt">• Hoàn thành 12 đầu việc (#1–#12)</text>
+  </g>
+  <line x1="408" y1="168" x2="446" y2="168" class="arrow"/>
+
+  <g transform="translate(452, 88)">
+    <rect width="376" height="160" class="sp-box"/>
+    <rect width="376" height="36" class="sp-hdr" rx="6"/>
+    <text x="188" y="24" class="sp-num">GIAI ĐOẠN 2: CỔNG IU VÀ TRỢ LÝ AI</text>
+    <text x="18" y="64" class="sp-txt">• Đăng nhập một chạm cổng đào tạo IU</text>
+    <text x="18" y="92" class="sp-txt">• Tính điểm GPA và cố vấn AI định hướng</text>
+    <text x="18" y="120" class="sp-txt">• Kết bạn, nhắn tin 1-1 và giao diện tối</text>
+    <text x="18" y="146" class="sp-txt">• Hoàn thành 8 đầu việc (#13–#20)</text>
+  </g>
+  <line x1="830" y1="168" x2="868" y2="168" class="arrow"/>
+
+  <g transform="translate(874, 88)">
+    <rect width="376" height="160" class="sp-box"/>
+    <rect width="376" height="36" class="sp-hdr" rx="6"/>
+    <text x="188" y="24" class="sp-num">GIAI ĐOẠN 3: ĐÓNG GÓI MÁY TÍNH</text>
+    <text x="18" y="64" class="sp-txt">• Đóng gói bản Windows mở nhanh 1–2 giây</text>
+    <text x="18" y="92" class="sp-txt">• Siết quyền API, thêm hiệu ứng gõ chữ AI</text>
+    <text x="18" y="120" class="sp-txt">• Đóng gói bản cài đặt thử nghiệm v9.9.9</text>
+    <text x="18" y="146" class="sp-txt">• Hoàn thành 7 đầu việc (#21–#27)</text>
+  </g>
+
+  <polyline points="1062,248 1062,274 218,274 218,296" class="arrow"/>
+
+  <g transform="translate(30, 300)">
+    <rect width="376" height="160" class="sp-box"/>
+    <rect width="376" height="36" class="sp-hdr" rx="6"/>
+    <text x="188" y="24" class="sp-num">GIAI ĐOẠN 4: NHÓM CHAT VÀ BOT 3TG</text>
+    <text x="18" y="64" class="sp-txt">• Gửi tin nhắn tức thì, trả lời trích dẫn</text>
+    <text x="18" y="92" class="sp-txt">• Tích hợp Bot 3TG và phân quyền nhóm</text>
+    <text x="18" y="120" class="sp-txt">• Kết bạn 2 chiều, báo trạng thái trực tuyến</text>
+    <text x="18" y="146" class="sp-txt">• Hoàn thành 10 đầu việc trên GitHub</text>
+  </g>
+  <line x1="408" y1="380" x2="446" y2="380" class="arrow"/>
+
+  <g transform="translate(452, 300)">
+    <rect width="376" height="160" class="sp-box"/>
+    <rect width="376" height="36" class="sp-hdr" rx="6"/>
+    <text x="188" y="24" class="sp-num">GIAI ĐOẠN 5: BẢO MẬT VÀ TẬP TRUNG</text>
+    <text x="18" y="64" class="sp-txt">• Băm mật khẩu PBKDF2 và chặn đoán khóa</text>
+    <text x="18" y="92" class="sp-txt">• Hàng đợi lưu tạm đồng bộ khi mất mạng</text>
+    <text x="18" y="120" class="sp-txt">• Kiểm chứng giờ học Pomodoro, phóng to PDF</text>
+    <text x="18" y="146" class="sp-txt">• Tách khối bảo mật và hoàn thiện 6 chủ đề</text>
+  </g>
+  <line x1="830" y1="380" x2="868" y2="380" class="arrow"/>
+
+  <g transform="translate(874, 300)">
+    <rect width="376" height="160" class="sp-box"/>
+    <rect width="376" height="36" class="sp-hdr" rx="6"/>
+    <text x="188" y="24" class="sp-num">GIAI ĐOẠN 6: KHÓA C++ VÀ PHÁT HÀNH</text>
+    <text x="18" y="64" class="sp-txt">• Biên dịch study_guard.exe trả thanh tác vụ &lt;5ms</text>
+    <text x="18" y="92" class="sp-txt">• Khóa màn hình phụ, phát nhạc từ ổ cứng</text>
+    <text x="18" y="120" class="sp-txt">• Sửa lỗi đọc PDF, kéo giãn mượt 60 FPS</text>
+    <text x="18" y="146" class="sp-txt">• Chạy thử 38/38 ca đạt • Phát hành V29.9.07</text>
+  </g>
+
+  <rect x="30" y="478" width="1220" height="44" class="footer-box"/>
+  <text x="640" y="507" class="footer-txt">Sản phẩm bàn giao: Bộ cài đặt 3TG Học Vui Mỗi Ngày Setup V29.9.07.exe (~117,9 MB) và Bản chạy ngay (~117,5 MB)</text>
+</svg>

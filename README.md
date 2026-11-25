@@ -1,60 +1,56 @@
-# Lumi Study
+# 3TG Study — Ứng dụng hỗ trợ học tập thông minh (`V29.9.07`)
 
-3TG là ứng dụng học tập tiếng Việt chạy trên Cloudflare Worker, với giao diện hồng, lộ trình theo môn học trong Cloudflare D1, bài trắc nghiệm, XP, chuỗi học, hồ sơ, Sổ tay ghi chú và trợ giảng Local AI. Giao diện hiện tại dùng JavaScript module và CSS tĩnh; Worker là API/runtime.
+> **Đồ án môn Công nghệ phần mềm (`INFO2011`) — Lớp N08 — Trường Đại học CMC**  
+> **Nhóm thực hiện (TONE PINK):** Lê Văn An (`BAI250001`, Nhóm trưởng), Nguyễn Như Quỳnh (`BCS252491`), Nguyễn Văn Tú (`BIT250364`)  
+> **Giảng viên hướng dẫn:** ThS. Nguyễn Thị Vân Anh
 
-## Dữ liệu đang kết nối
+**3TG Study** là hệ sinh thái hỗ trợ học tập thông minh trên máy tính Windows (Electron + C++ Win32) kết hợp điện toán đám mây (Cloudflare Workers, D1, R2), giúp sinh viên học tập trung không xao nhãng, ôn luyện theo lộ trình, theo dõi điểm rèn luyện GPA và hỏi đáp bài tập bằng trí tuệ nhân tạo.
 
-Worker hiện đọc/ghi các bảng học liệu, hồ sơ và gamification có sẵn trong D1, cùng `user_notes`, `ai_conversations` và `ai_messages`. Cẩm nang chỉ đọc `lessons.content`/`lessons.video_url`; app không sửa dữ liệu học liệu.
+---
 
-Lần kiểm tra D1 gần nhất có 10 môn, 106 chương, 4.094 bài học, 29.460 câu hỏi và 10 bản ghi subject_data. Bảng profiles, user_progress và user_stats chưa có hồ sơ người học. Lumi không thêm hoặc sửa dữ liệu môn học.
+## 1. Tính năng cốt lõi
 
-## Chạy ở máy
+- **Phòng học tập trung chống xao nhãng (`study_guard.exe`):** Ẩn thanh tác vụ Windows an toàn, chặn các phím chuyển cửa sổ, phủ đen toàn bộ màn hình phụ và tự động khôi phục nguyên vẹn trong dưới `5 ms` ngay cả khi thoát ứng dụng đột ngột; xác thực thời gian học thực tế trên máy chủ trước khi thưởng.
+- **Lộ trình học tập & ôn luyện:** Tổ chức `10` môn học cơ sở ngành, `106` chương, `4.094` bài học và `29.460` câu hỏi trắc nghiệm; tự động gom câu làm sai để ôn lại và lưu ghi chú gắn trực tiếp theo từng bài học.
+- **Đồng bộ Cổng đào tạo IU & dự báo GPA:** Đăng nhập một chạm lấy bảng điểm, tính GPA hệ 4 và hệ 10, mô phỏng nâng điểm từng môn theo trọng số tín chỉ và hỗ trợ nút ngắt kết nối xóa sạch bản ghi bảng điểm trong cơ sở dữ liệu.
+- **Trợ lý `3TG AI` & đọc tài liệu tại chỗ:** Hỗ trợ dán ảnh đề bài trực tiếp bằng `Ctrl+V` để giải thích từng bước; trình đọc tài liệu PDF mượt mà (`slice(0)` chống trắng trang) và phát nhạc trực tiếp từ ổ cứng qua máy chủ nhúng chuẩn `HTTP 206` không tốn băng thông đám mây.
+- **Hoạt động bền bỉ khi mất mạng:** Kết quả học tập được lưu tạm vào SQLite cục bộ và hàng đợi `sync_outbox`, tự động đồng bộ lại lên Cloudflare D1 ngay khi có Internet.
+- **Bảo mật & Cộng đồng:** Mã hóa mật khẩu `PBKDF2-HMAC-SHA256` (`100.000` vòng lặp + muối `16 byte` ngẫu nhiên), giới hạn thử sai đăng nhập, cookie phiên `HttpOnly`, kết bạn 2 chiều, nhắn tin nhóm phân quyền tích hợp `Bot 3TG`, cửa hàng `38` vật phẩm, `5` nhiệm vụ mỗi ngày, `10` thành tích và bảng xếp hạng tuần.
 
-1. Cài Node.js và npm.
-2. Mở thư mục dự án rồi chạy:
+---
 
-       npm install
+## 2. Kiến trúc hệ thống & Cơ sở dữ liệu
 
-3. Đăng nhập Wrangler vào tài khoản Cloudflare có quyền với D1 và R2:
+Hệ thống áp dụng kiến trúc lai 4 tầng gồm tầng giao diện Desktop (Electron), tầng điều khiển hệ điều hành (`C++` `study_guard.exe`) + máy chủ nhúng cục bộ (`embedded-server.cjs`), tầng xử lý biên (`Cloudflare Workers`) và tầng lưu trữ (`Cloudflare D1` chuẩn `3NF` với `33` bảng nghiệp vụ + bản sao SQLite cục bộ `build/local_replica.sqlite` + `Cloudflare R2`).
 
-       npx wrangler login
+![Kiến trúc 4 tầng 3TG Study](report_assets/fig_architecture_uml.png)
 
-4. Chạy ứng dụng:
+---
 
-       npm run dev
+## 3. Cài đặt, chạy cục bộ và kiểm thử
 
-5. Mở địa chỉ local mà Wrangler hiển thị.
+### Yêu cầu môi trường
+- Node.js (`>= 18`), npm và tài khoản Cloudflare Wrangler (nếu chạy Worker kết nối D1/R2 từ xa).
 
-wrangler.jsonc đã gắn D1 app-study-db và bucket R2 my-project-bucket. Cả hai binding đang dùng remote: true, vì vậy Worker local đọc/ghi trực tiếp tài nguyên Cloudflare thật. Bấm **Bắt đầu học** hoặc mở bài học đầu tiên sẽ tạo hồ sơ profiles/user_stats mới; hoàn thành bài sẽ ghi XP, tim, chuỗi học và tiến độ vào D1. Tải ảnh đại diện sẽ ghi object vào R2 và lưu đường dẫn trong profiles.avatar_url.
+### Chạy ứng dụng ở chế độ phát triển
+```bash
+npm install
+npm run dev
+```
 
-## Trợ giảng Lumi AI
+### Chạy bộ kiểm thử tự động toàn hệ thống (`38` tiêu chí)
+```bash
+node scripts/test_sprint6_full_suite.cjs
+```
+Kết quả xác minh bản phát hành `V29.9.07`: **`38 PASS, 0 FAIL`** (kiểm tra CSDL `build/local_replica.sqlite`, logic xóa bảng điểm IU, phản hồi `3TG AI`, nhị phân `build/study_guard.exe`, khóa màn hình phụ, phát nhạc `HTTP 206`, đọc PDF và giữ phiên đăng nhập).
 
-Trong chế độ local, Wrangler đọc biến môi trường từ file .env ở thư mục project. Đặt `LOCAL_AI_ENDPOINT` trỏ tới endpoint tương thích OpenAI của máy chạy model, ví dụ `http://127.0.0.1:1234/v1/chat/completions`; model văn bản mặc định là `qwen2.5:14b-instruct` và có thể đổi bằng `LOCAL_AI_MODEL`. Có thể đặt `LOCAL_AI_VISION_MODEL` thành model hỗ trợ đọc ảnh; nếu bỏ trống, app dùng `LOCAL_AI_MODEL` cho ảnh. Nếu máy AI yêu cầu xác thực, đặt secret `LOCAL_AI_API_KEY`. Khi chưa cấu hình endpoint, API chat trả về thông báo cấu hình còn thiếu và không gửi câu hỏi tới nhà cung cấp AI bên ngoài.
+> Ghi chú bảo mật: Các tệp chứa khóa bí mật như `.env` và `.dev.vars` được loại khỏi Git và quá trình đóng gói bộ cài.
 
-Khi triển khai Worker, endpoint phải truy cập được từ môi trường Worker. Không dùng `127.0.0.1` cho Worker đã deploy trên Cloudflare; địa chỉ đó trỏ tới chính Worker runtime. Dùng mạng riêng hoặc cổng kết nối được bảo vệ tới máy GPU, và lưu khóa tùy chọn bằng lệnh:
+---
 
-       npx wrangler secret put LOCAL_AI_API_KEY
+## 4. Tài liệu dự án & Báo cáo tổng kết
 
-Các file .env và .dev.vars được loại khỏi Git.
-
-## Triển khai
-
-- Chạy npm run deploy để đưa Worker và thư mục public/ lên Cloudflare.
-- Đặt `LOCAL_AI_ENDPOINT`, `LOCAL_AI_MODEL` và tùy chọn `LOCAL_AI_VISION_MODEL` cho Worker trước khi bật chat.
-- Tài khoản Cloudflare/Wrangler cần quyền truy cập D1 và R2 đã khai báo trong wrangler.jsonc.
-
-## Sổ tay ghi chú
-
-Trang Sổ tay hỗ trợ lọc theo môn/bài, tìm tiêu đề và nội dung, lưu bản nháp tự động sau 500 ms, gắn ghi chú với bài học, và xóa ghi chú. Mỗi ghi chú lưu giấy kẻ ngang/ô li/chấm/trắng, phông chữ và nét vẽ ngay trong `user_notes.content`; có công cụ hình học, chèn ký hiệu công thức và máy tính khoa học. AI tự do nhận văn bản trích từ PDF, DOCX, PPTX, XLSX và các tệp văn bản; ảnh được gửi đến model vision nếu đã cấu hình. PDF scan không có lớp văn bản cần gửi từng trang dưới dạng ảnh. API `/api/notes` giới hạn mọi thao tác theo phiên người học. Trong lộ trình, Cẩm nang mở nội dung `lessons.content`/`lessons.video_url`; khung ghi chú nhanh lưu vào cùng bảng `user_notes`. Câu trả lời AI có nút lưu vào Sổ tay, còn lịch sử phiên hỏi đáp được ghi trong `ai_conversations` và `ai_messages`.
-
-Ảnh đại diện được giới hạn ở JPG, PNG hoặc WebP, tối đa 4 MB. URL ảnh đi qua route media của Worker; bucket không cần public.
-
-## Ghi chú về hồ sơ
-
-Lumi tạo một hồ sơ khách ngẫu nhiên khi người học bắt đầu. Cookie phiên được giữ trên thiết bị và dùng để nối hồ sơ với các bảng tiến độ hiện có. Tên và avatar được lưu ở D1; mục tiêu bài học, âm thanh, giao diện tối và giảm chuyển động được lưu trên thiết bị này. Chưa có luồng đăng ký bằng email hoặc đồng bộ hồ sơ giữa nhiều thiết bị.
-
-## Tài liệu Cloudflare
-
-- D1 Worker bindings: https://developers.cloudflare.com/d1/worker-api/
-- Worker static assets: https://developers.cloudflare.com/workers/static-assets/
-- R2 Worker bindings: https://developers.cloudflare.com/r2/api/workers/workers-api-usage/
+- **Báo cáo tổng kết đồ án:** [Bao_Cao_Tong_Ket_Do_An_3TG_Study_TONE_PINK.docx](tổng%20kết%20dự%20án/Bao_Cao_Tong_Ket_Do_An_3TG_Study_TONE_PINK.docx)
+- **Sơ đồ thiết kế UML & quy trình:** Thư mục [`report_assets/`](report_assets/)
+- **Nhật ký 6 giai đoạn phát triển (Sprints):**
+  - [Sprint 1](tổng%20kết%20dự%20án/Sprint_1.md) · [Sprint 2](tổng%20kết%20dự%20án/Sprint_2.md) · [Sprint 3](tổng%20kết%20dự%20án/Sprint_3.md) · [Sprint 4](tổng%20kết%20dự%20án/Sprint_4.md) · [Sprint 5](tổng%20kết%20dự%20án/Sprint_5.md) · [Sprint 6](tổng%20kết%20dự%20án/Sprint_6.md)

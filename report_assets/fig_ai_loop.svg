@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" width="1280" height="360">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .title { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 25px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .box { fill: #FFFFFF; stroke: #000000; stroke-width: 2.8; rx: 10; }
+      .box-mid { fill: #F2F4F7; stroke: #000000; stroke-width: 3.2; rx: 10; }
+      .hdr { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 18px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .txt { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 16.5px; font-weight: 400; fill: #111111; text-anchor: middle; }
+      .arrow { stroke: #000000; stroke-width: 3; fill: none; marker-end: url(#arr); }
+    </style>
+    <marker id="arr" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M 1 2 L 10 6 L 1 10 z" fill="#000000"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="360" class="bg"/>
+  <text x="640" y="42" class="title">QUY TRÌNH 3 BƯỚC SỬ DỤNG TRÍ TUỆ NHÂN TẠO CÓ TRÁCH NHIỆM</text>
+
+  <g transform="translate(30, 75)">
+    <rect width="376" height="245" class="box"/>
+    <text x="188" y="45" class="hdr">1. MÔ TẢ BÀI TOÁN VÀ NHẬN GỢI Ý</text>
+    <line x1="30" y1="62" x2="346" y2="62" stroke="#000000" stroke-width="1.8"/>
+    <text x="188" y="102" class="txt">• Đưa ngữ cảnh và ràng buộc kỹ thuật rõ ràng</text>
+    <text x="188" y="138" class="txt">• Nhờ AI gợi ý khung mã nguồn, giao diện</text>
+    <text x="188" y="174" class="txt">• Đề xuất các trường hợp cần kiểm tra biên</text>
+    <text x="188" y="210" class="txt">(AI chỉ giữ vai trò công cụ hỗ trợ gợi ý)</text>
+  </g>
+
+  <line x1="408" y1="197" x2="446" y2="197" class="arrow"/>
+
+  <g transform="translate(452, 75)">
+    <rect width="376" height="245" class="box-mid"/>
+    <text x="188" y="45" class="hdr">2. KIỂM CHỨNG VÀ PHẢN BIỆN</text>
+    <line x1="30" y1="62" x2="346" y2="62" stroke="#000000" stroke-width="1.8"/>
+    <text x="188" y="102" class="txt">• Rà soát và hiểu rõ từng dòng mã sinh ra</text>
+    <text x="188" y="138" class="txt">• Phát hiện lỗi bảo mật, mất thanh tác vụ,</text>
+    <text x="188" y="174" class="txt">lỗi đọc tệp PDF hay đồng bộ khi rớt mạng</text>
+    <text x="188" y="210" class="txt">(Không sao chép thụ động mã do AI viết)</text>
+  </g>
+
+  <line x1="830" y1="197" x2="868" y2="197" class="arrow"/>
+
+  <g transform="translate(874, 75)">
+    <rect width="376" height="245" class="box"/>
+    <text x="188" y="45" class="hdr">3. TỰ CHỦ QUYẾT ĐỊNH VÀ KIỂM THỬ</text>
+    <line x1="30" y1="62" x2="346" y2="62" stroke="#000000" stroke-width="1.8"/>
+    <text x="188" y="102" class="txt">• Loại bỏ phương án yếu, tự viết mã chuẩn</text>
+    <text x="188" y="138" class="txt">• Tái cấu trúc bảo mật và hàng đợi đồng bộ</text>
+    <text x="188" y="174" class="txt">• Chạy kiểm thử tự động đạt 38/38 ca</text>
+    <text x="188" y="210" class="txt">(Nhóm chịu hoàn toàn trách nhiệm mã nguồn)</text>
+  </g>
+</svg>

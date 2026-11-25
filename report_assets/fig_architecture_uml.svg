@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 940" width="1280" height="940">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .title { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 27px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .subtitle { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 17px; font-style: italic; font-weight: 400; fill: #222222; text-anchor: middle; }
+      .tier-box { fill: #FFFFFF; stroke: #000000; stroke-width: 2.6; rx: 8; }
+      .tier-hdr { fill: #E8ECEF; stroke: #000000; stroke-width: 2.6; }
+      .tier-title { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 19px; font-weight: 700; fill: #000000; }
+      .mod-box { fill: #FFFFFF; stroke: #000000; stroke-width: 2; rx: 6; }
+      .mod-title { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 17px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .mod-text { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 15.5px; font-weight: 400; fill: #111111; text-anchor: middle; }
+      .flow-line { stroke: #000000; stroke-width: 2.6; fill: none; marker-end: url(#arrow); marker-start: url(#arrow-rev); }
+      .pill-bg { fill: #FFFFFF; stroke: #000000; stroke-width: 1.8; rx: 12; }
+      .flow-lbl { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 15.5px; font-weight: 700; fill: #000000; text-anchor: middle; }
+    </style>
+    <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M 1 2 L 10 6 L 1 10 z" fill="#000000"/>
+    </marker>
+    <marker id="arrow-rev" viewBox="0 0 12 12" refX="2" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M 11 2 L 2 6 L 11 10 z" fill="#000000"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="940" class="bg"/>
+  <text x="640" y="42" class="title">KIẾN TRÚC TỔNG THỂ 4 TẦNG CỦA HỆ THỐNG 3TG STUDY</text>
+  <text x="640" y="70" class="subtitle">Kết hợp phần mềm máy tính Windows và hạ tầng đám mây Cloudflare không máy chủ</text>
+
+  <!-- TẦNG 1 -->
+  <g transform="translate(30, 92)">
+    <rect width="1220" height="162" class="tier-box"/>
+    <rect width="1220" height="38" class="tier-hdr" rx="6"/>
+    <text x="20" y="26" class="tier-title">TẦNG 1: GIAO DIỆN NGƯỜI DÙNG VÀ ỨNG DỤNG MÁY TÍNH (ELECTRON + WEB)</text>
+
+    <g transform="translate(20, 50)">
+      <rect width="280" height="96" class="mod-box"/>
+      <text x="140" y="28" class="mod-title">Học tập và Cộng đồng</text>
+      <text x="140" y="54" class="mod-text">Lộ trình bài, trắc nghiệm, sổ tay</text>
+      <text x="140" y="78" class="mod-text">Cửa hàng, nhắn tin 1-1 và nhóm</text>
+    </g>
+    <g transform="translate(320, 50)">
+      <rect width="280" height="96" class="mod-box"/>
+      <text x="140" y="28" class="mod-title">Trình đọc tài liệu PDF</text>
+      <text x="140" y="54" class="mod-text">Sao chép vùng nhớ đọc tệp an toàn</text>
+      <text x="140" y="78" class="mod-text">Kéo giãn khung nhìn mượt 60 FPS</text>
+    </g>
+    <g transform="translate(620, 50)">
+      <rect width="280" height="96" class="mod-box"/>
+      <text x="140" y="28" class="mod-title">Tương tác 3TG AI</text>
+      <text x="140" y="54" class="mod-text">Dán ảnh chụp đề bài (Ctrl+V)</text>
+      <text x="140" y="78" class="mod-text">Cố vấn học tập và dự báo điểm GPA</text>
+    </g>
+    <g transform="translate(920, 50)">
+      <rect width="280" height="96" class="mod-box"/>
+      <text x="140" y="28" class="mod-title">Điều khiển ứng dụng</text>
+      <text x="140" y="54" class="mod-text">Phủ đen toàn bộ màn hình phụ</text>
+      <text x="140" y="78" class="mod-text">Mở cổng trường IU đăng nhập 1 chạm</text>
+    </g>
+  </g>
+
+  <line x1="640" y1="254" x2="640" y2="306" class="flow-line"/>
+  <rect x="395" y="266" width="490" height="28" class="pill-bg"/>
+  <text x="640" y="286" class="flow-lbl">Giao tiếp tiến trình nội bộ và máy chủ trên máy tính</text>
+
+  <!-- TẦNG 2 -->
+  <g transform="translate(30, 306)">
+    <rect width="1220" height="162" class="tier-box"/>
+    <rect width="1220" height="38" class="tier-hdr" rx="6"/>
+    <text x="20" y="26" class="tier-title">TẦNG 2: ĐIỀU KHIỂN WINDOWS BẰNG C++ VÀ MÁY CHỦ NHÚNG CỤC BỘ</text>
+
+    <g transform="translate(20, 50)">
+      <rect width="376" height="96" class="mod-box"/>
+      <text x="188" y="28" class="mod-title">Chương trình bảo vệ study_guard.exe</text>
+      <text x="188" y="54" class="mod-text">Ẩn và khôi phục thanh tác vụ dưới 5 mili-giây</text>
+      <text x="188" y="78" class="mod-text">Chặn phím tắt gây phân tâm (Win, Alt, F1–F24)</text>
+    </g>
+    <g transform="translate(422, 50)">
+      <rect width="376" height="96" class="mod-box"/>
+      <text x="188" y="28" class="mod-title">Máy chủ nhúng (embedded-server.cjs)</text>
+      <text x="188" y="54" class="mod-text">Phát nhạc từ ổ cứng chuẩn HTTP 206</text>
+      <text x="188" y="78" class="mod-text">Xử lý yêu cầu ngay cả khi mất kết nối mạng</text>
+    </g>
+    <g transform="translate(824, 50)">
+      <rect width="376" height="96" class="mod-box"/>
+      <text x="188" y="28" class="mod-title">Trợ lý Bot nhóm (src/bot3tg.js)</text>
+      <text x="188" y="54" class="mod-text">Chạy ghép tiến trình chính, không tốn thêm RAM</text>
+      <text x="188" y="78" class="mod-text">Hỗ trợ lệnh giải trí, hỏi AI và báo sai cú pháp</text>
+    </g>
+  </g>
+
+  <line x1="640" y1="468" x2="640" y2="520" class="flow-line"/>
+  <rect x="395" y="480" width="490" height="28" class="pill-bg"/>
+  <text x="640" y="500" class="flow-lbl">Giao thức mạng HTTPS chuẩn RESTful API và phiên Cookie</text>
+
+  <!-- TẦNG 3 -->
+  <g transform="translate(30, 520)">
+    <rect width="1220" height="162" class="tier-box"/>
+    <rect width="1220" height="38" class="tier-hdr" rx="6"/>
+    <text x="20" y="26" class="tier-title">TẦNG 3: DỊCH VỤ XỬ LÝ ĐÁM MÂY CLOUDFLARE WORKERS (src/index.js)</text>
+
+    <g transform="translate(20, 50)">
+      <rect width="376" height="96" class="mod-box"/>
+      <text x="188" y="28" class="mod-title">Xác thực và bảo vệ tài khoản</text>
+      <text x="188" y="54" class="mod-text">Băm mật khẩu PBKDF2 đủ 100.000 vòng lặp</text>
+      <text x="188" y="78" class="mod-text">Chặn đoán mật khẩu quá 5 lần mỗi 15 phút</text>
+    </g>
+    <g transform="translate(422, 50)">
+      <rect width="376" height="96" class="mod-box"/>
+      <text x="188" y="28" class="mod-title">Định tuyến và chống gian lận</text>
+      <text x="188" y="54" class="mod-text">Cung cấp hơn 50 đường dẫn API chức năng</text>
+      <text x="188" y="78" class="mod-text">Kiểm chứng giờ học thực tế và chặn truy cập chéo</text>
+    </g>
+    <g transform="translate(824, 50)">
+      <rect width="376" height="96" class="mod-box"/>
+      <text x="188" y="28" class="mod-title">Kiểm soát AI và đồng bộ dữ liệu</text>
+      <text x="188" y="54" class="mod-text">Chữ ký xác thực, giới hạn tối đa 60 câu mỗi ngày</text>
+      <text x="188" y="78" class="mod-text">Đồng bộ dữ liệu chờ từ máy tính lên đám mây</text>
+    </g>
+  </g>
+
+  <line x1="640" y1="682" x2="640" y2="734" class="flow-line"/>
+  <rect x="380" y="694" width="520" height="28" class="pill-bg"/>
+  <text x="640" y="714" class="flow-lbl">Truy vấn SQL an toàn, phát lại hàng đợi và gọi dịch vụ ngoài</text>
+
+  <!-- TẦNG 4 -->
+  <g transform="translate(30, 734)">
+    <rect width="1220" height="172" class="tier-box"/>
+    <rect width="1220" height="38" class="tier-hdr" rx="6"/>
+    <text x="20" y="26" class="tier-title">TẦNG 4: LƯU TRỮ DỮ LIỆU VÀ CÁC DỊCH VỤ LIÊN KẾT BÊN NGOÀI</text>
+
+    <g transform="translate(20, 50)">
+      <rect width="376" height="106" class="mod-box"/>
+      <text x="188" y="28" class="mod-title">Cơ sở dữ liệu (Cloudflare D1 &amp; SQLite)</text>
+      <text x="188" y="54" class="mod-text">Đầy đủ 33 bảng quan hệ chuẩn hóa</text>
+      <text x="188" y="78" class="mod-text">Lưu 10 môn học, 4.094 bài và 29.460 câu hỏi</text>
+    </g>
+    <g transform="translate(422, 50)">
+      <rect width="376" height="106" class="mod-box"/>
+      <text x="188" y="28" class="mod-title">Kho lưu trữ tệp Cloudflare R2</text>
+      <text x="188" y="54" class="mod-text">Lưu trữ ảnh đại diện và ảnh bìa cá nhân</text>
+      <text x="188" y="78" class="mod-text">Lưu ảnh và tệp đính kèm tin nhắn nhóm học</text>
+    </g>
+    <g transform="translate(824, 50)">
+      <rect width="376" height="106" class="mod-box"/>
+      <text x="188" y="28" class="mod-title">Hệ thống ngoài (Groq AI &amp; Cổng IU)</text>
+      <text x="188" y="54" class="mod-text">Mô hình AI suy luận nhanh và đọc ảnh bài tập</text>
+      <text x="188" y="78" class="mod-text">Cổng đào tạo Đại học CMC lấy bảng điểm</text>
+    </g>
+  </g>
+</svg>

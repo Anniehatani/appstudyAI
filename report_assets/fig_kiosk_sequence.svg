@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 880" width="1320" height="880">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .title { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 27px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .subtitle { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 17px; font-style: italic; font-weight: 400; fill: #222222; text-anchor: middle; }
+      .obj-box { fill: #F2F4F7; stroke: #000000; stroke-width: 2.5; rx: 6; }
+      .obj-txt { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 18px; font-weight: 700; fill: #000000; text-anchor: middle; }
+      .lifeline { stroke: #000000; stroke-width: 2; stroke-dasharray: 8,6; }
+      .act { fill: #FFFFFF; stroke: #000000; stroke-width: 2.2; }
+      .msg { stroke: #000000; stroke-width: 2.4; fill: none; marker-end: url(#solid-arrow); }
+      .ret { stroke: #000000; stroke-width: 2.2; stroke-dasharray: 6,4; fill: none; marker-end: url(#open-arrow); }
+      .msg-bg { fill: #FFFFFF; }
+      .msg-txt { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 16px; font-weight: 700; fill: #000000; }
+      .alt-box { fill: none; stroke: #000000; stroke-width: 2.6; }
+      .alt-tag { fill: #E8ECEF; stroke: #000000; stroke-width: 2.6; }
+      .alt-txt { font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 16px; font-weight: 700; fill: #000000; }
+    </style>
+    <marker id="solid-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M 1 2 L 10 6 L 1 10 z" fill="#000000"/>
+    </marker>
+    <marker id="open-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M 2 2 L 10 6 L 2 10" fill="none" stroke="#000000" stroke-width="2"/>
+    </marker>
+  </defs>
+
+  <rect width="1320" height="880" class="bg"/>
+  <text x="660" y="40" class="title">SƠ ĐỒ TUẦN TỰ BẢO VỆ TẬP TRUNG BẰNG C++ VÀ XÁC MINH GIỜ HỌC</text>
+  <text x="660" y="68" class="subtitle">Cơ chế khóa màn hình phụ, phục hồi thanh tác vụ dưới 5 mili-giây và chống gian lận điểm thưởng</text>
+
+  <!-- Đường sinh -->
+  <g transform="translate(45, 95)">
+    <rect width="210" height="52" class="obj-box"/><text x="105" y="33" class="obj-txt">Giao diện Học viên</text>
+    <line x1="105" y1="52" x2="105" y2="755" class="lifeline"/>
+  </g>
+  <g transform="translate(320, 95)">
+    <rect width="240" height="52" class="obj-box"/><text x="120" y="33" class="obj-txt">Ứng dụng (Electron)</text>
+    <line x1="120" y1="52" x2="120" y2="755" class="lifeline"/>
+  </g>
+  <g transform="translate(620, 95)">
+    <rect width="240" height="52" class="obj-box"/><text x="120" y="33" class="obj-txt">study_guard.exe (C++)</text>
+    <line x1="120" y1="52" x2="120" y2="755" class="lifeline"/>
+  </g>
+  <g transform="translate(1035, 95)">
+    <rect width="220" height="52" class="obj-box"/><text x="110" y="33" class="obj-txt">Máy chủ API và CSDL</text>
+    <line x1="110" y1="52" x2="110" y2="755" class="lifeline"/>
+  </g>
+
+  <rect x="142" y="168" width="16" height="635" class="act"/>
+  <rect x="432" y="218" width="16" height="540" class="act"/>
+  <rect x="732" y="280" width="16" height="390" class="act"/>
+  <rect x="1137" y="180" width="16" height="620" class="act"/>
+
+  <line x1="158" y1="196" x2="1134" y2="196" class="msg"/>
+  <rect x="200" y="166" width="540" height="24" class="msg-bg"/>
+  <text x="205" y="184" class="msg-txt">1. Gọi /api/pomodoro/heartbeat để máy chủ lưu giờ bắt đầu ca học</text>
+
+  <line x1="158" y1="248" x2="429" y2="248" class="msg"/>
+  <text x="172" y="238" class="msg-txt">2. Bật chế độ học tập trung</text>
+
+  <line x1="448" y1="302" x2="729" y2="302" class="msg"/>
+  <text x="462" y="292" class="msg-txt">3. Chạy study_guard.exe</text>
+
+  <path d="M 748 328 L 792 328 L 792 368 L 751 368" class="msg"/>
+  <rect x="802" y="322" width="315" height="52" class="msg-bg"/>
+  <text x="806" y="342" class="msg-txt">4. Ẩn thanh tác vụ Windows và</text>
+  <text x="806" y="366" class="msg-txt">khóa các phím Win, Alt, F1–F24</text>
+
+  <line x1="732" y1="412" x2="451" y2="412" class="ret"/>
+  <text x="466" y="402" class="msg-txt">5. Báo sẵn sàng "GUARD_READY"</text>
+
+  <path d="M 448 438 L 482 438 L 482 478 L 451 478" class="msg"/>
+  <rect x="490" y="432" width="225" height="50" class="msg-bg"/>
+  <text x="494" y="452" class="msg-txt">6. Tạo lớp phủ màu đen</text>
+  <text x="494" y="476" class="msg-txt">chặn toàn bộ màn hình phụ</text>
+
+  <rect x="40" y="512" width="1240" height="218" class="alt-box"/>
+  <polygon points="40,512 585,512 568,546 40,546" class="alt-tag"/>
+  <text x="54" y="535" class="alt-txt">Trường hợp thoát ca (Ctrl+Q) hoặc phần mềm tắt đột ngột</text>
+
+  <line x1="448" y1="590" x2="729" y2="590" class="msg"/>
+  <rect x="456" y="560" width="265" height="24" class="msg-bg"/>
+  <text x="462" y="578" class="msg-txt">7. Phát tín hiệu dừng / mất tiến trình</text>
+
+  <path d="M 748 612 L 792 612 L 792 652 L 751 652" class="msg"/>
+  <rect x="802" y="606" width="315" height="50" class="msg-bg"/>
+  <text x="806" y="626" class="msg-txt">8. Khôi phục thanh tác vụ (&lt; 5ms)</text>
+  <text x="806" y="650" class="msg-txt">Hiện lại thanh Windows nguyên vẹn</text>
+
+  <line x1="432" y1="700" x2="161" y2="700" class="ret"/>
+  <rect x="172" y="670" width="248" height="24" class="msg-bg"/>
+  <text x="176" y="688" class="msg-txt">9. Đóng các màn hình phụ</text>
+
+  <line x1="158" y1="782" x2="1134" y2="782" class="msg"/>
+  <rect x="195" y="752" width="790" height="24" class="msg-bg"/>
+  <text x="200" y="770" class="msg-txt">10. Gọi /api/pomodoro/complete — Máy chủ đối chiếu thời gian thực trước khi cộng thưởng</text>
+</svg>
