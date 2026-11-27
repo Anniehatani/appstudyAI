@@ -1,5 +1,8 @@
 import { renderThoBayMau, generateThoBayMauSvg, THO_STATES, THO_METADATA } from "./tho-bay-mau.js";
 import { renderPomodoro, loadPomodoroData, pomodoroState, openPomodoroExitConfirm, openPomodoroLearnersList } from "./pomodoro.js";
+import { renderLatex, formatAiRichText, renderPlainWithMath } from "./math-renderer.js";
+window.renderLatex = renderLatex;
+window.formatAiRichText = formatAiRichText;
 window.openPomodoroLearnersList = openPomodoroLearnersList;
 window.renderThoBayMau = renderThoBayMau;
 window.generateThoBayMauSvg = generateThoBayMauSvg;
@@ -1453,7 +1456,10 @@ function renderNoteCard(note, index) {
   const styleJson = esc(JSON.stringify(parsedContent.style));
   const isEditing = note.id == null || state.editingNoteIds.has(noteKey);
   if (!isEditing) {
-    const contentHtml = noteBodyHtml(parsedContent).trim();
+    const contentHtml = (parsedContent.rich
+      ? noteBodyHtml(parsedContent)
+      : formatAiRichText(parsedContent.body, { variant: "chat" })
+    ).trim();
     const linkedLabel = linkedLesson
       ? `📌 ${esc(note.subject_name || "Môn học")} · ${esc(note.lesson_title || "Bài học")}`
       : `📓 ${esc(note.subject_name || "Ghi chú tự do")}`;
@@ -3157,7 +3163,9 @@ function renderMessengerMessageRow(m, isGroup) {
           <div class="msg-bubble">
             ${quoteHtml}
             ${mediaHtml}
-            ${m.message ? `<div style="white-space:pre-wrap;">${esc(m.message)}</div>` : ''}
+            ${m.message ? (isAi
+              ? `<div class="msg-ai-rich">${formatAiRichText(m.message, { variant: "chat" })}</div>`
+              : `<div style="white-space:pre-wrap;">${renderPlainWithMath(m.message, { variant: "chat" })}</div>`) : ''}
           </div>
           <button type="button" class="msg-reply-trigger-btn" onclick="setMessengerReply(${m.id}, '${safeSenderName}', '${safeSnippet}')" title="Trả lời tin nhắn này">
             ↩️
@@ -7945,44 +7953,7 @@ window.closeQuiz = function() {
 // FORMAT CHAT TEXT: MARKDOWN & MATH/LOGIC SYMBOLS
 // ========================================================
 function formatChatText(text) {
-  if (!text) return "";
-  let html = esc(text);
-
-  // Bold **...**
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="chat-strong">$1</strong>');
-  // Italic *...*
-  html = html.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
-
-  // Math & logic formulas: wrap in .math-token for crisp monospace & pink badge styling
-  html = html.replace(/(?:¬[pqr]|[pqr]\s*(?:→|↔|∧|∨)\s*[pqr]|NOT\s*\([^)]+\)|AND\s*\([^)]+\)|OR\s*\([^)]+\)|[pqr]\s*đúng\s*→\s*¬[pqr]\s*sai|[pqr]\s*đúng|[pqr]\s*sai)/gi, function(match) {
-    return '<span class="math-token">' + match + '</span>';
-  });
-
-  const lines = html.split("\n");
-  const result = [];
-
-  for (let line of lines) {
-    line = line.trim();
-    if (!line) continue;
-
-    // Numbered list items
-    const numMatch = line.match(/^(?:<strong[^>]*>)?(\d+)[\.\)](?:<\/strong>)?\s*(.*)$/);
-    if (numMatch) {
-      result.push('<div class="chat-list-row"><span class="chat-list-num">' + numMatch[1] + '.</span><div class="chat-list-content">' + numMatch[2] + '</div></div>');
-      continue;
-    }
-
-    // Bullet points
-    const bulletMatch = line.match(/^[-•*]\s+(.*)$/);
-    if (bulletMatch) {
-      result.push('<div class="chat-bullet-row"><span class="chat-bullet-dot">✦</span><div>' + bulletMatch[1] + '</div></div>');
-      continue;
-    }
-
-    result.push('<div class="chat-para">' + line + '</div>');
-  }
-
-  return result.join("");
+  return formatAiRichText(text, { variant: "chat" });
 }
 
 window.toggleChatDropdown = function(e) {
@@ -9482,105 +9453,13 @@ function formatAdvisorMarkdown(text) {
   if (!text) return "";
 
   // Loại bỏ các dòng rườm rà không cần thiết
-  let clean = text
+  const clean = text
     .replace(/^Kính gửi:[^\n]*\n?/gim, "")
     .replace(/^Chủ đề:[^\n]*\n?/gim, "")
     .replace(/^---\s*$/gm, "")
     .trim();
 
-  const rawLines = clean.split("\n");
-  const blocks = [];
-  let tableBuffer = [];
-
-  const flushTable = () => {
-    if (tableBuffer.length >= 2 && tableBuffer[1].includes("---")) {
-      const parseCells = (row) => row.split("|").slice(1, -1).map(c => c.trim());
-      const headerCells = parseCells(tableBuffer[0]);
-      const bodyRows = tableBuffer.slice(2);
-
-      let tableHtml = '<div class="advisor-table-wrap"><table class="advisor-markdown-table"><thead><tr>';
-      for (const h of headerCells) {
-        let fH = esc(h).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-        tableHtml += `<th>${fH}</th>`;
-      }
-      tableHtml += '</tr></thead><tbody>';
-      for (const b of bodyRows) {
-        const cells = parseCells(b);
-        tableHtml += '<tr>';
-        for (const c of cells) {
-          let fC = esc(c)
-            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-            .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
-          tableHtml += `<td>${fC}</td>`;
-        }
-        tableHtml += '</tr>';
-      }
-      tableHtml += '</tbody></table></div>';
-      blocks.push(tableHtml);
-    } else {
-      for (const line of tableBuffer) {
-        blocks.push('<p class="advisor-p">' + esc(line) + '</p>');
-      }
-    }
-    tableBuffer = [];
-  };
-
-  for (let line of rawLines) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith("|") && trimmed.endsWith("|")) {
-      tableBuffer.push(trimmed);
-      continue;
-    } else if (tableBuffer.length > 0) {
-      flushTable();
-    }
-
-    if (!trimmed) continue;
-
-    let formatted = esc(trimmed)
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
-
-    if (trimmed.startsWith("### ")) {
-      blocks.push('<h4 class="advisor-h3">' + formatted.slice(4) + '</h4>');
-      continue;
-    }
-    if (trimmed.startsWith("## ")) {
-      blocks.push('<h3 class="advisor-h2">' + formatted.slice(3) + '</h3>');
-      continue;
-    }
-    if (trimmed.startsWith("# ")) {
-      blocks.push('<h2 class="advisor-h1">' + formatted.slice(2) + '</h2>');
-      continue;
-    }
-
-    const numMatch = trimmed.match(/^(\d+)[\.\)]\s*(.*)$/);
-    if (numMatch) {
-      const content = esc(numMatch[2]).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-      blocks.push('<div class="advisor-list-item"><span class="advisor-num">' + numMatch[1] + '.</span><div>' + content + '</div></div>');
-      continue;
-    }
-
-    const bulletMatch = trimmed.match(/^[-•*]\s+(.*)$/);
-    if (bulletMatch) {
-      const content = esc(bulletMatch[1]).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-      blocks.push('<div class="advisor-bullet-item"><span class="advisor-bullet">💡</span><div>' + content + '</div></div>');
-      continue;
-    }
-
-    if (trimmed.startsWith("&gt; ") || trimmed.startsWith("> ")) {
-      const content = formatted.replace(/^(&gt;|>)\s*/, '');
-      blocks.push('<div class="advisor-callout">' + content + '</div>');
-      continue;
-    }
-
-    blocks.push('<p class="advisor-p">' + formatted + '</p>');
-  }
-
-  if (tableBuffer.length > 0) {
-    flushTable();
-  }
-
-  return blocks.join("");
+  return formatAiRichText(clean, { variant: "advisor" });
 }
 
 function deduplicateClientActiveCourses(courses, rawSubjects = []) {

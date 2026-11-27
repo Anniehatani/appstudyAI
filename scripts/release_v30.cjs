@@ -39,7 +39,9 @@ async function uploadAsset(uploadUrl, filePath, fileName, token) {
 }
 
 async function main() {
-  console.log("=== PHÁT HÀNH GITHUB RELEASE V30.0.0 — 3TG STUDY AI ===");
+  const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'));
+  const ver = pkg.version || '30.0.1';
+  console.log(`=== PHÁT HÀNH GITHUB RELEASE V${ver} — 3TG STUDY AI ===`);
 
   const token = getToken();
   if (!token) throw new Error("Không tìm thấy GitHub token từ git credential helper.");
@@ -53,35 +55,32 @@ async function main() {
     'User-Agent': 'Node-Fetch'
   };
 
-  const tagName = 'v30.0.0';
-  const releaseTitle = '3TG Study AI V30.0.0 — Bản Phát Hành Mới Nhất (Sửa lỗi AI Offline, Đồng bộ & Slide)';
-  const releaseBody = `## 🚀 3TG STUDY AI — PHIÊN BẢN MỚI NHẤT V30.0.0
+  const tagName = `v${ver}`;
+  const releaseTitle = `3TG Study AI V${ver} — Sửa lỗi hiển thị công thức toán KaTeX (Pomodoro & Trợ lý AI)`;
+  const releaseBody = `## 🚀 3TG STUDY AI — PHIÊN BẢN MỚI NHẤT V${ver}
 > **Đồ án môn học:** Công nghệ phần mềm (\`INFO2011\`) • **Trường Đại học CMC**  
 > **Nhóm thực hiện:** TONE PINK (Lê Văn An, Nguyễn Như Quỳnh, Nguyễn Văn Tú)
 
 ---
 
-### ✨ CÁC CẬP NHẬT QUAN TRỌNG TRONG V30.0.0
+### ✨ CÁC CẬP NHẬT QUAN TRỌNG TRONG V${ver}
 
-1. **🤖 Sửa triệt để lỗi AI bị rơi vào chế độ Ngoại tuyến (Offline) trên App Electron:**
-   - Tự động nhận diện đúng loại API Key (\`gsk_...\` cho Groq, tránh gọi nhầm sang endpoint DeepSeek gây lỗi xác thực 401).
-   - Bổ sung chữ ký bảo mật \`x-3tg-client-sig\` cho tính năng kiểm tra kết nối AI trong Cài đặt.
-   - Đảm bảo 3TG AI (văn bản lẫn dán ảnh đề bài \`Ctrl + V\`), Bot nhóm chat và Cố vấn AI hoạt động ổn định, phản hồi dưới \`0.3s\`.
-2. **🎓 Nâng cấp đồng bộ Cổng đào tạo IU & Giao diện Messenger / Mobile:**
-   - Hỗ trợ tự động nhận diện giao diện mới \`/sinhvien/congsinhvien\` của cổng trường IU trên Desktop Electron.
-   - Vá triệt để lỗi méo avatar nhóm học tập, sticker quá khổ, chuỗi Streak bạn bè nghỉ lâu ngày, tự động dừng video cũ tránh trộn âm thanh, trình phát nhạc \`!sing\` nhúng YouTube và đổi ảnh đại diện nhóm lưu lên Cloudflare R2.
-3. **🔒 Nâng cấp đóng gói & Bảo mật:**
-   - Loại bỏ tệp biến môi trường \`.\dev.vars\` khỏi gói đóng gói \`.asar\`, sử dụng cơ chế bảo vệ đa lớp an toàn.
-   - Bộ kiểm thử tự động toàn hệ thống \`scripts/test_sprint6_full_suite.cjs\`: **38/38 PASS (100%)**.
+1. **∑ Sửa triệt để lỗi hiển thị công thức toán học (LaTeX / KaTeX) trên toàn hệ thống:**
+   - Tích hợp **KaTeX engine + font toán chuẩn** (\`/vendor/katex/\`) qua module dùng chung \`public/math-renderer.js\`.
+   - Khắc phục hoàn toàn tình trạng hiển thị thô \`$...$\`, \`$$...$$\`, \`\\iint_D\`, \`\\Rightarrow\`, \`\\frac\`, \`\\int_{-1}^{1}\` trong cả **Trợ lý 3TG AI bên ngoài**, **AI trong Phòng Pomodoro**, **Cố vấn học tập AI**, **Bot 3TG trong Messenger** và **Sổ tay ghi chú**.
+   - Định dạng đẹp khối bước giải (\`>> Bước 1\`), callout trích dẫn (\`>\`), đường kẻ (\`---\`), bảng biểu và code block; vẫn giữ nguyên văn bản tiền tệ (ví dụ \`$50 và $100\`).
+2. **🤖 Giữ nguyên toàn bộ nâng cấp từ V30.0.0:**
+   - Sửa lỗi AI rơi về chế độ Ngoại tuyến trên Desktop Electron, đồng bộ Cổng đào tạo IU, giao diện Messenger & tối ưu đóng gói an toàn.
+   - Bộ kiểm thử tự động \`scripts/test_sprint6_full_suite.cjs\`: **38/38 PASS (100%)**.
 
 ---
 
 ### 📦 TỆP CÀI ĐẶT WINDOWS (64-BIT)
 
-| Tệp tải về | Loại bản | Dung lượng | Ghi chú |
-| :--- | :---: | :---: | :--- |
-| **\`3TG Học Vui Mỗi Ngày 30.0.0.exe\`** | Portable | ~111.7 MB | **(Khuyên dùng)** Chạy trực tiếp ngay không cần cài đặt |
-| **\`3TG Học Vui Mỗi Ngày Setup 30.0.0.exe\`** | Installer | ~112.1 MB | Bộ cài đặt chuẩn Windows tạo shortcut Desktop & Start Menu |`;
+| Tệp tải về | Loại bản | Ghi chú |
+| :--- | :---: | :--- |
+| **\`3TG Học Vui Mỗi Ngày ${ver}.exe\`** | Portable | **(Khuyên dùng)** Chạy trực tiếp ngay không cần cài đặt |
+| **\`3TG Học Vui Mỗi Ngày Setup ${ver}.exe\`** | Installer | Bộ cài đặt chuẩn Windows tạo shortcut Desktop & Start Menu |`;
 
   let release = null;
   try {
@@ -119,8 +118,8 @@ async function main() {
   }
 
   const assetsToUpload = [
-    { path: path.resolve('dist-electron/3TG Học Vui Mỗi Ngày 30.0.0.exe'), name: '3TG Học Vui Mỗi Ngày 30.0.0.exe' },
-    { path: path.resolve('dist-electron/3TG Học Vui Mỗi Ngày Setup 30.0.0.exe'), name: '3TG Học Vui Mỗi Ngày Setup 30.0.0.exe' },
+    { path: path.resolve(`dist-electron/3TG Học Vui Mỗi Ngày ${ver}.exe`), name: `3TG Học Vui Mỗi Ngày ${ver}.exe` },
+    { path: path.resolve(`dist-electron/3TG Học Vui Mỗi Ngày Setup ${ver}.exe`), name: `3TG Học Vui Mỗi Ngày Setup ${ver}.exe` },
     { path: path.resolve('dist-electron/latest.yml'), name: 'latest.yml' }
   ];
 
@@ -144,7 +143,7 @@ async function main() {
     }
   }
 
-  console.log("\n🎉 HOÀN THÀNH PHÁT HÀNH GITHUB RELEASE V30.0.0!");
+  console.log(`\n🎉 HOÀN THÀNH PHÁT HÀNH GITHUB RELEASE V${ver}!`);
   console.log(`🔗 Link Release: ${release.html_url}`);
 }
 

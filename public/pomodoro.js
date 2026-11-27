@@ -18,6 +18,7 @@
 
 import { renderThoBayMau, THO_STATES } from "./tho-bay-mau.js";
 import { syncPomodoroCalculatorVisibility } from "./pomodoro-calculator.js";
+import { renderLatex, formatAiRichText, formatInlineRichText, renderPlainWithMath } from "./math-renderer.js";
 
 // Safe API caller helper (Guaranteed no window.api error)
 async function callApi(path, options = {}) {
@@ -1077,188 +1078,16 @@ export function renderPomodoroLearnersModal() {
 // 5.5 MATH FORMULA & AI TEXT FORMATTERS
 // ========================================================
 
-export function renderMathFormula(latex) {
-  if (!latex) return "";
-  let s = String(latex).trim();
-
-  // Strip brackets wrapper \left / \right
-  s = s.replace(/\\left\s*([(\[{|])/g, "$1").replace(/\\right\s*([)\]}|])/g, "$1");
-
-  // Handle \frac{numerator}{denominator}
-  let prev;
-  do {
-    prev = s;
-    s = s.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, (match, num, den) => {
-      return `<span class="math-frac"><span class="frac-num">${renderMathFormula(num)}</span><span class="frac-den">${renderMathFormula(den)}</span></span>`;
-    });
-  } while (s !== prev);
-
-  // Partial derivative \partial -> ∂
-  s = s.replace(/\\partial/g, "∂");
-
-  // Limits: \lim_{(x,y) \to (a,b)} -> lim<sub>(x,y) → (a,b)</sub>
-  s = s.replace(/\\lim_\s*\{([^{}]+)\}/g, "lim<sub>$1</sub>");
-  s = s.replace(/\\lim/g, "lim");
-
-  // Arrows & symbols
-  s = s.replace(/\\to\b/g, " → ");
-  s = s.replace(/\\rightarrow\b/g, " → ");
-  s = s.replace(/\\leftarrow\b/g, " ← ");
-  s = s.replace(/\\infty\b/g, "∞");
-  s = s.replace(/\\(ne|neq)\b/g, " ≠ ");
-  s = s.replace(/\\(le|leq)\b/g, " ≤ ");
-  s = s.replace(/\\(ge|geq)\b/g, " ≥ ");
-  s = s.replace(/\\pm\b/g, " ± ");
-  s = s.replace(/\\times\b/g, " × ");
-  s = s.replace(/\\cdot\b/g, " · ");
-  s = s.replace(/\\approx\b/g, " ≈ ");
-  s = s.replace(/\\int\b/g, " ∫ ");
-  s = s.replace(/\\iint\b/g, " ∬ ");
-  s = s.replace(/\\sum\b/g, " ∑ ");
-  s = s.replace(/\\prod\b/g, " ∏ ");
-  s = s.replace(/\\sqrt\s*\{([^{}]+)\}/g, "√<span style=\"text-decoration:overline;\">$1</span>");
-
-  // Greek letters
-  s = s.replace(/\\alpha\b/g, "α")
-       .replace(/\\beta\b/g, "β")
-       .replace(/\\gamma\b/g, "γ")
-       .replace(/\\delta\b/g, "δ")
-       .replace(/\\Delta\b/g, "Δ")
-       .replace(/\\theta\b/g, "θ")
-       .replace(/\\lambda\b/g, "λ")
-       .replace(/\\pi\b/g, "π")
-       .replace(/\\sigma\b/g, "σ")
-       .replace(/\\omega\b/g, "ω")
-       .replace(/\\mu\b/g, "μ");
-
-  // Clean math functions: \sin, \cos, \tan, \ln, \log
-  s = s.replace(/\\(sin|cos|tan|cot|ln|log|exp)\b/g, "$1");
-
-  // Superscripts & Subscripts: x^{2} or x^2, x_{1} or x_1
-  s = s.replace(/\^\s*\{([^{}]+)\}/g, "<sup>$1</sup>");
-  s = s.replace(/\^([0-9a-zA-Z+-]+)/g, "<sup>$1</sup>");
-  s = s.replace(/_\s*\{([^{}]+)\}/g, "<sub>$1</sub>");
-  s = s.replace(/_([0-9a-zA-Z+-]+)/g, "<sub>$1</sub>");
-
-  // Strip remaining solitary backslashes
-  s = s.replace(/\\([a-zA-Z]+)/g, "$1");
-
-  return s;
+export function renderMathFormula(latex, displayMode = false) {
+  return renderLatex(latex, displayMode);
 }
 
 export function formatInlineMarkdown(text) {
-  if (!text) return "";
-  let s = safeEsc(text);
-
-  // Inline Math: \( ... \) or $ ... $
-  s = s.replace(/\\\(\s*([\s\S]*?)\s*\\\)/g, (match, formula) => {
-    return `<span class="pomo-math-inline">${renderMathFormula(formula)}</span>`;
-  });
-  s = s.replace(/\$([^\$\n]+)\$/g, (match, formula) => {
-    return `<span class="pomo-math-inline">${renderMathFormula(formula)}</span>`;
-  });
-
-  // Bold: **text**
-  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong class="pomo-ai-strong">$1</strong>');
-
-  // Italic: *text*
-  s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-  // Inline code: `code`
-  s = s.replace(/`([^`]+)`/g, '<code class="pomo-ai-code">$1</code>');
-
-  return s;
+  return formatInlineRichText(text, { variant: "pomo" });
 }
 
 export function formatPomodoroAiText(raw) {
-  if (!raw) return "";
-
-  // 1. Extract and preserve Block Math: \[ ... \] or $$ ... $$
-  const mathBlocks = [];
-  let text = String(raw).replace(/\\\[\s*([\s\S]*?)\s*\\\]/g, (match, code) => {
-    const idx = mathBlocks.length;
-    mathBlocks.push(renderMathFormula(code));
-    return `___MATH_BLOCK_${idx}___`;
-  });
-  text = text.replace(/\$\$\s*([\s\S]*?)\s*\$\$/g, (match, code) => {
-    const idx = mathBlocks.length;
-    mathBlocks.push(renderMathFormula(code));
-    return `___MATH_BLOCK_${idx}___`;
-  });
-
-  // 2. Pre-process ">>" step delimiters into clean newlines so steps aren't clumped
-  text = text.replace(/>>\s*/g, "\n\n>> ");
-
-  // 3. Split into lines / blocks
-  const lines = text.split("\n");
-  const htmlParts = [];
-  let currentList = null;
-
-  const flushList = () => {
-    if (currentList) {
-      htmlParts.push(`<ul class="pomo-ai-bullet-list">${currentList.join("")}</ul>`);
-      currentList = null;
-    }
-  };
-
-  for (let line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      flushList();
-      continue;
-    }
-
-    // Step Block (e.g., ">> **Bước 1** ...", "**Bước 1**:", "Bước 1:")
-    if (trimmed.startsWith(">>") || /^\*\*(Bước|Cách|Ví dụ|Mẹo nhớ)\s*[\d]*\*\*/i.test(trimmed) || /^(Bước|Cách)\s+\d+:/i.test(trimmed)) {
-      flushList();
-      const content = trimmed.replace(/^>>\s*/, "");
-      htmlParts.push(`<div class="pomo-ai-step-block">${formatInlineMarkdown(content)}</div>`);
-      continue;
-    }
-
-    // Callout quote: starts with ">"
-    if (trimmed.startsWith(">")) {
-      flushList();
-      const calloutContent = trimmed.replace(/^>\s*/, "");
-      htmlParts.push(`<div class="pomo-ai-callout">${formatInlineMarkdown(calloutContent)}</div>`);
-      continue;
-    }
-
-    // Bullet item (* or -)
-    if (/^[*\-•]\s+/.test(trimmed)) {
-      if (!currentList) currentList = [];
-      const itemText = trimmed.replace(/^[*\-•]\s+/, "");
-      currentList.push(`<li>${formatInlineMarkdown(itemText)}</li>`);
-      continue;
-    }
-
-    // Numbered list item (1. or 2.)
-    const numMatch = trimmed.match(/^(\d+)[.)]\s+(.*)$/);
-    if (numMatch) {
-      flushList();
-      htmlParts.push(`
-        <div class="pomo-ai-list-row">
-          <span class="pomo-ai-list-num">${numMatch[1]}.</span>
-          <span class="pomo-ai-list-body">${formatInlineMarkdown(numMatch[2])}</span>
-        </div>
-      `);
-      continue;
-    }
-
-    // Regular paragraph
-    flushList();
-    htmlParts.push(`<p class="pomo-ai-para">${formatInlineMarkdown(trimmed)}</p>`);
-  }
-  flushList();
-
-  let finalHtml = htmlParts.join("");
-
-  // Restore Math Blocks
-  mathBlocks.forEach((renderedMath, i) => {
-    finalHtml = finalHtml.replace(`___MATH_BLOCK_${i}___`, `<div class="pomo-math-block">${renderedMath}</div>`);
-  });
-
-  return finalHtml;
+  return formatAiRichText(raw, { variant: "pomo" });
 }
 
 export function formatOfficeTextToHtml(rawText) {
@@ -2251,7 +2080,7 @@ export async function askPomodoroAi(customPrompt = null) {
 
   const formattingSystemRule = `\n\n[HƯỚNG DẪN ĐỊNH DẠNG CỦA BOT 3TG]:
 1. Tuyệt đối KHÔNG viết thành 1 khối văn bản dính liền! Chia bài giải thành các bước rõ ràng: ">> **Bước 1**:", ">> **Bước 2**:", ">> **Mẹo nhớ**:".
-2. Công thức toán học dùng cú pháp LaTeX: ví dụ đạo hàm riêng \\frac{\\partial f}{\\partial x}, phân số \\frac{a}{b}, giới hạn \\lim_{x \\to 0}, số mũ x^2.
+2. Mọi công thức toán học BẮT BUỘC dùng LaTeX đặt trong $...$ (cùng dòng) hoặc $$...$$ (đứng riêng một dòng), ví dụ: $\\frac{\\partial f}{\\partial x}$, $\\iint_D 6(x+2y)\\,dA$, $$\\int_{-1}^{1} f(x)\\,dx$$.
 3. Giải thích súc tích, dễ nhớ cho sinh viên ôn thi.`;
 
   try {
@@ -2323,7 +2152,7 @@ function renderPomodoroAiMessages() {
       <div class="pomo-ai-avatar">${m.sender === "bot" ? "🐰" : "👤"}</div>
       <div class="pomo-ai-text">
         ${m.image ? `<img src="${m.image}" class="pomo-ai-chat-bubble-image" onclick="window.open(this.src)" title="Bấm để xem ảnh gốc" />` : ''}
-        ${m.sender === "bot" ? formatPomodoroAiText(m.text) : safeEsc(m.text)}
+        ${m.sender === "bot" ? formatPomodoroAiText(m.text) : renderPlainWithMath(m.text, { variant: "pomo" })}
         ${m.sender === "bot" ? `
           <button type="button" class="pomo-ai-save-btn" onclick="window.savePomoAiToNotes('${encodeURIComponent(m.text)}')">
             💾 Lưu vào Sổ tay
@@ -3040,7 +2869,7 @@ function renderPomodoroActiveRoom() {
               <div class="pomo-ai-bubble ${m.sender}">
                 <div class="pomo-ai-avatar">${m.sender === "bot" ? "🐰" : "👤"}</div>
                 <div class="pomo-ai-text">
-                  ${m.sender === "bot" ? formatPomodoroAiText(m.text) : safeEsc(m.text)}
+                  ${m.sender === "bot" ? formatPomodoroAiText(m.text) : renderPlainWithMath(m.text, { variant: "pomo" })}
                   ${m.sender === "bot" ? `
                     <button type="button" class="pomo-ai-save-btn" onclick="window.savePomoAiToNotes('${encodeURIComponent(m.text)}')">
                       💾 Lưu vào Sổ tay

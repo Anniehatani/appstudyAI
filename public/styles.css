@@ -17000,4 +17000,168 @@ html[data-theme="dark"].low-spec-device .pomo-floating-calc-wrap {
   }
 }
 
+/* ========================================================
+   KATEX MATH & RICH AI MARKDOWN FORMATTING
+   ======================================================== */
+.ai-math-block {
+  background: rgba(255, 240, 246, 0.55);
+  border: 1.5px solid var(--lumi-pink-border, #ffccd9);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 10px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  text-align: center;
+  color: var(--ink-900, #1e1b24);
+}
+.ai-math-block .katex-display {
+  margin: 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.ai-math-inline {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 1px 4px;
+  border-radius: 6px;
+  background: rgba(255, 75, 130, 0.08);
+  color: var(--ink-900, #1e1b24);
+  margin: 0 1px;
+}
+.chat-bubble.user .ai-math-block {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+}
+.chat-bubble.user .ai-math-inline {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+.chat-bubble.user .katex {
+  color: #ffffff;
+}
+
+.chat-step-block {
+  background: rgba(255, 245, 249, 0.85);
+  border: 1.5px solid var(--lumi-pink-border, #ffccd9);
+  border-left: 4px solid var(--lumi-pink, #ff4b82);
+  border-radius: 10px;
+  padding: 8px 13px;
+  margin: 10px 0 8px;
+}
+.chat-callout {
+  border-left: 3.5px solid var(--lumi-pink, #ff4b82);
+  background: rgba(255, 75, 130, 0.07);
+  padding: 8px 12px;
+  border-radius: 0 10px 10px 0;
+  margin: 8px 0;
+  line-height: 1.6;
+}
+.chat-hr {
+  border: none;
+  border-top: 1.5px dashed rgba(148, 163, 184, 0.45);
+  margin: 12px 0;
+}
+.chat-heading {
+  font-weight: 900;
+  color: #b8144b;
+  margin: 12px 0 6px;
+  line-height: 1.35;
+}
+.chat-heading-1 { font-size: 17px; }
+.chat-heading-2 { font-size: 16px; }
+.chat-heading-3 { font-size: 15px; }
+
+.chat-inline-code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  background: rgba(255, 75, 130, 0.09);
+  color: #b8144b;
+  padding: 1px 6px;
+  border-radius: 5px;
+}
+.chat-code-block {
+  background: #141824;
+  color: #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.chat-code-lang {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  margin-bottom: 4px;
+  font-weight: 800;
+}
+
+/* Override KaTeX inside Pomodoro narrow dock & ensure proper scroll instead of overflow */
+.pomo-ai-text .pomo-math-block .katex-display {
+  margin: 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.pomo-ai-text .pomo-math-inline {
+  white-space: normal;
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 100%;
+  overflow-x: auto;
+  color: var(--ink-900, #1e1b24);
+}
+.pomo-ai-bubble.user .pomo-math-inline,
+.pomo-ai-bubble.user .katex {
+  color: #ffffff;
+}
+
+.msg-ai-rich .chat-para {
+  margin: 0 0 6px 0;
+}
+.msg-ai-rich .chat-para:last-child {
+  margin-bottom: 0;
+}
+
+[data-theme="dark"] .ai-math-block {
+  background: #1a2133;
+  border-color: #334155;
+  color: #f8fafc;
+}
+[data-theme="dark"] .ai-math-inline {
+  background: rgba(255, 75, 130, 0.16);
+  color: #f8fafc;
+}
+[data-theme="dark"] .chat-step-block {
+  background: #1a2133;
+  border-color: #334155;
+  border-left-color: var(--lumi-pink, #ff4b82);
+}
+[data-theme="dark"] .chat-callout {
+  background: rgba(255, 75, 130, 0.12);
+}
+[data-theme="dark"] .chat-heading {
+  color: #ff85b3;
+}
+[data-theme="dark"] .chat-inline-code {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fda4af;
+}
+[data-theme="dark"] .pomo-ai-text .pomo-math-block,
+[data-theme="dark"] .pomo-ai-text .pomo-math-inline {
+  color: #f8fafc;
+}
+[data-theme="dark"] .pomo-ai-text .pomo-ai-step-block {
+  background: #141926;
+  border-color: #2d3748;
+  border-left-color: var(--theme-accent, #ff4b82);
+}
+
+
 
