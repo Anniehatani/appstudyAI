@@ -1982,9 +1982,8 @@ async function getUserPublicProfile(targetUserId, currentUser, env) {
   ).bind(targetUserId).first();
   if (!profile) throw new HttpError(404, "Không tìm thấy hồ sơ học viên này.");
 
-  const stats = await env.DB.prepare(
-    "SELECT total_xp, current_streak, longest_streak, hearts, gems, last_active_date FROM user_stats WHERE user_id = ? LIMIT 1"
-  ).bind(targetUserId).first() || { total_xp: 0, current_streak: 0, longest_streak: 0, hearts: 5, gems: 0 };
+  const today = vietDate();
+  const stats = await evaluateUserStreak(targetUserId, env.DB, today);
 
   const weekStart = mondayDate(vietDate());
   const lb = await env.DB.prepare(
@@ -2120,13 +2119,16 @@ async function getFriendRequests(currentUser, env) {
 }
 
 async function getFriendsList(currentUser, env) {
+  const today = vietDate();
+  const yesterday = shiftDate(today, -1);
   const query = 
     "SELECT " +
       "CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END AS friend_user_id, " +
       "f.created_at AS friendship_date, " +
       "COALESCE(p.full_name, a.username, 'Học viên 3TG') AS full_name, " +
       "p.avatar_url, p.avatar_decoration, p.cover_url, p.school, p.major, p.last_active_at, p.status_icon, a.username, " +
-      "COALESCE(s.total_xp, 0) AS total_xp, COALESCE(s.current_streak, 0) AS current_streak, " +
+      "COALESCE(s.total_xp, 0) AS total_xp, " +
+      "CASE WHEN s.last_active_date IS NULL OR s.last_active_date < ? THEN 0 ELSE COALESCE(s.current_streak, 0) END AS current_streak, " +
       "COALESCE(w.league_name, 'Bronze') AS league_name " +
     "FROM friendships f " +
     "JOIN profiles p ON p.user_id = (CASE WHEN f.user_id = ? THEN f.friend_id ELSE f.user_id END) " +
@@ -2137,7 +2139,13 @@ async function getFriendsList(currentUser, env) {
     "GROUP BY friend_user_id " +
     "ORDER BY s.total_xp DESC";
 
-  const res = await env.DB.prepare(query).bind(currentUser.userId, currentUser.userId, currentUser.userId, currentUser.userId).all();
+  const res = await env.DB.prepare(query).bind(
+    currentUser.userId,
+    yesterday,
+    currentUser.userId,
+    currentUser.userId,
+    currentUser.userId
+  ).all();
   return { friends: res.results || [] };
 }
 
@@ -2509,9 +2517,13 @@ async function getGroupDetailsAndMessages(groupId, currentUser, env) {
 }
 
 async function callGroupAiBot(prompt, currentUser, contextText, env) {
-  const apiKey = env.DEEPSEEK_API_KEY || env.LOCAL_AI_API_KEY;
-  const endpoint = env.LOCAL_AI_ENDPOINT || "https://api.deepseek.com/chat/completions";
-  const model = env.DEEPSEEK_MODEL || env.LOCAL_AI_MODEL || "deepseek-chat";
+  let apiKey = env.GROQ_API_KEY || env.DEEPSEEK_API_KEY || env.LOCAL_AI_API_KEY || getGroqDefaultKey();
+  let endpoint = env.LOCAL_AI_ENDPOINT || (apiKey.startsWith("gsk_") ? "https://api.groq.com/openai/v1/chat/completions" : "https://api.deepseek.com/chat/completions");
+  let model = env.GROQ_MODEL || env.DEEPSEEK_MODEL || env.LOCAL_AI_MODEL || (apiKey.startsWith("gsk_") ? "openai/gpt-oss-120b" : "deepseek-chat");
+  if (apiKey.startsWith("gsk_")) {
+    endpoint = "https://api.groq.com/openai/v1/chat/completions";
+    if (!model || model === "deepseek-chat") model = "openai/gpt-oss-120b";
+  }
 
   const systemInstruction = 
     "Bạn là 3TG AI - một trợ lý AI thông minh, siêu hài hước, thân thiện, tâm lý và đa tài trong nhóm chat 3TG Messenger. " +
@@ -2858,6 +2870,47 @@ async function toggleGroupBot(request, groupId, currentUser, env) {
   }
 }
 
+async function uploadGroupAvatar(request, groupId, currentUser, env) {
+  const member = await env.DB.prepare(
+    "SELECT role FROM chat_group_members WHERE group_id = ? AND user_id = ? LIMIT 1"
+  ).bind(groupId, currentUser.userId).first();
+  if (!member) throw new HttpError(403, "Bạn không phải thành viên của nhóm này.");
+
+  let form;
+  try {
+    form = await request.formData();
+  } catch {
+    throw new HttpError(400, "Không đọc được ảnh tải lên.");
+  }
+  const file = form.get("avatar");
+  if (!file || typeof file.arrayBuffer !== "function") throw new HttpError(400, "Chọn ảnh đại diện nhóm trước khi tải lên.");
+  if (file.size > 6 * 1024 * 1024) throw new HttpError(413, "Ảnh đại diện nhóm cần nhỏ hơn 6 MB.");
+  
+  const extensions = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
+  const extension = extensions[file.type] || "jpg";
+  const imageBytes = new Uint8Array(await file.arrayBuffer());
+
+  let avatarUrl = "";
+  if (env.AVATARS) {
+    const key = `avatars/groups/${groupId}/${crypto.randomUUID()}.${extension}`;
+    await env.AVATARS.put(key, imageBytes, {
+      httpMetadata: { contentType: file.type || "image/jpeg", cacheControl: "public, max-age=31536000, immutable" }
+    });
+    avatarUrl = `/media/${key}`;
+  } else {
+    let binary = "";
+    const len = imageBytes.byteLength;
+    for (let i = 0; i < len; i++) binary += String.fromCharCode(imageBytes[i]);
+    avatarUrl = `data:${file.type};base64,${btoa(binary)}`;
+  }
+
+  await env.DB.prepare(
+    "UPDATE chat_groups SET avatar_url = ? WHERE id = ?"
+  ).bind(avatarUrl, groupId).run();
+
+  return { ok: true, avatar_url: avatarUrl };
+}
+
 async function handleChatUpload(request, user, env) {
   let fileName = "attachment";
   let fileType = "application/octet-stream";
@@ -3141,8 +3194,10 @@ async function askAI(request, user, env) {
   }
   const userCustomKey = (body.apiKey && String(body.apiKey).trim()) || (body.customApiKey && String(body.customApiKey).trim());
   const userCustomBaseUrl = (body.baseUrl && String(body.baseUrl).trim()) || (body.customBaseUrl && String(body.customBaseUrl).trim()) || (env.CUSTOM_AI_BASE_URL && String(env.CUSTOM_AI_BASE_URL).trim());
-  const deepseekKey = userCustomKey || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || getDeepseekDefaultKey();
-  const groqKey = env.GROQ_API_KEY || getGroqDefaultKey();
+  const rawPrimaryKey = userCustomKey || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || "";
+  const isPrimaryGroqKey = rawPrimaryKey.startsWith("gsk_");
+  const deepseekKey = isPrimaryGroqKey ? "" : (rawPrimaryKey || getDeepseekDefaultKey());
+  const groqKey = (userCustomKey && userCustomKey.startsWith("gsk_") ? userCustomKey : "") || env.GROQ_API_KEY || (isPrimaryGroqKey ? rawPrimaryKey : "") || getGroqDefaultKey();
 
   const freeMode = body.freeMode === true;
   let courseTitle = "";
@@ -3168,9 +3223,9 @@ async function askAI(request, user, env) {
   let primarySuccess = false;
 
   // ========================================================
-  // BƯỚC 1: Ưu tiên gọi API DeepSeek / Anthropic / Custom Proxy
+  // BƯỚC 1: Chỉ gọi DeepSeek / Anthropic / Custom Proxy khi KHÔNG phải key Groq và không ép dùng Groq endpoint
   // ========================================================
-  if (deepseekKey) {
+  if (deepseekKey && (!env.LOCAL_AI_ENDPOINT || !env.LOCAL_AI_ENDPOINT.includes("api.groq.com") || userCustomBaseUrl)) {
     try {
       let primaryEndpoint = "https://api.deepseek.com/chat/completions";
       let primaryHeaders = {
@@ -4107,6 +4162,8 @@ async function routeApi(request, env) {
   if (groupTransferMatch && method === "POST") return respond(await transferGroupOwnership(request, groupTransferMatch[1], user, env));
   const groupBotMatch = path.match(/^\/api\/groups\/([a-zA-Z0-9_-]+)\/bot$/);
   if (groupBotMatch && method === "POST") return respond(await toggleGroupBot(request, groupBotMatch[1], user, env));
+  const groupAvatarMatch = path.match(/^\/api\/groups\/([a-zA-Z0-9_-]+)\/avatar$/);
+  if (groupAvatarMatch && method === "POST") return respond(await uploadGroupAvatar(request, groupAvatarMatch[1], user, env));
 
   if (path === "/api/chat/upload" && method === "POST") return respond(await handleChatUpload(request, user, env));
   if (path === "/api/chat/notifications" && method === "GET") return respond(await getChatNotifications(user, env));

@@ -650,6 +650,12 @@ ipcMain.handle("academic:open-iu-login", async () => {
     console.log(`[IU Bridge] Đã bắt thành công ${jar.count} cookies: ${Object.keys(jar.map).join(", ")}`);
 
     const win = iu.getIuWindow();
+    if (win && !win.isDestroyed()) {
+      const curUrl = win.webContents.getURL() || "";
+      if (!curUrl.includes("/congthongtin/Index.aspx")) {
+        await win.loadURL("https://iu.cmcu.edu.vn/congthongtin/Index.aspx").catch(() => {});
+      }
+    }
     const session = win ? await iu.laySession(win) : null;
     if (!session || !session.userId) {
       return { ok: false, message: "Không thể đọc thông tin người dùng từ cổng IU." };

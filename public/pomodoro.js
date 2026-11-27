@@ -433,6 +433,16 @@ export const pomodoroState = {
   pastedImage: null,
   isAskingAi: false,
   showExitModal: false,
+  mobileTab: "clock", // clock | docs | note | ai
+  webFocusInterrupted: false,
+  webFocusWarnings: 0,
+  webDisqualified: false,
+  builtinNote: {
+    id: "",
+    title: "Ghi chú nhanh Pomodoro",
+    paper: "lined",
+    text: ""
+  },
   showCelebrationModal: false,
   showPlaylistDropdown: false,
   playlistSearch: "",
@@ -466,8 +476,116 @@ function getRandomQuote(mode) {
 }
 
 // ========================================================
-// 3. FULLSCREEN & FOCUS KIOSK MODE CHỐNG XAO NHÃNG
+// 3. FULLSCREEN & FOCUS KIOSK MODE CHỐNG XAO NHÃNG (DESKTOP + WEB)
 // ========================================================
+let _webWakeLock = null;
+let _webFocusHandlersBound = false;
+
+function triggerWebFocusViolation(reason) {
+  if (!pomodoroState.active || window.electronAPI) return;
+  if (pomodoroState.mode !== "focus" || pomodoroState.showExitModal) return;
+
+  // Dừng đồng hồ ngay lập tức và hủy thưởng ca hiện tại
+  pomodoroState.isPaused = true;
+  pomodoroState.webDisqualified = true;
+
+  if (!pomodoroState.webFocusInterrupted) {
+    pomodoroState.webFocusWarnings += 1;
+  }
+  pomodoroState.webFocusInterrupted = true;
+  updatePomodoroDisplayInDom();
+
+  const overlay = document.getElementById("pomo-web-lock-overlay");
+  if (overlay) {
+    overlay.style.display = "flex";
+    const countEl = document.getElementById("pomo-web-lock-warn-count");
+    if (countEl) countEl.textContent = String(pomodoroState.webFocusWarnings);
+  }
+  if (window.showToast) {
+    window.showToast(reason || "⛔ Đã thoát toàn màn hình! Đồng hồ đã dừng và không tính thưởng ca này.", true);
+  }
+}
+
+function onWebFullscreenChange() {
+  if (!pomodoroState.active || window.electronAPI) return;
+  if (!document.fullscreenElement && pomodoroState.mode === "focus" && !pomodoroState.showExitModal) {
+    triggerWebFocusViolation("⛔ Bạn vừa thoát chế độ toàn màn hình! Đồng hồ đã dừng và hủy thưởng ca này.");
+  }
+}
+
+function onWebVisibilityChange() {
+  if (!pomodoroState.active || window.electronAPI) return;
+  if (document.hidden && pomodoroState.mode === "focus" && !pomodoroState.showExitModal) {
+    triggerWebFocusViolation("⛔ Bạn vừa rời tab học tập! Đồng hồ đã dừng và hủy thưởng ca này.");
+  }
+}
+
+function onWebBeforeUnload(e) {
+  if (pomodoroState.active && pomodoroState.mode === "focus") {
+    e.preventDefault();
+    e.returnValue = "Bạn đang trong ca học Pomodoro. Rời trang sẽ mất tiến độ ca học!";
+    return e.returnValue;
+  }
+}
+
+function onWebContextMenu(e) {
+  if (!pomodoroState.active || window.electronAPI) return;
+  const tag = (e.target && e.target.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea" || e.target?.isContentEditable) return;
+  e.preventDefault();
+}
+
+async function activateWebFocusLock() {
+  pomodoroState.webFocusInterrupted = false;
+  if (!_webFocusHandlersBound && typeof document !== "undefined") {
+    _webFocusHandlersBound = true;
+    document.addEventListener("fullscreenchange", onWebFullscreenChange);
+    document.addEventListener("visibilitychange", onWebVisibilityChange);
+    window.addEventListener("beforeunload", onWebBeforeUnload);
+    document.addEventListener("contextmenu", onWebContextMenu);
+  }
+  try {
+    if (navigator.wakeLock && navigator.wakeLock.request) {
+      _webWakeLock = await navigator.wakeLock.request("screen");
+    }
+  } catch {}
+}
+
+function deactivateWebFocusLock() {
+  pomodoroState.webFocusInterrupted = false;
+  pomodoroState.webFocusWarnings = 0;
+  pomodoroState.webDisqualified = false;
+  if (_webFocusHandlersBound && typeof document !== "undefined") {
+    _webFocusHandlersBound = false;
+    document.removeEventListener("fullscreenchange", onWebFullscreenChange);
+    document.removeEventListener("visibilitychange", onWebVisibilityChange);
+    window.removeEventListener("beforeunload", onWebBeforeUnload);
+    document.removeEventListener("contextmenu", onWebContextMenu);
+  }
+  try {
+    if (_webWakeLock) {
+      _webWakeLock.release().catch(() => {});
+      _webWakeLock = null;
+    }
+  } catch {}
+}
+
+export async function resumeWebFocusLock() {
+  pomodoroState.webFocusInterrupted = false;
+  pomodoroState.isPaused = false;
+  updatePomodoroDisplayInDom();
+  const overlay = document.getElementById("pomo-web-lock-overlay");
+  if (overlay) overlay.style.display = "none";
+  try {
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen().catch(() => {});
+    }
+    if (navigator.wakeLock && navigator.wakeLock.request && !_webWakeLock) {
+      _webWakeLock = await navigator.wakeLock.request("screen");
+    }
+  } catch {}
+}
+
 export async function enterPomodoroKiosk() {
   window._isPomodoroActive = true;
 
@@ -476,8 +594,11 @@ export async function enterPomodoroKiosk() {
       await window.electronAPI.setKiosk(true);
     } else if (window.electronAPI && typeof window.electronAPI.setFullscreen === "function") {
       await window.electronAPI.setFullscreen(true);
-    } else if (document.documentElement.requestFullscreen) {
-      await document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      await activateWebFocusLock();
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen().catch(() => {});
+      }
     }
   } catch {}
 
@@ -486,6 +607,7 @@ export async function enterPomodoroKiosk() {
 
 export async function exitPomodoroKiosk() {
   window._isPomodoroActive = false;
+  deactivateWebFocusLock();
 
   try {
     if (window.electronAPI && typeof window.electronAPI.setKiosk === "function") {
@@ -577,6 +699,9 @@ if (typeof window !== "undefined") {
     if (/^F\d+$/i.test(e.key)) {
       e.preventDefault();
       e.stopPropagation();
+      if (!window.electronAPI && e.key.toUpperCase() === "F11") {
+        triggerWebFocusViolation("⛔ Bạn vừa nhấn phím F11 thoát toàn màn hình! Đồng hồ đã dừng và hủy thưởng ca này.");
+      }
       return false;
     }
 
@@ -587,6 +712,9 @@ if (typeof window !== "undefined") {
       }
       e.preventDefault();
       e.stopPropagation();
+      if (!window.electronAPI) {
+        triggerWebFocusViolation("⛔ Bạn vừa nhấn phím Esc thoát toàn màn hình! Đồng hồ đã dừng và hủy thưởng ca này.");
+      }
       return false;
     }
 
@@ -694,6 +822,20 @@ function onPomodoroTick() {
 }
 
 async function handleFocusCycleCompleted() {
+  if (pomodoroState.webDisqualified) {
+    pomodoroState.lastRewardXp = 0;
+    pomodoroState.lastRewardGems = 0;
+    pomodoroState.mode = "break";
+    pomodoroState.remainingSeconds = pomodoroState.breakDuration;
+    pomodoroState.currentQuote = getRandomQuote("break");
+    pomodoroState.showCelebrationModal = true;
+    if (window.showToast) {
+      window.showToast("⚠️ Ca học hoàn tất nhưng KHÔNG ĐƯỢC THƯỞNG do đã thoát toàn màn hình giữa chừng!", true);
+    }
+    if (window.render) window.render();
+    return;
+  }
+
   const xpAwarded = 50;
   const gemsAwarded = 30;
   pomodoroState.lastRewardXp = xpAwarded;
@@ -2545,14 +2687,16 @@ function renderPomodoroLobby() {
 // --- ACTIVE WORKSPACE SCREEN (3 CỘT: Trái Tabs tài liệu - Giữa Reader/Zen - Phải Tab AI, Góc trên Clock Widget) ---
 function renderPomodoroActiveRoom() {
   const isFocus = pomodoroState.mode === "focus";
-  const activeDoc = pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
+  const isBuiltinNote = pomodoroState.activeDocId === "__pomo_builtin_note__";
+  const activeDoc = isBuiltinNote ? null : pomodoroState.docs.find(d => d.id === pomodoroState.activeDocId);
   const notesList = (window.state && window.state.notes) || [];
   const currentTrack = pomodoroAudio.getCurrentTrack();
+  const activeMobileTab = pomodoroState.mobileTab || (isBuiltinNote ? "note" : (activeDoc ? "docs" : "clock"));
 
   setTimeout(() => initPomoResizers(), 40);
 
   return `
-    <div class="pomodoro-active-room ${isFocus ? 'focus-phase' : 'break-phase'}" style="--pomo-sidebar-width:${pomodoroState.sidebarWidth}px; --pomo-ai-width:${pomodoroState.aiDockWidth}px;">
+    <div class="pomodoro-active-room ${isFocus ? 'focus-phase' : 'break-phase'}" data-mobile-tab="${activeMobileTab}" style="--pomo-sidebar-width:${pomodoroState.sidebarWidth}px; --pomo-ai-width:${pomodoroState.aiDockWidth}px;">
       <!-- TOP STATUS BAR WITH COLLAPSIBLE CLOCK WIDGET -->
       <header class="pomo-room-topbar">
         <div class="pomo-topbar-left">
@@ -2655,6 +2799,14 @@ function renderPomodoroActiveRoom() {
         </div>
       </header>
 
+      <!-- MOBILE WORKSPACE TABS (CHỈ HIỆN TRÊN ĐIỆN THOẠI) -->
+      <nav class="pomo-mobile-tabs" aria-label="Chuyển khu vực phòng học">
+        <button type="button" class="pomo-mobile-tab-btn ${activeMobileTab === 'clock' ? 'active' : ''}" onclick="window.setPomoMobileTab('clock')">⏱️ Đồng hồ</button>
+        <button type="button" class="pomo-mobile-tab-btn ${activeMobileTab === 'docs' ? 'active' : ''}" onclick="window.setPomoMobileTab('docs')">📁 Tài liệu (${pomodoroState.docs.length})</button>
+        <button type="button" class="pomo-mobile-tab-btn ${activeMobileTab === 'note' ? 'active' : ''}" onclick="window.setPomoMobileTab('note')">📝 Sổ tay</button>
+        <button type="button" class="pomo-mobile-tab-btn ${activeMobileTab === 'ai' ? 'active' : ''}" onclick="window.setPomoMobileTab('ai')">✨ Bot AI</button>
+      </nav>
+
       <!-- 3-PANE WORKSPACE: LEFT (DOC TABS) | CENTER (DOCUMENT VIEWER / FULL CLOCK) | RIGHT (AI ASSISTANT TAB) -->
       <main class="pomo-room-body">
         
@@ -2668,12 +2820,15 @@ function renderPomodoroActiveRoom() {
             </div>
           </div>
 
-          <!-- Quick Notes Dropdown in sidebar -->
+          <!-- Quick Notes Dropdown & Built-in Notebook in sidebar -->
           <div class="sidebar-note-selector-wrap">
             <select class="sidebar-note-select" onchange="if(this.value){ window.addNoteToDocs(this.value); this.value=''; }">
               <option value="">＋ Thêm từ Sổ tay ghi chú...</option>
               ${notesList.map(n => `<option value="${n.id}">${safeEsc(n.title || 'Ghi chú không tên')}</option>`).join("")}
             </select>
+            <button type="button" class="btn-pomo-open-note-inline ${isBuiltinNote ? 'active' : ''}" onclick="window.openPomodoroBuiltinNote()">
+              📝 Mở Sổ tay nhanh
+            </button>
           </div>
 
           <!-- List of Added Documents -->
@@ -2714,8 +2869,8 @@ function renderPomodoroActiveRoom() {
         <!-- RESIZER CỘT TRÁI (KÉO CHỈNH ĐỘ RỘNG DANH SÁCH FILE) -->
         <div class="pomo-resizer left-resizer" id="pomo-left-resizer" title="Kéo ngang để chỉnh độ rộng danh sách tài liệu"></div>
 
-        <!-- ==================== Ở GIỮA: MỞ FILE HOẶC ĐỒNG HỒ ZEN TOÀN PHẦN ==================== -->
-        <section class="pomo-center-stage ${activeDoc ? 'doc-mode' : 'clock-mode'}">
+        <!-- ==================== Ở GIỮA: MỞ FILE, SỔ TAY NHANH HOẶC ĐỒNG HỒ ZEN ==================== -->
+        <section class="pomo-center-stage ${(activeDoc || isBuiltinNote) ? 'doc-mode' : 'clock-mode'}">
           ${!pomodoroState.sidebarOpen ? `
             <button type="button" class="pomo-sidebar-reopen-pill" onclick="window.togglePomoSidebar()" title="Mở lại danh sách tài liệu học">
               📁 Tài liệu ❯
@@ -2728,7 +2883,32 @@ function renderPomodoroActiveRoom() {
             </button>
           ` : ""}
 
-          ${activeDoc ? `
+          ${isBuiltinNote ? `
+            <!-- SỔ TAY GHI CHÚ SẴN CÓ NGAY TRONG PHÒNG HỌC POMODORO -->
+            <div class="pomo-builtin-note-wrap">
+              <div class="pomo-builtin-note-card note-paper-${safeEsc(pomodoroState.builtinNote.paper || 'lined')}">
+                <div class="pomo-builtin-note-toolbar">
+                  <select onchange="window.selectPomodoroBuiltinNote(this.value)" title="Chọn ghi chú có sẵn hoặc tạo mới">
+                    <option value="" ${!pomodoroState.builtinNote.id ? 'selected' : ''}>＋ Tạo ghi chú mới</option>
+                    ${notesList.map(n => `<option value="${n.id}" ${String(pomodoroState.builtinNote.id) === String(n.id) ? 'selected' : ''}>${safeEsc(n.title || 'Ghi chú không tên')}</option>`).join("")}
+                  </select>
+                  <select onchange="window.pomodoroState.builtinNote.paper = this.value; window.render();" title="Kiểu giấy">
+                    <option value="lined" ${pomodoroState.builtinNote.paper === 'lined' ? 'selected' : ''}>Giấy kẻ ngang</option>
+                    <option value="grid" ${pomodoroState.builtinNote.paper === 'grid' ? 'selected' : ''}>Giấy ô li</option>
+                    <option value="dotted" ${pomodoroState.builtinNote.paper === 'dotted' ? 'selected' : ''}>Giấy chấm bi</option>
+                    <option value="plain" ${pomodoroState.builtinNote.paper === 'plain' ? 'selected' : ''}>Giấy trơn</option>
+                  </select>
+                  <button type="button" class="btn-viewer-tool" style="margin-left:auto;" onclick="window.closeActiveDoc()">Đóng Sổ tay ✕</button>
+                </div>
+                <input type="text" class="pomo-builtin-note-title" placeholder="Tiêu đề ghi chú..." value="${safeEsc(pomodoroState.builtinNote.title)}" oninput="window.pomodoroState.builtinNote.title = this.value">
+                <textarea class="note-content-input pomo-builtin-note-editor" placeholder="Viết nhanh công thức, ý chính bài học ngay tại đây..." oninput="window.pomodoroState.builtinNote.text = this.value">${safeEsc(pomodoroState.builtinNote.text)}</textarea>
+                <div class="pomo-builtin-note-footer">
+                  <span style="font-size:12px;color:#795363;font-weight:700;">Ghi chú sẽ lưu trực tiếp vào Sổ tay của bạn</span>
+                  <button type="button" class="btn-duo btn-duo-pink" onclick="window.savePomodoroBuiltinNote()">💾 Lưu vào Sổ tay</button>
+                </div>
+              </div>
+            </div>
+          ` : activeDoc ? `
             <!-- KHI ĐANG MỞ FILE TÀI LIỆU: TRÌNH ĐỌC TRUNG TÂM (CÓ HỖ TRỢ ZOOM TRACKPAD & CUỘN CHUỘT) -->
             <div class="pomo-doc-full-viewer" id="pomo-doc-full-viewer">
               <div class="doc-viewer-header">
@@ -2934,6 +3114,26 @@ function renderPomodoroActiveRoom() {
 
       <!-- MODAL: DANH SÁCH BẠN HỌC ĐANG TRONG PHÒNG -->
       ${renderPomodoroLearnersModal()}
+
+      <!-- WEB FOCUS LOCK SHIELD (HIỆN KHI THOÁT TOÀN MÀN HÌNH / CHUYỂN TAB TRÊN TRÌNH DUYỆT) -->
+      <div class="pomo-web-lock-overlay" id="pomo-web-lock-overlay" style="display: ${pomodoroState.webFocusInterrupted ? 'flex' : 'none'};">
+        <div class="pomo-web-lock-card">
+          <div class="pomo-web-lock-icon">⛔</div>
+          <h3>Đã dừng đồng hồ &amp; Hủy thưởng ca này!</h3>
+          <p>
+            Bạn vừa nhấn phím chức năng thoát toàn màn hình hoặc rời màn hình học (lần #<strong id="pomo-web-lock-warn-count">${pomodoroState.webFocusWarnings}</strong>).
+            Đồng hồ đã <strong>DỪNG CHẠY NGAY LẬP TỨC</strong> và ca này <strong>KHÔNG ĐƯỢC NHẬN THƯỞNG (+50 XP / +30 💎)</strong>.
+          </p>
+          <div class="pomo-web-lock-actions">
+            <button type="button" class="btn-duo btn-duo-pink" onclick="window.resumeWebFocusLock()">
+              🎯 Quay lại toàn màn hình (Học tiếp không thưởng)
+            </button>
+            <button type="button" class="btn-duo btn-duo-white" onclick="window.abandonPomodoroSession()">
+              🚪 Thoát phòng học ngay
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -3587,6 +3787,73 @@ window.addNoteToDocs = addNoteToDocs;
 window.setActiveDoc = setActiveDoc;
 window.removeDoc = removeDoc;
 window.closeActiveDoc = closeActiveDoc;
+window.resumeWebFocusLock = resumeWebFocusLock;
+window.setPomoMobileTab = (tab) => {
+  pomodoroState.mobileTab = tab || "clock";
+  if (tab === "note") {
+    pomodoroState.activeDocId = "__pomo_builtin_note__";
+  } else if (tab === "clock") {
+    if (pomodoroState.activeDocId === "__pomo_builtin_note__") pomodoroState.activeDocId = null;
+  }
+  if (window.render) window.render();
+};
+window.openPomodoroBuiltinNote = () => {
+  pomodoroState.activeDocId = "__pomo_builtin_note__";
+  pomodoroState.mobileTab = "note";
+  if (window.render) window.render();
+};
+window.selectPomodoroBuiltinNote = (noteId) => {
+  const notesList = (window.state && window.state.notes) || [];
+  if (!noteId) {
+    pomodoroState.builtinNote = { id: "", title: "Ghi chú nhanh Pomodoro", paper: pomodoroState.builtinNote.paper || "lined", text: "" };
+  } else {
+    const found = notesList.find(n => String(n.id) === String(noteId));
+    if (found) {
+      const parsed = parsePomoNoteData(found.content);
+      pomodoroState.builtinNote = {
+        id: String(found.id),
+        title: found.title || "Ghi chú không tên",
+        paper: parsed.style?.paper || "lined",
+        text: parsed.plainText || ""
+      };
+    }
+  }
+  if (window.render) window.render();
+};
+window.savePomodoroBuiltinNote = async () => {
+  const n = pomodoroState.builtinNote;
+  const title = (n.title || "Ghi chú nhanh Pomodoro").trim();
+  const payload = JSON.stringify({
+    __richNote: 1,
+    style: { paper: n.paper || "lined", font: "sans" },
+    html: safeEsc(n.text || "").replace(/\n/g, "<br>")
+  });
+  try {
+    let savedNote = null;
+    if (n.id) {
+      const res = await callApi(`/api/notes/${encodeURIComponent(n.id)}`, {
+        method: "PUT",
+        body: { title, content: payload }
+      });
+      savedNote = res?.note || { id: n.id, title, content: payload };
+    } else {
+      const res = await callApi("/api/notes", {
+        method: "POST",
+        body: { title, content: payload, subjectId: null }
+      });
+      savedNote = res?.note || null;
+      if (savedNote && savedNote.id) n.id = String(savedNote.id);
+    }
+    if (window.state && Array.isArray(window.state.notes) && savedNote) {
+      const idx = window.state.notes.findIndex(x => String(x.id) === String(savedNote.id));
+      if (idx >= 0) window.state.notes[idx] = { ...window.state.notes[idx], ...savedNote };
+      else window.state.notes.unshift(savedNote);
+    }
+    if (window.showToast) window.showToast("Đã lưu ghi chú vào Sổ tay thành công! 💾");
+  } catch (err) {
+    if (window.showToast) window.showToast("Không thể lưu ghi chú: " + err.message, true);
+  }
+};
 
 window.openPomodoroLearnersList = openPomodoroLearnersList;
 window.closePomodoroLearnersList = closePomodoroLearnersList;

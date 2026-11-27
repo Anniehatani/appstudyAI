@@ -1,6 +1,6 @@
 {
   "name": "3tg-study",
-  "version": "9.9.9",
+  "version": "30.0.0",
   "description": "3TG — Web và App học tập thông minh phong cách Duolingo cùng Mascot Thỏ Bảy Màu",
   "private": true,
   "type": "module",
@@ -44,8 +44,7 @@
       "electron/**/*",
       "build/**/*",
       "package.json",
-      "wrangler.jsonc",
-      ".dev.vars"
+      "wrangler.jsonc"
     ],
     "win": {
       "icon": "build/icon.ico",

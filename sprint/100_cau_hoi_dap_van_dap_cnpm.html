@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>100 Câu Hỏi Đáp Vấn Đáp Môn Công Nghệ Phần Mềm - 3TG Study AI</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 15mm 15mm 15mm 15mm;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 10pt;
+      line-height: 1.55;
+      color: #1e293b;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    /* COVER PAGE */
+    .cover-page {
+      padding: 40px 30px;
+      border: 4px double #0f172a;
+      text-align: center;
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 240mm;
+    }
+    .cover-header {
+      width: 100%;
+    }
+    .school-title {
+      font-size: 13pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #0f172a;
+      margin: 0;
+    }
+    .dept-title {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #334155;
+      margin-top: 5px;
+    }
+    .cover-divider {
+      width: 180px;
+      height: 2px;
+      background: #0f172a;
+      margin: 15px auto 0;
+    }
+    .cover-body {
+      margin: 30px 0;
+    }
+    .cover-doc-badge {
+      display: inline-block;
+      padding: 5px 16px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 999px;
+      font-size: 9.5pt;
+      font-weight: 700;
+      color: #db2777;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+    }
+    .cover-main-title {
+      font-size: 20pt;
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.3;
+      text-transform: uppercase;
+      margin: 0 0 15px;
+    }
+    .cover-sub-title {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #2563eb;
+      margin: 0 0 12px;
+    }
+    .cover-desc {
+      font-size: 10pt;
+      color: #475569;
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    .cover-footer {
+      width: 100%;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 15px;
+      display: flex;
+      justify-content: space-between;
+      text-align: left;
+      font-size: 9.5pt;
+    }
+    .cover-info-block {
+      line-height: 1.6;
+    }
+    .cover-info-block strong {
+      color: #0f172a;
+    }
+
+    /* CHAPTER STYLES */
+    .chapter-header {
+      background: #f8fafc;
+      border-left: 5px solid #db2777;
+      border-top: 1px solid #e2e8f0;
+      border-right: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 25px 0 15px;
+      page-break-after: avoid;
+    }
+    .chapter-header h2 {
+      font-size: 12pt;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 4px;
+    }
+    .chapter-header p {
+      font-size: 8.5pt;
+      color: #64748b;
+      margin: 0;
+      font-style: italic;
+    }
+
+    /* QUESTION CARD */
+    .qa-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      padding: 11px 13px;
+      background: #ffffff;
+      page-break-inside: avoid;
+    }
+    .qa-card:nth-child(even) {
+      background: #fcfcfd;
+    }
+    .q-title {
+      font-size: 10pt;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 6px;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .q-badge {
+      display: inline-block;
+      background: #db2777;
+      color: #ffffff;
+      font-size: 7.5pt;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .q-keywords {
+      font-size: 8.5pt;
+      color: #475569;
+      background: #f1f5f9;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      display: inline-block;
+    }
+    .q-keywords strong {
+      color: #0f172a;
+    }
+    .a-content {
+      font-size: 9.5pt;
+      color: #1e293b;
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+    .a-content p {
+      margin: 4px 0;
+    }
+    .a-content ul, .a-content ol {
+      margin: 4px 0 4px 18px;
+      padding: 0;
+    }
+    .a-content li {
+      margin-bottom: 2px;
+    }
+    .pro-tip {
+      background: #fef3c7;
+      border-left: 3px solid #f59e0b;
+      padding: 4px 9px;
+      border-radius: 0 4px 4px 0;
+      font-size: 8.5pt;
+      color: #92400e;
+      margin-top: 6px;
+    }
+    .pro-tip strong {
+      color: #78350f;
+    }
+    .footer-note {
+      text-align: center;
+      font-size: 8.5pt;
+      color: #94a3b8;
+      margin-top: 25px;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TRANG BÌA CHÍNH THỨC -->
+  <div class="cover-page">
+    <div class="cover-header">
+      <div class="school-title">BỘ GIÁO DỤC VÀ ĐÀO TẠO • TRƯỜNG ĐẠI HỌC CMC</div>
+      <div class="dept-title">KHOA CÔNG NGHỆ THÔNG TIN VÀ TRUYỀN THÔNG</div>
+      <div class="cover-divider"></div>
+    </div>
+
+    <div class="cover-body">
+      <div class="cover-doc-badge">TÀI LIỆU ÔN TẬP VẤN ĐÁP BẢO VỆ ĐỒ ÁN MÔN HỌC</div>
+      <h1 class="cover-main-title">100 CÂU HỎI & CÂU TRẢ LỜI VẤN ĐÁP<br>MÔN CÔNG NGHỆ PHẦN MỀM</h1>
+      <div class="cover-sub-title">ĐỀ TÀI: NỀN TẢNG HỌC TẬP THÔNG MINH ĐA NỀN TẢNG 3TG STUDY AI</div>
+      <p class="cover-desc">
+        Hệ thống câu hỏi và câu trả lời mô hình hóa toàn diện: Chuẩn hóa dữ liệu 3NF, Cấu trúc Database Cloudflare D1/R2, Kiến trúc Serverless Edge & Hybrid Desktop, Quy trình Agile Scrum 6 Sprints, Kỹ nghệ yêu cầu, Thiết kế UML và Bộ kiểm thử 38 Test Cases.
+      </p>
+    </div>
+
+    <div class="cover-footer">
+      <div class="cover-info-block">
+        <div><strong>Mã học phần:</strong> INFO2011 (Công nghệ phần mềm)</div>
+        <div><strong>Học kỳ:</strong> Học kỳ 1 • Năm học 2025 - 2026</div>
+        <div><strong>Cơ sở đào tạo:</strong> CMC University Campus</div>
+      </div>
+      <div class="cover-info-block" style="text-align: right;">
+        <div><strong>Sinh viên thực hiện:</strong> LÊ VĂN AN</div>
+        <div><strong>Lớp học phần:</strong> Lớp Công nghệ phần mềm</div>
+        <div><strong>Phiên bản phát hành:</strong> Release v4.0.8 (Master Suite)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NỘI DUNG 100 CÂU HỎI -->
+
+  <div class="chapter-header">
+    <h2>Chương 1: Kiến trúc phần mềm & Công nghệ nền tảng (Architecture & Tech Stack)</h2>
+    <p>Bao gồm 15 câu hỏi trọng tâm về mô hình hệ thống, Serverless Edge Computing, Single Page Application, RESTful API và tối ưu hiệu năng mạng biên.</p>
+  </div>
+  
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 1</span>
+        <span>Kiến trúc tổng thể của hệ thống 3TG Study AI thuộc loại kiến trúc nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Client-Server, Jamstack, Serverless Edge Computing, Hybrid Desktop (Electron)</div>
+      <div class="a-content"><p>Hệ thống áp dụng kiến trúc <strong>Client-Server hiện đại</strong> kết hợp mô hình <strong>Serverless Edge Computing (Điện toán biên)</strong> và <strong>Hybrid Desktop</strong>. Cụ thể:</li><li><strong>Frontend:</strong> Single Page Application (SPA) viết bằng Vanilla JavaScript chuẩn ES Modules hiện đại, hoạt động đa nền tảng (Web Browser &amp; Electron Desktop).</li><li><strong>Backend:</strong> Chạy trên nền tảng Cloudflare Workers sử dụng công nghệ V8 Isolates siêu nhẹ, xử lý logic RESTful API trực tiếp tại các Data Center biên (Edge POPs) gần người dùng nhất.</li><li><strong>Data Layer:</strong> Cloudflare D1 (Cơ sở dữ liệu quan hệ SQLite phân tán toàn cầu) kết hợp Cloudflare R2 (Object Storage lưu trữ avatar, video, tệp tin đa phương tiện).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhấn mạnh từ khóa 'Serverless Edge Computing' và 'V8 Isolates'. Giảng viên đánh giá rất cao việc không dùng VPS cồng kềnh mà đưa toàn bộ backend lên mạng biên toàn cầu.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 2</span>
+        <span>Serverless Edge Computing trong dự án hoạt động như thế nào và khác gì so với kiến trúc Client-Server truyền thống?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Cloudflare Workers, Cold Start ~0ms, Edge CDN, V8 Isolates vs Docker Containers</div>
+      <div class="a-content"><p>Trong mô hình truyền thống (Client-Server dạng Monolith như Express/Node trên VPS hoặc Spring Boot), mọi request từ người dùng đều phải bay về một máy chủ trung tâm đặt cố định tại một khu vực địa lý, gây độ trễ cao và chịu rủi ro sập server khi nghẽn mạng.
+Ngược lại, với Serverless Edge Computing trên Cloudflare Workers:</li><li>Mã nguồn backend được phân tán tới hơn 300 thành phố trên thế giới.</li><li>Request của sinh viên Việt Nam sẽ được phục vụ bởi Data Center ngay tại Hà Nội hoặc TP.HCM với độ trễ mạng biên cực thấp (&lt;50ms).</li><li>Không có khái niệm khởi động lạnh (Cold Start = 0ms) nhờ cơ chế V8 Isolates nhẹ hơn hàng trăm lần so với việc khởi chạy Container Docker.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Dẫn chứng ngay chỉ số đo đạc thực tế: Độ trễ phản hồi API của hệ thống đo được chỉ từ 8ms - 35ms khi gọi các endpoint kiểm thử.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 3</span>
+        <span>Tại sao nhóm lại lựa chọn Cloudflare Workers mà không sử dụng Node.js Express hay NestJS truyền thống?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Chi phí vận hành, Zero-maintenance, Auto-scaling, Tích hợp sẵn D1 và R2</div>
+      <div class="a-content"><p>Lựa chọn này dựa trên 4 tiêu chí công nghệ phần mềm:</p><ol><li><strong>Khả năng tự động mở rộng (Auto-scaling vô hạn):</strong> Có thể xử lý hàng chục nghìn sinh viên cùng truy cập mùa thi cử mà không cần cấu hình Load Balancer hay Kubernetes cluster.</li><li><strong>Tối ưu chi phí:</strong> Mô hình Serverless chỉ tính phí khi có request thực tế phát sinh (Pay-per-request), không mất tiền duy trì VPS chạy ngầm 24/7.</li><li><strong>Bảo mật và chống DDoS:</strong> Tận dụng lớp bảo vệ DDoS hàng đầu thế giới của Cloudflare ngay từ tầng DNS và CDN.</li><li><strong>Hệ sinh thái đồng nhất:</strong> Tích hợp liền mạch với D1 Database, R2 Storage và Web Assets qua cơ chế Worker Bindings trực tiếp trong bộ nhớ (Zero-network hop).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Trả lời theo 4 góc độ: Hiệu năng - Khả năng mở rộng - Bảo mật - Chi phí (Cost-efficiency).</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 4</span>
+        <span>Phân tích mô hình kiến trúc của ứng dụng Frontend (SPA)? Vì sao nhóm không dùng React/Vue mà lại dùng Vanilla JS?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Single Page Application (SPA), Component-based Vanilla JS, Zero-build Overhead, Siêu nhẹ (<350KB)</div>
+      <div class="a-content"><p>Frontend được xây dựng theo kiến trúc <strong>Single Page Application (SPA)</strong> thuần túy:</li><li><strong>Cơ chế điều hướng (Client-side Routing):</strong> Sử dụng hàm chuyển đổi view `switchPage(page)` và quản lý trạng thái tập trung trong biến toàn cục `state`, DOM chỉ cập nhật đúng vùng thay đổi mà không cần tải lại toàn bộ trang web (No full-page reload).</li><li><strong>Lý do không dùng React/Vue:</strong>
+  1. <strong>Hiệu năng &amp; Kích thước bundle:</strong> Ứng dụng không cần nạp 2-3MB thư viện `node_modules` của React/Vue. Toàn bộ bundle mã nguồn frontend chỉ nặng ~320KB, đạt điểm Google Lighthouse Speed Index gần như tuyệt đối (99/100).
+  2. <strong>Tương thích hoàn hảo với Kiosk Desktop (Electron):</strong> Không có quá trình webpack/vite phức tạp, giảm thiểu tối đa rủi ro xung đột bộ nhớ trong môi trường đóng băng Kiosk Guard.
+  3. <strong>Làm chủ mã nguồn:</strong> Mọi tương tác DOM, hiệu ứng âm thanh và State Machine của Mascot đều được viết thuần, minh bạch và dễ bảo trì.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu rõ: 'Công nghệ phần mềm tốt là chọn công nghệ giải quyết đúng bài toán, không chạy theo phong trào framework khi bài toán cần sự siêu nhẹ và tốc độ tức thì'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 5</span>
+        <span>Kiến trúc Hybrid Desktop với Electron hoạt động ra sao? Electron kết nối với Web như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Main Process, Renderer Process, Context Isolation, Preload Script, IPC (Inter-Process Communication)</div>
+      <div class="a-content"><p>Ứng dụng máy tính (Desktop) áp dụng kiến trúc <strong>Electron đa tiến trình (Multi-process Architecture)</strong>:</li><li><strong>Main Process (`electron/main.cjs`):</strong> Chạy trên môi trường Node.js native của hệ điều hành Windows, có toàn quyền can thiệp phần cứng, quản trị cửa sổ Kiosk, điều khiển màn hình phụ và khởi chạy tiến trình bảo vệ `study_guard.exe`.</li><li><strong>Renderer Process (`public/index.html`, `app.js`):</strong> Chạy trong môi trường Chromium an toàn, hiển thị giao diện học tập.</li><li><strong>Cầu nối bảo mật (ContextBridge &amp; Preload):</strong> Tuân thủ tuyệt đối chuẩn bảo mật Electron hiện đại (`contextIsolation: true`, `nodeIntegration: false`). Giao tiếp giữa 2 tiến trình thông qua cơ chế IPC an toàn (`ipcRenderer.invoke` và `ipcMain.handle`).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Giảng viên thường gài bẫy hỏi: 'Electron có bị lỗ hổng XSS can thiệp phá máy tính không?'. Hãy khẳng định ngay: Nhờ bật Context Isolation và tắt Node Integration trong Renderer, mã web hoàn toàn bị cô lập khỏi hệ điều hành.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 6</span>
+        <span>RESTful API là gì? Hệ thống tuân thủ các nguyên tắc thiết kế RESTful như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Stateless, Resource-oriented, HTTP Verbs (GET, POST, PATCH, DELETE), Chuẩn hóa URI</div>
+      <div class="a-content"><p>RESTful API là chuẩn kiến trúc truyền thông dựa trên giao thức HTTP, định hướng tài nguyên (Resource-based) và không lưu trạng thái (Stateless).
+Hệ thống tuân thủ nghiêm ngặt chuẩn RESTful:</li><li><strong>Định danh tài nguyên qua danh từ số nhiều:</strong> `/api/subjects`, `/api/lessons`, `/api/groups`, `/api/messages`, `/api/notes`.</li><li><strong>Phân định rõ chức năng qua HTTP Verbs:</strong></li><li style="margin-left: 15px;">`GET`: Truy vấn tài nguyên (idempotent, an toàn, không thay đổi dữ liệu).</li><li style="margin-left: 15px;">`POST`: Tạo mới tài nguyên (`POST /api/groups`, `POST /api/messages`).</li><li style="margin-left: 15px;">`PATCH`: Cập nhật một phần tài nguyên (`PATCH /api/notes/:id`, `PATCH /api/profile`).</li><li style="margin-left: 15px;">`DELETE`: Xóa tài nguyên (`DELETE /api/notes/:id`, `DELETE /api/profile/avatar`).</li><li><strong>Định dạng dữ liệu chuẩn:</strong> 100% Request và Response sử dụng `application/json` đồng bộ.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Chỉ ra điểm đặc biệt: Hệ thống dùng `PATCH` thay vì `PUT` cho việc sửa ghi chú và cập nhật profile vì chỉ cập nhật các trường thay đổi, tiết kiệm băng thông mạng biên.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 7</span>
+        <span>Các mã phản hồi HTTP Status Codes phổ biến được hệ thống sử dụng là gì và ý nghĩa trong xử lý lỗi?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> 200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 429 Too Many Requests, 500 Internal Error</div>
+      <div class="a-content"><p>Hệ thống xây dựng lớp `HttpError(status, message)` kế thừa chuẩn `Error` của JavaScript, trả về các mã chuẩn:</li><li>`200 OK`: Thành công cho các tác vụ GET, PATCH thông thường.</li><li>`201 Created`: Tạo mới thành công (Ví dụ: tạo nhóm chat, đăng ký tài khoản).</li><li>`400 Bad Request`: Dữ liệu đầu vào sai định dạng hoặc thiếu trường bắt buộc.</li><li>`401 Unauthorized`: Người dùng chưa đăng nhập hoặc Cookie phiên đã hết hạn.</li><li>`403 Forbidden`: Người dùng không có quyền (Ví dụ: thành viên thường cố tình xóa nhóm hoặc thêm bot).</li><li>`404 Not Found`: Không tìm thấy tài nguyên (Ví dụ: bài học hoặc nhóm không tồn tại).</li><li>`429 Too Many Requests`: Vượt quá tần suất cho phép (Rate limiting đăng nhập quá 5 lần sai trong 15 phút).</li><li>`500 Internal Server Error`: Lỗi phát sinh bất ngờ phía server.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Hãy đề cập rằng mã lỗi được đóng gói nhất quán dạng JSON: `{ ok: false, error: 'Thông báo lỗi chi tiết' }`.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 8</span>
+        <span>Mô hình kiến trúc hướng sự kiện (Event-Driven Architecture) được áp dụng ở đâu trong đồ án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Pomodoro Timer Tick, State Machine Transition, Web Audio Synthesizer, Heartbeat Polling</div>
+      <div class="a-content"><p>Kiến trúc hướng sự kiện được thể hiện rõ nét ở 3 phân hệ:</p><ol><li><strong>Đồng hồ Pomodoro:</strong> Phát sinh các sự kiện theo chu kỳ thời gian (Timer Tick, Phase Transition giữa Học 25 phút và Nghỉ 5 phút), kích hoạt chuỗi sự kiện âm thanh và cảnh báo trên giao diện.</li><li><strong>Mascot Thỏ Bảy Màu:</strong> Chuyển đổi trạng thái (FSM State Transition) dựa trên các sự kiện tương tác của người dùng: Trả lời đúng (`CORRECT_ANSWER` -&gt; `CHEERING`), trả lời sai (`WRONG_ANSWER` -&gt; `PANIC`), hoàn thành cửa ải (`COMPLETE` -&gt; `GENIUS`).</li><li><strong>Phân hệ Học cùng nhau (Live Study Room):</strong> Sự kiện `heartbeat` gửi định kỳ 10 giây để cập nhật danh sách bạn cùng học trong phòng mà không làm nghẽn server.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Liên hệ sự kiện với mô hình phản xạ tự nhiên của người dùng, chứng minh phần mềm có độ tương tác cao (High Interactivity).</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 9</span>
+        <span>Trình bày cơ chế Outbox Pattern và khả năng phục hồi dữ liệu khi mất kết nối trong dự án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Outbox Queue, Local Replica, Replay Sync, Eventual Consistency, Idempotency</div>
+      <div class="a-content"><p>Để đảm bảo hệ thống có thể hoạt động ngay cả khi mạng chập chờn hoặc phục vụ chế độ thi offline trong Electron:</li><li><strong>Outbox Pattern:</strong> Khi người dùng thực hiện ghi dữ liệu (ví dụ cập nhật tiến độ học tập hoặc ghi chú), dữ liệu trước hết được ghi vào bảng hàng đợi cục bộ `outbox_events` trong SQLite local với trạng thái `pending`.</li><li><strong>Cơ chế Replay Sync (`/api/sync/replay`):</strong> Một tiến trình nền định kỳ kiểm tra kết nối mạng. Khi có internet trở lại, hệ thống sẽ đẩy tuần tự các sự kiện trong Outbox lên Cloudflare D1 theo đúng thứ tự thời gian, đảm bảo tính nhất quán cuối cùng (<strong>Eventual Consistency</strong>).</li><li>Các thao tác đều thiết kế mang tính <strong>Idempotent</strong> (thực thi nhiều lần không làm sai lệch kết quả).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Outbox Pattern là một mẫu kiến trúc kinh điển của hệ thống phân tán cấp doanh nghiệp (Enterprise Architecture). Giảng viên sẽ cực kỳ ấn tượng nếu bạn nêu bật được thuật ngữ này.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 10</span>
+        <span>Làm thế nào hệ thống đạt được tốc độ tải trang dưới 100ms trên toàn cầu?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Global CDN Edge, Asset Compression (Gzip/Brotli), Cache-Control Immutable, Zero Runtime Dependencies</div>
+      <div class="a-content"><p>Tốc độ dưới 100ms đạt được nhờ kết hợp 4 giải pháp công nghệ:</p><ol><li><strong>Cloudflare Edge CDN:</strong> Toàn bộ tệp tĩnh (HTML, CSS, JS, SVG) được phân phối tức thì từ máy chủ proxy biên đặt sát người dùng.</li><li><strong>Kỹ thuật nén dữ liệu:</strong> Tự động kích hoạt nén Gzip và Brotli, giảm dung lượng truyền tải từ 326KB xuống chỉ còn 76KB gzip.</li><li><strong>Chiến lược bộ nhớ đệm thông minh (Cache Busting):</strong> Tệp tĩnh được gắn version query hash (`styles.css?v=4.0.8`), đi kèm header `Cache-Control: public, max-age=31536000, immutable`, giúp trình duyệt tải gần như 0ms ở các lần truy cập tiếp theo.</li><li><strong>Không phụ thuộc thư viện nặng ngoài:</strong> Không import bundle React 2MB hay thư viện UI bên ngoài, DOM được render bằng Native JavaScript Template Literals.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Chỉ ra rằng trên Network tab của Chrome DevTools, kích thước tài nguyên gzip tải qua mạng chỉ vỏn vẹn 76.4 KiB.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 11</span>
+        <span>So sánh Serverless Edge với Container Docker / Kubernetes trong việc triển khai ứng dụng giáo dục?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Quản trị hạ tầng, Chi phí ban đầu, Tốc độ mở rộng, Mức độ phức tạp DevOps</div>
+      <div class="a-content"><p>- <strong>Docker / Kubernetes:</strong> Phù hợp với các hệ thống phức tạp có nhiều service chạy nền liên tục (background daemons), yêu cầu cấu hình hạ tầng mạng phức tạp, tốn chi phí thuê máy chủ cố định (ít nhất 20-50$/tháng) và cần kỹ sư DevOps quản trị cụm máy chủ.</li><li><strong>Serverless Edge (Cloudflare):</strong> Không cần máy chủ (Zero Server Management), chi phí ban đầu là 0 đồng, triển khai chỉ bằng 1 dòng lệnh `wrangler deploy`, tự động phân tán ra 300+ thành phố trên toàn cầu chỉ trong 5 giây. Đối với bài toán học tập của sinh viên, Serverless Edge vượt trội hoàn toàn về tốc độ, chi phí và khả năng chống sập.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhấn mạnh tiêu chí 'Phù hợp ngữ cảnh' (Context-driven Architecture) trong Công nghệ phần mềm.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 12</span>
+        <span>Tính độc lập nền tảng (Cross-platform) của đồ án được kiểm soát và duy trì như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Web Standards, Electron Wrapper, Feature Detection (`window.electronAPI`), Responsive CSS</div>
+      <div class="a-content"><p>Hệ thống sử dụng nguyên tắc <strong>'Write Once, Run Everywhere' (Viết một lần, chạy khắp nơi)</strong>:</li><li><strong>Phần lõi dùng Web Standards:</strong> Sử dụng HTML5, CSS3 hiện đại (Grid, Flexbox, CSS Variables) và ES Modules thuần túy, hoạt động chuẩn xác trên mọi trình duyệt (Chrome, Safari, Edge, Firefox trên cả PC và Mobile).</li><li><strong>Kỹ thuật Feature Detection:</strong> Trong mã JavaScript, hệ thống kiểm tra sự tồn tại của `window.electronAPI` để kích hoạt các tính năng đặc thù của Desktop (như Kiosk Native Guard, Stream nhạc cục bộ 206), trong khi trên Web Browser hệ thống chuyển sang chế độ Web an toàn tương ứng mà không làm gián đoạn trải nghiệm người dùng.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu ví dụ cụ thể: Chức năng đăng nhập Cổng trường IU trên Desktop thì dùng Electron BrowserWindow cào cookie tự động, còn trên Web thì dùng Bookmarklet 1-chạm.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 13</span>
+        <span>Làm thế nào hệ thống xử lý bài toán CORS (Cross-Origin Resource Sharing) trong môi trường phân tán?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> CORS Headers, Access-Control-Allow-Origin, Same-Origin Policy, Bookmarklet Injection</div>
+      <div class="a-content"><p>- Đối với API nội bộ: Backend Cloudflare Workers được cấu hình bộ lọc CORS trả về các header chuẩn:</li><li style="margin-left: 15px;">`Access-Control-Allow-Origin: *` hoặc whitelist domain ứng dụng.</li><li style="margin-left: 15px;">`Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS`.</li><li style="margin-left: 15px;">`Access-Control-Allow-Headers: Content-Type, Authorization, Cookie`.</li><li>Xử lý Request OPTIONS (Preflight Request) tự động với mã HTTP 204 No Content.</li><li>Đối với bài toán đọc điểm từ Cổng trường đại học CMC (`iu.cmcu.edu.vn`) có chính sách Same-Origin nghiêm ngặt trên Web: Nhóm phát minh giải pháp Bookmarklet/Console 1-chạm chạy trực tiếp trong ngữ cảnh trang trường để truyền dữ liệu về 3TG Study một cách hợp pháp và an toàn.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Giải thích rõ ràng: CORS là cơ chế bảo mật của trình duyệt, không phải lỗi server, và nhóm đã giải quyết nó một cách bài bản.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 14</span>
+        <span>Nguyên lý phân tách mối quan tâm (Separation of Concerns - SoC) được thể hiện như thế nào trong cấu trúc thư mục dự án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Mô đun hóa, MVC/Layered Structure, `src/`, `public/`, `electron/`, `sprint/`</div>
+      <div class="a-content"><p>Mã nguồn đồ án được phân chia thành các lớp rõ rệt theo nguyên lý SoC:</p><ol><li><strong>Lớp Giao diện &amp; Hiển thị (`public/`):</strong> Tách biệt `index.html` (cấu trúc khung), `styles.css` (giao diện, theme và responsive), `app.js` (logic điều hướng và tương tác người dùng), `tho-bay-mau.js` (bộ máy hoạt hình Mascot SVG độc lập).</li><li><strong>Lớp Nghiệp vụ &amp; Dịch vụ Biên (`src/`):</strong> `index.js` (API Gateway, router, middleware xác thực), `bot3tg.js` (trung tâm xử lý media và NLP bot), `academic_service.js` (thuật toán giải mã và phân tích GPA học thuật).</li><li><strong>Lớp Nền tảng Hệ điều hành (`electron/`):</strong> Chứa các tiến trình Native Wrapper của Windows và logic Kiosk Guard.</li><li><strong>Lớp Quản trị Quy trình (`sprint/`):</strong> Chứa tài liệu quản trị Scrum từ Sprint 1 đến Sprint 6.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Chỉ ra rằng tính mô-đun hóa giúp nhóm dễ dàng bảo trì, sửa lỗi một phân hệ mà không làm ảnh hưởng phân hệ khác (Low Coupling, High Cohesion).</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 15</span>
+        <span>Single Point of Failure (SPOF - Điểm lỗi đơn lẻ) được giảm thiểu như thế nào trong kiến trúc này?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Edge Replication, Multi-Region Fallback, Dual-Mode Storage (R2 & Data URI), Groq Multi-model</div>
+      <div class="a-content"><p>Hệ thống triệt tiêu SPOF qua 3 giải pháp:</p><ol><li><strong>Phân tán Data Center:</strong> Không có một máy chủ vật lý duy nhất. Nếu một trạm CDN của Cloudflare gặp sự cố, DNS tự động định tuyến sang trạm gần nhất trong vài mili-giây.</li><li><strong>Cơ chế Fallback lưu trữ:</strong> Khi tải ảnh avatar hoặc file, nếu R2 Storage tạm thời gián đoạn, hệ thống tự động fallback sang lưu trữ Data URI mã hóa Base64 trong database D1 để dịch vụ không bao giờ bị đứt quãng.</li><li><strong>Xử lý AI thông minh:</strong> Khi API AI Groq quá tải, Bot 3TG tự động kích hoạt bộ quy tắc NLP rule-based và kho media nội bộ đóng gói sẵn để phản hồi ngay cho sinh viên.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Khẳng định: 'Hệ thống thiết kế theo triết lý Graceful Degradation - suy giảm tính năng nhưng không bao giờ sập hoàn toàn'.</div>
+    </div>
+    
+  <div class="chapter-header">
+    <h2>Chương 2: Cơ sở dữ liệu & Mô hình hóa dữ liệu (Database Design, ERD & 3NF)</h2>
+    <p>Bao gồm 17 câu hỏi chuyên sâu về kiến trúc CSDL quan hệ Cloudflare D1 (SQLite), các dạng chuẩn hóa 1NF, 2NF, 3NF, cấu trúc 33 bảng, chỉ mục và bảo mật chống SQL Injection.</p>
+  </div>
+  
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 16</span>
+        <span>Cơ sở dữ liệu của dự án sử dụng công nghệ gì và bản chất hoạt động của nó?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Cloudflare D1, SQLite Engine, Serverless SQL Database, Global Read-Replication</div>
+      <div class="a-content"><p>Hệ thống sử dụng <strong>Cloudflare D1</strong> làm Cơ sở dữ liệu quan hệ chính (RDBMS):</li><li><strong>Bản chất:</strong> D1 được xây dựng dựa trên nhân <strong>SQLite</strong>, một công cụ CSDL quan hệ mạnh mẽ, đáng tin cậy và có tốc độ xử lý trong bộ nhớ cực nhanh.</li><li><strong>Kiến trúc phân tán:</strong> D1 kết hợp công nghệ nhân bản đọc toàn cầu (Global Read-Replication), cho phép truy vấn đọc (SELECT) chạy ngay tại Data Center biên với độ trễ chỉ vài mili-giây, trong khi các truy vấn ghi (INSERT, UPDATE, DELETE) được đồng bộ an toàn qua giao thức Raft consensus.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhắc lại rằng SQLite không phải là 'đồ chơi' mà là CSDL được triển khai nhiều nhất hành tinh (trên hàng tỷ smartphone và máy bay), khi đưa lên Cloudflare D1 nó trở thành hệ CSDL phân tán cấp đám mây.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 17</span>
+        <span>Dạng chuẩn 1 (1NF - First Normal Form) trong cơ sở dữ liệu của dự án là gì?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Tính nguyên tử (Atomicity), Không chứa mảng đa trị, Phân tách bảng con</div>
+      <div class="a-content"><p><strong>Định nghĩa 1NF:</strong> Một bảng đạt 1NF khi và chỉ khi mọi thuộc tính đều chứa các giá trị nguyên tử (Atomic values), không có thuộc tính lặp và không chứa danh sách/mảng giá trị trong một cột.
+<strong>Áp dụng trong dự án:</strong></li><li>Thay vì lưu danh sách môn học của một học kỳ dưới dạng mảng trong bảng sinh viên, hệ thống tách thành bảng `user_academic_subjects` độc lập với mỗi dòng là một môn học nguyên tử.</li><li>Bảng bài học `lessons`: Mỗi bài học chỉ đại diện cho một thực thể đơn nhất, các câu hỏi trắc nghiệm được tách thành bảng riêng `questions` liên kết qua khóa ngoại `lesson_id`.</li><li>Đối với các trường đặc biệt như `social_links` (Facebook, GitHub, Instagram) hoặc `options` câu hỏi trắc nghiệm, hệ thống lưu dưới dạng JSON có cấu trúc chuẩn hóa để đảm bảo tính toàn vẹn ngữ nghĩa.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhấn mạnh từ khóa 'Tính nguyên tử của dữ liệu (Atomic Values)'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 18</span>
+        <span>Dạng chuẩn 2 (2NF - Second Normal Form) trong cơ sở dữ liệu của dự án là gì?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Đạt 1NF, Phụ thuộc hàm đầy đủ vào khóa chính, Khắc phục phụ thuộc một phần</div>
+      <div class="a-content"><p><strong>Định nghĩa 2NF:</strong> Một bảng đạt 2NF khi nó đã đạt 1NF và <strong>mọi thuộc tính không khóa đều phải phụ thuộc hàm đầy đủ vào toàn bộ khóa chính</strong>, không được phụ thuộc vào một phần của khóa chính (đối với các bảng có khóa chính hỗn hợp - Composite Primary Key).
+<strong>Áp dụng trong dự án:</strong></li><li>Xét bảng liên kết nhiều - nhiều `chat_group_members(group_id, user_id, role, joined_at)`:</li><li style="margin-left: 15px;">Khóa chính là cặp `(group_id, user_id)`.</li><li style="margin-left: 15px;">Thuộc tính `role` (admin, deputy, member) và `joined_at` phụ thuộc vào cả `group_id` lẫn `user_id` (học viên X đóng vai trò Trưởng nhóm trong nhóm Y nhưng là thành viên trong nhóm Z).</li><li style="margin-left: 15px;">Hệ thống <strong>không</strong> lưu `group_name` hay `user_full_name` trong bảng này (vì `group_name` chỉ phụ thuộc vào `group_id`, `user_full_name` chỉ phụ thuộc vào `user_id`). Nhờ đó loại bỏ hoàn toàn sự phụ thuộc một phần, đạt 2NF chuẩn xác.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Lấy ngay ví dụ bảng `chat_group_members` để minh họa khóa chính tổ hợp và sự phụ thuộc hàm đầy đủ.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 19</span>
+        <span>3NF (Dạng chuẩn 3 - Third Normal Form) trong dự án là gì? Phân tích một ví dụ cụ thể trong mã nguồn?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Đạt 2NF, Không có phụ thuộc bắc cầu (No Transitive Dependency), X -> Y và Y -> Z</div>
+      <div class="a-content"><p><strong>Định nghĩa 3NF:</strong> Một bảng đạt 3NF khi nó đã đạt 2NF và <strong>không tồn tại bất kỳ thuộc tính không khóa nào phụ thuộc bắc cầu vào khóa chính</strong> (nghĩa là nếu có $X \to Y$ và $Y \to Z$ thì $Z$ không được nằm chung bảng với $X$).
+<strong>Ví dụ kinh điển trong dự án 3TG Study:</strong></li><li>Xem xét cây phân cấp giáo trình: Môn học (`subjects`) $\to$ Chương học (`units`) $\to$ Bài học (`lessons`).</li><li style="margin-left: 15px;">Bảng `lessons` có khóa chính là `id`.</li><li style="margin-left: 15px;">`lessons` chỉ lưu khóa ngoại `unit_id` (Bài học thuộc về Chương nào).</li><li style="margin-left: 15px;">`lessons` <strong>tuyệt đối không lưu cột `subject_id` hay `subject_name`</strong> trong bảng `lessons`! Bởi vì:
+    $$\text{lesson\_id} \to \text{unit\_id} \quad \text{và} \quad \text{unit\_id} \to \text{subject\_id}$$</li><li style="margin-left: 15px;">Nếu lưu cả `subject_id` trong `lessons`, khi đổi tên hoặc cập nhật môn học, ta sẽ gặp hiện tượng <strong>Dư thừa dữ liệu (Data Redundancy)</strong> và <strong>Bất thường khi cập nhật (Update Anomaly)</strong>.</li><li>Bằng cách chỉ liên kết `unit_id`, cấu trúc dữ liệu đạt chuẩn 3NF hoàn hảo.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Đây là câu hỏi 'ăn điểm 10' tuyệt đối. Hãy vẽ hoặc chỉ ra mối quan hệ: Lesson -> Unit -> Subject để chứng minh không có phụ thuộc bắc cầu.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 20</span>
+        <span>Có trường hợp nào trong hệ thống chấp nhận phi chuẩn hóa (Denormalization) không? Vì sao lại làm như vậy?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Denormalization, Tối ưu đọc (Read Optimization), Bảng `user_stats`, Giảm tải JOIN</div>
+      <div class="a-content"><p>Trong công nghệ phần mềm thực tế, đôi khi ta chủ động <strong>Phi chuẩn hóa có kiểm soát (Controlled Denormalization)</strong> để tối ưu tốc độ đọc:</li><li><strong>Ví dụ trong dự án:</strong> Bảng `user_stats` lưu trữ trực tiếp các thuộc tính tính toán sẵn: `total_xp`, `current_streak`, `longest_streak`, `gems`, `hearts`.</li><li><strong>Lý do kỹ thuật:</strong></li><li style="margin-left: 15px;">Về mặt lý thuyết chuẩn hóa thuần túy, `total_xp` có thể tính bằng `SUM(xp)` từ bảng lịch sử `user_progress`, và `current_streak` có thể tính bằng cách quét bảng nhật ký `user_streak_history`.</li><li style="margin-left: 15px;">Tuy nhiên, mỗi khi người dùng tải trang hoặc mở app, việc chạy câu lệnh `SUM()` và thuật toán quét ngày tháng trên hàng triệu bản ghi sẽ gây nghẽn CPU và làm chậm ứng dụng.</li><li style="margin-left: 15px;">Việc lưu sẵn giá trị tổng hợp trong `user_stats` và cập nhật bằng Transaction nguyên tử (`UPDATE user_stats SET total_xp = total_xp + ?`) giúp tốc độ hiển thị đạt tức thì (O(1)).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Khẳng định: 'Kỹ sư phần mềm giỏi là người hiểu rõ lý thuyết 3NF nhưng biết khi nào cần phi chuẩn hóa để bảo vệ hiệu năng hệ thống'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 21</span>
+        <span>Cấu trúc cơ sở dữ liệu của dự án bao gồm bao nhiêu bảng? Phân loại theo các nhóm chức năng?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> 33 bảng, 7 phân hệ chính, Tính toàn vẹn thực thể</div>
+      <div class="a-content"><p>Cơ sở dữ liệu của dự án gồm <strong>33 bảng</strong>, phân bổ khoa học thành 7 nhóm phân hệ chức năng:</p><ol><li><strong>Phân hệ Người dùng &amp; Xác thực:</strong> `accounts`, `profiles`, `user_stats`, `user_inventory`.</li><li><strong>Phân hệ Giáo trình &amp; Nội dung học:</strong> `subjects`, `units`, `lessons`, `questions`, `user_progress`, `user_mistakes`.</li><li><strong>Phân hệ Gamification &amp; Động lực:</strong> `weekly_leaderboards`, `user_achievements`, `achievements`, `user_streak_history`, `daily_quests`.</li><li><strong>Phân hệ Tập trung Pomodoro Kiosk:</strong> `user_pomodoro_sessions`, `pomodoro_active_learners`, `user_custom_audio`.</li><li><strong>Phân hệ Mạng xã hội &amp; Chat nhóm:</strong> `chat_groups`, `chat_group_members`, `chat_group_messages`, `friendships`, `user_direct_messages`.</li><li><strong>Phân hệ Học thuật Cổng trường CMCU:</strong> `user_academic_transcripts`, `academic_semesters`, `academic_subjects`, `academic_ai_advisors`.
+7. <strong>Phân hệ Đồng bộ Ngoại tuyến &amp; Hệ thống:</strong> `outbox_events`, `system_audit_logs`, `chat_notifications`.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu con số 33 bảng để thể hiện quy mô đồ án lớn, đạt tiêu chuẩn một hệ thống phần mềm thương mại hoàn chỉnh.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 22</span>
+        <span>So sánh chiến lược sử dụng khóa chính: UUID v4 (chuỗi 36 ký tự) và Integer Auto-increment?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> UUID v4 (Distributed ID), Auto-increment Integer, ID Enumeration Attack, Sharding</div>
+      <div class="a-content"><p>Hệ thống kết hợp thông minh cả 2 chiến lược tùy theo bản chất của từng bảng:</li><li><strong>Sử dụng UUID v4 (ví dụ `user_id`, `group_id`, `conversation_id`):</strong></li><li style="margin-left: 15px;"><em>Ưu điểm:</em> Không thể bị tấn công đoán mã ID (Chống ID Enumeration Attack / Insecure Direct Object References - IDOR). Đảm bảo tính duy nhất trên toàn cầu (Globally Unique), cho phép Client tự sinh ID khi offline mà không lo trùng lặp khi đồng bộ lên Cloud.</li><li><strong>Sử dụng Integer Auto-increment (ví dụ `messages.id`, `notes.id`, `lessons.id`):</strong></li><li style="margin-left: 15px;"><em>Ưu điểm:</em> Tiết kiệm dung lượng lưu trữ chỉ mục (B-Tree Index gọn gàng), tốc độ sắp xếp theo thứ tự thời gian (`ORDER BY id ASC/DESC`) cực nhanh, giúp hiển thị tin nhắn tuần tự chính xác.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Chỉ ra đây là quyết định thiết kế (Design Decision) có chủ đích rõ ràng, kết hợp bảo mật và hiệu năng.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 23</span>
+        <span>Khóa ngoại (Foreign Key) và chiến lược toàn vẹn tham chiếu `ON DELETE CASCADE` được áp dụng như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Referential Integrity, ON DELETE CASCADE, Mồ côi dữ liệu (Orphan Records)</div>
+      <div class="a-content"><p>Khóa ngoại đảm bảo <strong>Tính toàn vẹn tham chiếu (Referential Integrity)</strong>:</li><li>Khi một thực thể cha bị xóa, toàn bộ các bản ghi con phụ thuộc cũng phải được tự động dọn dẹp để tránh tình trạng 'dữ liệu mồ côi' (Orphan Records) gây rác bộ nhớ.</li><li><strong>Ví dụ trong dự án:</strong></li><li style="margin-left: 15px;">Khi xóa một nhóm chat `chat_groups`, ràng buộc `ON DELETE CASCADE` sẽ tự động xóa sạch toàn bộ thành viên trong `chat_group_members` và tin nhắn trong `chat_group_messages` liên quan đến nhóm đó.</li><li style="margin-left: 15px;">Khi xóa một bài học `lessons`, các câu hỏi trắc nghiệm `questions` thuộc bài học đó tự động biến mất.</li><li>Ràng buộc khóa ngoại được D1 SQLite kiểm soát chặt chẽ với cờ `PRAGMA foreign_keys = ON;`.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Cảnh báo giảng viên biết rằng nếu không có CASCADE, hệ thống sẽ bị lỗi Foreign Key Constraint Violation khi xóa cha.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 24</span>
+        <span>Đánh chỉ mục (Indexing) là gì? Những cột nào trong cơ sở dữ liệu bắt buộc phải đánh chỉ mục?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> B-Tree Index, Tìm kiếm O(log N) vs Full Table Scan O(N), `user_id`, `group_id`, `created_at`</div>
+      <div class="a-content"><p>Chỉ mục (Index) là cấu trúc dữ liệu phụ trợ (thường là B-Tree) giúp máy chủ tìm kiếm dữ liệu với độ phức tạp $O(\log N)$ thay vì phải quét toàn bộ bảng (Full Table Scan $O(N)$).
+<strong>Các trường được đánh chỉ mục trọng yếu trong dự án:</strong></p><ol><li>`chat_group_messages(group_id, id DESC)`: Tối ưu tải 50 tin nhắn mới nhất của phòng chat trong chớp mắt.</li><li>`user_progress(user_id, lesson_id)`: Kiểm tra trạng thái hoàn thành bài học của sinh viên với tốc độ tức thì.</li><li>`accounts(username)`: Đảm bảo tìm kiếm đăng nhập duy nhất chỉ trong 1ms.</li><li>`friendships(user_id, friend_id)`: Tối ưu tra cứu danh sách bạn bè và lời mời kết bạn 2 chiều.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu rõ sự đánh đổi (Trade-off): Đánh chỉ mục tăng tốc độ đọc (Read) nhưng làm chậm nhẹ thao tác ghi (Write) và tốn dung lượng đĩa, vì vậy nhóm chỉ đánh chỉ mục trên các cột thường xuyên nằm trong mệnh đề `WHERE` và `JOIN`.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 25</span>
+        <span>Khái niệm Transaction (Giao dịch) và phương thức `env.DB.batch()` được sử dụng trong trường hợp nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> ACID Properties, Atomicity (Nguyên tử), `db.batch()`, Rollback</div>
+      <div class="a-content"><p>Transaction đảm bảo 4 thuộc tính <strong>ACID (Atomicity, Consistency, Isolation, Durability)</strong>. Nguyên tử (Atomicity) nghĩa là: 'Tất cả cùng thành công hoặc tất cả cùng thất bại (All-or-Nothing)', không có trạng thái lấp lửng.
+<strong>Áp dụng cụ thể trong đồ án:</strong></li><li>Khi người dùng đăng ký tài khoản mới: Cần thực hiện đồng thời 4 thao tác:
+  1. Chèn thông tin vào `accounts`.
+  2. Chèn hồ sơ vào `profiles`.
+  3. Khởi tạo số liệu mặc định trong `user_stats` (50 gems, 5 tim).
+  4. Tặng bùa bảo vệ chuỗi trong `user_inventory`.</li><li>Nhóm sử dụng phương thức `await env.DB.batch([op1, op2, op3, op4])` của Cloudflare D1 để đóng gói toàn bộ 4 câu lệnh vào một Transaction duy nhất. Nếu bất kỳ câu lệnh nào thất bại (ví dụ username bị trùng), toàn bộ giao dịch được Rollback an toàn.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Dẫn chứng việc dùng Transaction khi mua đồ trong Shop: Trừ tiền đá quý (gems) và cộng vật phẩm vào kho đồ phải nằm trong cùng một Transaction để chống gian lận trừ tiền mà không nhận đồ.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 26</span>
+        <span>Vì sao hệ thống lưu tệp tin đa phương tiện trên Cloudflare R2 mà không lưu trực tiếp dạng BLOB trong Database?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Object Storage (S3-compatible), Database Bloat, Giảm tải I/O, Chi phí băng thông</div>
+      <div class="a-content"><p>Đây là bài toán kinh điển trong Kỹ nghệ phần mềm về quản lý tài nguyên:</p><ol><li><strong>Chống phình to CSDL (Prevent Database Bloat):</strong> Các file video MP4, ảnh avatar chất lượng cao có dung lượng từ vài trăm KB đến hàng chục MB. Nếu lưu nhị phân (BLOB) vào CSDL quan hệ, kích thước database sẽ tăng vọt, làm chậm các thao tác backup, restore, index và cache RAM của SQLite.</li><li><strong>Hiệu năng truyền phát:</strong> Cloudflare R2 là hệ thống Object Storage tương thích S3 chuẩn, hỗ trợ truyền phát trực tiếp (Streaming) và phân phối CDN tốc độ cao, giải phóng hoàn toàn gánh nặng I/O cho CSDL.</li><li><strong>Mô hình kết hợp:</strong> Database chỉ lưu đường dẫn URL dạng văn bản (`/media/avatars/...`), còn dữ liệu nhị phân thực tế nằm trên R2.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhắc thêm ưu điểm của Cloudflare R2: Miễn phí hoàn toàn băng thông tải về (Zero Egress Fee), giúp ứng dụng vận hành thương mại mà không sợ phát sinh chi phí ẩn.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 27</span>
+        <span>Mô hình quan hệ Nhiều - Nhiều (N - N) giữa Người dùng và Nhóm chat được hiện thực hóa như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Junction Table (Bảng trung gian), Khóa chính kết hợp, `chat_group_members`</div>
+      <div class="a-content"><p>- Một người dùng có thể tham gia nhiều nhóm học tập, và một nhóm học tập chứa nhiều người dùng $\to$ Đây là quan hệ Nhiều - Nhiều (N-N).</li><li>Trong CSDL quan hệ, không thể đặt khóa ngoại trực tiếp giữa 2 bảng `accounts` và `chat_groups`. Bắt buộc phải sử dụng <strong>Bảng liên kết trung gian (Junction Table)</strong> là `chat_group_members`.</li><li>Bảng này chứa 2 khóa ngoại tham chiếu về 2 bảng cha:</li><li style="margin-left: 15px;">`user_id REFERENCES accounts(user_id)`</li><li style="margin-left: 15px;">`group_id REFERENCES chat_groups(id)`</li><li>Bổ sung thêm các thuộc tính mô tả mối quan hệ: `role` (admin, deputy, member), `joined_at`.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Vẽ nhẩm sơ đồ quan hệ: Users (1) --- (N) Group_Members (N) --- (1) Groups.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 28</span>
+        <span>Hệ thống quản lý dữ liệu lịch sử chuỗi ngày học (Streaks) theo thời gian như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Time-series evaluation, `user_streak_history`, Bùa đông băng (Freeze), Idempotent logic</div>
+      <div class="a-content"><p>- Dữ liệu chuỗi Streak được theo dõi hàng ngày qua bảng `user_streak_history(user_id, activity_date, status)` với các trạng thái: `completed`, `freeze_used`, `missed`.</li><li><strong>Thuật toán đánh giá chuỗi (`evaluateUserStreak`):</strong></li><li style="margin-left: 15px;">So sánh ngày hoạt động gần nhất (`last_active_date`) với ngày hiện tại của Việt Nam (`vietDate()` theo múi giờ UTC+7).</li><li style="margin-left: 15px;">Nếu người dùng học liên tục hôm nay và hôm qua: Giữ nguyên và cộng chuỗi.</li><li style="margin-left: 15px;">Nếu nghỉ 1 ngày: Hệ thống tự động kiểm tra kho đồ (`user_inventory`), nếu có bùa `streak_freeze`, tự động tiêu thụ 1 bùa để đóng băng ngày nghỉ và bảo toàn chuỗi.</li><li style="margin-left: 15px;">Nếu nghỉ quá số ngày bảo vệ: Đặt lại chuỗi `current_streak = 0` một cách minh bạch.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhấn mạnh việc xử lý múi giờ UTC+7 chuẩn xác để tránh trường hợp học lúc 23h59 bị tính nhầm sang ngày mới.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 29</span>
+        <span>Làm thế nào hệ thống đảm bảo tính toàn vẹn dữ liệu (Data Integrity)?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Entity Integrity, Referential Integrity, Domain Integrity, Check Constraints</div>
+      <div class="a-content"><p>Hệ thống bảo vệ toàn vẹn dữ liệu qua 3 cấp độ:</p><ol><li><strong>Toàn vẹn thực thể (Entity Integrity):</strong> Mọi bảng đều có Khóa chính (`PRIMARY KEY`) duy nhất, không rỗng (`NOT NULL`).</li><li><strong>Toàn vẹn tham chiếu (Referential Integrity):</strong> Sử dụng các ràng buộc khóa ngoại `FOREIGN KEY` với cơ chế kiểm tra tự động `ON DELETE CASCADE` hoặc `ON DELETE SET NULL`.</li><li><strong>Toàn vẹn miền giá trị (Domain Integrity):</strong> Giới hạn miền dữ liệu hợp lệ qua các ràng buộc kiểu dữ liệu, mệnh đề `CHECK` (ví dụ: `hearts &gt;= 0`, `gems &gt;= 0`, `role IN ('admin', 'deputy', 'member')`) và giá trị mặc định `DEFAULT`.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Trả lời theo 3 trụ cột Integrity chuẩn lý thuyết CSDL: Thực thể - Tham chiếu - Miền giá trị.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 30</span>
+        <span>Bảo mật CSDL: Hệ thống ngăn chặn triệt để lỗ hổng SQL Injection bằng cách nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Prepared Statements, Parameterized Queries (`.bind()`), Không nối chuỗi SQL</div>
+      <div class="a-content"><p>- <strong>Nguyên nhân SQL Injection:</strong> Do lập trình viên ghép chuỗi đầu vào của người dùng trực tiếp vào câu lệnh SQL (`'SELECT * FROM users WHERE name = ' + input`), kẻ tấn công có thể chèn các ký tự như `' OR '1'='1` để phá hủy CSDL.</li><li><strong>Giải pháp triệt để trong dự án:</strong></li><li style="margin-left: 15px;">100% các câu lệnh truy vấn trong `src/index.js` đều sử dụng <strong>Prepared Statements với Parameter Binding</strong> của Cloudflare D1:</li><li style="margin-left: 15px;">Ví dụ: `env.DB.prepare('SELECT * FROM accounts WHERE username = ?').bind(username).first()`.</li><li style="margin-left: 15px;">Trình phân tích cú pháp SQL sẽ biên dịch trước cấu trúc lệnh, dữ liệu đầu vào trong hàm `.bind()` luôn được đối xử thuần túy là tham số (Literals), ngăn chặn 100% nguy cơ tiêm mã độc SQL.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Mở mã nguồn chỉ trực tiếp cho cô thấy tất cả các câu lệnh đều có dấu hỏi chấm `?` và hàm `.bind()`, tuyệt đối không có nối chuỗi `+`.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 31</span>
+        <span>Bảng `user_academic_transcripts` lưu trữ dữ liệu điểm như thế nào để phục vụ thuật toán cố vấn AI?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> JSON Document Storage, Structured GPA Hierarchy, What-If Simulation Data</div>
+      <div class="a-content"><p>- Bảng `user_academic_transcripts` lưu trữ toàn bộ dữ liệu bảng điểm cào từ cổng trường CMCU:</li><li style="margin-left: 15px;">Cột `student_info`: Lưu thông tin sinh viên (MSSV, lớp, ngành học, số tín chỉ tích lũy).</li><li style="margin-left: 15px;">Cột `raw_subjects`: Lưu danh sách các môn đã học đi kèm điểm thành phần (chuyên cần, bài tập, giữa kỳ, cuối kỳ, điểm hệ 10, hệ 4 và điểm chữ).</li><li style="margin-left: 15px;">Cột `ai_advisor_analysis`: Lưu trữ phân tích chiến lược của AI.</li><li><strong>Lợi ích:</strong> Cấu trúc này cho phép thuật toán What-If mô phỏng cải thiện điểm ngay lập tức trên máy khách mà không cần gọi truy vấn phức tạp tới server.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhắc đến việc hệ thống có hàm khử trùng lặp điểm học lại (`deduplicateClientActiveCourses`), lấy điểm cao nhất của môn cải thiện.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 32</span>
+        <span>Sự khác biệt giữa lưu trữ SQL truyền thống và SQLite phân tán D1 trong việc xử lý đồng thời (Concurrency)?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Optimistic Concurrency, Single-writer Multiple-readers, Cloudflare Pipeline</div>
+      <div class="a-content"><p>- <strong>SQL truyền thống (như MySQL/PostgreSQL):</strong> Sử dụng các cơ chế khóa hàng (Row-level Locking) hoặc MVCC phức tạp trên máy chủ đơn lẻ.</li><li><strong>Cloudflare D1:</strong> Áp dụng mô hình <strong>Single-writer Multiple-readers</strong> kết hợp giao thức đồng thuận Raft. Mọi node biên trên thế giới đều có thể đọc dữ liệu đồng thời với tốc độ song song không giới hạn. Các thao tác ghi được điều phối tuần tự qua pipeline an toàn, loại bỏ hoàn toàn hiện tượng deadlock (khoá chết).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhấn mạnh: Với ứng dụng học tập, 90% tác vụ là Đọc (xem bài, xem bảng điểm, xem tin nhắn) nên mô hình D1 tối ưu hiệu năng vượt trội.</div>
+    </div>
+    
+  <div class="chapter-header">
+    <h2>Chương 3: Quy trình phát triển phần mềm Agile/Scrum (Agile/Scrum Methodology)</h2>
+    <p>Bao gồm 16 câu hỏi về mô hình Agile Scrum qua 6 Sprints, User Stories, Acceptance Criteria, Definition of Done, các nghi thức họp và đo lường tiến độ dự án.</p>
+  </div>
+  
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 33</span>
+        <span>Dự án áp dụng mô hình quy trình phát triển phần mềm nào và tại sao?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Agile Scrum, Lặp và tăng trưởng (Iterative & Incremental), 6 Sprints, Thích ứng nhanh</div>
+      <div class="a-content"><p>Dự án áp dụng mô hình <strong>Agile Scrum</strong>:</li><li><strong>Lý do lựa chọn:</strong> Dự án có phạm vi tính năng đa dạng (học tập, mạng xã hội, bot media, kiosk guard native, tích hợp AI). Mô hình truyền thống Waterfall (thác nước) quá cứng nhắc và không thể ứng phó kịp thời với các rủi ro kỹ thuật (như thay đổi cổng trường hay lỗi detached buffer của PDF).</li><li><strong>Đặc trưng:</strong> Phát triển theo phương pháp <strong>lặp và tăng trưởng (Iterative &amp; Incremental)</strong>, chia thành 6 Sprints rõ ràng. Mỗi Sprint đều tạo ra một phiên bản phần mềm có thể chạy được (Potentially Shippable Product Increment).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Trả lời nhấn mạnh vào tính 'thích ứng với sự thay đổi' (Embracing Change) của Tuyên ngôn Agile.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 34</span>
+        <span>Tuyên ngôn Agile (Agile Manifesto) có 4 giá trị cốt lõi gì và nhóm đã áp dụng như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Cá nhân và sự tương tác, Phần mềm chạy tốt, Hợp tác với khách hàng, Phản hồi với thay đổi</div>
+      <div class="a-content"><p>4 giá trị cốt lõi của Agile được hiện thực hóa trong đồ án:</p><ol><li><strong>Cá nhân và sự tương tác hơn là quy trình và công cụ:</strong> Nhóm trao đổi trực tiếp hàng ngày, thống nhất nhanh các giải pháp kiến trúc.</li><li><strong>Phần mềm chạy tốt hơn là tài liệu đầy đủ:</strong> Ưu tiên bàn giao sản phẩm chạy thực tế sau mỗi Sprint (thể hiện qua URL live `workers.dev` và bộ test 38 PASS).</li><li><strong>Hợp tác với khách hàng hơn là đàm phán hợp đồng:</strong> Thường xuyên lấy ý kiến phản hồi từ chính các bạn sinh viên CMCU đang tự học để bổ sung tính năng phù hợp.</li><li><strong>Phản hồi với thay đổi hơn là bám sát kế hoạch:</strong> Linh hoạt bổ sung tính năng Bookmarklet 1-chạm khi phát hiện rào cản CORS trên Web.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Thuộc lòng 4 giá trị này, giảng viên môn CNPM rất thích sinh viên đối chiếu lý thuyết Agile vào thực tế dự án.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 35</span>
+        <span>Các vai trò (Roles) trong mô hình Scrum của nhóm được phân công như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Product Owner (PO), Scrum Master (SM), Development Team (Dev)</div>
+      <div class="a-content"><p>- <strong>Product Owner (PO):</strong> Đại diện cho tiếng nói người dùng (sinh viên), quản lý và sắp xếp độ ưu tiên của Product Backlog, quyết định tiêu chí chấp nhận cho các tính năng cốt lõi.</li><li><strong>Scrum Master (SM):</strong> Đảm bảo quy trình Scrum được tuân thủ, điều phối các buổi họp Daily Standup, tháo gỡ các trở ngại kỹ thuật (Impediments) cho nhóm.</li><li><strong>Development Team:</strong> Nhóm kỹ sư đa năng (Full-stack) chịu trách nhiệm thiết kế, lập trình Frontend, Backend, Native Guard Windows và xây dựng bộ kiểm thử tự động.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu rõ vai trò của bản thân trong nhóm để chứng minh sự đóng góp thực tế.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 36</span>
+        <span>Trình bày tổng quan mục tiêu và kết quả chính của Sprint 1?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Khởi tạo nền tảng, CSDL D1, Xác thực PBKDF2, Khung giao diện Duolingo</div>
+      <div class="a-content"><p><strong>Mục tiêu Sprint 1:</strong> Thiết lập kiến trúc cốt lõi, cơ sở dữ liệu và hệ thống xác thực người dùng an toàn.
+<strong>Kết quả đạt được:</strong></li><li>Thiết kế 33 bảng cơ sở dữ liệu trên Cloudflare D1.</li><li>Hiện thực hóa cơ chế băm mật khẩu chuẩn quân đội PBKDF2-HMAC-SHA256 kết hợp mã hóa Salt ngẫu nhiên.</li><li>Xây dựng khung giao diện Single Page Application phong cách Duolingo với thanh điều hướng Sidebar và hệ thống Theme Sáng/Tối Neo-brutalism.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Tham chiếu trực tiếp đến tài liệu `sprint/Sprint_1.md`.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 37</span>
+        <span>Trình bày mục tiêu và kết quả chính của Sprint 2?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Mascot Thỏ Bảy Màu FSM, Cây bài học Gamification, Hệ thống Tim/XP/Streak</div>
+      <div class="a-content"><p><strong>Mục tiêu Sprint 2:</strong> Xây dựng cơ chế tương tác học tập thông minh và hệ thống tạo động lực (Gamification).
+<strong>Kết quả đạt được:</strong></li><li>Lập trình bộ máy hữu hạn trạng thái (FSM) cho Linh vật Thỏ Bảy Màu bằng SVG động, biểu cảm thay đổi theo ngữ cảnh.</li><li>Xây dựng lộ trình học tập dạng cây kỹ năng với các Cửa ải (Stages), Nút bài học (Lesson Nodes), rương kho báu và câu hỏi trắc nghiệm tương tác.</li><li>Hiện thực hóa cơ chế Streak bảo vệ chuỗi ngày học, thưởng Tim và Đá quý.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Tham chiếu trực tiếp đến tài liệu `sprint/Sprint_2.md`.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 38</span>
+        <span>Trình bày mục tiêu và kết quả chính của Sprint 3?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Pomodoro Kiosk, Windows Native Guard (`study_guard.exe`), Âm thanh Byte-Range 206</div>
+      <div class="a-content"><p><strong>Mục tiêu Sprint 3:</strong> Xây dựng phòng học tập trung Pomodoro chống gian lận đa màn hình trên Windows Desktop.
+<strong>Kết quả đạt được:</strong></li><li>Tích hợp tệp nhị phân native `study_guard.exe` can thiệp Windows Hook, khóa phím và vô hiệu hóa các màn hình phụ khi học.</li><li>Xây dựng máy phát nhạc sóng não Lo-fi hỗ trợ chuẩn HTTP 206 Byte-Range streaming.</li><li>Sảnh chờ phòng học hiển thị danh sách người cùng học thời gian thực.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Tham chiếu trực tiếp đến tài liệu `sprint/Sprint_3.md`.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 39</span>
+        <span>Trình bày mục tiêu và kết quả chính của Sprint 4?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Mạng xã hội học tập, Chat nhóm/1-1, Bot 3TG Media Hub, Quản trị phòng chat</div>
+      <div class="a-content"><p><strong>Mục tiêu Sprint 4:</strong> Xây dựng phân hệ mạng xã hội sinh viên, kết bạn và nhóm học tập tích hợp Trợ lý Bot 3TG.
+<strong>Kết quả đạt được:</strong></li><li>Hệ thống Messenger hỗ trợ nhắn tin trực tiếp 1-1 và tạo nhóm chat học tập.</li><li>Tích hợp Bot 3TG đa năng hỗ trợ các lệnh media giải trí (`!ff`, `!anime`, `!gai`, `!sad`, `!sing`, `!troll`) và tra cứu thông tin nhóm.</li><li>Phân quyền Trưởng nhóm (Key holder), Phó nhóm và thành viên.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Tham chiếu trực tiếp đến tài liệu `sprint/Sprint_4.md`.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 40</span>
+        <span>Trình bày mục tiêu và kết quả chính của Sprint 5?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Cổng trường IU CMCU, Cố vấn học tập 3TG AI, Giải mã XOR/Base64, Mô phỏng What-If GPA</div>
+      <div class="a-content"><p><strong>Mục tiêu Sprint 5:</strong> Tích hợp cổng thông tin sinh viên Đại học CMC (`iu.cmcu.edu.vn`) và Trợ giảng AI cố vấn học tập.
+<strong>Kết quả đạt được:</strong></li><li>Thuật toán giải mã bảng điểm cổng trường với chuẩn mã hóa nội bộ XOR và Base64.</li><li>Tính toán chính xác GPA hệ 10, GPA hệ 4, phân loại học lực và phát hiện các môn điểm C/D/F cần cải thiện.</li><li>Trợ giảng 3TG AI phân tích lộ trình gỡ điểm 4 tuần theo phương pháp Active Recall.</li><li>Công cụ mô phỏng What-If dự đoán điểm GPA tương lai.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Tham chiếu trực tiếp đến tài liệu `sprint/Sprint_5.md`.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 41</span>
+        <span>Trình bày mục tiêu và kết quả chính của Sprint 6?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Kiểm thử toàn diện 38 PASS, Tối ưu Mobile 375px, Cloudflare Workers Deploy, Master Release</div>
+      <div class="a-content"><p><strong>Mục tiêu Sprint 6:</strong> Kiểm thử toàn diện toàn hệ thống, tối ưu hóa giao diện di động và phát hành bản Release chính thức.
+<strong>Kết quả đạt được:</strong></li><li>Xây dựng Test Suite tự động đạt <strong>38 PASS, 0 FAIL</strong> bao quát cả 6 phân hệ cốt lõi.</li><li>Tối ưu hóa 100% giao diện di động chuẩn màn hình nhỏ 375px (iPhone SE):</li><li style="margin-left: 15px;">Menu sidebar đóng mở mượt mà kèm nút ✕ đóng nhanh.</li><li style="margin-left: 15px;">Bố cục 2 cột dạng thẻ Facebook cho Khóa học, Cửa hàng và Nhóm bạn.</li><li style="margin-left: 15px;">Sửa lỗi tràn màn hình, avatar nhóm méo và thứ tự tin nhắn.</li><li>Triển khai thành công lên Cloudflare Workers tại tên miền `https://lumi-study.3tgstudy.workers.dev`.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Tham chiếu trực tiếp đến tài liệu `sprint/Sprint_6.md`.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 42</span>
+        <span>User Story là gì? Cho ví dụ một User Story hoàn chỉnh trong dự án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> As a [role], I want [feature], So that [benefit]</div>
+      <div class="a-content"><p><strong>Định nghĩa:</strong> User Story là bản mô tả ngắn gọn, phi kỹ thuật về một tính năng phần mềm dưới góc nhìn của người dùng cuối.
+<strong>Cấu trúc chuẩn:</strong> `Là một [Vai trò], tôi muốn [Hành động/Tính năng], để [Lợi ích/Giá trị]`.
+<strong>Ví dụ trong dự án 3TG Study:</strong>
+<em>"Là một sinh viên Đại học CMC chuẩn bị thi hết môn, tôi muốn kết nối tài khoản trường để xem phân tích các môn điểm thấp C/D/F và mô phỏng GPA What-If, để tôi có thể lên kế hoạch ôn thi cải thiện điểm hiệu quả nhất và nâng học lực lên Giỏi."</em></p></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Giảng viên đánh giá rất cao khi bạn nêu rõ cả 3 vế: Ai? Muốn gì? Để làm gì?</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 43</span>
+        <span>Tiêu chí chấp nhận (Acceptance Criteria - AC) có vai trò gì và viết như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Acceptance Criteria, Given - When - Then, Ranh giới kiểm thử</div>
+      <div class="a-content"><p>- <strong>Vai trò:</strong> AC xác định ranh giới rõ ràng khi nào một User Story được coi là hoàn thành, là căn cứ để nhóm lập trình và viết Test Cases kiểm thử.</li><li><strong>Định dạng chuẩn Given - When - Then:</strong></li><li style="margin-left: 15px;"><em>Given (Ngữ cảnh):</em> Học viên đang ở sảnh chờ Pomodoro với 0 tim còn lại.</li><li style="margin-left: 15px;"><em>When (Hành động):</em> Học viên hoàn thành đủ một chu kỳ học tập 25 phút không vi phạm Kiosk Guard.</li><li style="margin-left: 15px;"><em>Then (Kết quả mong đợi):</em> Hệ thống phải cộng 1 Tim thưởng, cộng 50 điểm XP và cập nhật số liệu hiển thị trên topbar mà không cần tải lại trang.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu rõ AC chính là bản hợp đồng giữa Product Owner và Development Team.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 44</span>
+        <span>Định nghĩa hoàn thành (Definition of Done - DoD) của nhóm gồm những tiêu chí nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Definition of Done (DoD), Code Review, Unit Tests Pass, Responsive, No Critical Bugs</div>
+      <div class="a-content"><p>Một tính năng chỉ được đánh dấu 'Done' khi thỏa mãn toàn bộ checklist DoD của nhóm:</p><ol><li>Mã nguồn được viết theo chuẩn Clean Code, không có biến thừa hoặc hàm trùng lặp.</li><li>Vượt qua 100% các ca kiểm thử trong bộ Test Suite tự động (38/38 PASS).</li><li>Đã kiểm tra tương thích giao diện trên cả Desktop và Mobile màn hình nhỏ 375px.</li><li>Được đồng thuận duyệt qua quy trình Code Review của nhóm.</li><li>Đã đóng gói và triển khai thành công lên môi trường Cloudflare Workers Production không có lỗi runtime console.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Khẳng định: 'Viết code xong chưa gọi là Done, phải thỏa mãn toàn bộ DoD mới được nghiệm thu Sprint'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 45</span>
+        <span>Product Backlog và Sprint Backlog khác nhau như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Product Backlog (Tổng thể, Ưu tiên), Sprint Backlog (Cam kết, Chi tiết trong Sprint)</div>
+      <div class="a-content"><p>- <strong>Product Backlog:</strong> Là danh sách tổng hợp toàn bộ các yêu cầu, tính năng, cải tiến và bản sửa lỗi mong muốn cho toàn bộ vòng đời sản phẩm. Được quản lý bởi Product Owner và liên tục được cập nhật, sắp xếp theo độ ưu tiên nghiệp vụ.</li><li><strong>Sprint Backlog:</strong> Là tập con các hạng mục được đội ngũ phát triển chọn lọc từ Product Backlog trong buổi họp Sprint Planning để cam kết hoàn thành trong một Sprint cụ thể (kèm kế hoạch công việc chi tiết để hiện thực hóa chúng).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Dùng hình ảnh: Product Backlog là kho nguyên liệu tổng, Sprint Backlog là thực đơn nấu ăn trong tuần.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 46</span>
+        <span>Các buổi họp trong Scrum (Ceremonies) được nhóm tổ chức như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Sprint Planning, Daily Scrum (15 phút), Sprint Review (Demo), Sprint Retrospective</div>
+      <div class="a-content"><p>Nhóm duy trì nghiêm túc 4 nghi thức Scrum:</p><ol><li><strong>Sprint Planning:</strong> Đầu mỗi Sprint, nhóm họp chọn các User Story và phân rã thành các Task kỹ thuật.</li><li><strong>Daily Standup:</strong> Họp nhanh 15 phút đầu ngày trả lời 3 câu hỏi: <em>Hôm qua đã làm gì? Hôm nay sẽ làm gì? Có gặp trở ngại gì không?</em></li><li><strong>Sprint Review:</strong> Cuối Sprint, nhóm demo phần mềm chạy thực tế cho các thành viên và lấy ý kiến đánh giá.</li><li><strong>Sprint Retrospective (Cải tiến):</strong> Rút kinh nghiệm: <em>Cái gì làm tốt? Cái gì chưa tốt? Cần cải tiến điều gì ở Sprint tiếp theo?</em></li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Kể một ví dụ thực tế ở Sprint Retrospective 5: Nhóm nhận thấy giao diện mobile bị tràn chữ nên đã thống nhất đặt trọng tâm Sprint 6 vào Mobile Responsive.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 47</span>
+        <span>Cách nhóm đo lường tiến độ và năng suất phát triển (Velocity & Burndown Chart)?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Story Points, Team Velocity, Burndown Chart, Ước lượng độ phức tạp</div>
+      <div class="a-content"><p>- <strong>Story Points:</strong> Nhóm sử dụng dãy số Fibonacci (1, 2, 3, 5, 8, 13) để ước lượng độ phức tạp tương đối của mỗi User Story thay vì dùng giờ làm việc thuần túy.</li><li><strong>Velocity (Vận tốc nhóm):</strong> Tính bằng tổng số Story Points nhóm hoàn thành thực tế trong mỗi Sprint (trung bình nhóm đạt 25 - 30 Story Points / Sprint).</li><li><strong>Burndown Chart (Biểu đồ cháy):</strong> Đồ thị thể hiện khối lượng công việc còn lại theo từng ngày của Sprint, giúp nhóm nhận diện sớm nguy cơ trễ hạn để kịp thời điều chỉnh phạm vi.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhắc rằng việc ước lượng bằng Story Points giúp tránh sai số do kinh nghiệm lập trình của từng cá nhân.</div>
+    </div>
+    
+  <div class="chapter-header">
+    <h2>Chương 4: Kỹ nghệ yêu cầu phần mềm (Requirements Engineering)</h2>
+    <p>Bao gồm 12 câu hỏi phân biệt Yêu cầu chức năng (FR) và phi chức năng (NFR), ma trận truy vết RTM, kỹ thuật thu thập và kiểm soát thay đổi yêu cầu.</p>
+  </div>
+  
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 48</span>
+        <span>Phân biệt Yêu cầu chức năng (FR) và Yêu cầu phi chức năng (NFR) trong dự án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Functional Requirements (Hệ thống làm gì?), Non-Functional Requirements (Hệ thống chạy thế nào?)</div>
+      <div class="a-content"><p>- <strong>Yêu cầu chức năng (Functional Requirements - FR):</strong> Mô tả các hành vi, dịch vụ hoặc chức năng cụ thể mà hệ thống phần mềm bắt buộc phải cung cấp cho người dùng.</li><li style="margin-left: 15px;"><em>Ví dụ:</em> Học viên có thể trả lời câu hỏi trắc nghiệm, tạo nhóm học tập, tra cứu điểm thi cổng trường, nói chuyện với AI Tutor.</li><li><strong>Yêu cầu phi chức năng (Non-Functional Requirements - NFR):</strong> Mô tả các tiêu chuẩn chất lượng, ràng buộc kỹ thuật và đặc tính vận hành của hệ thống.</li><li style="margin-left: 15px;"><em>Ví dụ:</em> Thời gian tải trang dưới 100ms, bảo mật mật khẩu bằng thuật toán PBKDF2, giao diện co giãn tốt trên màn hình nhỏ 375px, độ sẵn sàng đạt 99.9%.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhớ câu châm ngôn: 'FR là phần mềm làm ĐÚNG VIỆC (Do the right things), NFR là phần mềm làm VIỆC ĐÚNG CÁCH (Do things right)'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 49</span>
+        <span>Kể tên 6 phân hệ Yêu cầu chức năng cốt lõi (FR) của hệ thống 3TG Study AI?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Học tập Duolingo, Mascot FSM, Pomodoro Focus, Mạng xã hội & Chat, Cổng trường CMCU, 3TG AI Tutor</div>
+      <div class="a-content"><p>6 phân hệ chức năng chính bao gồm:</p><ol><li><strong>Phân hệ Học tập &amp; Cây bài học Gamification (FR-01):</strong> Học theo lộ trình cửa ải, làm bài trắc nghiệm tương tác, quản lý tiến độ, thưởng Tim, XP và Chuỗi ngày học Streak.</li><li><strong>Phân hệ Linh vật Thỏ Bảy Màu FSM (FR-02):</strong> Đổi biểu cảm và lời thoại động theo hành vi học bài của sinh viên.</li><li><strong>Phân hệ Sảnh học Pomodoro Focus Kiosk (FR-03):</strong> Đếm giờ 25/5, khóa môi trường gian lận đa màn hình, phát nhạc tập trung, hiển thị danh sách người cùng học.</li><li><strong>Phân hệ Mạng xã hội &amp; Chat nhóm (FR-04):</strong> Nhắn tin 1-1, lập nhóm học tập, đổi avatar nhóm lên Cloudflare R2, tích hợp Bot 3TG giải trí media.</li><li><strong>Phân hệ Quản trị Học thuật Cổng trường CMCU (FR-05):</strong> Cào bảng điểm, phân loại môn điểm C/D/F, mô phỏng điểm GPA What-If.</li><li><strong>Phân hệ Trợ lý Trí tuệ Nhân tạo 3TG AI (FR-06):</strong> Giải thích bài tập từng bước, tư vấn chiến lược cải thiện điểm học kỳ theo phương pháp Active Recall.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Trình bày mạch lạc theo đúng 6 phân hệ lớn tương ứng với mục tiêu 6 Sprints.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 50</span>
+        <span>Nêu các Yêu cầu phi chức năng (NFR) về Hiệu năng (Performance) mà hệ thống đạt được?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Độ trễ API <100ms, Bundle size <350KB, Google Lighthouse >95, CPU Usage <5%</div>
+      <div class="a-content"><p>Hệ thống đáp ứng các chỉ số NFR định lượng khắt khe:</li><li><strong>Thời gian phản hồi API:</strong> Dưới 100ms cho 95% các request thông thường tại Data Center biên Việt Nam.</li><li><strong>Dung lượng trang web:</strong> Toàn bộ mã nguồn tệp tĩnh sau nén gzip chỉ vỏn vẹn 76.4 KiB, tổng dung lượng bộ nhớ tải trang &lt;350KB.</li><li><strong>Thời gian khởi động Kiosk:</strong> Dưới 1.5 giây trên hệ điều hành Windows 10/11.</li><li><strong>Tải tài nguyên máy tính:</strong> Tiến trình chạy ngầm của Electron Kiosk chiếm dưới 5% CPU và dưới 85MB RAM, đảm bảo mượt mà ngay cả trên các laptop cấu hình thấp của sinh viên.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Luôn đưa ra các con số định lượng cụ thể (Metrics), không trả lời chung chung 'nhanh' hay 'mượt'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 51</span>
+        <span>Nêu các NFR về Bảo mật (Security) trong quản lý mật khẩu và phiên làm việc?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> PBKDF2-HMAC-SHA256, Salt ngẫu nhiên 16 bytes, HttpOnly Cookie, Rate Limiting</div>
+      <div class="a-content"><p>Hệ thống bảo vệ người dùng theo tiêu chuẩn an ninh quốc tế:</p><ol><li><strong>Bảo mật lưu trữ mật khẩu:</strong> Sử dụng thuật toán PBKDF2 (Password-Based Key Derivation Function 2) với 100,000 vòng lặp HMAC-SHA256 và chuỗi muối ngẫu nhiên (Cryptographic Salt) 16 bytes, vô hiệu hóa hoàn toàn các cuộc tấn công tra từ điển (Rainbow Table Attack).</li><li><strong>Bảo mật phiên làm việc (Session Security):</strong> Định danh phiên qua chuỗi token ngẫu nhiên mã hóa trong Cookie với các cờ bảo vệ `HttpOnly` (chống đánh cắp cookie qua XSS) và `SameSite=Lax` (chống tấn công CSRF).</li><li><strong>Chống Brute-force:</strong> Bộ lọc Rate Limiter chặn tự động khi phát hiện đăng nhập sai quá 5 lần trong 15 phút từ cùng một địa chỉ IP.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu rõ: Dự án có cơ chế tự động nâng cấp mã băm (Auto-upgrade hash) từ chuẩn SHA-256 cũ lên PBKDF2 khi sinh viên đăng nhập.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 52</span>
+        <span>Nêu các NFR về Khả năng tương thích thiết bị (Responsive Design) của đồ án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Mobile First, Viewport 375px (iPhone SE), CSS Grid / Flexbox, Touch Target 44px</div>
+      <div class="a-content"><p>- <strong>Khả năng tương thích:</strong> Hệ thống hiển thị tối ưu trên dải màn hình từ 375px (điện thoại cỡ nhỏ như iPhone SE) đến 2560px (màn hình máy tính 2K/4K).</li><li><strong>Chuẩn công thái học di động (Mobile Usability):</strong></li><li style="margin-left: 15px;">Mọi nút bấm (Touch Targets) có kích thước tối thiểu $44 \times 44\text{px}$ theo khuyến nghị của Apple Human Interface Guidelines.</li><li style="margin-left: 15px;">Bố cục lưới tự động chuyển đổi từ 3-4 cột trên máy tính thành 2 cột đều trên di động.</li><li style="margin-left: 15px;">Không bao giờ xuất hiện thanh cuộn ngang ngoài ý muốn (Zero horizontal scrollbar).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Dẫn chứng ngay việc ở Sprint 6 nhóm đã test trực tiếp trên DevTools mobile 375px và điện thoại thật.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 53</span>
+        <span>NFR về Tính dễ sử dụng (Usability) và Tâm lý học người dùng (Gamification) được thiết kế thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Dopamine Loop, Duolingo Neo-brutalism, Micro-interactions, Sound FX</div>
+      <div class="a-content"><p>- <strong>Vòng lặp tạo động lực (Dopamine Loop):</strong> Mỗi hành động tích cực của sinh viên (trả lời đúng, hoàn thành bài, duy trì chuỗi Streak) đều được khen thưởng tức thì bằng âm thanh leng keng vui nhộn, hiệu ứng pháo hoa Confetti và lời khen từ Thỏ Bảy Màu.</li><li><strong>Phong cách Neo-brutalism:</strong> Sử dụng viền đen đậm, đổ bóng khối 3D cứng cáp và bảng màu tươi sáng, tạo cảm giác thân thiện, xua tan sự căng thẳng và nhàm chán khi ôn thi đại học.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu rõ: 'Phần mềm giáo dục thành công không chỉ cần đúng chức năng mà phải khiến người dùng muốn quay lại học mỗi ngày'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 54</span>
+        <span>Các kỹ thuật thu thập yêu cầu (Requirements Elicitation Techniques) nào đã được nhóm áp dụng?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Phỏng vấn sâu (Interviews), Quan sát thực tế (Observation), Khảo sát bảng hỏi (Surveys)</div>
+      <div class="a-content"><p>Nhóm đã kết hợp 3 kỹ thuật thu thập yêu cầu trong môn CNPM:</p><ol><li><strong>Phỏng vấn sâu (Interviews):</strong> Phỏng vấn trực tiếp 15 sinh viên Đại học CMC về những khó khăn lớn nhất khi tự học ở nhà (phân tâm lướt mạng, chán nản, không biết mình yếu môn nào).</li><li><strong>Quan sát hành vi (Observation):</strong> Quan sát thói quen học tập của sinh viên trong phòng tự học để phát hiện nhu cầu phòng Kiosk chặn sao nhãng và nhu cầu học nhóm.</li><li><strong>Nghiên cứu sản phẩm tương tự (Benchmarking):</strong> Phân tích điểm mạnh của Duolingo (giữ chuỗi Streak, gamification) và Forest (tập trung Pomodoro) để chắt lọc những tinh hoa vào 3TG Study.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Chứng minh yêu cầu phần mềm xuất phát từ nỗi đau có thật (Real Pain-points) của sinh viên.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 55</span>
+        <span>Ma trận truy vết yêu cầu (Requirements Traceability Matrix - RTM) có tác dụng gì trong đồ án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Traceability Matrix, Liên kết Yêu cầu - Thiết kế - Code - Test Case, Chống sót tính năng</div>
+      <div class="a-content"><p>- <strong>Khái niệm:</strong> RTM là bảng ma trận liên kết đa chiều giữa: Yêu cầu của người dùng $\to$ Yêu cầu phần mềm (FR) $\to$ Module thiết kế $\to$ File mã nguồn $\to$ Test Cases kiểm thử.</li><li><strong>Tác dụng trong dự án:</strong></li><li style="margin-left: 15px;">Đảm bảo 100% các yêu cầu đặt ra đều được lập trình đầy đủ (không bị bỏ sót).</li><li style="margin-left: 15px;">Giúp đánh giá tác động (Impact Analysis) khi có thay đổi: Nếu sửa một yêu cầu, nhóm biết chính xác những file code và test case nào cần được cập nhật theo.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Khẳng định toàn bộ 38 test cases trong bộ kiểm thử Sprint 6 đều được truy vết ngược về các FR ban đầu.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 56</span>
+        <span>Nhóm xử lý bài toán xung đột yêu cầu (Conflict Resolution) như thế nào? (Ví dụ: Chống gian lận vs Quyền riêng tư)?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Trade-off, Privacy-preserving Kiosk, Không quay màn hình, Không đọc dữ liệu cá nhân</div>
+      <div class="a-content"><p>- <strong>Xung đột phát sinh:</strong> Yêu cầu Chống gian lận đòi hỏi giám sát học viên, nhưng yêu cầu Phi chức năng về Quyền riêng tư (Privacy) đòi hỏi không được xâm phạm máy tính cá nhân của sinh viên.</li><li><strong>Giải pháp dung hòa của nhóm:</strong></li><li style="margin-left: 15px;">Thay vì cài phần mềm gián điệp theo dõi webcam hay quét tệp tin máy tính (như một số phần mềm thi cử cực đoan gây phản cảm),</li><li style="margin-left: 15px;">3TG Study chỉ sử dụng kỹ thuật <strong>Hộp cát tự nguyện (Voluntary Kiosk Guard)</strong>: Tự động che các màn hình phụ và phát âm thanh cảnh báo khi chuột rời khỏi vùng học bài.</li><li style="margin-left: 15px;">Tuyệt đối không thu thập hình ảnh, không đọc lịch sử duyệt web của sinh viên, bảo vệ quyền riêng tư 100%.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Đây là câu trả lời thể hiện tư duy đạo đức nghề nghiệp và giải quyết xung đột yêu cầu xuất sắc.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 57</span>
+        <span>Làm thế nào để kiểm định và xác nhận yêu cầu (Requirements Validation) với người dùng?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Sprint Review Demo, UAT Testing, Người dùng trải nghiệm thực tế</div>
+      <div class="a-content"><p>Sau mỗi Sprint, nhóm tiến hành xác nhận yêu cầu qua 2 bước:</p><ol><li><strong>Nghiệm thu tiêu chí chấp nhận (AC Verification):</strong> Kiểm tra xem tính năng có vượt qua toàn bộ các kịch bản Given-When-Then đã cam kết hay không.</li><li><strong>Thử nghiệm chấp nhận người dùng (User Acceptance Testing - UAT):</strong> Đưa link web `lumi-study.3tgstudy.workers.dev` cho nhóm sinh viên trải nghiệm thực tế trên điện thoại và laptop, thu nhận phản hồi để điều chỉnh ngay trong Sprint tiếp theo.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhấn mạnh chu kỳ phản hồi ngắn (Short Feedback Loop) giúp sản phẩm luôn bám sát kỳ vọng của sinh viên.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 58</span>
+        <span>Hiện tượng thay đổi phạm vi yêu cầu (Scope Creep) là gì và nhóm đã kiểm soát nó như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Scope Creep, Đóng băng phạm vi (Scope Freeze), Đưa vào Product Backlog tương lai</div>
+      <div class="a-content"><p>- <strong>Scope Creep:</strong> Là hiện tượng phạm vi dự án liên tục bị phình to do các yêu cầu mới phát sinh ngoài kế hoạch ban đầu, dẫn đến nguy cơ vỡ tiến độ (trễ deadline).</li><li><strong>Cách nhóm kiểm soát:</strong></li><li style="margin-left: 15px;">Áp dụng nguyên tắc <strong>Đóng băng phạm vi Sprint (Sprint Scope Freeze)</strong>: Khi Sprint đã bắt đầu, tuyệt đối không chèn thêm tính năng mới vào Sprint đó.</li><li style="margin-left: 15px;">Mọi ý tưởng mới (ví dụ: làm thêm tính năng diễn đàn thảo luận hay gọi video nhóm) đều được ghi nhận vào Product Backlog để đánh giá và ưu tiên cho các phiên bản tương lai.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Khẳng định: 'Biết từ chối đúng lúc là phẩm chất quan trọng của người quản trị dự án phần mềm'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 59</span>
+        <span>Tài liệu hóa yêu cầu phần mềm (Software Requirements Specification - SRS) trong dự án gồm những mục gì?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Mục đích, Phạm vi, Mô tả tổng quan, Yêu cầu giao diện, FR & NFR, Phụ lục</div>
+      <div class="a-content"><p>Tài liệu SRS của đồ án được cấu trúc theo chuẩn quốc tế IEEE 830, gồm:</p><ol><li><strong>Giới thiệu:</strong> Mục đích tài liệu, phạm vi đề tài 3TG Study AI, đối tượng độc giả.</li><li><strong>Mô tả tổng quan:</strong> Phác thảo sản phẩm, các lớp người dùng, môi trường vận hành (Web &amp; Windows).</li><li><strong>Yêu cầu giao diện bên ngoài:</strong> Giao diện người dùng, giao diện phần cứng, giao diện truyền thông API.</li><li><strong>Yêu cầu chức năng chi tiết (System Features):</strong> 6 phân hệ cốt lõi với use case cụ thể.</li><li><strong>Yêu cầu phi chức năng:</strong> Hiệu năng, bảo mật, độ tin cậy, tính bảo trì.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhắc lại các mục chính chuẩn IEEE 830 để chứng minh kiến thức học thuật vững chắc.</div>
+    </div>
+    
+  <div class="chapter-header">
+    <h2>Chương 5: Thiết kế hệ thống & Mô hình hóa UML (System Design & UML)</h2>
+    <p>Bao gồm 12 câu hỏi giải thích các loại sơ đồ UML (Use Case, Sequence, State Machine, Activity, Class, Deployment) và Design Patterns trong mã nguồn.</p>
+  </div>
+  
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 60</span>
+        <span>Sơ đồ Use Case tổng quát của hệ thống gồm những Actor nào và mối quan hệ giữa chúng?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Actor: Sinh viên (Student), Trưởng nhóm (Admin), Hệ thống AI / Cổng trường (External System)</div>
+      <div class="a-content"><p>Sơ đồ Use Case của 3TG Study xác định 3 Actor chính:</p><ol><li><strong>Sinh viên (Học viên - Primary Actor):</strong> Thực hiện học bài trắc nghiệm, tham gia phòng Pomodoro, nhắn tin, xem điểm và trò chuyện với AI.</li><li><strong>Trưởng nhóm học tập (Admin - Specialized Actor):</strong> Kế thừa toàn bộ quyền của Sinh viên, có thêm các Use Case đặc quyền: Đổi tên/avatar nhóm, mời/kick thành viên, thêm/bớt Bot 3TG, chuyển giao quyền quản trị.</li><li><strong>Hệ thống ngoài (Secondary / External Actors):</strong>
+   - <em>Cổng thông tin IU CMCU:</em> Cung cấp nguồn dữ liệu bảng điểm.
+   - <em>Groq AI Cloud Engine:</em> Đóng vai trò máy chủ suy luận trí tuệ nhân tạo.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhớ giải thích quan hệ kế thừa giữa Actor Trưởng nhóm và Học viên.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 61</span>
+        <span>Phân biệt quan hệ <<include>> và <<extend>> trong sơ đồ Use Case của dự án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Include (Bắt buộc phải có), Extend (Mở rộng có điều kiện), Điểm mở rộng (Extension Point)</div>
+      <div class="a-content"><p>- <strong>Quan hệ `&lt;&lt;include&gt;&gt;` (Bao hàm - Bắt buộc):</strong></li><li style="margin-left: 15px;"><em>Ví dụ:</em> Use Case <em>'Làm bài học'</em> `&lt;&lt;include&gt;&gt;` Use Case <em>'Xác thực đăng nhập'</em>. Bạn bắt buộc phải đăng nhập thì mới lưu được điểm và tiến độ học tập vào hệ thống.</li><li><strong>Quan hệ `&lt;&lt;extend&gt;&gt;` (Mở rộng - Tùy chọn có điều kiện):</strong></li><li style="margin-left: 15px;"><em>Ví dụ:</em> Use Case <em>'Phân tích lộ trình điểm bằng 3TG AI'</em> `&lt;&lt;extend&gt;&gt;` Use Case <em>'Xem bảng điểm môn học'</em>. Chỉ khi học viên có nhu cầu cải thiện điểm hoặc bấm nút nhờ AI trợ giúp thì hành vi mở rộng này mới được kích hoạt tại điểm mở rộng (Extension Point).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Include là mũi tên nét đứt hướng từ Base Use Case đến Included Use Case, Extend hướng từ Extension Use Case về Base Use Case.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 62</span>
+        <span>Phân tích Sơ đồ tuần tự (Sequence Diagram) luồng xử lý Nộp bài học và Chấm điểm?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Lifeline: Client UI -> App Controller -> API Gateway -> Database D1 -> UI Feedback</div>
+      <div class="a-content"><p>Luồng tuần tự gồm 5 bước thông điệp:</p><ol><li><strong>User $\to$ Client UI:</strong> Chọn đáp án và bấm nút 'Kiểm tra' (`submitAnswer`).</li><li><strong>Client UI $\to$ API Gateway (`/api/lessons/:id/check`):</strong> Gửi mã câu hỏi và đáp án lựa chọn.</li><li><strong>API Gateway $\to$ Database D1:</strong> Truy vấn đáp án đúng trong bảng `questions`, so sánh kết quả:
+   - Nếu đúng: Chuẩn bị thông điệp cộng XP, tính toán Streak trong `user_stats`.
+   - Nếu sai: Trừ 1 Tim, ghi bản ghi vào bảng `user_mistakes` để phục vụ ôn tập câu sai.</li><li><strong>Database D1 $\to$ API Gateway:</strong> Xác nhận hoàn thành transaction.</li><li><strong>API Gateway $\to$ Client UI:</strong> Trả về kết quả JSON. Giao diện Client kích hoạt âm thanh, cập nhật thanh tiến độ và chuyển trạng thái Thỏ Bảy Màu sang `CHEERING` hoặc `PANIC`.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhấn mạnh thứ tự thời gian từ trên xuống dưới theo đúng bản chất của Sequence Diagram.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 63</span>
+        <span>Sơ đồ máy trạng thái hữu hạn (FSM) của Linh vật Thỏ Bảy Màu được thiết kế như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Finite State Machine (FSM), Trạng thái: IDLE, STUDYING, GENIUS, PANIC, CHEERING, SULKING</div>
+      <div class="a-content"><p>Linh vật Thỏ Bảy Màu được mô hình hóa bằng <strong>Finite State Machine (FSM)</strong> với các trạng thái rõ rệt:</li><li><strong>`IDLE` (Nghỉ ngơi):</strong> Trạng thái mặc định khi sinh viên vừa mở app.</li><li><strong>`STUDYING` (Chăm chỉ):</strong> Kích hoạt khi sinh viên bắt đầu đọc đề hoặc gõ bàn phím.</li><li><strong>`CHEERING` (Cổ vũ/Vui sướng):</strong> Kích hoạt khi sinh viên trả lời đúng câu hỏi hoặc duy trì chuỗi Streak.</li><li><strong>`PANIC` (Hoảng sợ/Thất thần):</strong> Kích hoạt khi sinh viên trả lời sai hoặc bị trừ Tim.</li><li><strong>`GENIUS` (Bác học/Đắc thắng):</strong> Kích hoạt khi sinh viên vượt qua toàn bộ Cửa ải bài học với điểm tuyệt đối 3 sao.</li><li><strong>`SULKING` (Hờn dỗi):</strong> Kích hoạt khi sinh viên lâu ngày không vào học bài.
+Mỗi chuyển trạng thái đều đi kèm hình vẽ SVG hoạt hình và câu thoại độc quyền tương ứng.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Mascot FSM là một điểm sáng thiết kế độc đáo của đồ án, hãy tự tin trình bày tính sáng tạo này.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 64</span>
+        <span>Sơ đồ hoạt động (Activity Diagram) của phiên học Pomodoro Kiosk diễn ra như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Fork/Join, Decision Node, Timer Loop, Native Hook Guard, Break Phase</div>
+      <div class="a-content"><p>Quy trình Activity Diagram:</p><ol><li><strong>Bắt đầu (Initial Node):</strong> Sinh viên bấm nút 'Bắt đầu học 25 phút'.</li><li><strong>Phân nhánh song song (Fork Node):</strong>
+   - Nhánh 1: Khởi động bộ đếm giờ lùi 25 phút trên giao diện.
+   - Nhánh 2: Gửi lệnh IPC tới Main Process kích hoạt `study_guard.exe` để che màn hình phụ và bắt sự kiện bàn phím.</li><li><strong>Điểm kiểm tra (Decision Node):</strong>
+   - Nếu người dùng di chuột ra khỏi màn hình hoặc mở ứng dụng cấm $\to$ Kích hoạt chuông báo động, hiển thị cảnh báo phạt.
+   - Nếu hoàn thành đủ 25 phút $\to$ Hợp nhất tiến trình (Join Node).</li><li><strong>Chuyển pha:</strong> Tự động giải phóng màn hình phụ, chuyển sang pha 'Nghỉ giải lao 5 phút', phát âm thanh chúc mừng và cộng đá quý thưởng.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Chỉ ra cách dùng Fork/Join để mô tả 2 tiến trình chạy song song (Timer giao diện và Native Guard hệ điều hành).</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 65</span>
+        <span>Sơ đồ lớp (Class Diagram) cho phân hệ Quản lý Điểm & Cố vấn học tập được cấu trúc ra sao?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Lớp `Transcript`, `Semester`, `Subject`, `GradeCalculator`, `AcademicAdvisor`</div>
+      <div class="a-content"><p>- <strong>Lớp `AcademicTranscript`:</strong> Chứa thuộc tính `studentInfo`, `totalCredits`, danh sách các `Semester` và các phương thức `calculateGPA()`, `findWeakSubjects()`.</li><li><strong>Lớp `Semester`:</strong> Chứa thuộc tính `semesterName`, `semesterYear` và danh sách các đối tượng `Subject` (Quan hệ Composition 1 - N).</li><li><strong>Lớp `Subject`:</strong> Chứa `subjectCode`, `subjectName`, `credits`, `componentScores` (chuyên cần, bài tập, giữa kỳ, cuối kỳ) và điểm chữ (`diemChu`), điểm hệ 4 (`diemHe4`).</li><li><strong>Lớp `AcademicAdvisor`:</strong> Nhận dữ liệu từ `AcademicTranscript` để thực hiện phương thức `generateStudyPlan()` và `simulateWhatIfGPA(targetScore)`.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhắc lại quan hệ Composition: Nếu bảng điểm bị xóa thì các học kỳ và môn học trong bảng điểm đó cũng biến mất.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 66</span>
+        <span>Sơ đồ triển khai (Deployment Diagram) của hệ thống gồm những Node phần cứng nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Client PC/Mobile, Cloudflare Global Edge Network, D1 Distributed Node, R2 Bucket, Groq API</div>
+      <div class="a-content"><p>Hệ thống phân tán trên 4 nút mạng (Nodes):</p><ol><li><strong>User Device Node (PC/Laptop/Smartphone):</strong> Chạy ứng dụng Electron hoặc Web Browser (HTML5/JS Engine).</li><li><strong>Cloudflare Edge Worker Node:</strong> Hơn 300 trạm trung chuyển biên toàn cầu, chạy V8 Isolates xử lý logic điều hướng và API.</li><li><strong>Cloudflare Data Storage Node:</strong>
+   - <em>D1 Storage Server:</em> Quản lý cơ sở dữ liệu quan hệ SQLite phân tán.
+   - <em>R2 Storage Server:</em> Lưu trữ tệp tin đa phương tiện tương thích Amazon S3.</li><li><strong>AI Inference Cloud Node (Groq Cloud):</strong> Cụm máy chủ tăng tốc phần cứng LPU (Language Processing Unit) chạy mô hình LLaMA 3.3.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Vẽ nhẩm các khối Node và đường truyền giao thức HTTPS/WSS kết nối giữa chúng.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 67</span>
+        <span>Thiết kế giao diện UI/UX của đồ án tuân theo những nguyên lý thẩm mỹ nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Neo-brutalism, Bảng màu Duolingo, Micro-interactions, Tương phản cao</div>
+      <div class="a-content"><p>Giao diện được thiết kế theo xu hướng <strong>Neo-brutalism hiện đại</strong> kết hợp phong cách giáo dục của <strong>Duolingo</strong>:</li><li><strong>Đường viền đậm nét (Thick Borders):</strong> Viền đen dứt khoát `2px - 3px solid var(--ink-900)`, tạo cảm giác xúc giác (tactile feeling) chân thật như những nút bấm vật lý.</li><li><strong>Đổ bóng cứng (Hard Drop Shadows):</strong> Đổ bóng không làm mờ (`box-shadow: 0 4px 0 var(--ink-900)`), khi bấm nút thì phần tử dịch chuyển xuống 2px tạo phản hồi bấm cực kỳ đã tay.</li><li><strong>Bảng màu cảm xúc:</strong> Màu hồng Lumi Pink (`#ff7597`) biểu trưng cho sự trẻ trung, màu vàng Gold (`#fbbf24`) cho thành tựu và màu xanh Emerald (`#10b981`) cho kết quả chính xác.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhấn mạnh: UI đẹp là một yếu tố phi chức năng quan trọng giúp giảm tỷ lệ bỏ học (Churn rate) của sinh viên.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 68</span>
+        <span>Design Pattern: Mẫu thiết kế Singleton Pattern được áp dụng ở đâu trong mã nguồn?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Singleton Pattern, Duy nhất một thể hiện, `window.pomodoroState`, `SessionManager`</div>
+      <div class="a-content"><p>- <strong>Định nghĩa Singleton:</strong> Đảm bảo một lớp hoặc đối tượng chỉ có duy nhất một thực thể (Single Instance) trong suốt vòng đời ứng dụng và cung cấp điểm truy cập toàn cục.</li><li><strong>Áp dụng trong dự án:</strong></li><li style="margin-left: 15px;">Đối tượng trạng thái Pomodoro (`pomodoroState`) được quản lý theo mô hình Singleton. Trong toàn bộ ứng dụng, chỉ có duy nhất một bộ đếm giờ Pomodoro được phép chạy tại một thời điểm, tránh tình trạng mở 2 tab làm chạy song song 2 bộ đếm giờ gây sai lệch dữ liệu học tập.</li><li style="margin-left: 15px;">Bộ điều khiển âm thanh `AudioContext` cũng được khởi tạo dạng Singleton để tái sử dụng kênh âm thanh hệ thống.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Chỉ ra cơ chế kiểm tra `if (!instance) instance = new ...` chuẩn mực của Singleton.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 69</span>
+        <span>Design Pattern: Mẫu thiết kế State Pattern được hiện thực hóa ở phân hệ nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> State Pattern, Trạng thái Mascot Thỏ Bảy Màu, Đóng gói hành vi theo trạng thái</div>
+      <div class="a-content"><p>- <strong>Định nghĩa State:</strong> Cho phép một đối tượng thay đổi hành vi của nó khi trạng thái nội bộ thay đổi.</li><li><strong>Áp dụng:</strong> Mascot Thỏ Bảy Màu áp dụng State Pattern triệt để. Thay vì viết hàng trăm câu lệnh `if-else` lồng nhau rối rắm trong code hiển thị, mỗi trạng thái (`THO_STATES.CHEERING`, `THO_STATES.PANIC`, `THO_STATES.GENIUS`...) được đóng gói thành một cấu trúc siêu dữ liệu độc lập (`THO_METADATA`), bao gồm hình vẽ SVG, màu sắc và danh sách các câu thoại ngẫu nhiên tương ứng.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Khẳng định: Nhờ State Pattern, khi muốn thêm một trạng thái mới cho Thỏ (ví dụ trạng thái Ngủ gật), ta chỉ cần khai báo thêm mà không phải sửa code lõi (Tuân thủ nguyên lý Open/Closed).</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 70</span>
+        <span>Design Pattern: Mẫu thiết kế Strategy Pattern được áp dụng ở đâu?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Strategy Pattern, Tính toán GPA theo quy chế đào tạo, Đa chiến lược</div>
+      <div class="a-content"><p>- <strong>Định nghĩa Strategy:</strong> Định nghĩa một họ các thuật toán, đóng gói từng thuật toán lại và làm cho chúng có thể hoán đổi cho nhau linh hoạt.</li><li><strong>Áp dụng trong `academic_service.js`:</strong></li><li style="margin-left: 15px;">Thuật toán quy đổi điểm áp dụng Strategy Pattern để hỗ trợ chuyển đổi linh hoạt giữa các thang điểm đào tạo: Thang điểm 10 $\to$ Thang điểm 4 $\to$ Thang điểm chữ (A+, A, B+, B, C, D, F) theo Quy chế đào tạo tín chỉ của Bộ Giáo dục.</li><li style="margin-left: 15px;">Khi cần đổi cách tính GPA tích lũy (ví dụ cách tính điểm cải thiện lấy điểm cao nhất vs tính điểm trung bình), hệ thống chỉ cần hoán đổi chiến lược tính toán tương ứng.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Liên hệ trực tiếp với môn Công nghệ phần mềm: Strategy Pattern giúp mã nguồn không bị gán cứng (Hard-coded).</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 71</span>
+        <span>Sơ đồ tuần tự cho tính năng Đăng nhập một chạm Cổng trường CMCU qua Bookmarklet diễn ra như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Cross-origin bridge, Token injection, Cookie passing, Scrape & Parse</div>
+      <div class="a-content"><p>Luồng hoạt động tuần tự của giải pháp kỹ thuật Bookmarklet:</p><ol><li>Sinh viên đăng nhập tài khoản Microsoft trên tab cổng trường `iu.cmcu.edu.vn`.</li><li>Sinh viên bấm mã 1-chạm Bookmarklet trên trình duyệt.</li><li>Script Bookmarklet thực thi trong ngữ cảnh trang trường, đọc cookie phiên hợp lệ `document.cookie`.</li><li>Script gửi lệnh `POST` kèm cookie về endpoint `/api/academic/import` của 3TG Study.</li><li>Backend Cloudflare Workers nhận cookie, gọi ngược lại API cổng trường để cào dữ liệu bảng điểm, giải mã XOR/Base64, chuẩn hóa 3NF và lưu vào database D1.</li><li>Thông báo thành công hiển thị cho sinh viên và bảng điểm được tải lên tức thì.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Đây là một giải pháp kiến trúc cực kỳ sáng tạo vượt qua rào cản CORS của trình duyệt web.</div>
+    </div>
+    
+  <div class="chapter-header">
+    <h2>Chương 6: Kiểm thử & Đảm bảo chất lượng phần mềm (Testing & Quality Assurance)</h2>
+    <p>Bao gồm 13 câu hỏi về các cấp độ Unit/Integration/System Test, bộ test tự động 38/38 PASS, Black-box, White-box, kiểm thử bảo mật và hồi quy.</p>
+  </div>
+  
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 72</span>
+        <span>Phân biệt Unit Testing, Integration Testing và System Testing trong đồ án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Unit Test (Đơn vị), Integration Test (Tích hợp), System Test (Hệ thống toàn diện)</div>
+      <div class="a-content"><p>Hệ thống kiểm thử được xây dựng theo mô hình Kim tự tháp kiểm thử (Test Pyramid):</p><ol><li><strong>Unit Testing (Kiểm thử đơn vị):</strong> Kiểm tra các hàm logic độc lập nhỏ nhất. <em>Ví dụ:</em> Hàm giải mã `giai_ma_iu()`, hàm tính điểm GPA `processAcademicTranscript()`, hàm tạo chuỗi mã hóa mật khẩu `hashPassword()`.</li><li><strong>Integration Testing (Kiểm thử tích hợp):</strong> Kiểm tra sự kết hợp ăn khớp giữa 2 hay nhiều module. <em>Ví dụ:</em> Kiểm tra luồng gửi tin nhắn gọi Bot 3TG và lưu đồng thời vào CSDL; kiểm tra luồng hoàn thành Pomodoro cập nhật số liệu `user_stats`.</li><li><strong>System Testing (Kiểm thử hệ thống):</strong> Kiểm thử toàn diện trên môi trường hoàn chỉnh từ giao diện người dùng, API, cơ sở dữ liệu đến các dịch vụ bên thứ ba (được tự động hóa qua bộ Test Suite 38 test cases).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Vẽ hình tam giác Kim tự tháp kiểm thử: Đáy là Unit Test (nhiều nhất), giữa là Integration Test, đỉnh là E2E/System Test.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 73</span>
+        <span>Trình bày cấu trúc và kết quả của bộ Test Suite tự động 38 test case (`test_sprint6_full_suite.cjs`)?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> 38 PASS 0 FAIL, 6 phân khu kiểm thử toàn diện</div>
+      <div class="a-content"><p>Bộ Test Suite tự động kiểm tra nghiêm ngặt 6 phân khu chức năng và đạt kết quả tuyệt đối <strong>38 PASS, 0 FAIL</strong>:</li><li><strong>Phần 1: CSDL &amp; Schema:</strong> Kiểm tra sự tồn tại của 13 bảng trọng yếu và tính toàn vẹn khi ngắt kết nối cổng trường (13 tests).</li><li><strong>Phần 2: Trí tuệ nhân tạo Groq AI Pipeline:</strong> Kiểm tra endpoint phản hồi HTTP 200 và sinh câu trả lời thông minh (2 tests).</li><li><strong>Phần 3: Bảo mật Kiosk &amp; Native Guard:</strong> Kiểm tra tệp nhị phân `study_guard.exe`, hàm khóa và giải phóng màn hình phụ (5 tests).</li><li><strong>Phần 4: Trình phát nhạc Local (HTTP 206):</strong> Kiểm tra byte-range tua nhạc, lưu và xóa nhạc cá nhân (7 tests).</li><li><strong>Phần 5: Trình đọc tài liệu PDF:</strong> Kiểm tra chống lỗi detached buffer bằng `buffer.slice(0)`, nhảy trang và thanh co giãn (5 tests).</li><li><strong>Phần 6: Quản lý phiên &amp; Giao diện:</strong> Kiểm tra khởi tạo phiên từ cookie, tự động tải dữ liệu và các nút bấm CSS (6 tests).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Mở terminal chạy lệnh `node scripts/test_sprint6_full_suite.cjs` trực tiếp trước mặt giảng viên để chứng minh 38 test xanh mướt 100%.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 74</span>
+        <span>Kiểm thử hộp đen (Black-box Testing) được áp dụng như thế nào trong dự án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Kiểm thử chức năng, Phân vùng tương đương (Equivalence Partitioning), Phân tích giá trị biên (Boundary Value Analysis)</div>
+      <div class="a-content"><p>Kiểm thử hộp đen kiểm tra phần mềm dựa trên đặc tả yêu cầu mà không cần quan tâm đến cấu trúc mã nguồn bên trong:</p><ol><li><strong>Phân vùng tương đương (Equivalence Partitioning):</strong>
+   - Kiểm thử nhập điểm GPA mục tiêu (Thang điểm 0.0 đến 4.0):
+     - Phân vùng hợp lệ: `[0.0, 4.0]` (ví dụ nhập 3.2, 3.6).
+     - Phân vùng không hợp lệ: Số âm (`-1.0`) hoặc lớn hơn 4.0 (`4.5`, `10.0`).</li><li><strong>Phân tích giá trị biên (Boundary Value Analysis):</strong>
+   - Kiểm tra tại các giá trị biên: `0.0`, `0.1`, `3.9`, `4.0`.
+   - Kiểm tra giới hạn tải ảnh đại diện: Biên 4MB (3.9MB cho phép, 4.1MB báo lỗi 413 Payload Too Large ngay lập tức).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu rõ 2 kỹ thuật cốt lõi của kiểm thử hộp đen: Phân vùng tương đương và Giá trị biên.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 75</span>
+        <span>Kiểm thử hộp trắng (White-box Testing) và độ bao phủ mã nguồn (Code Coverage) được thực hiện ra sao?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Kiểm thử cấu trúc, Statement Coverage, Branch Coverage, Path Testing</div>
+      <div class="a-content"><p>- <strong>Bản chất:</strong> Kiểm thử viên nắm rõ cấu trúc mã nguồn, thiết kế test case đi qua các nhánh rẽ (`if-else`, `switch-case`, `try-catch`).</li><li><strong>Áp dụng trong dự án:</strong></li><li style="margin-left: 15px;">Kiểm tra hàm `evaluateUserStreak`:
+    - Nhánh 1: Chưa từng học (`last_active_date = null`) $\to$ Gán streak = 0.
+    - Nhánh 2: Học hôm nay hoặc hôm qua $\to$ Giữ nguyên chuỗi an toàn.
+    - Nhánh 3: Nghỉ hôm qua và có bùa đông băng $\to$ Trừ 1 bùa, bảo lưu streak.
+    - Nhánh 4: Nghỉ hôm qua nhưng hết bùa $\to$ Reset streak về 0.</li><li style="margin-left: 15px;">Đảm bảo độ bao phủ nhánh (<strong>Branch Coverage</strong>) đạt trên 90% cho các module nghiệp vụ quan trọng.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Vẽ sơ đồ luồng điều khiển (Control Flow Graph - CFG) của hàm đánh giá Streak để chứng minh mọi nhánh đều có test case chạy qua.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 76</span>
+        <span>Kiểm thử hồi quy (Regression Testing) có vai trò gì khi sửa lỗi trong đồ án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Chống lỗi dây chuyền (Side-effects), Tự động hóa kiểm thử trước Deploy</div>
+      <div class="a-content"><p>- <strong>Khái niệm:</strong> Khi sửa một lỗi hoặc thêm tính năng mới, kiểm thử hồi quy đảm bảo những tính năng cũ đang chạy tốt không bị hỏng ngoài ý muốn (Không gây ra lỗi dây chuyền - Side-effects).</li><li><strong>Áp dụng thực tế:</strong></li><li style="margin-left: 15px;">Ví dụ ở Sprint 6 khi sửa lỗi avatar nhóm bị méo trên mobile, nhóm lập tức chạy lại toàn bộ test suite `test_sprint6_full_suite.cjs` để đảm bảo logic đăng nhập, chấm điểm và kiosk guard vẫn hoạt động trơn tru 38/38 test.</li><li style="margin-left: 15px;">Mọi bản release trước khi chạy lệnh `wrangler deploy` đều phải vượt qua bài kiểm tra hồi quy tự động này.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu quy tắc: 'Không bao giờ deploy lên Production nếu chưa chạy kiểm thử hồi quy'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 77</span>
+        <span>Kiểm thử bảo mật: Cơ chế chống Brute-force đăng nhập được kiểm thử như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Rate Limiting, Tấn công vét cạn, Giới hạn 5 lần/15 phút, HTTP 429</div>
+      <div class="a-content"><p>- <strong>Kịch bản kiểm thử bảo mật:</strong></li><li style="margin-left: 15px;">Viết script giả lập kẻ tấn công gửi liên tục 6 request đăng nhập sai mật khẩu từ cùng một địa chỉ IP.</li><li style="margin-left: 15px;"><em>Kết quả mong đợi:</em> 5 request đầu tiên server trả về mã `401 Unauthorized`. Từ request thứ 6 trở đi, server phải kích hoạt lá chắn Rate Limiting, từ chối xử lý và trả về mã `429 Too Many Requests` đi kèm thông báo thời gian chờ (`retryAfter`).</li><li style="margin-left: 15px;">Khi người dùng đăng nhập đúng: Bộ đếm thất bại được tự động xóa (`resetRateLimit`).</p></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Chỉ ra đây là tiêu chuẩn bảo mật chống tấn công từ chối dịch vụ và dò mật khẩu theo chuẩn OWASP Top 10.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 78</span>
+        <span>Kiểm thử bảo mật: Cơ chế ngăn chặn Cross-Site Scripting (XSS) được kiểm tra ra sao?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> XSS Stored, XSS Reflected, Hàm khử trùng `esc()`, HTML Encoding</div>
+      <div class="a-content"><p>- <strong>Lỗ hổng XSS:</strong> Kẻ xấu cố tình nhập tên người dùng hoặc tin nhắn chứa mã độc JavaScript dạng `&lt;script&gt;alert('hack')&lt;/script&gt;` hoặc `&lt;img src=x onerror=stealCookie()&gt;`.</li><li><strong>Giải pháp kiểm thử và xử lý:</strong></li><li style="margin-left: 15px;">Tất cả các trường hiển thị ra DOM đều đi qua hàm mã hóa thực thể HTML `esc()`:
+    - Ký tự `&lt;` chuyển thành `&amp;lt;`
+    - Ký tự `&gt;` chuyển thành `&amp;gt;`
+    - Ký tự `"` chuyển thành `&amp;quot;`
+    - Ký tự `'` chuyển thành `&amp;#39;`</li><li style="margin-left: 15px;">Kiểm thử tiêm mã độc vào ô chat và tên nhóm: Toàn bộ mã độc hiển thị an toàn dưới dạng chuỗi văn bản thuần túy, tuyệt đối không bị trình duyệt thực thi.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Hàm `esc()` nhỏ nhưng có võ, thể hiện tư duy phòng thủ chiều sâu (Defense in Depth).</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 79</span>
+        <span>Kiểm thử giao diện (UI Testing) trên màn hình nhỏ di động 375px (iPhone SE) tập trung vào những điểm gì?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Responsive Testing, Viewport 375px, Tràn ngang (Overflow-X), Bố cục 2 cột</div>
+      <div class="a-content"><p>Nhóm tập trung kiểm thử 5 khía cạnh then chốt trên thiết bị di động:</p><ol><li><strong>Loại bỏ tràn ngang:</strong> Kiểm tra `document.documentElement.scrollWidth &lt;= window.innerWidth` để cam kết không có thanh cuộn ngang gây vỡ khung hình.</li><li><strong>Khả năng bấm nút (Touch Target):</strong> Các nút chuyển bài, menu, đóng ✕ đều có kích thước bấm ngón tay thoải mái.</li><li><strong>Độ tương phản chữ:</strong> Cỡ chữ nội dung tối thiểu 12px, đảm bảo đọc rõ ràng dưới ánh sáng ban ngày.</li><li><strong>Bố cục co giãn:</strong> Danh sách môn học và cửa hàng tự động chuyển sang lưới 2 cột cân đối như giao diện Facebook di động.</li><li><strong>Bàn phím ảo không che khuất:</strong> Khi bàn phím ảo bật lên trên điện thoại, thanh nhập tin nhắn Messenger tự động đẩy lên trên mà không che mất nội dung chat.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhắc lại các ảnh chụp thực tế màn hình iPhone SE 375px trong báo cáo Sprint 6.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 80</span>
+        <span>Cơ chế xử lý ngoại lệ (Exception Handling) tập trung của hệ thống hoạt động như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Global Try-Catch, Lớp `HttpError`, Logging tập trung, Trải nghiệm người dùng</div>
+      <div class="a-content"><p>- Toàn bộ luồng xử lý API được bọc trong một khối `try-catch` tổng thể tại hàm `fetch()` của Cloudflare Workers:</li><li style="margin-left: 15px;">Nếu bắt được lỗi nghiệp vụ chủ động (`err instanceof HttpError`): Trả về đúng mã HTTP tương ứng (400, 401, 403, 404, 429) cùng thông báo lỗi tiếng Việt thân thiện.</li><li style="margin-left: 15px;">Nếu phát sinh lỗi hệ thống chưa biết (Uncaught Exception): Tự động bắt lỗi, ghi log phục vụ chẩn đoán và trả về mã `500 Internal Server Error`, không bao giờ làm sập tiến trình Worker.</li><li>Phía Client: Hàm gọi API `api()` tự động bắt lỗi và hiển thị thanh thông báo lỗi Toast Popup mượt mà góc màn hình.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Khẳng định: Ứng dụng không bao giờ để lộ vết ngăn xếp lỗi (Stack Trace) ra cho người dùng cuối vì lý do an toàn thông tin.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 81</span>
+        <span>Quy trình quản lý lỗi (Bug Life Cycle) được nhóm thực hiện như thế nào qua các Sprint?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> New -> Assigned -> Open -> Fixed -> Verified -> Closed</div>
+      <div class="a-content"><p>Mọi con Bug phát hiện được đều tuân thủ vòng đời 6 bước:</p><ol><li><strong>New:</strong> Phát hiện lỗi (ví dụ: lỗi video gửi trước câu lệnh hoặc avatar nhóm bị méo).</li><li><strong>Assigned:</strong> Phân công cho thành viên phụ trách module đó.</li><li><strong>Open:</strong> Thành viên tái hiện lỗi, điều tra nguyên nhân gốc rễ (Root Cause Analysis).</li><li><strong>Fixed:</strong> Viết code sửa lỗi và viết test case kiểm tra.</li><li><strong>Verified:</strong> Thành viên khác trong nhóm kiểm thử lại trên môi trường staging.</li><li><strong>Closed:</strong> Đóng lỗi sau khi xác nhận không còn phát sinh lỗi phụ.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu ví dụ về việc xử lý dứt điểm 7 lỗi người dùng phản hồi ngay trong ngày ở Sprint 6.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 82</span>
+        <span>Kiểm thử chấp nhận người dùng (User Acceptance Testing - UAT) mang lại bài học gì cho nhóm?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> UAT Feedback, Phát hiện lỗi thực tế, Tinh chỉnh trải nghiệm</div>
+      <div class="a-content"><p>UAT là bước kiểm thử mang tính quyết định:</li><li>Khi nhóm đưa bản thử nghiệm cho sinh viên thật sử dụng, nhóm phát hiện ra những vấn đề mà môi trường giả lập không thấy được:</li><li style="margin-left: 15px;">Hiện tượng sinh viên vừa bật video vừa bấm video khác làm 2 âm thanh bị đè lên nhau $\to$ Nhóm lập tức bổ sung cơ chế tự động Pause video cũ.</li><li style="margin-left: 15px;">Trình duyệt chặn cookie cross-origin cổng trường $\to$ Nhóm phát minh ra tính năng Bookmarklet 1-chạm.</li><li>Nhờ UAT, sản phẩm đạt độ hoàn thiện cao nhất và thực sự giải quyết được nhu cầu của người học.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Chứng minh tinh thần cầu thị và cải tiến liên tục của nhóm phát triển phần mềm.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 83</span>
+        <span>Continuous Integration & Deployment (CI/CD) trong đồ án được thiết lập như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Automated Pipeline, `npm run test`, `wrangler deploy`, Tự động kiểm tra trước phát hành</div>
+      <div class="a-content"><p>Quy trình CI/CD được thiết lập tinh gọn và tự động hóa cao:</p><ol><li><strong>Continuous Integration (Tích hợp liên tục):</strong> Mỗi khi có commit mới, script kiểm thử tự động `node scripts/test_sprint6_full_suite.cjs` được kích hoạt để kiểm tra tính tương thích của CSDL, API và các module native.</li><li><strong>Continuous Deployment (Triển khai liên tục):</strong> Khi toàn bộ test suite vượt qua (38 PASS), lệnh `npm run deploy` tự động đóng gói tài sản tĩnh, biên dịch mã backend và đẩy lên mạng lưới toàn cầu Cloudflare Workers chỉ trong chưa đầy 10 giây, gán mã Version ID duy nhất để dễ dàng rollback khi cần.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Chỉ ra Version ID mới nhất trên hệ thống Cloudflare để làm bằng chứng trực quan.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 84</span>
+        <span>Nếu hệ thống gặp sự cố sau khi Deploy, quy trình khôi phục phiên bản (Rollback) diễn ra như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Version Rollback, Cloudflare Deployments History, Zero Downtime Recovery</div>
+      <div class="a-content"><p>- Cloudflare Workers lưu trữ lịch sử mọi lần triển khai với các Version ID bất biến.</li><li>Nếu một bản release phát sinh lỗi nghiêm trọng trên Production:</li><li style="margin-left: 15px;">Nhóm chỉ cần vào Dashboard Cloudflare Workers hoặc chạy lệnh `wrangler rollback &lt;version-id&gt;`.</li><li style="margin-left: 15px;">Hệ thống sẽ chuyển hướng toàn bộ lưu lượng truy cập toàn cầu quay trở lại phiên bản ổn định trước đó chỉ trong vòng 1 giây mà không có bất kỳ thời gian chết nào (<strong>Zero Downtime</strong>).</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Rollback là kỹ năng sống còn của kỹ sư phần mềm khi vận hành hệ thống thực tế.</div>
+    </div>
+    
+  <div class="chapter-header">
+    <h2>Chương 7: Các tính năng công nghệ đặc thù & Điểm sáng đồ án (Advanced Features)</h2>
+    <p>Bao gồm 10 câu hỏi về các giải pháp kỹ thuật độc đáo: Kiosk Guard chống gian lận Windows, giải mã bảng điểm CMCU, khắc phục lỗi detached buffer PDF, HTTP 206 streaming nhạc và YouTube bot integration.</p>
+  </div>
+  
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 85</span>
+        <span>Tính năng Kiosk Guard chống gian lận đa màn hình trong phòng học Pomodoro hoạt động như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Windows Native Hook, Multi-monitor blackout, Mouse trap, Kiosk containment</div>
+      <div class="a-content"><p>Kiosk Guard là tính năng độc quyền trên bản Desktop Electron giải quyết triệt để nạn gian lận phân tâm khi tự học:</li><li>Khi học viên bấm bắt đầu phiên Pomodoro 25 phút, ứng dụng kích hoạt chế độ Kiosk toàn màn hình (`kiosk: true`, `alwaysOnTop: true`).</li><li><strong>Xử lý đa màn hình:</strong> Quét toàn bộ danh sách màn hình phụ (`screen.getAllDisplays()`), tự động tạo các cửa sổ đen trong suốt khóa cứng trên tất cả các màn hình thứ hai, thứ ba, ngăn không cho học viên lén mở tài liệu hay chat trên màn hình phụ.</li><li>Con trỏ chuột bị khóa chặt trong phạm vi cửa sổ học bài.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhấn mạnh đây là tính năng hiếm có đồ án sinh viên nào làm được vì đòi hỏi can thiệp sâu vào API hệ điều hành.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 86</span>
+        <span>Tệp nhị phân `study_guard.exe` can thiệp vào Windows API như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Win32 API, SetWindowsHookEx, Low-Level Keyboard Hook (WH_KEYBOARD_LL), Chặn Alt+Tab, Windows Key</div>
+      <div class="a-content"><p>- `study_guard.exe` là một module native được viết bằng C++/Win32 biên dịch mã máy tối ưu:</li><li>Sử dụng hàm Windows API `SetWindowsHookEx(WH_KEYBOARD_LL, ...)` để cài đặt một móc chặn bàn phím cấp thấp (Low-Level Keyboard Hook).</li><li>Chặn đứng các tổ hợp phím tắt thoát ứng dụng phổ biến: `Alt + Tab`, `Alt + F4`, phím `Windows (Start Menu)`, `Ctrl + Esc`.</li><li>Khi phiên học kết thúc hoặc học viên bấm nút xác nhận rời phòng hợp lệ, tiến trình giải phóng móc hook (`UnhookWindowsHookEx`) và trả lại quyền điều khiển bình thường cho máy tính.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Giải thích rõ tệp `study_guard.exe` được đóng gói trực tiếp trong thư mục `build/` của dự án.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 87</span>
+        <span>Cơ chế giải mã dữ liệu bảng điểm từ cổng trường CMCU (iu.cmcu.edu.vn) hoạt động ra sao?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> XOR Cipher, Base64 Encoding, Reverse Engineering Portal, Secret Key AzzSystem</div>
+      <div class="a-content"><p>Hệ thống cổng thông tin đào tạo của trường Đại học CMC sử dụng cơ chế bảo vệ payload đặc thù:</li><li>Các request gửi đi và dữ liệu trả về được mã hóa kết hợp giữa thuật toán <strong>XOR đối xứng</strong> và <strong>Base64</strong>:</li><li style="margin-left: 15px;">Phép toán: $\text{CipherChar} = \text{Char} \oplus \text{KeyChar}$</li><li style="margin-left: 15px;">Khóa giải mã mặc định: `AzzSystem` hoặc trích xuất từ action header.</li><li>Nhóm đã nghiên cứu cấu trúc truyền thông API của cổng trường (Reverse Engineering hợp pháp), viết thành công 2 hàm lõi `ma_hoa_iu()` và `giai_ma_iu()` trong `src/academic_service.js`, giải mã hoàn hảo dữ liệu kết quả học tập cá nhân và điểm tích lũy của sinh viên.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Dẫn chứng việc phần mềm giải mã được điểm hệ 10, điểm hệ 4 và điểm chữ của từng học kỳ hiển thị mượt mà trên dashboard.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 88</span>
+        <span>Làm thế nào nhóm khắc phục rào cản Same-Origin Policy (CORS) khi đăng nhập trường trên Web?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Same-Origin Policy, Bookmarklet 1-chạm, Console Injection, Cross-domain Data Transfer</div>
+      <div class="a-content"><p>- <strong>Vấn đề kỹ thuật:</strong> Do chính sách bảo mật Same-Origin của trình duyệt, trang web `workers.dev` không có quyền truy cập vào Cookie hoặc LocalStorage của popup mở cổng trường `iu.cmcu.edu.vn`.</li><li><strong>Giải pháp kỹ thuật của nhóm:</strong></li><li style="margin-left: 15px;">Xây dựng công cụ <strong>Mã đồng bộ 1-chạm (Bookmarklet)</strong>:</li><li style="margin-left: 15px;">Người dùng đăng nhập cổng trường ở một tab, sau đó chạy đoạn mã JavaScript nhỏ từ thanh Bookmark hoặc F12 Console.</li><li style="margin-left: 15px;">Đoạn mã này thực thi trực tiếp tại miền `iu.cmcu.edu.vn`, lấy cookie phiên hợp lệ và gửi thẳng về máy chủ 3TG Study qua API `/api/academic/import`.</li><li style="margin-left: 15px;">Giúp sinh viên dùng bản Web vẫn đồng bộ được toàn bộ điểm thi chỉ trong 2 giây mà không cần cài thêm Extension trình duyệt phức tạp.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Mở modal đăng nhập IU trên web, chỉ cho cô xem nút 'Chép mã 1-chạm' và ô dán cookie tiện lợi.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 89</span>
+        <span>Trợ lý 3TG AI phân tích lộ trình cải thiện GPA theo phương pháp Active Recall như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Groq Cloud LLaMA 3.3, Active Recall, Spaced Repetition, Phân tích môn C/D/F</div>
+      <div class="a-content"><p>- Khi bảng điểm được đồng bộ, hệ thống tự động lọc ra danh sách các môn học có điểm thấp (C, D, F hoặc điểm hệ 10 &lt; 6.5) đang kéo tụt GPA nhiều nhất.</li><li>Dữ liệu này được đóng gói vào Prompt gửi tới mô hình AI LLaMA 3.3 qua Groq Cloud:</li><li style="margin-left: 15px;">AI sẽ lập lộ trình học tập cá nhân hóa 4 tuần.</li><li style="margin-left: 15px;">Hướng dẫn áp dụng kỹ thuật <strong>Chủ động hồi tưởng (Active Recall)</strong> và <strong>Lặp lại ngắt quãng (Spaced Repetition)</strong> thay vì đọc thụ động.</li><li style="margin-left: 15px;">Phân tích môn nào học lại sẽ giúp GPA tăng nhanh nhất với chi phí tín chỉ thấp nhất.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nêu bật tính ứng dụng cao của AI trong việc cố vấn học tập thực tế cho sinh viên.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 90</span>
+        <span>Lỗi 'Detached ArrayBuffer' trong Web Worker khi xem tài liệu PDF là gì và cách nhóm khắc phục?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Web Worker, Structured Clone Algorithm, Transferable Objects, `buffer.slice(0)`</div>
+      <div class="a-content"><p>- <strong>Nguyên nhân lỗi:</strong> Khi đọc file PDF bằng thư viện PDF.js trong môi trường Web Worker, theo cơ chế truyền dữ liệu của HTML5 (Transferable Objects), vùng nhớ `ArrayBuffer` của file PDF sau khi gửi sang Worker sẽ bị xóa quyền sở hữu ở luồng chính (trở thành <strong>Detached ArrayBuffer</strong>). Nếu người dùng chuyển trang hoặc vẽ lại canvas, ứng dụng sẽ sập ngay lập tức.</li><li><strong>Cách khắc phục triệt để:</strong></li><li style="margin-left: 15px;">Nhóm xử lý nhân bản mảng nhị phân trước khi chuyển giao bằng kỹ thuật sao chép sâu vùng nhớ: `new Uint8Array(buffer.slice(0))`.</li><li style="margin-left: 15px;">Đảm bảo luồng chính luôn giữ một bản sao bộ nhớ nguyên vẹn, người dùng có thể lật trang, phóng to, thu nhỏ và nhảy trang tài liệu PDF mượt mà không bao giờ bị crash.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Đây là một lỗi kỹ thuật ngầm rất khó chịu trong xử lý nhị phân của trình duyệt, sửa được chứng tỏ nhóm có năng lực debug chuyên sâu.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 91</span>
+        <span>Trình phát nhạc cục bộ hỗ trợ chuẩn HTTP 206 Partial Content Byte-Range Streaming như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> HTTP 206 Partial Content, Header `Range: bytes=start-end`, Tua nhạc mượt mà, Node HTTP Server</div>
+      <div class="a-content"><p>- <strong>Vấn đề:</strong> Khi người dùng tua một bài hát dài, nếu server chỉ hỗ trợ mã `200 OK` thông thường, trình duyệt buộc phải tải lại toàn bộ file từ đầu, gây giật lag và tốn băng thông.</li><li><strong>Giải pháp:</strong> Trong file `embedded-server.cjs`, nhóm xây dựng luồng phát trực tiếp hỗ trợ mã phản hồi <strong>`HTTP 206 Partial Content`</strong>:</li><li style="margin-left: 15px;">Đọc header `Range: bytes=x-y` từ request của trình duyệt.</li><li style="margin-left: 15px;">Sử dụng luồng đọc file theo đoạn `fs.createReadStream(filePath, { start, end })`.</li><li style="margin-left: 15px;">Trả về header `Content-Range: bytes start-end/totalSize`.</li><li style="margin-left: 15px;">Cho phép người dùng tua tới bất kỳ giây nào của bài hát và âm thanh phát ngay tức thì.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Đây là cơ chế chuẩn mực được các nền tảng streaming lớn như YouTube, Spotify sử dụng.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 92</span>
+        <span>Cơ chế chống xung đột âm thanh (`handleMediaPlay`) khi người dùng mở nhiều video cùng lúc hoạt động ra sao?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Audio Conflict Prevention, `window.handleMediaPlay`, Event Delegation, Pause All</div>
+      <div class="a-content"><p>- <strong>Vấn đề người dùng phản ánh:</strong> Khi học viên bấm xem video này trong khung chat, sau đó bấm tiếp video khác, cả 2 video cùng phát làm âm thanh bị trộn lẫn vào nhau.</li><li><strong>Giải pháp kỹ thuật:</strong></li><li style="margin-left: 15px;">Nhóm xây dựng hàm điều phối trung tâm `window.handleMediaPlay(currentEl)` gắn vào sự kiện `onplay` của mọi thẻ `&lt;video&gt;` và `&lt;audio&gt;`.</li><li style="margin-left: 15px;">Khi một phương tiện bắt đầu phát, hàm sẽ tự động duyệt toàn bộ DOM qua `document.querySelectorAll('video, audio')`, tự động gọi lệnh `.pause()` trên tất cả các trình phát khác và gỡ bỏ cờ đang phát.</li><li style="margin-left: 15px;">Đảm bảo tại một thời điểm chỉ có duy nhất một nguồn âm thanh được cất lên trong toàn bộ ứng dụng.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Một chi tiết nhỏ nhưng nâng cao chất lượng trải nghiệm người dùng (UX) đạt chuẩn chuyên nghiệp.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 93</span>
+        <span>Cơ chế tìm kiếm và nhúng YouTube Video ID tự động cho lệnh `!sing` của Bot 3TG hoạt động như thế nào?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> YouTube Video Extraction, Regex `/watch?v=([a-zA-Z0-9_-]{11})/`, Responsive Iframe Embed</div>
+      <div class="a-content"><p>- Khi sinh viên gõ lệnh `!sing [tên bài]` trong nhóm chat (ví dụ `!sing yêu`):
+  1. Bot 3TG gửi truy vấn tìm kiếm ngầm tới YouTube Search.
+  2. Trích xuất mã định danh video 11 ký tự chuẩn xác qua biểu thức chính quy (Regex): `//watch\?v=([a-zA-Z0-9_-]{11})/`.
+  3. Trả về tin nhắn chứa đường dẫn xem trực tiếp kèm cấu trúc thẻ nhúng `iframe` bảo mật `https://www.youtube-nocookie.com/embed/${ytId}`.
+  4. Giao diện Messenger tự động dựng khung phát nhạc tỷ lệ 16:9 với giao diện gọn gàng, sinh viên có thể nghe nhạc chill học bài ngay trong chat.</p></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Giải thích rõ việc dùng domain `youtube-nocookie.com` để tôn trọng quyền riêng tư và chặn quảng cáo theo dõi sinh viên.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 94</span>
+        <span>Chức năng đổi Avatar nhóm học tập kết nối lưu trữ trực tiếp vào Cloudflare R2 được xây dựng ra sao?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> POST /api/groups/:id/avatar, R2 Put Object, Multipart FormData, Cập nhật đa giao diện</div>
+      <div class="a-content"><p>Quy trình đổi avatar nhóm diễn ra qua 3 bước:</p><ol><li><strong>Phía Client:</strong> Người dùng bấm vào biểu tượng máy ảnh trên avatar nhóm trong Messenger, chọn file ảnh từ máy tính (hỗ trợ JPG, PNG, WebP, GIF dung lượng &lt;6MB). Dữ liệu được đóng gói vào đối tượng `FormData`.</li><li><strong>Phía Backend:</strong> Endpoint `POST /api/groups/:id/avatar` kiểm tra quyền thành viên trong bảng `chat_group_members`. Sau đó tạo một key định danh duy nhất `avatars/groups/${groupId}/${uuid}.${ext}` và đẩy thẳng lên Cloudflare R2 Bucket (`env.AVATARS.put()`).</li><li><strong>Lưu trữ &amp; Phản hồi:</strong> Cập nhật trường `avatar_url` trong bảng `chat_groups`. Giao diện tự động cập nhật avatar mới hình tròn đồng bộ trên cả thanh tiêu đề chat, danh sách sidebar và trang mạng xã hội Bạn bè.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Khẳng định đây là tính năng vừa được cập nhật hoàn thiện ở phiên bản Release v4.0.8.</div>
+    </div>
+    
+  <div class="chapter-header">
+    <h2>Chương 8: Quản trị dự án, Mã nguồn sạch & Hướng phát triển (Maintenance, Clean Code & Future Scope)</h2>
+    <p>Bao gồm 5 câu hỏi chiến lược về quản lý mã nguồn Git, nguyên lý SOLID, quản trị rủi ro phần mềm, định hướng thương mại hóa SaaS và bài học kinh nghiệm.</p>
+  </div>
+  
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 95</span>
+        <span>Chiến lược quản trị mã nguồn (Git Flow) và quy tắc viết Commit Message của nhóm là gì?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Git Flow, Main / Feature Branches, Conventional Commits (feat, fix, docs, refactor, chore)</div>
+      <div class="a-content"><p>- <strong>Quy trình nhánh (Branching Strategy):</strong></li><li style="margin-left: 15px;">Nhánh `main`: Đại diện cho phiên bản Production ổn định, chỉ nhận merge khi đã vượt qua toàn bộ 38 test cases.</li><li style="margin-left: 15px;">Các nhánh tính năng (`feature/pomodoro`, `feature/academic`, `fix/mobile-layout`): Dùng để phát triển độc lập từng User Story.</li><li><strong>Quy tắc viết Commit chuẩn quốc tế (Conventional Commits):</strong></li><li style="margin-left: 15px;">Mọi commit đều có tiền tố rõ ràng:
+    - `feat:` Thêm tính năng mới (ví dụ: `feat: integrate YouTube music player in !sing command`).
+    - `fix:` Sửa lỗi (ví dụ: `fix: prevent group avatar distortion on 375px mobile`).
+    - `docs:` Viết tài liệu báo cáo Sprint.
+    - `refactor:` Tái cấu trúc code nhưng không thay đổi hành vi.
+    - `chore:` Dọn dẹp tệp tin rác và tối ưu cấu hình.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Mở `git log --oneline -n 10` để chứng minh lịch sử commit cực kỳ sạch đẹp, chuẩn chỉ.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 96</span>
+        <span>Nguyên lý thiết kế mã nguồn sạch (SOLID Principles) được thể hiện ở những vị trí nào trong dự án?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Single Responsibility (S), Open/Closed (O), Liskov Substitution (L), Interface Segregation (I), Dependency Inversion (D)</div>
+      <div class="a-content"><p>Nhóm vận dụng linh hoạt các nguyên lý SOLID:</p><ol><li><strong>S - Single Responsibility Principle (Đơn trách nhiệm):</strong> Mỗi module chỉ làm một nhiệm vụ duy nhất. `academic_service.js` chỉ chuyên trách giải mã và tính điểm, `bot3tg.js` chỉ xử lý lệnh media của bot, `pomodoro.js` chỉ quản lý chu kỳ đếm giờ và kiosk.</li><li><strong>O - Open/Closed Principle (Mở rộng nhưng đóng thay đổi):</strong> Mascot Thỏ Bảy Màu cho phép thêm trạng thái biểu cảm mới (`THO_STATES`) mà không cần đụng chạm hay viết lại hàm render cốt lõi.</li><li><strong>D - Dependency Inversion (Đảo ngược phụ thuộc):</strong> Tầng giao tiếp CSDL sử dụng lớp trừu tượng `env.DB` (Binding interface của Cloudflare), cho phép dễ dàng chuyển đổi hoặc chạy thử nghiệm giữa SQLite cục bộ và D1 Cloud mà không phải sửa logic nghiệp vụ.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhắc lại: 'Tuân thủ SOLID giúp đồ án sinh viên đạt chất lượng như một sản phẩm phần mềm doanh nghiệp'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 97</span>
+        <span>Quản trị rủi ro phần mềm (Risk Management): Phân tích 3 rủi ro kỹ thuật lớn nhất và biện pháp phòng ngừa của nhóm?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> Rủi ro 1: Thay đổi cổng trường, Rủi ro 2: Quá tải quota AI, Rủi ro 3: Xung đột bộ nhớ Worker</div>
+      <div class="a-content"><p>Nhóm đã lập ma trận quản trị rủi ro ngay từ Sprint 1:</p><ol><li><strong>Rủi ro 1: Cổng trường CMCU thay đổi định dạng hoặc chặn IP:</strong>
+   - <em>Giải pháp phòng ngừa:</em> Xây dựng đồng thời 3 cơ chế nạp điểm: Cào trực tiếp qua tài khoản trường, nhập cookie qua Bookmarklet 1-chạm, và tải lên file dữ liệu JSON/Excel dự phòng.</li><li><strong>Rủi ro 2: Giới hạn tần suất gọi API AI của Groq (Rate limit exceeded):</strong>
+   - <em>Giải pháp phòng ngừa:</em> Bot 3TG có sẵn hệ thống phản hồi luật ngữ nghĩa nội bộ (Rule-based NLP) và kho media tĩnh dự phòng để trả lời tức thì khi AI quá tải.</li><li><strong>Rủi ro 3: Lỗi Detached ArrayBuffer làm sập trình đọc PDF:</strong>
+   - <em>Giải pháp phòng ngừa:</em> Nhân bản sâu vùng nhớ nhị phân `buffer.slice(0)` trước khi chuyển giao vào Web Worker.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Khẳng định: 'Quản trị rủi ro tốt là luôn có ít nhất một phương án B (Fallback plan) cho mọi tính năng cốt lõi'.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 98</span>
+        <span>Định hướng mở rộng và tiềm năng thương mại hóa (Commercialization) của sản phẩm 3TG Study AI?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> SaaS Multi-tenant, Mở rộng liên trường đại học, Gói Premium B2B, Gamification Shop</div>
+      <div class="a-content"><p>Đồ án có tiềm năng phát triển thành sản phẩm khởi nghiệp công nghệ (EdTech Startup) thực thụ:</p><ol><li><strong>Mô hình SaaS Đa trường học (Multi-tenant Platform):</strong> Mở rộng kiến trúc giải mã điểm để kết nối thêm cổng đào tạo của các trường đại học khác (Bách Khoa, Quốc Gia, FPT, Kinh Tế Quốc Dân).</li><li><strong>Mô hình kinh doanh B2C &amp; B2B:</strong>
+   - <em>B2C (Freemium):</em> Miễn phí tính năng học tập cơ bản; thu phí gói Premium cho tính năng Cố vấn AI chuyên sâu không giới hạn và kho hình nền Discord Wallpaper động.
+   - <em>B2B:</em> Bán giải pháp phòng học Kiosk chống gian lận và giám sát kỳ thi trực tuyến cho các trường học và trung tâm đào tạo.</li><li><strong>Hệ sinh thái Gamification:</strong> Hợp tác với các thương hiệu sinh viên để đổi đá quý (gems) lấy voucher trà sữa, sách học tập thật.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Nhấn mạnh tính khả thi kinh doanh (Business Viability) sẽ giúp đồ án ghi điểm tuyệt đối trong mắt hội đồng giám khảo.</div>
+    </div>
+    
+    <div class="qa-card">
+      <div class="q-title">
+        <span class="q-badge">CÂU 99</span>
+        <span>Nếu được làm lại dự án từ đầu, nhóm sẽ cải tiến điều gì về mặt Công nghệ Phần mềm?</span>
+      </div>
+      <div class="q-keywords"><strong>Từ khóa cốt lõi:</strong> TypeScript, Automated E2E Cypress/Playwright, WebRTC Voice Room, CI/CD GitHub Actions</div>
+      <div class="a-content"><p>Nhìn lại toàn bộ hành trình 6 Sprints, nhóm đúc rút được 3 cải tiến chiến lược:</p><ol><li><strong>Áp dụng TypeScript ngay từ đầu:</strong> Giúp phát hiện sớm các lỗi sai kiểu dữ liệu ngay trong quá trình biên dịch (Compile-time Type Safety), đặc biệt khi xử lý các cấu trúc dữ liệu bảng điểm phức tạp.</li><li><strong>Bổ sung kiểm thử tự động giao diện End-to-End (E2E):</strong> Tích hợp Playwright hoặc Cypress vào quy trình CI/CD để tự động chạy thử kịch bản click chuột trên trình duyệt di động trước mỗi lần deploy.</li><li><strong>Nâng cấp tính năng học nhóm sang WebRTC:</strong> Thay vì chỉ hiển thị danh sách bạn cùng học và chat văn bản, nhóm sẽ nâng cấp phòng Pomodoro thành kênh thoại Voice/Video P2P trực tiếp để sinh viên có cảm giác như đang ngồi chung bàn học thực sự.</li></ol></div>
+      <div class="pro-tip"><strong>💡 Bí quyết trả lời ăn điểm tối đa:</strong> Đây là câu hỏi kết thúc vấn đáp kinh điển của giảng viên để đánh giá mức độ trưởng thành và khả năng tự phản biện (Self-reflection) của sinh viên. Trả lời khiêm tốn nhưng định hướng tương lai sắc sảo.</div>
+    </div>
+    
+  <div class="footer-note">
+    Tài liệu lưu trữ nội bộ thuộc Thư viện Sprint đồ án 3TG Study AI • Trường Đại học CMC • Hoàn thành ngày 26/11/2026.
+  </div>
+</body>
+</html>

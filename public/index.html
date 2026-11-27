@@ -39,17 +39,20 @@
         } catch (e) {}
       })();
     </script>
-    <link rel="stylesheet" href="/styles.css?v=3.3.1">
-    <link rel="stylesheet" href="/tho-bay-mau.css?v=3.3.1">
-    <script src="/vendor/pdf.min.js?v=3.3.1"></script>
-    <script type="module" src="/app.js?v=3.3.1"></script>
+    <link rel="stylesheet" href="/styles.css?v=4.0.8">
+    <link rel="stylesheet" href="/tho-bay-mau.css?v=4.0.8">
+    <script src="/vendor/pdf.min.js?v=4.0.8"></script>
+    <script type="module" src="/app.js?v=4.0.8"></script>
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar" id="sidebar">
-        <a class="brand brand-3tg" href="/" aria-label="3TG trang chủ">
-          <img src="/3tg-logo-full.svg" alt="3TG" class="brand-logo-img">
-        </a>
+        <div class="sidebar-top-row">
+          <a class="brand brand-3tg" href="/" aria-label="3TG trang chủ">
+            <img src="/3tg-logo-full.svg" alt="3TG" class="brand-logo-img">
+          </a>
+          <button type="button" class="sidebar-close-btn" id="menu-close-btn" aria-label="Đóng menu">✕</button>
+        </div>
         <div class="sidebar-label">KHÔNG GIAN HỌC</div>
         <nav class="main-nav" aria-label="Điều hướng chính">
           <button class="nav-item active" data-page="home"><span class="nav-icon">🗺️</span><span>Lộ trình học</span></button>

@@ -5,12 +5,11 @@
  * Tiện ích, AI và Báo sai lệnh thông minh.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import ANIME_JSON from './data/media/anime.json' with { type: 'json' };
+import FF_JSON from './data/media/ff.json' with { type: 'json' };
+import GAI_JSON from './data/media/gai.json' with { type: 'json' };
+import SAD_JSON from './data/media/sad.json' with { type: 'json' };
+import TRAI_JSON from './data/media/trai.json' with { type: 'json' };
 
 // Thời điểm khởi động bot để tính uptime
 const BOT_START_TIME = Date.now();
@@ -20,50 +19,26 @@ export const BOT_NAME = '🤖 Bot 3TG';
 export const BOT_AVATAR = 'https://api.dicebear.com/7.x/bottts/svg?seed=bot-3tg&backgroundColor=ffb6c1';
 export const BOT_DECORATION = 'deco_pink_cherry';
 
-// Helper nạp media an toàn từ JSON
-function loadMediaJson(filename, fallbackList = []) {
-  const possiblePaths = [
-    path.resolve(__dirname, 'data/media', filename),
-    path.resolve(__dirname, '../src/data/media', filename)
-  ];
-  for (const p of possiblePaths) {
-    try {
-      if (fs.existsSync(p)) {
-        const raw = JSON.parse(fs.readFileSync(p, 'utf8'));
-        if (Array.isArray(raw) && raw.length > 0) {
-          return raw;
-        }
-      }
-    } catch {}
-  }
-  return fallbackList;
-}
+// 1. Kho Media đầy đủ từ Bot Discord (đóng gói tĩnh để chạy mượt trên Cloudflare Workers)
+const ANIME_LIST = Array.isArray(ANIME_JSON) && ANIME_JSON.length ? ANIME_JSON : [
+  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/anime/7576606096303869205.mp4"
+];
 
-// 1. Kho Media đầy đủ từ Bot Discord
-const ANIME_LIST = loadMediaJson('anime.json', [
-  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/anime/7576606096303869205.mp4",
-  "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZtNXQzbzBwNHc3Z2Z3ZnNudm55N2ZtZzh3NDN1eDVwbnhnNnF0eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oKIPnAiaMCws8nOsE/giphy.gif"
-]);
+const FF_LIST = Array.isArray(FF_JSON) && FF_JSON.length ? FF_JSON : [
+  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/ff/7068509323760028954.mp4"
+];
 
-const FF_LIST = loadMediaJson('ff.json', [
-  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/ff/7068509323760028954.mp4",
-  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/ff/7106098048689753370.mp4"
-]);
+const GAI_LIST = Array.isArray(GAI_JSON) && GAI_JSON.length ? GAI_JSON : [
+  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/gai/7532825260257905928.mp4"
+];
 
-const GAI_LIST = loadMediaJson('gai.json', [
-  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/gai/7532825260257905928.mp4",
-  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/gai/7414848529367125266.mp4"
-]);
+const SAD_LIST = Array.isArray(SAD_JSON) && SAD_JSON.length ? SAD_JSON : [
+  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/sad/7429521282082901255.mp4"
+];
 
-const SAD_LIST = loadMediaJson('sad.json', [
-  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/sad/7429521282082901255.mp4",
-  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/sad/7393437435163659527.mp4"
-]);
-
-const TRAI_LIST = loadMediaJson('trai.json', [
-  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/trai/7618258561457507602.mp4",
-  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/trai/7469796033871088914.mp4"
-]);
+const TRAI_LIST = Array.isArray(TRAI_JSON) && TRAI_JSON.length ? TRAI_JSON : [
+  "https://hjvijcaphilfcvuhjvjr.supabase.co/storage/v1/object/public/datavideo/trai/7618258561457507602.mp4"
+];
 
 const ANH_LIST = [
   "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800",
@@ -245,12 +220,49 @@ export async function handleBot3TgCommand(text, context = {}) {
     };
   }
 
+async function searchYouTubeVideoId(query) {
+  try {
+    const url = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(query + ' lyrics');
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Language': 'vi,en;q=0.9'
+      }
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const match = html.match(/\/watch\?v=([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : null;
+  } catch (err) {
+    console.warn('[YouTube Search Error]', err);
+    return null;
+  }
+}
+
   // 2.7 PHÁT NHẠC / BÀI HÁT (!sing, !nhac, !music, !play, !audio)
   if (cmd === "sing" || cmd === "nhac" || cmd === "music" || cmd === "play" || cmd === "audio") {
-    const songName = query || "Một bài hát chill thư giãn";
-    return {
-      message: `🎵 Đang tìm kiếm và chuẩn bị giai điệu: **"${songName}"** 🎶\n🎧 Lời khuyên: Hãy đeo tai nghe và bật chế độ Pomodoro 25 phút để vừa nghe nhạc vừa học cực kỳ tập trung nhé! ✨`
-    };
+    const songName = query || "nhạc chill học bài";
+    const ytId = await searchYouTubeVideoId(songName);
+    if (ytId) {
+      const ytWatchUrl = `https://www.youtube.com/watch?v=${ytId}`;
+      return {
+        message: `🎵 Đã tìm thấy bài hát: **"${songName}"** 🎶\n🎧 Thưởng thức giai điệu ngay bên dưới hoặc mở xem trên YouTube: ${ytWatchUrl}\n💡 Bật chế độ Pomodoro 25 phút để vừa nghe nhạc vừa học cực đỉnh nhé! ✨`,
+        mediaUrl: ytWatchUrl,
+        mediaType: "youtube",
+        mediaName: `Nhạc: ${songName}`,
+        youtubeId: ytId
+      };
+    } else {
+      const videoUrl = getRandomItem(SAD_LIST);
+      const ytQuery = encodeURIComponent(songName + " lyrics");
+      const ytUrl = `https://www.youtube.com/results?search_query=${ytQuery}`;
+      return {
+        message: `🎵 Video nhạc tâm trạng cho: **"${songName}"** 🎶\n🔗 Tìm trên YouTube: ${ytUrl}\n💡 Đeo tai nghe + Pomodoro 25 phút = tập trung cực đỉnh! ✨`,
+        mediaUrl: videoUrl,
+        mediaType: "video",
+        mediaName: `Nhạc: ${songName}`
+      };
+    }
   }
 
   // 2.8 TROLL / MEME

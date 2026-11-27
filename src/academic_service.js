@@ -765,9 +765,13 @@ export function processAcademicTranscript(bangDiemRaw, studentInfo = {}, activeC
  * Cố vấn 3TG AI: Phân tích bảng điểm & lập lộ trình cải thiện điểm số
  */
 export async function generateAcademicAdvisorPlan(transcriptData, targetGpa = 3.2, env = {}, selectedCourse = "all") {
-  const apiKey = env.LOCAL_AI_API_KEY || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || "";
-  const endpoint = env.LOCAL_AI_ENDPOINT || "https://api.deepseek.com/chat/completions";
-  const model = env.DEEPSEEK_MODEL || "deepseek-chat";
+  const apiKey = env.GROQ_API_KEY || env.LOCAL_AI_API_KEY || env.DEEPSEEK_API_KEY || env.VITE_DEEPSEEK_API_KEY || "";
+  let endpoint = env.LOCAL_AI_ENDPOINT || "https://api.deepseek.com/chat/completions";
+  let model = env.GROQ_MODEL || env.DEEPSEEK_MODEL || "deepseek-chat";
+  if (apiKey.startsWith("gsk_")) {
+    endpoint = "https://api.groq.com/openai/v1/chat/completions";
+    if (!model || model === "deepseek-chat") model = "openai/gpt-oss-120b";
+  }
 
   if (!apiKey && !env.LOCAL_AI_ENDPOINT) {
     throw new Error("Chưa cấu hình API Key cho 3TG AI. Hãy kiểm tra biến DEEPSEEK_API_KEY trong file .dev.vars!");

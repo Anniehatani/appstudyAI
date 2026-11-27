@@ -3058,6 +3058,19 @@ window.searchMessengerConversations = function(query) {
   renderMessengerModal();
 };
 
+window.handleMediaPlay = function(currentEl) {
+  try { document.activeElement?.blur?.(); } catch {}
+  if (currentEl) currentEl.setAttribute('data-playing', 'true');
+  document.querySelectorAll('video, audio').forEach(el => {
+    if (el !== currentEl && !el.paused) {
+      try {
+        el.pause();
+        el.removeAttribute('data-playing');
+      } catch {}
+    }
+  });
+};
+
 function renderMessengerMessageRow(m, isGroup) {
   const isMine = m.isMine;
   const isAi = m.isAi || m.senderId === '3tg-ai-bot' || m.senderId === '3tg-bot';
@@ -3065,7 +3078,20 @@ function renderMessengerMessageRow(m, isGroup) {
 
   let mediaHtml = "";
   if (m.mediaUrl) {
-    if (m.mediaType === "image") {
+    if (m.mediaType === "youtube" || m.youtubeId || (typeof m.mediaUrl === "string" && (m.mediaUrl.includes("youtube.com/watch") || m.mediaUrl.includes("youtu.be/")))) {
+      let ytId = m.youtubeId;
+      if (!ytId && typeof m.mediaUrl === "string") {
+        const mYt = m.mediaUrl.match(/(?:watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        if (mYt) ytId = mYt[1];
+      }
+      if (ytId) {
+        mediaHtml = `
+          <div class="msg-media-wrap msg-media-youtube-wrap">
+            <iframe src="https://www.youtube-nocookie.com/embed/${esc(ytId)}" class="msg-media-youtube-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+          </div>
+        `;
+      }
+    } else if (m.mediaType === "image") {
       mediaHtml = `
         <div class="msg-media-wrap">
           <img src="${esc(m.mediaUrl)}" class="msg-media-img" onclick="openMediaLightbox('${esc(m.mediaUrl)}', 'image')" alt="${esc(m.mediaName || 'Ảnh')}" loading="lazy">
@@ -3073,8 +3099,14 @@ function renderMessengerMessageRow(m, isGroup) {
       `;
     } else if (m.mediaType === "video") {
       mediaHtml = `
-        <div class="msg-media-wrap">
-          <video src="${esc(m.mediaUrl)}" controls playsinline webkit-playsinline class="msg-media-video" preload="metadata" onplay="this.setAttribute('data-playing', 'true')" onpause="this.removeAttribute('data-playing')"></video>
+        <div class="msg-media-wrap" id="vid-wrap-${esc(m.id)}">
+          <video src="${esc(m.mediaUrl)}" controls playsinline webkit-playsinline class="msg-media-video" preload="metadata"
+            ontouchstart="document.activeElement?.blur?.()"
+            onclick="document.activeElement?.blur?.()"
+            onplay="window.handleMediaPlay(this)"
+            onpause="this.removeAttribute('data-playing')"
+            onerror="var w=this.closest('.msg-media-wrap');if(w){w.innerHTML='<div class=\\'msg-video-dead\\'>📹 Video không còn khả dụng</div>';}"
+          ></video>
         </div>
       `;
     } else if (m.mediaType === "audio") {
@@ -3084,7 +3116,7 @@ function renderMessengerMessageRow(m, isGroup) {
             <span class="audio-icon">🎙️</span>
             <span class="audio-title">${esc(m.mediaName || 'Tin nhắn âm thanh')}</span>
           </div>
-          <audio src="${esc(m.mediaUrl)}" controls class="msg-media-audio-player" preload="metadata"></audio>
+          <audio src="${esc(m.mediaUrl)}" controls class="msg-media-audio-player" preload="metadata" onplay="window.handleMediaPlay(this)"></audio>
         </div>
       `;
     } else {
@@ -3138,6 +3170,41 @@ function renderMessengerMessageRow(m, isGroup) {
   `;
 }
 
+window.triggerChangeGroupAvatar = function(groupId) {
+  if (!groupId) return;
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/jpeg,image/png,image/webp,image/gif";
+  input.onchange = async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    if (file.size > 6 * 1024 * 1024) {
+      showToast("Ảnh đại diện nhóm cần nhỏ hơn 6 MB.", true);
+      return;
+    }
+    showToast("Đang tải ảnh đại diện nhóm lên Cloudflare...", false);
+    const fd = new FormData();
+    fd.append("avatar", file);
+    try {
+      const res = await api(`/api/groups/${groupId}/avatar`, {
+        method: "POST",
+        body: fd
+      });
+      if (res && res.avatar_url) {
+        showToast("🎉 Đã cập nhật ảnh đại diện nhóm thành công!", false);
+        if (activeMessenger && activeMessenger.id === groupId) {
+          renderMessengerModal();
+        }
+        fetchChatGroups();
+        render();
+      }
+    } catch (err) {
+      showToast("Lỗi cập nhật ảnh nhóm: " + err.message, true);
+    }
+  };
+  input.click();
+};
+
 async function renderMessengerModal() {
   const modalRoot = document.getElementById("modal-root");
   if (!modalRoot || !activeMessenger) return;
@@ -3179,8 +3246,9 @@ async function renderMessengerModal() {
         activeTitle = grp.name || "Nhóm học tập";
         activeSubtitle = `👥 ${groupMembers.length} thành viên • Gõ /AI [câu hỏi]`;
         activeAvatarHtml = `
-          <div class="group-avatar-circle">
-            👥
+          <div class="group-avatar-circle" style="position:relative; cursor:pointer;" onclick="window.triggerChangeGroupAvatar('${esc(activeMessenger.id)}')" title="Bấm để đổi ảnh đại diện nhóm (Lưu lên Cloudflare R2)">
+            ${grp.avatar_url ? `<img src="${esc(grp.avatar_url)}" alt="" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : '👥'}
+            <div style="position:absolute; bottom:-3px; right:-3px; width:18px; height:18px; background:#fff; border:1.5px solid var(--ink-900); border-radius:50%; font-size:10px; display:grid; place-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.3);" title="Đổi ảnh đại diện">📷</div>
           </div>
         `;
       } else {
@@ -3239,7 +3307,7 @@ async function renderMessengerModal() {
 
   modalRoot.innerHTML = `
     <div class="messenger-overlay" onclick="closeMessenger(event)">
-      <div class="messenger-shell ${activeMessenger.isFullscreen ? 'fullscreen' : ''}" onclick="event.stopPropagation()">
+      <div class="messenger-shell ${activeMessenger.isFullscreen ? 'fullscreen' : ''} ${activeMessenger.id ? 'has-active-chat' : ''}" onclick="event.stopPropagation()">
         <!-- SIDEBAR -->
         <div class="messenger-sidebar">
           <div class="messenger-sidebar-header">
@@ -3247,9 +3315,14 @@ async function renderMessengerModal() {
               <span>🌸</span>
               <span>3TG Messenger</span>
             </div>
-            <button type="button" class="messenger-btn-new-group" onclick="openCreateGroupModal()" title="Tạo nhóm chat học tập mới">
-              ➕ Tạo nhóm mới
-            </button>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button type="button" class="messenger-btn-new-group" onclick="openCreateGroupModal()" title="Tạo nhóm chat học tập mới">
+                ➕ Tạo nhóm mới
+              </button>
+              <button type="button" class="messenger-header-btn pink" onclick="closeMessenger()" title="Đóng Messenger" style="padding:5px 9px; font-size:12px;">
+                ✕
+              </button>
+            </div>
           </div>
 
           <div class="messenger-sidebar-search">
@@ -3274,8 +3347,8 @@ async function renderMessengerModal() {
               const isSelected = activeMessenger.type === 'group' && activeMessenger.id === g.id;
               return `
                 <div class="messenger-inbox-item ${isSelected ? 'active' : ''}" onclick="switchMessengerConversation('group', '${esc(g.id)}')">
-                  <div class="group-avatar-circle" style="width:42px; height:42px; font-size:18px;">
-                    👥
+                  <div class="group-avatar-circle" style="font-size:18px;">
+                    ${g.avatar_url ? `<img src="${esc(g.avatar_url)}" alt="" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : '👥'}
                   </div>
                   <div style="flex:1; overflow:hidden;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -3336,12 +3409,13 @@ async function renderMessengerModal() {
         <!-- MAIN CHAT PANEL -->
         <div class="messenger-main">
           <div class="messenger-header">
-            <div class="messenger-header-left" ${!isGroup && activeMessenger.id ? `onclick="openUserProfileModal('${esc(activeMessenger.id)}')"` : ''} style="cursor:pointer;">
-              <div style="position:relative; display:inline-block;">
+            <div class="messenger-header-left" style="min-width:0;">
+              <button type="button" class="messenger-mobile-back-btn" style="display:none;" onclick="event.stopPropagation(); switchMessengerConversation('all', null)" title="Quay lại danh sách chat">←</button>
+              <div style="position:relative; display:inline-block; flex-shrink:0; cursor:pointer;" ${!isGroup && activeMessenger.id ? `onclick="openUserProfileModal('${esc(activeMessenger.id)}')"` : ''}>
                 <span style="background:transparent; border:none; padding:0; overflow:visible;">${activeAvatarHtml}</span>
                 ${!isGroup && activeStatusObj ? `<span class="inbox-status-dot ${activeStatusObj.isOnline ? 'online' : ''}"></span>` : ''}
               </div>
-              <div>
+              <div style="min-width:0; cursor:pointer;" ${!isGroup && activeMessenger.id ? `onclick="openUserProfileModal('${esc(activeMessenger.id)}')"` : ''}>
                 <h3 style="font-size:16px; font-weight:900; color:var(--ink-900); margin:0 0 2px 0;">
                   ${esc(activeTitle)}
                 </h3>
@@ -3483,9 +3557,25 @@ function reconcileMessengerThread(messages, isGroup) {
   // 5. Kiểm tra vị trí thanh cuộn của người dùng trước khi thêm
   const wasAtBottom = (thread.scrollHeight - thread.scrollTop - thread.clientHeight) < 160;
 
-  // 6. CHỈ chèn tiếp các tin nhắn mới vào cuối danh sách (không render lại cái cũ)
-  const newHtml = newMessages.map(m => renderMessengerMessageRow(m, isGroup)).join("");
-  thread.insertAdjacentHTML("beforeend", newHtml);
+  // 6. Chèn các tin nhắn mới vào đúng thứ tự thời gian (ID tăng dần)
+  newMessages.forEach(m => {
+    const rowHtml = renderMessengerMessageRow(m, isGroup);
+    let inserted = false;
+    if (typeof m.id === "number") {
+      const existingRows = Array.from(thread.querySelectorAll('.msg-row[id^="msg-"]'));
+      for (const row of existingRows) {
+        const rowId = Number(row.id.replace("msg-", ""));
+        if (!isNaN(rowId) && rowId > m.id) {
+          row.insertAdjacentHTML("beforebegin", rowHtml);
+          inserted = true;
+          break;
+        }
+      }
+    }
+    if (!inserted) {
+      thread.insertAdjacentHTML("beforeend", rowHtml);
+    }
+  });
 
   // 7. Chỉ tự động cuộn xuống nếu người dùng đang ở đáy và KHÔNG đang phát video/audio
   if (wasAtBottom) {
@@ -3612,7 +3702,14 @@ window.submitMessengerMessage = function() {
     method: "POST",
     body: payload
   }).then((res) => {
-    // Nếu có phản hồi ngay từ Bot 3TG hoặc AI, render ngay lập tức!
+    // Nếu tin nhắn gửi thành công, cập nhật ngay ID tạm sang ID chính thức từ server
+    if (res && res.message && res.message.id) {
+      const tempEl = document.getElementById(`msg-${tempId}`);
+      if (tempEl) {
+        tempEl.id = `msg-${res.message.id}`;
+      }
+    }
+    // Nếu có phản hồi ngay từ Bot 3TG hoặc AI, render ngay lập tức sau tin nhắn user!
     if (res && res.aiMessage) {
       const curThread = document.getElementById("messenger-thread");
       if (curThread && activeMessenger && activeMessenger.id === convId) {
@@ -4620,11 +4717,11 @@ function renderFriends() {
         <div class="friends-messages-container">
           <!-- TOP TOOLBAR -->
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-            <div style="display:flex; gap:10px; align-items:center;">
-              <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 18px; font-size:14px;" onclick="openMessenger('all', null, true)">
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; width:100%;">
+              <button type="button" class="btn-duo btn-duo-pink" style="padding:10px 14px; font-size:13.5px; flex:1 1 160px;" onclick="openMessenger('all', null, true)">
                 ⛶ Mở Messenger Toàn Màn Hình
               </button>
-              <button type="button" class="btn-duo btn-duo-white" style="padding:10px 18px; font-size:14px;" onclick="openCreateGroupModal()">
+              <button type="button" class="btn-duo btn-duo-white" style="padding:10px 14px; font-size:13.5px; flex:1 1 150px;" onclick="openCreateGroupModal()">
                 ➕ Tạo nhóm chat mới 👥
               </button>
             </div>
@@ -4643,20 +4740,22 @@ function renderFriends() {
                 ${groups.map(g => `
                   <div class="friend-card" style="cursor:pointer;" onclick="openMessenger('group', '${esc(g.id)}')">
                     <div class="friend-info-left">
-                      <div class="group-avatar-circle" style="width:44px; height:44px; font-size:20px;">👥</div>
-                      <div>
-                        <h3 style="font-size:16px; font-weight:900; margin:0 0 3px 0; color:var(--ink-900);">
+                      <div class="group-avatar-circle" style="width:44px; height:44px; font-size:20px; flex-shrink:0;">
+                        ${g.avatar_url ? `<img src="${esc(g.avatar_url)}" alt="" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">` : '👥'}
+                      </div>
+                      <div style="min-width:0; flex:1;">
+                        <h3 style="font-size:16px; font-weight:900; margin:0 0 3px 0; color:var(--ink-900); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                           ${esc(g.name)}
                         </h3>
                         <div style="font-size:12px; color:var(--lumi-pink); font-weight:700; margin-bottom:2px;">
                           👥 ${g.member_count} thành viên
                         </div>
-                        <div style="font-size:13.5px; color:var(--ink-700); font-weight:600; max-width:440px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        <div style="font-size:13px; color:var(--ink-700); font-weight:600; width:100%; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                           ${esc(g.last_message || 'Bấm để tham gia thảo luận nhóm!')}
                         </div>
                       </div>
                     </div>
-                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                    <div class="friend-card-actions" style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
                       <span style="font-size:11px; font-weight:700; color:var(--ink-400);">${esc(String(g.last_time || '').slice(11, 16))}</span>
                       <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 14px; font-size:12.5px;">Vào nhóm chat ➔</button>
                     </div>
@@ -4681,20 +4780,20 @@ function renderFriends() {
                     <div class="friend-card" style="cursor:pointer;" onclick="openMessenger('direct', '${esc(u.user_id)}')">
                       <div class="friend-info-left">
                         <span class="friend-avatar-badge" style="background:transparent; border:none; padding:0; overflow:visible;">${avatarHtml}</span>
-                        <div>
-                          <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px;">
+                        <div style="min-width:0; flex:1;">
+                          <div style="display:flex; align-items:center; gap:6px; margin-bottom:3px; flex-wrap:wrap;">
                             <h3 style="font-size:16px; font-weight:900; margin:0; color:var(--ink-900);">
                               ${esc(u.full_name)}
                             </h3>
                             <span class="active-status-dot ${cStatus.badgeClass}"></span>
                             <span style="font-size:11.5px; font-weight:700; color:${cStatus.isOnline ? '#10b981' : 'var(--ink-400)'};">${esc(cStatus.text)}</span>
                           </div>
-                          <div style="font-size:13.5px; color:var(--ink-700); font-weight:600; max-width:440px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                          <div style="font-size:13px; color:var(--ink-700); font-weight:600; width:100%; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                             ${c.isMine ? '<strong>Bạn:</strong> ' : ''}${esc(c.lastMessage)}
                           </div>
                         </div>
                       </div>
-                      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+                      <div class="friend-card-actions" style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
                         <span style="font-size:11px; font-weight:700; color:var(--ink-400);">${esc(String(c.lastTime || '').slice(11, 16))}</span>
                         ${c.unreadCount ? `<span style="background:#ef4444; color:#fff; font-size:10.5px; font-weight:900; padding:2px 7px; border-radius:999px;">${c.unreadCount} mới</span>` : ''}
                         <button type="button" class="btn-duo btn-duo-pink" style="padding:6px 12px; font-size:12.5px;">Mở chat ➔</button>
@@ -6031,8 +6130,23 @@ export function renderDecoratedAvatar(avatarUrl, decoCode, size = 48, name = "3T
 
   let statusHtml = "";
   if (statusIcon) {
+    let bubbleSize = 18;
+    let bubbleFont = 11;
+    if (size <= 40) {
+      bubbleSize = 16;
+      bubbleFont = 9.5;
+    } else if (size <= 54) {
+      bubbleSize = 20;
+      bubbleFont = 11.5;
+    } else if (size <= 90) {
+      bubbleSize = 24;
+      bubbleFont = 13.5;
+    } else {
+      bubbleSize = 32;
+      bubbleFont = 17;
+    }
     statusHtml = `
-      <div class="avatar-status-speech-bubble" style="font-size:${Math.max(12, Math.round(size * 0.34))}px;" title="Trạng thái: ${esc(statusIcon)}">
+      <div class="avatar-status-speech-bubble" style="width:${bubbleSize}px; height:${bubbleSize}px; min-width:${bubbleSize}px; min-height:${bubbleSize}px; max-width:${bubbleSize}px; max-height:${bubbleSize}px; font-size:${bubbleFont}px; padding:0; display:flex; align-items:center; justify-content:center; box-sizing:border-box;" title="Trạng thái: ${esc(statusIcon)}">
         ${esc(statusIcon)}
       </div>
     `;
@@ -8714,30 +8828,7 @@ function renderSettings() {
             </a>
           </div>
 
-          <!-- AI & API KEY CONFIGURATION CARD -->
-          <div class="fb-side-card" style="margin-top:14px;">
-            <h3 class="fb-side-card-title">🤖 Cấu hình Trợ lý Cố vấn 3TG AI</h3>
-            <p style="font-size:12.5px; color:var(--ink-500); margin:4px 0 10px 0;">
-              Mặc định hệ thống sử dụng kết nối <strong>Groq LPU siêu tốc</strong>. Bạn có thể tự điền API Key riêng (DeepSeek, Claude, Groq) hoặc Proxy bên thứ 3.
-            </p>
-            <div class="form-group" style="margin-bottom:8px;">
-              <label class="form-label" style="font-size:12px; margin-bottom:3px;">Khóa API Key riêng</label>
-              <input type="password" id="custom-ai-key-input" class="form-input" style="font-size:12px; padding:8px 10px;" placeholder="sk-... hoặc gsk_..." value="${esc(localStorage.getItem('custom_deepseek_key') || localStorage.getItem('custom_groq_key') || '')}" />
-            </div>
-            <div class="form-group" style="margin-bottom:12px;">
-              <label class="form-label" style="font-size:12px; margin-bottom:3px;">Proxy Base URL (cho key mua bên thứ 3)</label>
-              <input type="text" id="custom-ai-baseurl-input" class="form-input" style="font-size:12px; padding:8px 10px;" placeholder="Ví dụ: https://api.proxy.vn/v1" value="${esc(localStorage.getItem('custom_ai_base_url') || '')}" />
-            </div>
-            <div style="display:flex; gap:8px;">
-              <button type="button" class="btn-duo btn-duo-pink" style="flex:1; padding:8px 12px; font-size:12.5px;" onclick="window.saveAiSettings()">
-                💾 Lưu cấu hình
-              </button>
-              <button type="button" class="btn-duo btn-duo-white" style="flex:1; padding:8px 12px; font-size:12.5px;" onclick="window.testAiConnection()">
-                ⚡ Thử kết nối
-              </button>
-            </div>
-            <div id="ai-test-status" style="font-size:12px; margin-top:8px; display:none;"></div>
-          </div>
+          
         </div>
 
         <!-- RIGHT COLUMN: CHỈ SỐ HỌC TẬP & DÒNG TRẠNG THÁI -->
@@ -8902,8 +8993,11 @@ window.testAiConnection = async function() {
     statusEl.textContent = "⏳ Đang gửi thử 1 tin nhắn kiểm tra kết nối AI...";
   }
   try {
+    const userId = state.profile?.user_id || state.profile?.id || "";
+    const clientSig = userId ? await computeAiClientSignature(userId) : "";
     const res = await api("/api/chat", {
       method: "POST",
+      headers: clientSig ? { "x-3tg-client-sig": clientSig } : {},
       body: {
         message: "Xin chào 3TG! Hãy phản hồi ngắn gọn 1 câu để kiểm tra kết nối.",
         freeMode: true,
@@ -10278,75 +10372,92 @@ window.handleIuPortalLogin = async function() {
   }
 
   // 2. CHẠY TRÊN TRÌNH DUYỆT WEB (Google Chrome / Edge):
-  const loginUrl = "https://iu.cmcu.edu.vn/congthongtin/login.aspx";
-  const popup = window.open(loginUrl, "iu_login_popup", "width=1000,height=780,left=200,top=100");
-  window._activeIuPopup = popup;
-
-  showToast("🐰 Đã mở cửa sổ đăng nhập Cổng IU! Bạn đăng nhập Microsoft xong bấm nút 'Đã đăng nhập xong' để Thỏ đóng cửa sổ và đồng bộ nhé!", false);
-
+  // Trình duyệt Web chặn đọc cookie/session chéo trang (Same-Origin Policy) nên không thể tự đọc phiên Microsoft từ cửa sổ cổng IU như App Desktop.
+  showToast("💡 Đăng nhập Microsoft SSO 1-chạm tự động chạy trên App Desktop. Trên Web, bạn có thể nhập tài khoản cổng IU bên dưới!", false);
   const container = document.querySelector(".iu-single-action-box");
   if (container) {
     container.innerHTML = `
-      <div class="iu-browser-sync-active">
-        <p class="iu-browser-status-title">🌐 Đang mở cửa sổ cổng trường IU...</p>
-        <p class="iu-browser-status-desc">Vui lòng đăng nhập tài khoản Microsoft trường trên cửa sổ vừa mở. Sau khi đăng nhập thành công, bấm nút bên dưới để đóng cửa sổ ngay:</p>
-        <button type="button" class="btn-duo btn-duo-green iu-btn-confirm-done" onclick="window.confirmBrowserIuDone()">
-          ✅ Tôi đã đăng nhập xong (Đóng cửa sổ & Đồng bộ)
-        </button>
+      <div class="iu-browser-sync-active" style="text-align:left; padding:16px; border-radius:16px; background:#fff5f7; border:1.5px solid var(--lumi-pink-border, #ffb3c6);">
+        <p style="font-size:13.5px; font-weight:800; color:var(--ink-900); margin:0 0 6px 0;">🌐 Trình duyệt Web bị chặn tự đọc phiên Microsoft SSO</p>
+        <p style="font-size:12.5px; color:var(--ink-600); margin:0 0 12px 0; line-height:1.45;">
+          Tính năng bấm 1 chạm tự mở Microsoft & quay lại cần quyền <strong>App Desktop 3TG Study</strong>. Ngay trên trình duyệt Web, bạn có thể đồng bộ bằng 2 cách:
+        </p>
+        <form onsubmit="window.submitDirectIuCredentials(event)" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;">
+          <input type="text" id="iu-web-username" class="chat-input" placeholder="Mã sinh viên (VD: 251100...)" style="font-size:13px; padding:8px 12px; border-radius:10px;" required>
+          <input type="password" id="iu-web-password" class="chat-input" placeholder="Mật khẩu cổng thông tin IU" style="font-size:13px; padding:8px 12px; border-radius:10px;" required>
+          <button type="submit" id="btn-iu-web-login" class="btn-duo btn-duo-pink" style="width:100%; padding:9px 14px; font-size:13px;">
+            🚀 Đăng nhập & Lấy bảng điểm ngay
+          </button>
+        </form>
+        <div style="border-top:1px dashed var(--lumi-pink-border, #ffb3c6); padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:12px; color:var(--ink-500); font-weight:600;">Đã đồng bộ trên App Desktop rồi?</span>
+          <button type="button" class="btn-duo btn-duo-green" style="padding:6px 12px; font-size:12px;" onclick="window.confirmBrowserIuDone()">
+            🔄 Tải lại từ Cloud
+          </button>
+        </div>
       </div>
     `;
   }
+  if (btn) {
+    btn.disabled = false;
+  }
+};
 
-  // Polling tự động nếu cửa sổ đóng hoặc nếu có dữ liệu
-  let hasScraped = false;
-  const pollTimer = setInterval(async () => {
-    try {
-      const chk = await api("/api/academic/transcript");
-      if (chk && chk.hasTranscript && chk.transcript) {
-        clearInterval(pollTimer);
-        try { if (popup && !popup.closed) popup.close(); } catch {}
-        state.academicTranscript = chk;
-        window.closeAcademicModal();
-        showToast(`🎉 Tuyệt vời! Tool đã đục thành công bảng điểm của ${chk.transcript.student.ho_ten}!`, false);
-        if (typeof launchConfetti === "function") launchConfetti();
-        updateShell();
-        render();
-        return;
-      }
-    } catch {}
-
-    if (popup && popup.closed && !hasScraped) {
-      hasScraped = true;
-      clearInterval(pollTimer);
+window.submitDirectIuCredentials = async function(e) {
+  if (e) e.preventDefault();
+  const userEl = document.getElementById("iu-web-username");
+  const passEl = document.getElementById("iu-web-password");
+  const username = userEl ? userEl.value.trim() : "";
+  const password = passEl ? passEl.value.trim() : "";
+  if (!username || !password) {
+    showToast("Vui lòng nhập đầy đủ Mã sinh viên và Mật khẩu cổng IU.", true);
+    return;
+  }
+  showAppLoader("Đang kết nối cổng trường IU… 🎓", "Đang đăng nhập và tải bảng điểm từ iu.cmcu.edu.vn...");
+  try {
+    const res = await api("/api/academic/login-iu", {
+      method: "POST",
+      body: { username, password }
+    });
+    if (res && res.ok && res.transcript) {
+      state.academicTranscript = {
+        hasTranscript: true,
+        transcript: res.transcript,
+        aiAnalysis: res.aiAnalysis,
+        targetGpa: res.targetGpa || 3.2,
+        lastSyncedAt: new Date().toISOString()
+      };
+      window.closeAcademicModal();
+      showToast(`🎉 Tuyệt vời! Đã tải thành công bảng điểm của ${res.transcript.student.ho_ten}!`, false);
+      if (typeof launchConfetti === "function") launchConfetti();
+      updateShell();
+      render();
+    } else {
+      showToast(res?.error || res?.message || "Đăng nhập không thành công. Nếu tài khoản bắt buộc Microsoft SSO, hãy mở App Desktop 3TG Study để đồng bộ 1 chạm!", true);
     }
-  }, 1200);
+  } catch (err) {
+    showToast("Không đăng nhập được trực tiếp: " + err.message + " (Nếu dùng Microsoft SSO, vui lòng đồng bộ qua App Desktop 3TG Study)", true);
+  } finally {
+    hideAppLoader();
+  }
 };
 
 window.confirmBrowserIuDone = async function() {
-  try {
-    if (window._activeIuPopup && !window._activeIuPopup.closed) {
-      window._activeIuPopup.close();
-    }
-  } catch {}
-
-  showAppLoader("Đang kiểm tra dữ liệu bảng điểm IU… 🎓", "Đang đồng bộ dữ liệu kết quả học tập từ cổng trường…");
+  showAppLoader("Đang kiểm tra dữ liệu bảng điểm… 🎓", "Đang tải dữ liệu kết quả học tập đã đồng bộ trên Cloud…");
   try {
     const chk = await api("/api/academic/transcript");
     if (chk && chk.hasTranscript && chk.transcript) {
       state.academicTranscript = chk;
       window.closeAcademicModal();
-      showToast(`🎉 Đã kết nối thành công bảng điểm của ${chk.transcript.student.ho_ten}!`, false);
+      showToast(`🎉 Đã tải thành công bảng điểm của ${chk.transcript.student.ho_ten}!`, false);
       if (typeof launchConfetti === "function") launchConfetti();
       updateShell();
       render();
       return;
     }
-
-    showToast("💡 Vui lòng hoàn tất đăng nhập Microsoft trên cổng trường để Thỏ tự động đồng bộ bảng điểm nhé!", true);
-    renderAcademicLoginModal();
+    showToast("💡 Tài khoản này chưa có bảng điểm trên Cloud. Hãy đồng bộ 1 chạm trên App Desktop 3TG Study hoặc đăng nhập bên dưới nhé!", true);
   } catch (err) {
     showToast("Chưa tải được bảng điểm: " + err.message, true);
-    renderAcademicLoginModal();
   } finally {
     hideAppLoader();
   }
@@ -10359,6 +10470,7 @@ window.openAcademicLoginModal = function() {
 function renderAcademicLoginModal() {
   const modalRoot = document.getElementById("modal-root");
   if (!modalRoot) return;
+  const isDesktop = Boolean(window.electronAPI?.openIuLogin || window.__uniStudyIU?.loginIU);
 
   modalRoot.innerHTML = `
     <div class="modal-backdrop" onclick="window.closeAcademicModal(event)">
@@ -10395,6 +10507,11 @@ function renderAcademicLoginModal() {
             <p class="iu-single-hint" style="margin-top: 14px; text-align: center; color: #64748b; font-size: 13px;">
               🔒 Xác thực an toàn qua hệ thống Microsoft Office 365 của CMC University
             </p>
+            ${!isDesktop ? `
+              <p style="margin-top: 8px; text-align: center; color: var(--ink-500); font-size: 12px;">
+                💡 Chạy bằng <strong>App Desktop 3TG Study</strong> sẽ tự động lấy thông tin & đóng cửa sổ ngay sau khi đăng nhập.
+              </p>
+            ` : ''}
           </div>
         </div>
       </div>
@@ -10918,6 +11035,7 @@ function closeMobileMenu() {
   document.getElementById("mobile-overlay")?.classList.remove("active");
 }
 document.getElementById("menu-toggle")?.addEventListener("click", openMobileMenu);
+document.getElementById("menu-close-btn")?.addEventListener("click", closeMobileMenu);
 document.getElementById("mobile-overlay")?.addEventListener("click", closeMobileMenu);
 
 
